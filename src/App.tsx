@@ -1,35 +1,48 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useMemo, useState } from 'react'
+import { SignIn } from './auth/SignIn'
+import { createSupabaseAuth, supabaseFromEnv } from './auth/supabaseAuth'
+import type { Account, AuthService } from './auth/types'
 
-function App() {
-  const [count, setCount] = useState(0)
+export function AppShell({ auth }: { auth: AuthService | null }) {
+  const [account, setAccount] = useState<Account | null | undefined>(undefined)
+
+  useEffect(() => {
+    if (!auth) return
+    let live = true
+    void auth.current().then((a) => live && setAccount(a))
+    const off = auth.onChange((a) => setAccount(a))
+    return () => {
+      live = false
+      off()
+    }
+  }, [auth])
+
+  if (!auth) {
+    return (
+      <main className="auth">
+        <h1 className="auth-brand">Track Me Fit</h1>
+        <p>The app isn’t connected to its database yet. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env.local.</p>
+      </main>
+    )
+  }
+  if (account === undefined) return <main className="auth">Loading…</main>
+  if (!account) return <SignIn auth={auth} />
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
+    <main className="auth">
+      <h1 className="auth-brand">Track Me Fit</h1>
+      <p>
+        Signed in as <strong>{account.name || account.email}</strong> ({account.role === 'coach' ? 'coach' : 'member'}).
       </p>
-    </>
+      <button className="auth-link" onClick={() => void auth.signOut()}>Sign out</button>
+    </main>
   )
 }
 
-export default App
+export default function App() {
+  const auth = useMemo(() => {
+    const sb = supabaseFromEnv()
+    return sb ? createSupabaseAuth(sb) : null
+  }, [])
+  return <AppShell auth={auth} />
+}
