@@ -16,7 +16,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Waiting on |
 |---|---|---|
-| T-037 | Go live on Supabase (create project, run migration, add keys) | DK creates the Supabase project; steps in docs/supabase-setup.md |
+| T-037 | Go live on Supabase: project created, keys in `.env.local`; check the migration ran and try a real sign-up | Network access to `*.supabase.co` from Claude's workspace (DK) |
 | T-010 | Import IFCT 2017 Indian foods | Permission from ICMR-NIN |
 | T-011 | Import Indian Nutrient Databank recipes | Licence answer from the INDB authors |
 | T-012 | USDA search through our server | USDA API key from data.gov (DK) |
@@ -31,7 +31,8 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 |---|---|---|
 | T-015 | USDA bulk importer (Foundation + SR Legacy) into our foods table | Mapper tests (started in T-007), import count check |
 | T-017 | Onboarding: quick start + health check | Component tests for each step; health "yes" shows the doctor note |
-| T-018 | Food logging: search, grams or portions, quick add, barcode | Unit tests for amounts; component tests for the log sheet |
+| T-018b | Food logging extras: quick add (calories only), barcode scan, batch-cooked weighing, recent and frequent foods | Component tests for each |
+| T-038 | Serve food search from the database instead of a 535 KB (gzip) download | Search tests against the server |
 | T-019 | Add your own food, product, recipe | Recipe per-100 g maths tests |
 | T-020 | Manual diet targets (calories and macros), set by user or coach | Validation tests |
 | T-021 | Optional "suggest my targets" using the diet engine | Engine tests (done); UI test for accept / ignore |
@@ -61,4 +62,5 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-013 | Sign-in screens: email, Google, password reset, user or coach | `src/auth/SignIn.test.tsx` (13) |
 | T-014 | Data model and privacy rules (users, coaches, food, progress, training) | `src/db/rls.test.ts` (17), run in PGlite |
 | T-030 | Load USDA values for our ingredients: 26 of 28 matched, 22 of 25 dishes computed | `src/food/indian/database.test.ts` (6) |
+| T-018 | Food log: day view by meal, search 7,567 foods, log by grams or portions, remove, move between days | `src/log/log.test.ts` (7), `src/log/FoodLog.test.tsx` (7), `src/food/search.test.ts` (7) |
 | T-029 | Recipe calculator, raw-to-cooked converter, USDA extract script | `src/food/recipe.test.ts`, `src/food/indian/resolve.test.ts` |
