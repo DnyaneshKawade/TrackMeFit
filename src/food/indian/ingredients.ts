@@ -3,6 +3,12 @@
 // domain), and the importer fills calories and macros from USDA. Ingredients
 // USDA does not have (paneer, poha) take values from a package label.
 
+import { INGREDIENTS_NORTH } from './extra-ingredients/north'
+import { INGREDIENTS_SOUTH } from './extra-ingredients/south'
+import { INGREDIENTS_WESTEAST } from './extra-ingredients/westeast'
+import { INGREDIENTS_SNACKS } from './extra-ingredients/snacks'
+import { INGREDIENTS_NONVEG_SWEETS } from './extra-ingredients/nonveg-sweets'
+
 export type ValueSource =
   | { kind: 'usda'; description: string }
   | { kind: 'label'; note: string }
@@ -58,9 +64,27 @@ const list: (Omit<Ingredient, 'id'> & { key: string })[] = [
 
   // Other
   { key: 'sugar', name: 'Sugar', aliases: ['cheeni', 'shakkar'], values: usda('Sugars, granulated') },
+  // Indian staples not in USDA; values come from package labels
+  { key: 'jaggery', name: 'Jaggery (gur)', aliases: ['gur', 'gud', 'vellam', 'bella'], values: { kind: 'label', note: 'Not in USDA. Take values from a jaggery packet label.' } },
+  { key: 'khoya', name: 'Khoya (mawa)', aliases: ['mawa', 'khoa'], values: { kind: 'label', note: 'Not in USDA. Take values from a khoya packet label.' } },
+  { key: 'makhana', name: 'Makhana (fox nuts)', aliases: ['phool makhana', 'lotus seeds'], values: { kind: 'label', note: 'Not in USDA. Take values from a makhana packet label.' } },
+  { key: 'soya-chunks', name: 'Soya chunks, dry', aliases: ['soya badi', 'nutrela', 'meal maker'], values: { kind: 'label', note: 'Not in USDA. Take values from a soya chunks packet label.' } },
+  { key: 'ragi-flour', name: 'Ragi flour (finger millet)', aliases: ['nachni', 'nachni atta', 'finger millet flour'], values: { kind: 'label', note: 'Not in USDA. Take values from a ragi flour packet label.' } },
+  { key: 'sattu', name: 'Sattu (roasted gram flour)', aliases: ['chana sattu'], values: { kind: 'label', note: 'Not in USDA. Take values from a sattu packet label.' } },
+  { key: 'vermicelli', name: 'Vermicelli (seviyan), dry', aliases: ['seviyan', 'semiya', 'sewai'], values: { kind: 'label', note: 'Not in USDA. Take values from a vermicelli packet label.' } },
+
   { key: 'water', name: 'Water', aliases: ['pani'], values: { kind: 'fixed', per100g: { kcal: 0, proteinG: 0, carbG: 0, fatG: 0 } } },
 ]
 
-export const INGREDIENTS: Ingredient[] = list.map(({ key, ...rest }) => ({ id: `tmf:ing:${key}`, ...rest }))
+const BASE: Ingredient[] = list.map(({ key, ...rest }) => ({ id: `tmf:ing:${key}`, ...rest }))
+
+export const INGREDIENTS: Ingredient[] = [
+  ...BASE,
+  ...INGREDIENTS_NORTH,
+  ...INGREDIENTS_SOUTH,
+  ...INGREDIENTS_WESTEAST,
+  ...INGREDIENTS_SNACKS,
+  ...INGREDIENTS_NONVEG_SWEETS,
+]
 
 export const ingredientById = new Map(INGREDIENTS.map((i) => [i.id, i]))

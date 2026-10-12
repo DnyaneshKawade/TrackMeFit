@@ -107,7 +107,8 @@ describe('Indian standard recipes', () => {
   it('uses only known ingredients with positive weights', () => {
     for (const r of RECIPES) {
       for (const i of r.ingredients) {
-        expect(ingredientById.has(i.foodId), `${r.id}: ${i.foodId}`).toBe(true)
+        // usda:<fdc_id> ingredients are checked against the USDA table in database.test.ts
+        if (!i.foodId.startsWith('usda:')) expect(ingredientById.has(i.foodId), `${r.id}: ${i.foodId}`).toBe(true)
         expect(i.grams, `${r.id}: ${i.foodId}`).toBeGreaterThan(0)
       }
     }

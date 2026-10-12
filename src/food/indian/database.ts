@@ -16,7 +16,13 @@ export interface IndianDatabase {
 }
 
 export function buildIndianDatabase(usdaCsv: string, labels: Record<string, Per100g> = {}): IndianDatabase {
-  const { foods, unresolved } = resolveIngredients(INGREDIENTS, parseUsdaMacros(usdaCsv), labels)
+  const usda = parseUsdaMacros(usdaCsv)
+  const { foods, unresolved } = resolveIngredients(INGREDIENTS, usda, labels)
+  // Recipes may also use any USDA food directly as "usda:<fdc_id>".
+  for (const row of usda) {
+    const id = `usda:${row.fdcId}`
+    foods.set(id, { id, name: row.description, state: 'raw', per100g: row.per100g, portions: [], source: 'usda', sourceId: row.fdcId })
+  }
   const dishes: RecipeResult[] = []
   const pendingDishes: IndianDatabase['pendingDishes'] = []
   for (const recipe of RECIPES) {
