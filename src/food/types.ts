@@ -30,6 +30,8 @@ export interface Portion {
 export interface Food {
   id: string
   name: string
+  /** Other names people search for (Hinglish, regional, English). */
+  aliases?: string[]
   brand?: string
   state: FoodState
   per100g: Per100g
