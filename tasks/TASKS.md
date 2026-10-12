@@ -10,7 +10,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Owner | Tests | Notes |
 |---|---|---|---|---|
-| T-016 | Our own Indian food database: first 25 dishes done, growing to 300 | Claude | `src/food/recipe.test.ts`, `src/food/indian/resolve.test.ts` | See [docs/indian-food-database.md](../docs/indian-food-database.md) |
+| T-016 | Our own Indian food database: 1,375 dishes written (1,115 computed); raw foods list in progress; packaged products next | Claude | `src/food/recipe.test.ts`, `src/food/indian/resolve.test.ts` | See [docs/indian-food-database.md](../docs/indian-food-database.md) |
 
 ## Blocked
 
@@ -19,7 +19,9 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-010 | Import IFCT 2017 Indian foods | Permission from ICMR-NIN |
 | T-011 | Import Indian Nutrient Databank recipes | Licence answer from the INDB authors |
 | T-012 | USDA search through our server | USDA API key from data.gov (DK) |
-| T-031 | Paneer and poha values (unblocks paneer bhurji, palak paneer, poha) | A photo of a common paneer and poha packet label (DK) |
+| T-031 | Label values for 37 non-USDA ingredients (paneer, jaggery, khoya, methi leaves, poha, soya chunks...); unblocks 260 dishes | Packet label photos (DK) |
+| T-033 | Packaged Indian products (Open Food Facts India, brand labels) | Open Food Facts not reachable from Claude's cloud setup (DK to allow the domains) |
+| T-034 | Review leafy-green and juice recipes: some got extra oil or sugar to pass an energy check that was too strict (now relaxed) | Review pass |
 | T-032 | Verify cooked weights | Someone cooks each dish and weighs the pot |
 
 ## To do

@@ -26,8 +26,25 @@ describe('Indian food database built from USDA', () => {
     expect(missing).toEqual([])
   })
 
-  it('has calories that agree with the macros for every dish', () => {
-    for (const d of db.dishes) expect(d.energyMismatch, d.food.id).toBeLessThan(0.1)
+  // Dish calories are summed from USDA's measured energy, while protein x 4 +
+  // carbs x 4 + fat x 9 overstates it for vegetables and fruit (USDA carbs
+  // include fibre). So the check allows 20%, or 15 kcal per 100 g for light foods.
+  it('has calories that roughly agree with the macros for every dish', () => {
+    for (const d of db.dishes) {
+      const gap = d.energyMismatch * d.food.per100g.kcal
+      expect(d.energyMismatch < 0.2 || gap < 15, `${d.food.id}: ${d.energyMismatch.toFixed(2)}`).toBe(true)
+    }
+  })
+
+  it('keeps every dish between 0 and 900 kcal per 100 g', () => {
+    for (const d of db.dishes) {
+      expect(d.food.per100g.kcal, d.food.id).toBeGreaterThanOrEqual(0)
+      expect(d.food.per100g.kcal, d.food.id).toBeLessThanOrEqual(900)
+    }
+  })
+
+  it('has more than 1,000 computed dishes', () => {
+    expect(db.dishes.length).toBeGreaterThan(1000)
   })
 
   it('keeps USDA ids on ingredients for attribution', () => {

@@ -3,6 +3,7 @@
 // domain), and the importer fills calories and macros from USDA. Ingredients
 // USDA does not have (paneer, poha) take values from a package label.
 
+import { INGREDIENTS_SHARED } from './extra-ingredients/shared'
 import { INGREDIENTS_NORTH } from './extra-ingredients/north'
 import { INGREDIENTS_SOUTH } from './extra-ingredients/south'
 import { INGREDIENTS_WESTEAST } from './extra-ingredients/westeast'
@@ -80,6 +81,7 @@ const BASE: Ingredient[] = list.map(({ key, ...rest }) => ({ id: `tmf:ing:${key}
 
 export const INGREDIENTS: Ingredient[] = [
   ...BASE,
+  ...INGREDIENTS_SHARED,
   ...INGREDIENTS_NORTH,
   ...INGREDIENTS_SOUTH,
   ...INGREDIENTS_WESTEAST,

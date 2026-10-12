@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-12: 1,375 Indian dishes (T-016)
+
+- Recipes split into category files (`src/food/indian/recipes/`): North 274, South 290, West/East/Northeast 252, snacks/street food/drinks 261, non-veg and sweets 273, plus the 25 core dishes.
+- Recipes can use any USDA food directly as `usda:<fdc_id>`; 37 non-USDA ingredients wait on label values. Duplicate label ingredients merged into `extra-ingredients/shared.ts`.
+- 1,115 dishes compute now; 260 wait on labels (paneer 72, jaggery 67, khoya 21, ...).
+- Energy check relaxed for vegetables and fruit (USDA carbs include fibre); added a 0-900 kcal per 100 g range check and a 1,000-dish minimum. Whole suite: 79 passing.
+- Review sheet for DK: project files `trackmefit-review/indian-dishes-v2.csv`.
+- Open: T-031 labels, T-033 packaged products, T-034 recipe review.
+
 ## 2026-10-12: USDA values loaded (T-030)
 
 - DK downloaded the USDA SR Legacy zip; `data/usda/sr_legacy_macros.csv` now holds all 7,793 foods (public domain).
