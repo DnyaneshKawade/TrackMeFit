@@ -17,8 +17,6 @@ export const INGREDIENTS_SOUTH2: Ingredient[] = [
     label('Not in USDA (USDA "Gooseberries" is the European fruit). Take values from a fresh amla pack label.')),
   ingredient('south2-malabar-spinach', 'Malabar spinach (basale), raw', ['basale soppu', 'bachali kura', 'pasalai keerai', 'vaali', 'poi saag', 'malabar spinach'],
     label('Not in USDA. Take values from a fresh Malabar spinach pack label.')),
-  ingredient('south2-raw-mango', 'Raw green mango', ['kacha aam', 'mangai', 'mamidikaya', 'mavinakayi', 'pacha manga', 'kairi', 'raw mango'],
-    label('Not in USDA (USDA "Mangos, raw" is ripe fruit). Take values from a raw mango pack label.')),
   ingredient('south2-mor-milagai', 'Mor milagai (sun-dried curd chillies), uncooked', ['mor milagai', 'majjiga mirapakayalu', 'sandige menasinakai', 'curd chillies', 'moru mulaku'],
     label('Not in USDA. Take values from a mor milagai packet label.')),
   ingredient('south2-curry-leaves', 'Curry leaves, fresh', ['karuveppilai', 'karivepaku', 'kadi patta', 'karibevu', 'curry leaves'],

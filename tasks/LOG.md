@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-12: 3,336 dishes, 3,547 products, 1,461 raw foods (T-016, T-033, T-035)
+
+- Second batch of dish files: restaurant 350, South 350, regional non-veg 325, sweets and bakery 348, thalis/diet/vrat/Jain 343, regional veg 245. Duplicates removed across files; duplicate raw mango label merged.
+- 3,336 dishes in total; 2,559 compute now, 777 wait on 69 label ingredients (`labels-needed.csv` in project files).
+- `data/off/india_products.csv`: 3,547 Indian packaged products from the Open Food Facts India export DK downloaded (25,389 rows; most lacked full nutrition). ODbL, kept separate; `src/food/off.ts` loads it.
+- `src/food/indian/raw-foods.ts`: 1,461 USDA foods with Indian names and aliases.
+- Tests: whole suite 87 passing.
+- Note: during merging, a git stash briefly emptied the in-progress dish files; all files were restored and each writer confirmed nothing was lost. Don't stash while writers are working.
+
 ## 2026-10-12: 1,375 Indian dishes (T-016)
 
 - Recipes split into category files (`src/food/indian/recipes/`): North 274, South 290, West/East/Northeast 252, snacks/street food/drinks 261, non-veg and sweets 273, plus the 25 core dishes.

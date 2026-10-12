@@ -247,7 +247,7 @@ const CHICKEN: IndianRecipe[] = [
     [noodles(200), water(280), chicken(150), oil(50), onion(60), cabbage(80), capsicum(40), carrot(40), soy(10), schezwan(50)], 920, [PLATE]),
   r('chicken-sweet-corn-soup', 'Chicken sweet corn soup', ['chicken corn soup'],
     [chicken(100), corn(150), cornstarch(20), egg(30), oil(5), water(700)], 900, [CUP, KATORI]),
-  r('chicken-manchow-soup', 'Chicken manchow soup', ['manchow soup chicken', 'chicken hot and sour soup'],
+  r('chicken-manchow-soup', 'Chicken manchow soup', ['manchow soup chicken'],
     [chicken(100), cabbage(60), carrot(40), capsicum(30), cornstarch(20), soy(20), oil(25), water(700), noodles(30)], 880, [CUP, KATORI]),
   r('chicken-momos-steamed', 'Chicken momos (steamed)', ['chicken momo', 'chicken dumplings', 'steam momos chicken'],
     [maida(150), water(80), chickenMince(200), onion(60), cabbage(50), oil(10), ...gg(10)], 540, [piece('1 momo (25 g)', 25), piece('1 plate, 6 momos (150 g)', 150)]),

@@ -18,7 +18,7 @@ export const INGREDIENTS_REGIONAL2: Ingredient[] = [
     label('Not in USDA (only the ground spice is). Take values from a fresh turmeric root pack label.')),
   ingredient('regional2-raw-papaya', 'Raw papaya (green), raw', ['kacha papita', 'raw papaya', 'green papaya', 'amita', 'pepe'],
     label('Not in USDA (USDA has ripe papaya only). Take values from a raw papaya pack label.')),
-  ingredient('regional2-raw-mango', 'Raw mango (green), raw', ['kachi kairi', 'kairi', 'raw mango', 'green mango', 'kancha aam', 'ambi'],
+  ingredient('regional2-raw-mango', 'Raw mango (green), raw', ['kachi kairi', 'kairi', 'raw mango', 'green mango', 'kancha aam', 'ambi', 'kacha aam', 'mangai', 'mamidikaya', 'mavinakayi', 'pacha manga'],
     label('Not in USDA (USDA has ripe mango only). Take values from a raw mango pack label.')),
   ingredient('regional2-elephant-apple', 'Elephant apple (outenga), raw', ['outenga', 'ou tenga', 'chalta', 'elephant apple'],
     label('Not in USDA. Take values from an elephant apple pack label.')),
