@@ -31,7 +31,7 @@ const list: (Omit<Ingredient, 'id'> & { key: string })[] = [
 
   // Grains
   { key: 'rice', name: 'Rice, white, raw', aliases: ['chawal', 'basmati', 'sona masoori'], values: usda('Rice, white, long-grain, regular, raw, unenriched') },
-  { key: 'atta', name: 'Atta (whole wheat flour)', aliases: ['wheat flour', 'gehu atta'], values: usda('Wheat flour, whole-grain') },
+  { key: 'atta', name: 'Atta (whole wheat flour)', aliases: ['wheat flour', 'gehu atta'], values: usda("Wheat flour, whole-grain (Includes foods for USDA's Food Distribution Program)") },
   { key: 'sooji', name: 'Sooji (semolina)', aliases: ['rava', 'semolina'], values: usda('Semolina, unenriched') },
   { key: 'poha', name: 'Poha (flattened rice), dry', aliases: ['chivda', 'aval', 'flattened rice'], values: { kind: 'label', note: 'Not in USDA. Take values from a common Indian poha packet label.' } },
 

@@ -30,7 +30,9 @@ Ingredient values are never typed in by hand. Recipes are ours, so the results a
 
 ## Loading USDA values
 
-USDA bulk files need no API key:
+Done: `data/usda/sr_legacy_macros.csv` holds all 7,793 SR Legacy foods. Every USDA ingredient matches; paneer and poha still need label values, so the 3 dishes that use them are pending. Carbohydrate figures include fibre (USDA "by difference").
+
+To refresh (USDA bulk files need no API key):
 
 1. Download `FoodData_Central_sr_legacy_food_csv_2018-04.zip` from https://fdc.nal.usda.gov/download-datasets and unzip it.
 2. Run `python3 scripts/usda/extract_macros.py <unzipped folder> data/usda/sr_legacy_macros.csv`.

@@ -19,8 +19,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-010 | Import IFCT 2017 Indian foods | Permission from ICMR-NIN |
 | T-011 | Import Indian Nutrient Databank recipes | Licence answer from the INDB authors |
 | T-012 | USDA search through our server | USDA API key from data.gov (DK) |
-| T-030 | Load USDA values for our ingredients | USDA download is blocked from Claude's cloud setup; needs fdc.nal.usda.gov allowed, or DK runs the extract script once |
-| T-031 | Paneer and poha values | A photo of a common paneer and poha packet label (DK) |
+| T-031 | Paneer and poha values (unblocks paneer bhurji, palak paneer, poha) | A photo of a common paneer and poha packet label (DK) |
 | T-032 | Verify cooked weights | Someone cooks each dish and weighs the pot |
 
 ## To do
@@ -56,4 +55,5 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-008 | Task tracking files and conventions | n/a |
 | T-007 | Food data plan and source rules | `src/food/food.test.ts` (8) |
 | T-009 | Tests run on every push and pull request (GitHub Actions) | CI workflow |
+| T-030 | Load USDA values for our ingredients: 26 of 28 matched, 22 of 25 dishes computed | `src/food/indian/database.test.ts` (6) |
 | T-029 | Recipe calculator, raw-to-cooked converter, USDA extract script | `src/food/recipe.test.ts`, `src/food/indian/resolve.test.ts` |
