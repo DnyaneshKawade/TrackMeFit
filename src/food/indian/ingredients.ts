@@ -9,6 +9,12 @@ import { INGREDIENTS_SOUTH } from './extra-ingredients/south'
 import { INGREDIENTS_WESTEAST } from './extra-ingredients/westeast'
 import { INGREDIENTS_SNACKS } from './extra-ingredients/snacks'
 import { INGREDIENTS_NONVEG_SWEETS } from './extra-ingredients/nonveg-sweets'
+import { INGREDIENTS_RESTAURANT } from './extra-ingredients/restaurant'
+import { INGREDIENTS_SOUTH2 } from './extra-ingredients/south2'
+import { INGREDIENTS_NONVEG2 } from './extra-ingredients/nonveg2'
+import { INGREDIENTS_SWEETS_BAKERY } from './extra-ingredients/sweets-bakery'
+import { INGREDIENTS_THALI_DIET } from './extra-ingredients/thali-diet'
+import { INGREDIENTS_REGIONAL2 } from './extra-ingredients/regional2'
 
 export type ValueSource =
   | { kind: 'usda'; description: string }
@@ -87,6 +93,12 @@ export const INGREDIENTS: Ingredient[] = [
   ...INGREDIENTS_WESTEAST,
   ...INGREDIENTS_SNACKS,
   ...INGREDIENTS_NONVEG_SWEETS,
+  ...INGREDIENTS_RESTAURANT,
+  ...INGREDIENTS_SOUTH2,
+  ...INGREDIENTS_NONVEG2,
+  ...INGREDIENTS_SWEETS_BAKERY,
+  ...INGREDIENTS_THALI_DIET,
+  ...INGREDIENTS_REGIONAL2,
 ]
 
 export const ingredientById = new Map(INGREDIENTS.map((i) => [i.id, i]))

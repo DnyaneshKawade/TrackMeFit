@@ -10,6 +10,12 @@ import { RECIPES_SOUTH } from './recipes/south'
 import { RECIPES_WESTEAST } from './recipes/westeast'
 import { RECIPES_SNACKS } from './recipes/snacks'
 import { RECIPES_NONVEG_SWEETS } from './recipes/nonveg-sweets'
+import { RECIPES_RESTAURANT } from './recipes/restaurant'
+import { RECIPES_SOUTH2 } from './recipes/south2'
+import { RECIPES_NONVEG2 } from './recipes/nonveg2'
+import { RECIPES_SWEETS_BAKERY } from './recipes/sweets-bakery'
+import { RECIPES_THALI_DIET } from './recipes/thali-diet'
+import { RECIPES_REGIONAL2 } from './recipes/regional2'
 
 export type { IndianRecipe } from './define'
 
@@ -20,4 +26,10 @@ export const RECIPES: IndianRecipe[] = [
   ...RECIPES_WESTEAST,
   ...RECIPES_SNACKS,
   ...RECIPES_NONVEG_SWEETS,
+  ...RECIPES_RESTAURANT,
+  ...RECIPES_SOUTH2,
+  ...RECIPES_NONVEG2,
+  ...RECIPES_SWEETS_BAKERY,
+  ...RECIPES_THALI_DIET,
+  ...RECIPES_REGIONAL2,
 ]
