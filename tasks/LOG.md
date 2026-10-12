@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-12: Database and sign-in (T-013, T-014)
+
+- `supabase/migrations/20261012000000_init.sql`: profiles (user or coach, onboarding history), coach links, custom foods, food logs, diet targets, weigh-ins, measurements, custom exercises, workout plans, sessions and sets. Row-level security on every table.
+- Privacy tests run the real migration in PGlite (Postgres in WebAssembly) with a stand-in auth schema: `src/db/rls.test.ts`, 17 tests, checked by weakening a rule and seeing tests fail.
+- Sign-in: `src/auth/` (email + password, Google for regular users, password reset, user or coach on sign-up), behind an `AuthService` interface; `src/auth/SignIn.test.tsx`, 13 tests.
+- `docs/supabase-setup.md`: the one-time steps for DK. Open: T-037 go live.
+
 ## 2026-10-12: 3,336 dishes, 3,547 products, 1,461 raw foods (T-016, T-033, T-035)
 
 - Second batch of dish files: restaurant 350, South 350, regional non-veg 325, sweets and bakery 348, thalis/diet/vrat/Jain 343, regional veg 245. Duplicates removed across files; duplicate raw mango label merged.

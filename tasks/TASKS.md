@@ -16,6 +16,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Waiting on |
 |---|---|---|
+| T-037 | Go live on Supabase (create project, run migration, add keys) | DK creates the Supabase project; steps in docs/supabase-setup.md |
 | T-010 | Import IFCT 2017 Indian foods | Permission from ICMR-NIN |
 | T-011 | Import Indian Nutrient Databank recipes | Licence answer from the INDB authors |
 | T-012 | USDA search through our server | USDA API key from data.gov (DK) |
@@ -28,8 +29,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests planned |
 |---|---|---|
-| T-013 | Supabase project: database, sign-in (email + Google), Mumbai region | Row-level security tests: users see only their data; coaches only their clients |
-| T-014 | Data model: users, coaches, coach-client links, foods, food logs, weigh-ins, measurements, plans, workouts, sets | Schema migration tests |
 | T-015 | USDA bulk importer (Foundation + SR Legacy) into our foods table | Mapper tests (started in T-007), import count check |
 | T-017 | Onboarding: quick start + health check | Component tests for each step; health "yes" shows the doctor note |
 | T-018 | Food logging: search, grams or portions, quick add, barcode | Unit tests for amounts; component tests for the log sheet |
@@ -59,5 +58,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-009 | Tests run on every push and pull request (GitHub Actions) | CI workflow |
 | T-033 | Packaged Indian products from Open Food Facts: 3,547 of 25,389 usable | `src/food/off.test.ts` (3) |
 | T-035 | Raw foods with Indian names: 1,461 USDA foods | `src/food/indian/raw-foods.test.ts` (5) |
+| T-013 | Sign-in screens: email, Google, password reset, user or coach | `src/auth/SignIn.test.tsx` (13) |
+| T-014 | Data model and privacy rules (users, coaches, food, progress, training) | `src/db/rls.test.ts` (17), run in PGlite |
 | T-030 | Load USDA values for our ingredients: 26 of 28 matched, 22 of 25 dishes computed | `src/food/indian/database.test.ts` (6) |
 | T-029 | Recipe calculator, raw-to-cooked converter, USDA extract script | `src/food/recipe.test.ts`, `src/food/indian/resolve.test.ts` |
