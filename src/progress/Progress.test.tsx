@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { shiftDate } from '../log/types'
 import { Progress } from './Progress'
 import { memoryProgressStore } from './stores'
+import { EMPTY_PROFILE, type ProfileInfo } from '../profile/types'
+import { memoryTargetStore } from '../targets/stores'
 
 afterEach(cleanup)
 
@@ -61,5 +63,35 @@ describe('progress tab', () => {
     click('Save measurements')
     expect(await screen.findByText(/^down 2.5 cm since 1 Sep/)).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Edit today’s' })).toBeTruthy()
+  })
+})
+
+describe('Catch up to Steady (T-059c)', () => {
+  const profile: ProfileInfo = { ...EMPTY_PROFILE, goal: 'gain', experience: 'beginner', heightCm: 170, goalRate: 0.01 }
+  const weighIns = Array.from({ length: 14 }, (_, i) => ({ date: shiftDate(TODAY, i - 13), kg: 54.5 }))
+  afterEach(() => localStorage.clear())
+
+  it('5. offers Steady with the lower calories, and switches only on the person’s OK', async () => {
+    const targets = memoryTargetStore('me', [{ id: 't', startsOn: '2026-09-01', kcal: 2600, proteinG: 120, carbG: 330, fatG: 70, source: 'suggested', setBy: 'me' }])
+    const calls: [number, unknown][] = []
+    render(<Progress store={memoryProgressStore(weighIns)} goal="gain" profile={profile} targets={targets} onSwitchPace={async (r, t) => void calls.push([r, t])} today={TODAY} />)
+    const card = await screen.findByRole('region', { name: 'Switch to Steady' })
+    await within(card).findByText(/2,600 to 2,300 kcal/)
+    expect(calls).toEqual([])
+    fireEvent.click(within(card).getByRole('button', { name: 'Switch to Steady' }))
+    await waitFor(() => expect(calls).toEqual([[0.005, { kcal: 2300, proteinG: 120, fatG: 70, carbG: 298 }]]))
+  })
+
+  it('6. "Not now" hides it for two weeks', async () => {
+    render(<Progress store={memoryProgressStore(weighIns)} goal="gain" profile={profile} onSwitchPace={async () => {}} today={TODAY} />)
+    fireEvent.click(within(await screen.findByRole('region', { name: 'Switch to Steady' })).getByRole('button', { name: 'Not now' }))
+    expect(screen.queryByRole('region', { name: 'Switch to Steady' })).toBeNull()
+    cleanup()
+    render(<Progress store={memoryProgressStore(weighIns)} goal="gain" profile={profile} onSwitchPace={async () => {}} today={shiftDate(TODAY, 13)} />)
+    await screen.findByRole('heading', { name: 'Progress' })
+    expect(screen.queryByRole('region', { name: 'Switch to Steady' })).toBeNull()
+    cleanup()
+    render(<Progress store={memoryProgressStore(weighIns)} goal="gain" profile={profile} onSwitchPace={async () => {}} today={shiftDate(TODAY, 14)} />)
+    expect(await screen.findByRole('region', { name: 'Switch to Steady' })).toBeTruthy()
   })
 })
