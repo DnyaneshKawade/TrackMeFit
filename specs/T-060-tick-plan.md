@@ -1,6 +1,6 @@
 # T-060: Tick off the meal plan
 
-Status: built (agreed by DK merging the plan, 13 Oct 2026; asked for as "adding a checkbox in front of each item and meal, and day, if ate tick not no tick")
+Status: built (layout changed by T-063; agreed by DK merging the plan, 13 Oct 2026; asked for as "adding a checkbox in front of each item and meal, and day, if ate tick not no tick")
 Task: [T-060](../tasks/TASKS.md)
 
 ## Problem

@@ -98,17 +98,16 @@
 
 .log > .info { background: #f1faf6; border-radius: 10px; padding: 10px 12px; margin: 10px 0; font-size: 14px; }
 .amount .info { background: #f1faf6; border-radius: 10px; padding: 10px 12px; margin: 8px 0; font-size: 14px; }
-.today-plan { border: 1px solid #dfe5e2; border-radius: 12px; padding: 10px 12px; margin: 10px 0; font-size: 14px; }
-.today-plan summary { cursor: pointer; font-weight: 600; }
-.today-plan h4 { margin: 10px 0 2px; font-size: 14px; }
-.today-plan ul { list-style: none; padding: 0; margin: 0; }
-.today-plan li { padding: 3px 0; }
-.today-plan .reason { display: block; }
-.today-plan .tick { display: flex; align-items: center; gap: 8px; margin: 8px 0 2px; }
-.today-plan input[type="checkbox"] { width: 20px; height: 20px; accent-color: #0f7a5c; vertical-align: middle; }
-.today-plan li .link { margin-left: 6px; }
-.today-plan li .set-row { display: flex; gap: 6px; margin-top: 4px; }
-.today-plan li .set-row input { width: 80px; }
+.today-plan { border: 1px solid #dfe5e2; border-radius: 12px; padding: 4px 12px; margin: 10px 0; font-size: 14px; }
+.today-plan p { margin: 4px 0 8px; }
+.log .tick { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+.log input[type="checkbox"] { width: 20px; height: 20px; flex: none; accent-color: #0f7a5c; }
+.meal li.planned { justify-content: flex-start; flex-wrap: wrap; }
+.meal li.planned > div { flex: 1; }
+.meal li.planned:not(.ticked) > div { opacity: 0.6; }
+.meal li.planned .reason { flex-basis: 100%; padding-left: 28px; }
+.meal li.planned .set-row { display: flex; gap: 6px; flex-basis: 100%; padding-left: 28px; }
+.meal li.planned .set-row input { width: 80px; }
 @media (prefers-color-scheme: dark) {
   .log > .info, .amount .info { background: #12302a; }
   .today-plan { border-color: #2c3734; }

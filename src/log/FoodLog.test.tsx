@@ -246,6 +246,12 @@ describe('faster logging', () => {
   })
 })
 
+/** The day once the meal plan has loaded into the meals (T-063). */
+const planShown = async () => {
+  await screen.findByRole('region', { name: 'Your meal plan' })
+  return screen.getByRole('main')
+}
+
 describe('veg days (T-058c)', () => {
   const CHICKEN: Food = {
     id: 'tmf:dish:chicken-curry',
@@ -278,7 +284,7 @@ describe('veg days (T-058c)', () => {
   it('4, 5. shows the saved plan, with chicken swapped for a veg food on a non-veg-free weekday', async () => {
     show(await withPlan())
     expect(screen.getByRole('status', { name: 'Veg day' }).textContent).toMatch(/Tuesday is your non-veg-free day/)
-    const plan = await screen.findByRole('group', { name: 'Your meal plan' })
+    const plan = await planShown()
     expect(plan.textContent).toMatch(/veg today/)
     expect(plan.textContent).not.toMatch(/Chicken/)
     expect(plan.textContent).toMatch(/so chicken is swapped for paneer/)
@@ -286,13 +292,13 @@ describe('veg days (T-058c)', () => {
 
   it('4, 7. shows the usual plan on other days, and the person can make any day a veg day', async () => {
     show(await withPlan(), '2026-10-14')
-    const plan = await screen.findByRole('group', { name: 'Your meal plan' })
+    const plan = await planShown()
     expect(plan.textContent).toMatch(/Chicken/)
     fireEvent.click(screen.getByRole('button', { name: 'Make today a veg day' }))
     expect(screen.getByRole('status', { name: 'Veg day' }).textContent).toMatch(/You made today a veg day/)
-    await waitFor(() => expect(screen.getByRole('group', { name: 'Your meal plan' }).textContent).not.toMatch(/Chicken/))
+    await waitFor(() => expect(screen.getByRole('main').textContent).not.toMatch(/Chicken/))
     fireEvent.click(screen.getByRole('button', { name: 'Not a veg day' }))
-    await waitFor(() => expect(screen.getByRole('group', { name: 'Your meal plan' }).textContent).toMatch(/Chicken/))
+    await waitFor(() => expect(screen.getByRole('main').textContent).toMatch(/Chicken/))
   })
 
   it('6. mentions the veg day when logging chicken, and still lets the person log it', async () => {
@@ -314,7 +320,7 @@ describe('veg days (T-058c)', () => {
     show(await withPlan())
     fireEvent.click(screen.getByRole('button', { name: 'I’m eating non-veg today' }))
     expect(screen.getByRole('status', { name: 'Veg day' }).textContent).toMatch(/you’re eating non-veg today/)
-    await waitFor(() => expect(screen.getByRole('group', { name: 'Your meal plan' }).textContent).toMatch(/Chicken/))
+    await waitFor(() => expect(screen.getByRole('main').textContent).toMatch(/Chicken/))
     cleanup()
     show(await withPlan())
     expect(screen.getByRole('button', { name: 'Make it a veg day again' })).toBeTruthy()
