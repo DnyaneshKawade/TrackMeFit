@@ -58,7 +58,8 @@ export function fromRow(r: FoodRow): Food {
     name: r.name,
     state: r.state,
     per100g: { kcal: Number(r.kcal), proteinG: Number(r.protein_g), carbG: Number(r.carb_g), fatG: Number(r.fat_g) },
-    portions: r.portions ?? [],
+    // Rows imported before the {} fix carry an object here; treat it as none.
+    portions: Array.isArray(r.portions) ? r.portions : [],
     source: r.source,
   }
   if (r.aliases?.length) food.aliases = r.aliases
@@ -77,8 +78,11 @@ const COLUMNS: (keyof FoodRow)[] = [
 
 // Postgres array literal: {"a","b"} with quotes and backslashes escaped.
 const pgArray = (xs: string[]) => `{${xs.map((x) => `"${x.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`).join(',')}}`
-const csvCell = (v: unknown) => {
-  const s = v === null ? '' : Array.isArray(v) && (v.length === 0 || typeof v[0] === 'string') ? pgArray(v as string[]) : typeof v === 'object' ? JSON.stringify(v) : String(v)
+// Text array columns; `portions` is jsonb and is always written as JSON, so
+// a food without portions is [] and not {} (which the app can't read).
+const TEXT_ARRAYS = new Set<keyof FoodRow>(['aliases', 'tags', 'search_aliases'])
+const csvCell = (c: keyof FoodRow, v: unknown) => {
+  const s = v === null ? '' : TEXT_ARRAYS.has(c) ? pgArray(v as string[]) : typeof v === 'object' ? JSON.stringify(v) : String(v)
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
@@ -87,7 +91,7 @@ export function toCsv(foods: Food[]): string {
   const lines = [COLUMNS.join(',')]
   for (const f of foods) {
     const r = toRow(f)
-    lines.push(COLUMNS.map((c) => csvCell(r[c])).join(','))
+    lines.push(COLUMNS.map((c) => csvCell(c, r[c])).join(','))
   }
   return lines.join('\n') + '\n'
 }
