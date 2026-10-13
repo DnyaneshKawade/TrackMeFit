@@ -44,3 +44,18 @@
   .search, .amount-row input, .amount-row select { background: #161d1b; color: inherit; border-color: #3a4643; }
   .results button { border-color: #2c3734; }
 }
+
+.left { background: #f1faf6; border-radius: 12px; padding: 12px; margin: 0 0 12px; }
+.left header { display: flex; justify-content: space-between; align-items: baseline; }
+.left .big { font-size: 22px; font-weight: 700; }
+.left .over { color: #b42318; }
+.left .bars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; font-size: 14px; }
+.set-targets { width: 100%; font: inherit; font-weight: 600; padding: 12px; border-radius: 12px; border: 1.5px solid #0f7a5c; color: #0f7a5c; background: none; cursor: pointer; margin-bottom: 12px; }
+.targets .target-field { display: grid; gap: 4px; margin: 12px 0; font-weight: 600; }
+.targets .target-input { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+.targets input { font: inherit; padding: 12px; border: 1.5px solid #cdd6d2; border-radius: 10px; min-width: 0; }
+.targets .link:disabled { opacity: 0.4; }
+@media (prefers-color-scheme: dark) {
+  .left { background: #12302a; }
+  .targets input { background: #161d1b; color: inherit; border-color: #3a4643; }
+}

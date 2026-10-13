@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Daily targets (T-020)
+
+- The food log shows what is left for the day (calories, protein, carbs, fat), or "over" in red, under the day totals. With no targets yet it shows "Set your daily targets".
+- The targets form takes calories and the three macros, checks the allowed ranges, can fill carbs from the calories left, and notes when the macros add up to more than 5% away from the calories (saving is still allowed).
+- New targets start today and earlier days keep theirs; targets set by a coach say so. Saved to `diet_targets` (`src/targets/stores.ts`). Engine suggestions stay optional (T-021).
+- Tests: `src/targets/targets.test.ts` (8), `src/targets/TargetsFood.test.tsx` (4); whole suite passing.
+
 ## 2026-10-13: Live on Supabase (T-037)
 
 - DK created the Supabase project (Mumbai) and ran the migration. All 13 tables respond, and a test sign-up (`+test` address) created its profile through the signup trigger.

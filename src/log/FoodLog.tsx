@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { SearchIndex } from '../food/search'
 import { AddFood } from './AddFood'
+import { TargetsForm } from '../targets/TargetsForm'
+import { remaining, type DietTarget, type TargetStore, type TargetValues } from '../targets/types'
 import { localDate, MEAL_NAMES, MEALS, shiftDate, totals, type LogEntry, type LogStore, type Meal, type NewLogEntry } from './types'
 import './log.css'
 
@@ -14,10 +16,14 @@ function dayLabel(date: string, today: string): string {
 export function FoodLog({
   store,
   loadIndex,
+  targets,
+  userId,
   today = localDate(),
 }: {
   store: LogStore
   loadIndex: () => Promise<SearchIndex>
+  targets?: TargetStore
+  userId?: string
   today?: string
 }) {
   const [date, setDate] = useState(today)
@@ -25,6 +31,27 @@ export function FoodLog({
   const [error, setError] = useState<string | null>(null)
   const [adding, setAdding] = useState<Meal | null>(null)
   const [index, setIndex] = useState<SearchIndex | null>(null)
+  const [target, setTarget] = useState<DietTarget | null | undefined>(undefined)
+  const [editingTargets, setEditingTargets] = useState(false)
+
+  useEffect(() => {
+    if (!targets) return
+    let live = true
+    setTarget(undefined)
+    targets.forDate(date).then(
+      (t) => live && setTarget(t),
+      () => live && setTarget(null),
+    )
+    return () => {
+      live = false
+    }
+  }, [targets, date])
+
+  const saveTargets = async (v: TargetValues) => {
+    const saved = await targets!.save(v, today)
+    if (date >= today) setTarget(saved)
+    setEditingTargets(false)
+  }
 
   const load = useCallback(async () => {
     setError(null)
@@ -61,6 +88,14 @@ export function FoodLog({
     }
   }
 
+  if (editingTargets) {
+    return (
+      <main className="log">
+        <TargetsForm initial={target ?? null} onSave={saveTargets} onCancel={() => setEditingTargets(false)} />
+      </main>
+    )
+  }
+
   if (adding) {
     return (
       <main className="log">
@@ -84,6 +119,11 @@ export function FoodLog({
         <div><dt>Carbs</dt><dd>{day.carbG} g</dd></div>
         <div><dt>Fat</dt><dd>{day.fatG} g</dd></div>
       </dl>
+
+      {targets && target && <LeftToday target={target} eaten={day} byCoach={!!userId && target.setBy !== userId} onEdit={() => setEditingTargets(true)} />}
+      {targets && target === null && (
+        <button className="set-targets" onClick={() => setEditingTargets(true)}>Set your daily targets</button>
+      )}
 
       {error && <p className="error" role="alert">{error}</p>}
       {entries === null && <p className="muted">Loading…</p>}
@@ -115,5 +155,36 @@ export function FoodLog({
           )
         })}
     </main>
+  )
+}
+
+function LeftToday({
+  target,
+  eaten,
+  byCoach,
+  onEdit,
+}: {
+  target: DietTarget
+  eaten: TargetValues
+  byCoach: boolean
+  onEdit: () => void
+}) {
+  const left = remaining(target, eaten)
+  const amount = (n: number, unit: string) => (n >= 0 ? `${n}${unit} left` : `${-n}${unit} over`)
+  return (
+    <section className="left" aria-label="Left for the day">
+      <header>
+        <span className={left.kcal < 0 ? 'big over' : 'big'}>{amount(left.kcal, ' kcal')}</span>
+        <button className="link" onClick={onEdit}>Edit targets</button>
+      </header>
+      <span className="muted">
+        of {target.kcal} kcal{byCoach ? ' · set by your coach' : ''}
+      </span>
+      <div className="bars">
+        <span>Protein {amount(left.proteinG, ' g')}</span>
+        <span>Carbs {amount(left.carbG, ' g')}</span>
+        <span>Fat {amount(left.fatG, ' g')}</span>
+      </div>
+    </section>
   )
 }
