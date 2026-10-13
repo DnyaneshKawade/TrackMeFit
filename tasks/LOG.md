@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Workout plans and logger (T-023, T-025)
+
+- The app now has two tabs, Food and Training. Training shows today's workouts, "Start a workout" (a plan day or an empty workout) and your plans.
+- Plan builder: name, up to 14 days, exercises from a 63-exercise library (search by name, gym slang like "rdl" or "ohp", or muscle), sets and rep range per exercise. Problems are listed in plain words before saving. Deleting a plan hides it so past workouts keep their day.
+- Logger: each exercise shows the plan target, what you did last time, and a suggestion for today from the training engine's double progression with its reason (for example "Hit 10 reps on every set, so the weight goes up"). The weight and reps are filled in from the suggestion; each set saves as soon as it is logged, with optional reps in reserve.
+- Saved to the workout tables through `src/training/supabaseStore.ts`.
+- Tests: `src/training/training.test.ts` (12), `src/training/Workouts.test.tsx` (5); whole suite 167 passing.
+- Open: weekly set changes per muscle from feedback and deloads (T-024).
+
 ## 2026-10-13: Daily targets (T-020)
 
 - The food log shows what is left for the day (calories, protein, carbs, fat), or "over" in red, under the day totals. With no targets yet it shows "Set your daily targets".

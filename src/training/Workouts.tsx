@@ -1,0 +1,141 @@
+import { useCallback, useEffect, useState } from 'react'
+import { localDate } from '../log/types'
+import { PlanEditor } from './PlanEditor'
+import { SessionView } from './SessionView'
+import type { Plan, PlanDay, Session, WorkoutStore } from './types'
+import '../log/log.css'
+import './training.css'
+
+type View = { kind: 'home' } | { kind: 'plan'; plan: Plan } | { kind: 'session'; session: Session } | { kind: 'start' }
+
+export function Workouts({ store, today = localDate() }: { store: WorkoutStore; today?: string }) {
+  const [plans, setPlans] = useState<Plan[] | null>(null)
+  const [sessions, setSessions] = useState<Session[]>([])
+  const [view, setView] = useState<View>({ kind: 'home' })
+  const [error, setError] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    try {
+      const [p, s] = await Promise.all([store.plans(), store.sessionsOn(today)])
+      setPlans(p)
+      setSessions(s)
+      setError(null)
+    } catch {
+      setPlans([])
+      setError('Couldn’t load your workouts. Check your connection.')
+    }
+  }, [store, today])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  const dayOf = (id: string | null): PlanDay | undefined => plans?.flatMap((p) => p.days).find((d) => d.id === id)
+
+  const start = async (day: PlanDay | null) => {
+    try {
+      const session = await store.startSession(today, day)
+      setView({ kind: 'session', session })
+    } catch {
+      setError('Couldn’t start the workout. Check your connection.')
+      setView({ kind: 'home' })
+    }
+  }
+
+  const back = () => {
+    setView({ kind: 'home' })
+    void load()
+  }
+
+  if (view.kind === 'plan') {
+    return (
+      <main className="log">
+        <PlanEditor
+          initial={view.plan}
+          onClose={() => setView({ kind: 'home' })}
+          onSave={async (p) => {
+            await store.savePlan(p)
+            back()
+          }}
+          onDelete={
+            view.plan.id
+              ? async () => {
+                  await store.deletePlan(view.plan.id!)
+                  back()
+                }
+              : undefined
+          }
+        />
+      </main>
+    )
+  }
+
+  if (view.kind === 'session') {
+    return (
+      <main className="log">
+        <SessionView store={store} session={view.session} planned={dayOf(view.session.planDayId)?.exercises ?? []} onClose={back} />
+      </main>
+    )
+  }
+
+  if (view.kind === 'start') {
+    return (
+      <main className="log">
+        <section className="sheet" aria-label="Start a workout">
+          <header className="sheet-head">
+            <h2>Start a workout</h2>
+            <button className="link" onClick={() => setView({ kind: 'home' })}>Close</button>
+          </header>
+          {plans?.map((p) => (
+            <div key={p.id} className="start-plan">
+              <h3>{p.name}</h3>
+              {p.days.map((d) => (
+                <button key={d.id} className="day-button" onClick={() => void start(d)}>
+                  <strong>{d.name}</strong>
+                  <span className="muted">{d.exercises.length} exercises</span>
+                </button>
+              ))}
+            </div>
+          ))}
+          <button className="add" onClick={() => void start(null)}>Empty workout</button>
+        </section>
+      </main>
+    )
+  }
+
+  return (
+    <main className="log">
+      <h2>Today’s training</h2>
+      {error && <p className="error" role="alert">{error}</p>}
+      {sessions.length === 0 && <p className="muted">No workout logged today.</p>}
+      <ul className="session-list">
+        {sessions.map((s) => (
+          <li key={s.id}>
+            <button className="day-button" onClick={() => setView({ kind: 'session', session: s })}>
+              <strong>{s.name}</strong>
+              <span className="muted">{s.sets.length} sets logged</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <button className="primary" onClick={() => setView({ kind: 'start' })}>Start a workout</button>
+
+      <h2 className="plans-head">My plans</h2>
+      {plans === null && <p className="muted">Loading…</p>}
+      {plans?.length === 0 && <p className="muted">No plan yet. A plan is a few training days, each with its exercises, sets and rep ranges.</p>}
+      <ul className="session-list">
+        {plans?.map((p) => (
+          <li key={p.id}>
+            <button className="day-button" onClick={() => setView({ kind: 'plan', plan: p })}>
+              <strong>{p.name}</strong>
+              <span className="muted">{p.days.map((d) => d.name).join(' · ')}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <button className="add" onClick={() => setView({ kind: 'plan', plan: { name: '', days: [{ dayIndex: 0, name: '', exercises: [] }] } })}>
+        + New plan
+      </button>
+    </main>
+  )
+}

@@ -1,0 +1,162 @@
+import { useEffect, useState } from 'react'
+import { exerciseById, type Exercise } from './exercises'
+import { ExercisePicker } from './ExercisePicker'
+import { checkSet, describeSets, suggestNext, type PastSession, type PlanExercise, type Session, type WorkoutStore } from './types'
+
+export function SessionView({
+  store,
+  session: initial,
+  planned,
+  onClose,
+}: {
+  store: WorkoutStore
+  session: Session
+  planned: PlanExercise[]
+  onClose: () => void
+}) {
+  const [session, setSession] = useState(initial)
+  const [extra, setExtra] = useState<string[]>([])
+  const [picking, setPicking] = useState(false)
+
+  const ids = [...new Set([...planned.map((p) => p.exerciseId), ...session.sets.map((s) => s.exerciseId), ...extra])]
+
+  if (picking) {
+    return (
+      <ExercisePicker
+        onClose={() => setPicking(false)}
+        onPick={(e) => {
+          setExtra((x) => [...x, e.id])
+          setPicking(false)
+        }}
+      />
+    )
+  }
+
+  return (
+    <section className="session" aria-label={session.name}>
+      <header className="sheet-head">
+        <h2>{session.name}</h2>
+        <button className="link" onClick={onClose}>Done</button>
+      </header>
+      {ids.map((id) => {
+        const exercise = exerciseById.get(id)
+        if (!exercise) return null
+        return (
+          <ExerciseLog
+            key={id}
+            store={store}
+            session={session}
+            exercise={exercise}
+            plan={planned.find((p) => p.exerciseId === id)}
+            onChange={setSession}
+          />
+        )
+      })}
+      <button className="add" onClick={() => setPicking(true)}>+ Add exercise</button>
+    </section>
+  )
+}
+
+function ExerciseLog({
+  store,
+  session,
+  exercise,
+  plan,
+  onChange,
+}: {
+  store: WorkoutStore
+  session: Session
+  exercise: Exercise
+  plan?: PlanExercise
+  onChange: (s: Session) => void
+}) {
+  const [history, setHistory] = useState<PastSession[] | null>(null)
+  const [weight, setWeight] = useState('')
+  const [reps, setReps] = useState('')
+  const [rir, setRir] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const range: [number, number] = plan ? [plan.repMin, plan.repMax] : exercise.isolation ? [10, 15] : [6, 10]
+  const suggestion = history ? suggestNext(history, exercise, range) : null
+
+  useEffect(() => {
+    let live = true
+    store.history(exercise.id, session.performedOn).then(
+      (h) => {
+        if (!live) return
+        setHistory(h)
+        const s = suggestNext(h, exercise, range)
+        if (s) {
+          setWeight((w) => w || String(s.weight))
+          setReps((r) => r || String(s.targetReps))
+        }
+      },
+      () => live && setHistory([]),
+    )
+    return () => {
+      live = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store, exercise.id, session.performedOn])
+
+  const done = session.sets.filter((s) => s.exerciseId === exercise.id).sort((a, b) => a.setIndex - b.setIndex)
+
+  const log = async () => {
+    const w = Number(weight.replace(',', '.'))
+    const r = Number(reps)
+    const x = rir.trim() === '' ? null : Number(rir)
+    const problem = weight.trim() === '' || reps.trim() === '' ? 'Enter weight and reps.' : checkSet(w, r, x)
+    setError(problem)
+    if (problem) return
+    setBusy(true)
+    try {
+      const nextIndex = done.reduce((m, s) => Math.max(m, s.setIndex + 1), 0)
+      const saved = await store.addSet(session.id, { exerciseId: exercise.id, setIndex: nextIndex, weightKg: w, reps: r, rir: x })
+      onChange({ ...session, sets: [...session.sets, saved] })
+    } catch {
+      setError('Couldn’t save the set. Check your connection and try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const remove = async (id: string) => {
+    try {
+      await store.removeSet(id)
+      onChange({ ...session, sets: session.sets.filter((s) => s.id !== id) })
+    } catch {
+      setError('Couldn’t remove that set. Try again.')
+    }
+  }
+
+  return (
+    <section className="exercise" aria-label={exercise.name}>
+      <header>
+        <h3>{exercise.name}</h3>
+        {plan && <span className="muted">{plan.sets} × {plan.repMin}–{plan.repMax}</span>}
+      </header>
+      {history && history[0] && <p className="muted">Last time: {describeSets(history[0].sets)}</p>}
+      {suggestion && (
+        <p className="suggest">
+          Try {suggestion.weight} kg × {suggestion.targetReps}. <span className="muted">{suggestion.why}</span>
+        </p>
+      )}
+      <ol className="sets">
+        {done.map((s, i) => (
+          <li key={s.id}>
+            <span>Set {i + 1}: {s.weightKg} kg × {s.reps}{s.rir !== null ? ` · ${s.rir} in reserve` : ''}</span>
+            <button className="link" aria-label={`Remove set ${i + 1} of ${exercise.name}`} onClick={() => void remove(s.id)}>✕</button>
+          </li>
+        ))}
+      </ol>
+      <div className="set-row">
+        <input aria-label={`${exercise.name} weight (kg)`} placeholder="kg" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
+        <input aria-label={`${exercise.name} reps`} placeholder="reps" inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)} />
+        <input aria-label={`${exercise.name} reps in reserve`} placeholder="RIR" inputMode="numeric" value={rir} onChange={(e) => setRir(e.target.value)} />
+        <button className="primary" disabled={busy} onClick={log}>Log set</button>
+      </div>
+      {error && <p className="error" role="alert">{error}</p>}
+    </section>
+  )
+}
