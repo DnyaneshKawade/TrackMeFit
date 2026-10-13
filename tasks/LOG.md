@@ -2,9 +2,9 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
-## 2026-10-14: Admin dashboard noted (T-042)
+## 2026-10-14: Admin dashboard plan (T-042)
 
-- DK asked for an admin dashboard to manage the whole app: update all data, manage the application and other admin features. Added to the to-do list as T-042; details to settle when it is picked up.
+- DK asked for an admin dashboard to manage the whole app: update all data, manage the application and other admin features. Researched comparable apps, Supabase admin patterns and India's DPDP Act, and wrote the [Admin Dashboard Plan](https://claude.ai/code/artifact/8810062d-8117-486a-8550-1d59ff91c52a): an `/admin` area in the app, built in three phases (T-042a safe access, T-042b food and content after T-038, T-042c running the app), with open questions for DK.
 - Tests: none (task list only).
 
 ## 2026-10-14: Faster food logging (T-018b, T-019)

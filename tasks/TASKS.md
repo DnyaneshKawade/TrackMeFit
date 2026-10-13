@@ -35,7 +35,9 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-022b | Progress extras: progress photos (private storage) and strength trends per exercise | Photo upload privacy tests; strength trend tests |
 | T-027 | Offline logging: save food and sets without a connection and sync later | Offline queue tests |
 | T-026 | Coach dashboard: client list, flags, plan editing, check-ins, chat | Permission tests; flag rule tests |
-| T-042 | Admin dashboard (DK's request): an admin role, separate from users and coaches, that can manage everything. Edit the shared food and exercise data, review user-added foods before they become public, manage users and coaches (roles, blocking), and see app health (sign-ups, active users, errors) | Admin-only access tests (RLS); food review flow tests; role change tests |
+| T-042a | Admin phase 1, safe access: admin role in its own table with a required second factor, append-only audit log, Edge Function for blocking and deleting accounts, People page, coach approval, data export and delete ([plan](https://claude.ai/code/artifact/8810062d-8117-486a-8550-1d59ff91c52a)) | Non-admins and admins without a second factor refused; every admin action logged; log cannot be edited |
+| T-042b | Admin phase 2, food and content (after T-038): food editor, review queue for user-submitted foods, wrong-food reports, exercise library | Approved foods public with reviewer recorded; rejected stay private |
+| T-042c | Admin phase 3, running the app: health numbers from the database, Sentry with personal data scrubbed, feature switches, banners, grievance queue with a 90-day clock | Numbers match a seeded database; no health field reaches Sentry |
 
 ## Done
 
