@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { EMPTY_FOOD_FORM, foodFromForm, recipeFood, type FoodForm, type FoodFormErrors, type NewCustomFood } from '../food/custom'
-import { searchFoods, type SearchIndex } from '../food/search'
+import type { FoodFinder } from '../food/finder'
+import { useFoodSearch } from '../food/useFoodSearch'
 import type { Food } from '../food/types'
 
 const SAVE_FAILED = 'Couldn’t save. Check your connection and try again.'
@@ -101,7 +102,7 @@ export function CreateRecipe({
   onCreated,
   onBack,
 }: {
-  index: SearchIndex | null
+  index: FoodFinder | null
   onCreate: (food: NewCustomFood) => Promise<Food>
   onCreated: (food: Food) => void
   onBack: () => void
@@ -113,7 +114,7 @@ export function CreateRecipe({
   const [servings, setServings] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const results = useMemo(() => (index ? searchFoods(index, query, 6) : []), [index, query])
+  const { results } = useFoodSearch(index, query, 6)
 
   const optional = (s: string) => (s.trim() ? Number(s) : null)
   const preview = useMemo(() => {

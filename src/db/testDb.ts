@@ -3,6 +3,7 @@
 // row-level security can be tested without a server.
 
 import { PGlite } from '@electric-sql/pglite'
+import { pg_trgm } from '@electric-sql/pglite/contrib/pg_trgm'
 // Every migration, in file-name (date) order, as Supabase applies them.
 const MIGRATIONS = Object.entries(import.meta.glob('../../supabase/migrations/*.sql', { query: '?raw', import: 'default', eager: true }))
   .sort(([a], [b]) => a.localeCompare(b))
@@ -30,7 +31,7 @@ export interface TestDb {
 let counter = 0
 
 export async function createTestDb(): Promise<TestDb> {
-  const db = new PGlite()
+  const db = new PGlite({ extensions: { pg_trgm } })
   await db.exec(AUTH_STUB)
   for (const sql of MIGRATIONS) await db.exec(sql)
 

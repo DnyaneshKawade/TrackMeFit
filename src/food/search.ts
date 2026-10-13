@@ -48,21 +48,20 @@ const startsWithWord = (s: string, q: string) => s === q || s.startsWith(q + ' '
 const hasWord = (s: string, q: string) => (' ' + s + ' ').includes(' ' + q + ' ')
 
 // Whole-word matches beat partial ones, so "dal" ranks "Dal makhani" and
-// "Moong dal" above "Dalgona coffee".
+// "Moong dal" above "Dalgona coffee". A regional name counts the same as the
+// name, so "dahi" finds our curd before packaged products called "Dahi".
 function score(e: Entry, q: string, tokens: string[]): number {
-  if (e.name === q) return 100
-  if (e.aliases.includes(q)) return 90
-  if (startsWithWord(e.name, q)) return 80
-  if (e.aliases.some((a) => startsWithWord(a, q))) return 75
+  if (e.name === q || e.aliases.includes(q)) return 100
+  if (startsWithWord(e.name, q) || e.aliases.some((a) => startsWithWord(a, q))) return 80
   if (hasWord(e.name, q) || e.aliases.some((a) => hasWord(a, q))) return 65
   if (tokens.every((t) => e.words.includes(t))) return 60
-  if (e.name.startsWith(q)) return 50
-  if (e.aliases.some((a) => a.startsWith(q))) return 45
+  if (e.name.startsWith(q) || e.aliases.some((a) => a.startsWith(q))) return 50
   if (tokens.every((t) => e.words.some((w) => w.startsWith(t)))) return 40
   return 0
 }
 
-/** Best matches first. Ties go to our own dishes, then shorter names. */
+/** Best matches first. Ties go to our own dishes, then shorter names, then id
+ * (the same order as search_foods in the database, T-038). */
 export function searchFoods(index: SearchIndex, query: string, limit = 30): Food[] {
   const q = normalize(query)
   if (!q) return []
@@ -76,7 +75,8 @@ export function searchFoods(index: SearchIndex, query: string, limit = 30): Food
     (a, b) =>
       b.s - a.s ||
       (SOURCE_RANK[a.e.food.source] ?? 9) - (SOURCE_RANK[b.e.food.source] ?? 9) ||
-      a.e.name.length - b.e.name.length,
+      a.e.name.length - b.e.name.length ||
+      (a.e.food.id < b.e.food.id ? -1 : a.e.food.id > b.e.food.id ? 1 : 0),
   )
   return hits.slice(0, limit).map((h) => h.e.food)
 }

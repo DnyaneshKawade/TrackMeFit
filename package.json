@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "size": "node --experimental-strip-types --no-warnings build/size.ts",
+    "export-foods": "vite-node scripts/export-foods.ts",
     "check": "tsc -b && eslint . && vitest run"
   },
   "dependencies": {

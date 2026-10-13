@@ -4,17 +4,18 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { FoodLog } from '../log/FoodLog'
 import { memoryLogStore } from '../log/memoryStore'
 import { createSearchIndex } from '../food/search'
+import { localFinder } from '../food/finder'
 import { memoryTargetStore } from './stores'
 import type { TargetStore } from './types'
 
 afterEach(cleanup)
 
 const TODAY = '2026-10-12'
-const loadIndex = () => Promise.resolve(createSearchIndex([]))
+const loadFoods = () => Promise.resolve(localFinder(createSearchIndex([])))
 const lunch = { id: 'l', loggedOn: TODAY, meal: 'lunch' as const, foodId: 'x', foodName: 'Dal chawal', grams: 350, kcal: 500, proteinG: 15, carbG: 85, fatG: 10 }
 
 function setup(targets: TargetStore, userId = 'me') {
-  render(<FoodLog store={memoryLogStore([lunch])} loadIndex={loadIndex} targets={targets} userId={userId} today={TODAY} />)
+  render(<FoodLog store={memoryLogStore([lunch])} loadFoods={loadFoods} targets={targets} userId={userId} today={TODAY} />)
 }
 const type = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } })
 

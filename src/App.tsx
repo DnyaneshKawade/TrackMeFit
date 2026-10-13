@@ -12,7 +12,7 @@ import { Workouts } from './training/Workouts'
 import { memoryWorkoutStore } from './training/memoryStore'
 import { supabaseWorkoutStore } from './training/supabaseStore'
 import type { WorkoutStore } from './training/types'
-import type { SearchIndex } from './food/search'
+import { localFinder, serverFinder, type FoodFinder } from './food/finder'
 import { memoryCustomFoodStore, supabaseCustomFoodStore, type CustomFoodStore } from './food/custom'
 import { localDate } from './log/types'
 import { memoryProfileStore, supabaseProfileStore } from './profile/stores'
@@ -25,7 +25,8 @@ const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ defa
 import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
 import type { ProgressStore } from './progress/types'
 
-const loadIndex = (): Promise<SearchIndex> => import('./food/catalogueData').then((m) => m.searchIndex)
+// The bundled food list, downloaded only when the database can't answer.
+const loadBundledFoods = (): Promise<FoodFinder> => import('./food/catalogueData').then((m) => localFinder(m.searchIndex))
 
 export function AppShell({
   auth,
@@ -36,6 +37,7 @@ export function AppShell({
   progressStoreFor = () => memoryProgressStore(),
   foodStoreFor = () => memoryCustomFoodStore(),
   mealPlanStoreFor = () => memoryMealPlanStore(),
+  loadFoods = loadBundledFoods,
 }: {
   auth: AuthService | null
   logStoreFor?: (account: Account) => LogStore
@@ -45,6 +47,8 @@ export function AppShell({
   progressStoreFor?: (account: Account) => ProgressStore
   foodStoreFor?: (account: Account) => CustomFoodStore
   mealPlanStoreFor?: (account: Account) => MealPlanStore
+  /** Food search; the bundled list unless the database is set up. */
+  loadFoods?: () => Promise<FoodFinder>
 }) {
   const [account, setAccount] = useState<Account | null | undefined>(undefined)
   const store = useMemo(() => (account ? logStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -124,7 +128,7 @@ export function AppShell({
               if (mealPlan && mealPlans) await mealPlans.save(mealPlan.plan, mealPlan.picks).catch(() => null)
               setProfile(p)
             }}
-            loadIndex={loadIndex}
+            loadFoods={loadFoods}
             onSkip={async () => {
               const p = { ...profile, fullName: profile.fullName || account.name, onboardedAt: new Date().toISOString() }
               await profiles!.save(p)
@@ -147,7 +151,7 @@ export function AppShell({
       {tab === 'food' && (
         <FoodLog
           store={store!}
-          loadIndex={loadIndex}
+          loadFoods={loadFoods}
           foods={foods}
           targets={targets}
           userId={account.id}
@@ -164,6 +168,11 @@ export function AppShell({
 export default function App() {
   const sb = useMemo(() => supabaseFromEnv(), [])
   const auth = useMemo(() => (sb ? createSupabaseAuth(sb) : null), [sb])
+  // One finder for the session, so the "are foods loaded" check runs once.
+  const loadFoods = useMemo(() => {
+    const finder = sb ? serverFinder(sb, loadBundledFoods) : null
+    return finder ? () => Promise.resolve(finder) : loadBundledFoods
+  }, [sb])
   return (
     <AppShell
       auth={auth}
@@ -174,6 +183,7 @@ export default function App() {
       progressStoreFor={(a) => supabaseProgressStore(sb!, a.id)}
       foodStoreFor={(a) => supabaseCustomFoodStore(sb!, a.id)}
       mealPlanStoreFor={(a) => supabaseMealPlanStore(sb!, a.id)}
+      loadFoods={loadFoods}
     />
   )
 }
