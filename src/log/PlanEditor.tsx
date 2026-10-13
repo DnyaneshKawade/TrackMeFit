@@ -5,11 +5,28 @@
 
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import type { Macros } from '../engine/diet'
-import { MEALS, addItem, planCheck, removeItem, setItemGrams, swapItem, swapOptions, tidyPlan, type MealName, type MealPlan } from '../engine/mealPlan'
+import { MEALS, addFoundItem, planCheck, removeItem, setItemGrams, swapItem, swapOptions, tidyPlan, type MealName, type MealPlan } from '../engine/mealPlan'
 import type { DietTag } from '../food/types'
+import type { CustomFood, NewCustomFood } from '../food/custom'
+import type { FoodFinder } from '../food/finder'
+import type { Food } from '../food/types'
 import type { AcceptedMealPlan } from '../profile/MealPlanStep'
 import type { SavedMealPlan } from '../profile/mealPlanStore'
 import { PLAN_FOODS_BY_ID, planFoodsFor } from '../profile/planFoods'
+import { AddFood } from './AddFood'
+import { PLAN_MEAL } from './planTicks'
+import type { LogEntry, NewLogEntry } from './types'
+
+/** The Food tab's food search, to add any food to the plan (T-061b). */
+export interface PlanSearch {
+  index: FoodFinder | null
+  recent: LogEntry[] | null
+  myFoods: CustomFood[]
+  /** Starts loading the above. */
+  prepare: () => void
+  onCreate: (food: NewCustomFood) => Promise<Food>
+  onRemoveFood: (id: string) => Promise<void>
+}
 import '../training/training.css'
 import '../profile/profile.css'
 
@@ -24,6 +41,7 @@ export default function PlanEditor({
   blocked,
   counts,
   loadWeight,
+  search,
   onSave,
   onClose,
 }: {
@@ -38,6 +56,7 @@ export default function PlanEditor({
   counts: Record<string, number>
   /** The latest weight, for a new plan; null when none is logged. */
   loadWeight: () => Promise<number | null>
+  search: PlanSearch
   onSave: (plan: MealPlan, picks: string[]) => Promise<void>
   onClose: () => void
 }) {
@@ -45,6 +64,7 @@ export default function PlanEditor({
   const [plan, setPlan] = useState<MealPlan | null>(saved?.plan ?? null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [adding, setAdding] = useState<MealName | null>(null)
   const foods = useMemo(() => planFoodsFor(excluded), [excluded])
 
   const save = async (p: MealPlan, picks: string[]) => {
@@ -59,6 +79,32 @@ export default function PlanEditor({
     }
   }
 
+  if (adding && plan) {
+    const meal = adding
+    const addFound = async (e: NewLogEntry) => {
+      const food = (await search.index?.byIds([e.foodId]).catch(() => null))?.get(e.foodId)
+      const macros = { kcal: e.kcal, proteinG: e.proteinG, carbG: e.carbG, fatG: e.fatG }
+      setPlan(addFoundItem(plan, meal, { foodId: e.foodId, name: e.foodName, grams: e.grams ?? 0, macros, tags: food?.tags }))
+      setAdding(null)
+    }
+    return (
+      <AddFood
+        meal={PLAN_MEAL[meal]}
+        target={`${meal} in your plan`}
+        quickAdd={false}
+        excluded={excluded}
+        date=""
+        index={search.index}
+        recent={search.recent}
+        myFoods={search.myFoods}
+        onAdd={addFound}
+        onCreate={search.onCreate}
+        onRemoveFood={search.onRemoveFood}
+        onClose={() => setAdding(null)}
+      />
+    )
+  }
+
   return (
     <section className="plan-editor meal-plan" aria-label={mode === 'edit' ? 'Change your meal plan' : 'New meal plan'}>
       <header className="sheet-head">
@@ -67,7 +113,16 @@ export default function PlanEditor({
       </header>
       {error && <p className="error" role="alert">{error}</p>}
       {mode === 'edit' && plan ? (
-        <EditPlan plan={plan} foods={foods} goal={targets ?? plan.targets} onChange={setPlan} />
+        <EditPlan
+          plan={plan}
+          foods={foods}
+          goal={targets ?? plan.targets}
+          onChange={setPlan}
+          onAdd={(meal) => {
+            search.prepare()
+            setAdding(meal)
+          }}
+        />
       ) : (
         <NewPlan targets={targets} excluded={excluded} blocked={blocked} counts={counts} loadWeight={loadWeight} onAccept={(a) => void save(a.plan, a.picks)} />
       )}
@@ -85,7 +140,19 @@ export default function PlanEditor({
   )
 }
 
-function EditPlan({ plan, foods, goal, onChange }: { plan: MealPlan; foods: ReturnType<typeof planFoodsFor>; goal: Macros; onChange: (p: MealPlan) => void }) {
+function EditPlan({
+  plan,
+  foods,
+  goal,
+  onChange,
+  onAdd,
+}: {
+  plan: MealPlan
+  foods: ReturnType<typeof planFoodsFor>
+  goal: Macros
+  onChange: (p: MealPlan) => void
+  onAdd: (meal: MealName) => void
+}) {
   const [amounts, setAmounts] = useState<Record<string, string>>({})
   const byMeal = new Map(plan.meals.map((m) => [m.name, m]))
   return (
@@ -151,14 +218,9 @@ function EditPlan({ plan, foods, goal, onChange }: { plan: MealPlan; foods: Retu
                 )
               })}
             </ul>
-            <select className="add-food" aria-label={`Add a food to ${name}`} value="" onChange={(e) => e.target.value && onChange(addItem(plan, name, PLAN_FOODS_BY_ID.get(e.target.value)!))}>
-              <option value="">+ Add a food</option>
-              {foods.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name}
-                </option>
-              ))}
-            </select>
+            <button className="add" onClick={() => onAdd(name)}>
+              + Add a food
+            </button>
           </section>
         )
       })}

@@ -11,6 +11,7 @@ import { memoryMealPlanStore, type MealPlanStore } from '../profile/mealPlanStor
 import { excludedTags } from '../profile/dietRules'
 import { memoryTargetStore } from '../targets/stores'
 import type { DietTarget } from '../targets/types'
+import type { Food } from '../food/types'
 
 afterEach(() => {
   cleanup()
@@ -21,6 +22,36 @@ const DAY = '2026-10-14'
 const TARGET: DietTarget = { id: 't1', kcal: 2400, proteinG: 130, fatG: 67, carbG: 319, startsOn: '2026-10-01', source: 'manual', setBy: 'me' }
 const veg = { dietPref: 'veg' as const, foodRules: [], allergies: [], currentDiet: { counts: { 'tmf:dish:roti': 4, 'tmf:dish:dal-tadka': 2 } }, medical: {} }
 
+const POHA: Food = {
+  id: 'tmf:dish:poha',
+  name: 'Poha',
+  state: 'cooked',
+  per100g: { kcal: 130, proteinG: 2.5, carbG: 24, fatG: 3 },
+  portions: [{ label: '1 plate (150 g)', grams: 150 }],
+  source: 'trackMeFit',
+  tags: ['onion_garlic'],
+}
+const CHICKEN: Food = {
+  id: 'tmf:dish:chicken-curry',
+  name: 'Chicken curry',
+  state: 'cooked',
+  per100g: { kcal: 180, proteinG: 15, carbG: 4, fatG: 11 },
+  portions: [{ label: '1 katori (150 g)', grams: 150 }],
+  source: 'trackMeFit',
+  tags: ['meat', 'onion_garlic'],
+}
+
+/** "+ Add a food" in a plan meal, then the full Add food search (T-061b). */
+async function addFound(meal: string, query: string, name: string) {
+  const region = within(screen.getByRole('region', { name: 'Change your meal plan' })).getByRole('region', { name: meal })
+  fireEvent.click(within(region).getByRole('button', { name: '+ Add a food' }))
+  const sheet = await screen.findByRole('region', { name: `Add food to ${meal} in your plan` })
+  fireEvent.change(within(sheet).getByLabelText('Search foods'), { target: { value: query } })
+  fireEvent.click(await within(sheet).findByRole('button', { name: new RegExp(`^${name}`) }))
+  fireEvent.click(await within(sheet).findByRole('button', { name: `Add to ${meal} in your plan` }))
+  await screen.findByRole('region', { name: 'Change your meal plan' })
+}
+
 async function setup(opts: { plan?: boolean; diet?: DietAnswers; weight?: number | null; target?: boolean; mealPlans?: MealPlanStore } = {}) {
   const mealPlans = opts.mealPlans ?? memoryMealPlanStore()
   const picks = PROTEIN_PICKS.filter((p) => ['paneer', 'dal'].includes(p.key)).flatMap((p) => p.foods)
@@ -30,7 +61,7 @@ async function setup(opts: { plan?: boolean; diet?: DietAnswers; weight?: number
   render(
     <FoodLog
       store={memoryLogStore()}
-      loadFoods={() => Promise.resolve(localFinder(createSearchIndex([])))}
+      loadFoods={() => Promise.resolve(localFinder(createSearchIndex([POHA, CHICKEN])))}
       today={DAY}
       diet={opts.diet ?? veg}
       mealPlans={mealPlans}
@@ -66,14 +97,16 @@ describe('change the meal plan (T-061)', () => {
     const n = items()
     fireEvent.click(within(lunch).getByRole('button', { name: `Remove ${first.name} from Lunch` }))
     expect(items()).toBe(n - 1)
-    fireEvent.change(within(lunch).getByLabelText('Add a food to Lunch'), { target: { value: 'tmf:ing:curd' } })
-    expect(items()).toBe(n)
-    expect(within(lunch).getByLabelText('Curd (dahi) grams at Lunch')).toBeTruthy()
+    await addFound('Lunch', 'poha', 'Poha')
+    const after = within(screen.getByRole('region', { name: 'Change your meal plan' })).getByRole('region', { name: 'Lunch' })
+    expect(within(after).getAllByRole('listitem')).toHaveLength(n)
+    expect(within(after).getByLabelText('Poha grams at Lunch')).toHaveProperty('value', '150')
 
-    const swap = within(lunch).queryAllByRole('combobox', { name: /^Swap / })[0] as HTMLSelectElement
+    const lunchNow = () => within(screen.getByRole('region', { name: 'Change your meal plan' })).getByRole('region', { name: 'Lunch' })
+    const swap = within(lunchNow()).queryAllByRole('combobox', { name: /^Swap / })[0] as HTMLSelectElement
     const from = swap.getAttribute('aria-label')!.replace(/^Swap (.*) at Lunch$/, '$1')
     fireEvent.change(swap, { target: { value: swap.options[1].value } })
-    expect(within(lunch).queryByLabelText(`${from} grams at Lunch`)).toBeNull()
+    expect(within(lunchNow()).queryByLabelText(`${from} grams at Lunch`)).toBeNull()
   })
 
   it('2. the check says how far the plan is from the targets', async () => {
@@ -86,21 +119,20 @@ describe('change the meal plan (T-061)', () => {
 
   it('3. "Save plan" saves the changes and the Food tab shows them; "Cancel" keeps the old plan', async () => {
     const { plan, mealPlans } = await setup()
-    let editor = await openEditor()
+    const editor = await openEditor()
     const snack = plan.meals.find((m) => m.name === 'Snack')!.items[0]
     fireEvent.click(within(within(editor).getByRole('region', { name: 'Snack' })).getByRole('button', { name: `Remove ${snack.name} from Snack` }))
     fireEvent.click(within(editor).getByRole('button', { name: 'Cancel' }))
     await screen.findByRole('region', { name: 'Your meal plan' })
     expect((await mealPlans.latest())!.plan).toEqual(plan)
 
-    editor = await openEditor()
-    const lunch = within(editor).getByRole('region', { name: 'Lunch' })
-    fireEvent.change(within(lunch).getByLabelText('Add a food to Lunch'), { target: { value: 'tmf:ing:curd' } })
-    fireEvent.click(within(editor).getByRole('button', { name: 'Save plan' }))
+    await openEditor()
+    await addFound('Lunch', 'poha', 'Poha')
+    fireEvent.click(screen.getByRole('button', { name: 'Save plan' }))
     await screen.findByRole('region', { name: 'Your meal plan' })
     const saved = (await mealPlans.latest())!.plan
-    expect(saved.meals.find((m) => m.name === 'Lunch')!.items.some((i) => i.foodId === 'tmf:ing:curd')).toBe(true)
-    expect(within(screen.getByRole('region', { name: 'Lunch' })).getAllByRole('checkbox', { name: 'Ate Curd (dahi)' }).length).toBeGreaterThan(0)
+    expect(saved.meals.find((m) => m.name === 'Lunch')!.items.find((i) => i.foodId === POHA.id)).toMatchObject({ grams: 150, weighed: 'as eaten' })
+    expect(within(screen.getByRole('region', { name: 'Lunch' })).getAllByRole('checkbox', { name: 'Ate Poha' }).length).toBe(1)
   })
 
   it('3. a failed save keeps the editor open with the changes', async () => {
@@ -108,12 +140,13 @@ describe('change the meal plan (T-061)', () => {
     let fail = false
     const flaky: MealPlanStore = { latest: store.latest, save: (p, k) => (fail ? Promise.reject(new TypeError('Failed to fetch')) : store.save(p, k)) }
     await setup({ mealPlans: flaky })
-    const editor = await openEditor()
+    await openEditor()
     fail = true
-    fireEvent.change(within(within(editor).getByRole('region', { name: 'Lunch' })).getByLabelText('Add a food to Lunch'), { target: { value: 'tmf:ing:curd' } })
+    await addFound('Lunch', 'poha', 'Poha')
+    const editor = screen.getByRole('region', { name: 'Change your meal plan' })
     fireEvent.click(within(editor).getByRole('button', { name: 'Save plan' }))
     expect((await within(editor).findByRole('alert')).textContent).toBe('Couldn’t save the plan. Try again.')
-    expect(within(editor).getByLabelText('Curd (dahi) grams at Lunch')).toBeTruthy()
+    expect(within(editor).getByLabelText('Poha grams at Lunch')).toBeTruthy()
   })
 
   it('4. "Make a new plan" builds one from the picked protein foods, and "Use this plan" saves it', async () => {
@@ -152,5 +185,40 @@ describe('change the meal plan (T-061)', () => {
     expect(within(editor).getByRole('region', { name: 'Lunch' })).toBeTruthy()
     fireEvent.click(within(editor).getByRole('button', { name: 'Make a new plan' }))
     expect((await screen.findByText(/we don’t make an automatic meal plan/)).textContent).toMatch(/coach or your doctor/)
+  })
+
+  it('7 (T-061b). "Add a food" searches every food; amounts scale and a veg day swaps a non-veg dish', async () => {
+    const nonveg = { ...veg, dietPref: 'nonveg' as const, foodRules: ['nonveg_off:tue'] }
+    const { mealPlans } = await setup({ diet: nonveg })
+    await openEditor()
+    const sheetOpen = within(screen.getByRole('region', { name: 'Change your meal plan' })).getByRole('region', { name: 'Dinner' })
+    fireEvent.click(within(sheetOpen).getByRole('button', { name: '+ Add a food' }))
+    const sheet = await screen.findByRole('region', { name: 'Add food to Dinner in your plan' })
+    // Plans need an amount, so there is no calories-only quick add here.
+    expect(within(sheet).queryByRole('button', { name: 'Quick add' })).toBeNull()
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }))
+    await addFound('Dinner', 'chicken', 'Chicken curry')
+    const grams = screen.getByLabelText('Chicken curry grams at Dinner')
+    fireEvent.change(grams, { target: { value: '300' } })
+    fireEvent.blur(grams)
+    fireEvent.click(screen.getByRole('button', { name: 'Save plan' }))
+    await screen.findByRole('region', { name: 'Your meal plan' })
+    const item = (await mealPlans.latest())!.plan.meals.find((m) => m.name === 'Dinner')!.items.find((i) => i.foodId === CHICKEN.id)!
+    expect(item).toMatchObject({ grams: 300, tags: ['meat', 'onion_garlic'] })
+    expect(Math.round(item.macros.kcal)).toBe(540)
+    // On the non-veg-free Tuesday it is swapped like the plan's own chicken.
+    cleanup()
+    render(
+      <FoodLog
+        store={memoryLogStore()}
+        loadFoods={() => Promise.resolve(localFinder(createSearchIndex([POHA, CHICKEN])))}
+        today="2026-10-13"
+        diet={nonveg}
+        mealPlans={mealPlans}
+      />,
+    )
+    const dinner = await screen.findByRole('region', { name: 'Dinner' })
+    await screen.findByRole('region', { name: 'Your meal plan' })
+    expect(within(dinner).queryByText('Chicken curry')).toBeNull()
   })
 })

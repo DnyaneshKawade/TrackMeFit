@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_PROTEIN_PER_MEAL_KG, SUGAR_MAX_G, VEG_G, amountHint, buildMealPlan, checkFeasibility, cookedGrams, swapItem, swapOptions, vegDayPlan, addItem, planCheck, removeItem, setItemGrams, tidyPlan, MAX_PLAN_GRAMS, type MealPlan, type MealPlanInput } from './mealPlan'
+import { MAX_PROTEIN_PER_MEAL_KG, SUGAR_MAX_G, VEG_G, amountHint, buildMealPlan, checkFeasibility, cookedGrams, swapItem, swapOptions, vegDayPlan, addItem, addFoundItem, planCheck, removeItem, setItemGrams, tidyPlan, MAX_PLAN_GRAMS, type MealPlan, type MealPlanInput } from './mealPlan'
 import { PLAN_FOODS_BY_ID, PROTEIN_PICKS, planFoodsFor, typicalDayToBase } from '../profile/planFoods'
 import { excludedTags } from '../profile/dietRules'
 
@@ -226,5 +226,19 @@ describe('changing a plan by hand (T-061)', () => {
     expect(planCheck({ ...t, kcal: 2050, proteinG: 103 }, t)).toBe('This plan is close to your targets.')
     expect(planCheck({ ...t, kcal: 1700, proteinG: 80 }, t)).toBe('This plan has 300 kcal less than your target. It has 20 g less protein than your target.')
     expect(planCheck({ ...t, proteinG: 130 }, t)).toBe('This plan has 30 g more protein than your target.')
+  })
+
+  it('1 (T-061b). a food from search keeps its amount and calories, merges, and scales when changed', () => {
+    const poha = { foodId: 'tmf:dish:poha', name: 'Poha', grams: 150, macros: { kcal: 195, proteinG: 3.8, carbG: 36, fatG: 4.5 }, tags: ['onion_garlic' as const] }
+    const once = addFoundItem(plan, 'Breakfast', poha)
+    const item = () => once.meals.find((m) => m.name === 'Breakfast')!.items.find((i) => i.foodId === poha.foodId)!
+    expect(item()).toMatchObject({ grams: 150, weighed: 'as eaten', reason: 'You added this.', tags: ['onion_garlic'] })
+    expect(Math.round(once.totals.kcal)).toBe(Math.round(plan.totals.kcal + 195))
+    const twice = addFoundItem(once, 'Breakfast', poha)
+    expect(twice.meals.find((m) => m.name === 'Breakfast')!.items.filter((i) => i.foodId === poha.foodId)).toHaveLength(1)
+    const at = once.meals.find((m) => m.name === 'Breakfast')!.items.indexOf(item())
+    const half = setItemGrams(once, 'Breakfast', at, 75, asha.foods).meals.find((m) => m.name === 'Breakfast')!.items[at]
+    expect(half.grams).toBe(75)
+    expect(half.macros.kcal).toBeCloseTo(97.5)
   })
 })

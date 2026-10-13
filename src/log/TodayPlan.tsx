@@ -51,6 +51,8 @@ export default function TodayPlan({
   const plan = useMemo(() => {
     if (!vegWhy) return saved.plan
     const allowed = new Set(planFoodsFor(excluded).map((f) => f.id))
+    // Foods added from search stay unless their tags are left out today.
+    for (const m of saved.plan.meals) for (const i of m.items) if (i.weighed === 'as eaten' && !i.tags?.some((t) => excluded.has(t))) allowed.add(i.foodId)
     return vegDayPlan(saved.plan, PLAN_FOODS, allowed, saved.picks, vegWhy)
   }, [saved, excluded, vegWhy])
   const rows = useMemo(() => planRows(saved.id, plan.meals), [saved.id, plan])

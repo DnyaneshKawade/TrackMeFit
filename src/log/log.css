@@ -105,7 +105,7 @@
 /* Changing the plan (T-061) */
 .today-plan .change-plan { padding: 0 0 8px; }
 .plan-editor .grams { width: 64px; font: inherit; padding: 4px 6px; border: 1px solid #cdd6d2; border-radius: 8px; }
-.plan-editor .add-food { width: 100%; margin-top: 8px; font: inherit; padding: 8px; border-radius: 10px; border: 1.5px dashed #b9c5c0; background: none; color: #0f7a5c; }
+.plan-editor .add { background: none; border: 1.5px dashed #b9c5c0; border-radius: 10px; width: 100%; margin-top: 8px; padding: 10px; font: inherit; color: #0f7a5c; font-weight: 600; cursor: pointer; }
 .plan-editor .editor-actions { display: grid; gap: 8px; margin: 16px 0; }
 .plan-editor .set-row { display: grid; gap: 10px; margin: 12px 0; }
 .plan-editor .set-row input { width: 100px; font: inherit; padding: 8px; }
