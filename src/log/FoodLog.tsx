@@ -1,5 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
-import { withFoods, type SearchIndex } from '../food/search'
+import { withMine, type FoodFinder } from '../food/finder'
 import { memoryCustomFoodStore, type CustomFood, type CustomFoodStore, type NewCustomFood } from '../food/custom'
 import { AddFood } from './AddFood'
 import { TargetsForm } from '../targets/TargetsForm'
@@ -49,7 +49,7 @@ function dayLabel(date: string, today: string): string {
 
 export function FoodLog({
   store,
-  loadIndex,
+  loadFoods,
   foods: foodStore,
   targets,
   userId,
@@ -58,7 +58,8 @@ export function FoodLog({
   today = localDate(),
 }: {
   store: LogStore
-  loadIndex: () => Promise<SearchIndex>
+  /** Food search: the database, or the bundled list as a backup. */
+  loadFoods: () => Promise<FoodFinder>
   /** The person's own foods and recipes. */
   foods?: CustomFoodStore
   targets?: TargetStore
@@ -71,14 +72,14 @@ export function FoodLog({
   const [entries, setEntries] = useState<LogEntry[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [adding, setAdding] = useState<Meal | null>(null)
-  const [index, setIndex] = useState<SearchIndex | null>(null)
+  const [index, setIndex] = useState<FoodFinder | null>(null)
   const [target, setTarget] = useState<DietTarget | null | undefined>(undefined)
   const [editingTargets, setEditingTargets] = useState(false)
   const [recent, setRecent] = useState<LogEntry[] | null>(null)
   const [myFoods, setMyFoods] = useState<CustomFood[] | null>(null)
   const [fallbackFoods] = useState(() => memoryCustomFoodStore())
   const custom = foodStore ?? fallbackFoods
-  const allFoods = useMemo(() => (index ? withFoods(index, myFoods ?? []) : null), [index, myFoods])
+  const allFoods = useMemo(() => (index ? withMine(index, myFoods ?? []) : null), [index, myFoods])
   const [saved, setSaved] = useState<SavedMealPlan | null>(null)
   const [choice, setChoice] = useState<DayChoice>(() => readChoice(date))
   useEffect(() => setChoice(readChoice(date)), [date])
@@ -146,7 +147,7 @@ export function FoodLog({
 
   const openAdd = (meal: Meal) => {
     setAdding(meal)
-    if (!index) void loadIndex().then(setIndex)
+    if (!index) void loadFoods().then(setIndex)
     // Offers are a convenience: if they can't load, search still works.
     setRecent(null)
     store.recent().then(setRecent, () => setRecent([]))

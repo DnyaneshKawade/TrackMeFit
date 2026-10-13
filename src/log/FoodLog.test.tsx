@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { FoodLog } from './FoodLog'
 import { memoryLogStore } from './memoryStore'
 import { createSearchIndex } from '../food/search'
+import { localFinder } from '../food/finder'
 import type { Food } from '../food/types'
 import type { LogStore } from './types'
 import { memoryCustomFoodStore } from '../food/custom'
@@ -30,11 +31,11 @@ const foods: Food[] = [
     source: 'usda',
   },
 ]
-const loadIndex = () => Promise.resolve(createSearchIndex(foods))
+const loadFoods = () => Promise.resolve(localFinder(createSearchIndex(foods)))
 const TODAY = '2026-10-12'
 
 function setup(store: LogStore = memoryLogStore()) {
-  render(<FoodLog store={store} loadIndex={loadIndex} today={TODAY} />)
+  render(<FoodLog store={store} loadFoods={loadFoods} today={TODAY} />)
   return store
 }
 
@@ -168,7 +169,7 @@ describe('faster logging', () => {
 
   it('creates a food from a per-serving label, logs it, and finds it in search next time', async () => {
     const foods = memoryCustomFoodStore()
-    render(<FoodLog store={memoryLogStore()} loadIndex={loadIndex} foods={foods} today={TODAY} />)
+    render(<FoodLog store={memoryLogStore()} loadFoods={loadFoods} foods={foods} today={TODAY} />)
     await openAdd('Snacks')
     type('Search foods', 'chikki')
     fireEvent.click(await screen.findByRole('button', { name: 'Add “chikki” as a new food' }))
@@ -197,7 +198,7 @@ describe('faster logging', () => {
 
   it('asks before saving a label whose numbers don’t add up', async () => {
     const foods = memoryCustomFoodStore()
-    render(<FoodLog store={memoryLogStore()} loadIndex={loadIndex} foods={foods} today={TODAY} />)
+    render(<FoodLog store={memoryLogStore()} loadFoods={loadFoods} foods={foods} today={TODAY} />)
     await openAdd('Snacks')
     fireEvent.click(screen.getByRole('button', { name: 'New food' }))
     type('Name', 'Odd bar')
@@ -214,7 +215,7 @@ describe('faster logging', () => {
 
   it('builds a recipe from ingredients and the cooked weight', async () => {
     const foods = memoryCustomFoodStore()
-    render(<FoodLog store={memoryLogStore()} loadIndex={loadIndex} foods={foods} today={TODAY} />)
+    render(<FoodLog store={memoryLogStore()} loadFoods={loadFoods} foods={foods} today={TODAY} />)
     await openAdd('Breakfast')
     fireEvent.click(screen.getByRole('button', { name: 'New recipe' }))
     type('Recipe name', 'Atta dosa')
@@ -234,7 +235,7 @@ describe('faster logging', () => {
 
   it('deletes one of your foods after asking', async () => {
     const foods = memoryCustomFoodStore([{ name: 'Chikki', state: 'asSold', per100g: { kcal: 480, proteinG: 12, carbG: 60, fatG: 22 }, portions: [] }])
-    render(<FoodLog store={memoryLogStore()} loadIndex={loadIndex} foods={foods} today={TODAY} />)
+    render(<FoodLog store={memoryLogStore()} loadFoods={loadFoods} foods={foods} today={TODAY} />)
     await openAdd('Snacks')
     fireEvent.click(await screen.findByRole('button', { name: 'My foods' }))
     fireEvent.click(screen.getByRole('button', { name: 'Delete Chikki' }))
@@ -269,7 +270,7 @@ describe('veg days (T-058c)', () => {
   }
   const show = (mealPlans?: Awaited<ReturnType<typeof withPlan>>, today = TUESDAY) =>
     render(
-      <FoodLog store={memoryLogStore()} loadIndex={() => Promise.resolve(createSearchIndex([...foods, CHICKEN]))} today={today} diet={diet} mealPlans={mealPlans} />,
+      <FoodLog store={memoryLogStore()} loadFoods={() => Promise.resolve(localFinder(createSearchIndex([...foods, CHICKEN])))} today={today} diet={diet} mealPlans={mealPlans} />,
     )
   afterEach(() => localStorage.clear())
 
@@ -322,7 +323,7 @@ describe('veg days (T-058c)', () => {
   })
 
   it('shows no veg-day line for vegetarians', () => {
-    render(<FoodLog store={memoryLogStore()} loadIndex={loadIndex} today={TUESDAY} diet={{ dietPref: 'veg', foodRules: [], allergies: [] }} />)
+    render(<FoodLog store={memoryLogStore()} loadFoods={loadFoods} today={TUESDAY} diet={{ dietPref: 'veg', foodRules: [], allergies: [] }} />)
     expect(screen.queryByRole('status', { name: 'Veg day' })).toBeNull()
   })
 })

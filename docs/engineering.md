@@ -55,7 +55,7 @@ Pick the structure for how data is used and how big it can grow. Rules:
 - **Measure before optimising.** Small lists don't need clever structures; add one when a test or the size budget shows the need.
 
 Current state:
-- Food search scans about 7,500 foods per keystroke with whole-word scoring. That is fast enough today. T-038 moves search into Postgres with a trigram index so it scales and the 520 KB download disappears.
+- Food search runs in Postgres (`search_foods`, trigram index, T-038) and returns only the matches. The bundled list (about 520 KB) is downloaded only as a fallback when the server can't answer.
 - Food lookups by id now use a map (`src/food/search.ts`).
 
 ## 5. Caching

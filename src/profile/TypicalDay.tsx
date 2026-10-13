@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { searchFoods, type SearchIndex } from '../food/search'
+import type { FoodFinder } from '../food/finder'
+import { useFoodSearch } from '../food/useFoodSearch'
 import type { DietTag } from '../food/types'
 import { DIET_ITEMS, MAX_COUNT, checkCustom, describeDiet, estimateDiet, extraFromFood, type DietExtra, type DietItem } from './currentDiet'
 import { allowedFoods } from './dietRules'
@@ -29,7 +30,7 @@ export function TypicalDay({
   counts,
   extras,
   weightKg,
-  loadIndex,
+  loadFoods,
   onChange,
 }: {
   /** Everyday foods to show, already filtered by diet (dietItemsFor). */
@@ -39,33 +40,31 @@ export function TypicalDay({
   counts: Record<string, number>
   extras: DietExtra[]
   weightKg: number
-  loadIndex?: () => Promise<SearchIndex>
+  loadFoods?: () => Promise<FoodFinder>
   onChange: (counts: Record<string, number>, extras: DietExtra[]) => void
 }) {
   const [adding, setAdding] = useState<'search' | 'custom' | null>(null)
-  const [index, setIndex] = useState<SearchIndex | null>(null)
+  const [index, setIndex] = useState<FoodFinder | null>(null)
   const [indexError, setIndexError] = useState(false)
   const [query, setQuery] = useState('')
   const [custom, setCustom] = useState({ name: '', kcal: '', protein: '' })
   const [customError, setCustomError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (adding !== 'search' || index || !loadIndex) return
+    if (adding !== 'search' || index || !loadFoods) return
     let live = true
-    loadIndex().then(
+    loadFoods().then(
       (i) => live && setIndex(i),
       () => live && setIndexError(true),
     )
     return () => {
       live = false
     }
-  }, [adding, index, loadIndex])
+  }, [adding, index, loadFoods])
 
   // Search wider, then drop what the diet leaves out, so 8 allowed foods show.
-  const results = useMemo(
-    () => (index && query.trim() ? allowedFoods(searchFoods(index, query, 40), excluded).slice(0, 8) : []),
-    [index, query, excluded],
-  )
+  const found = useFoodSearch(index, query, 40)
+  const results = useMemo(() => allowedFoods(found.results, excluded).slice(0, 8), [found.results, excluded])
   const diet = estimateDiet(counts, extras, items)
 
   const setExtraCount = (id: string, count: number) =>
@@ -127,7 +126,7 @@ export function TypicalDay({
 
       {adding === null && (
         <div className="add-other">
-          {loadIndex && (
+          {loadFoods && (
             <button type="button" className="add" onClick={() => setAdding('search')}>
               + Add another food
             </button>
@@ -150,7 +149,7 @@ export function TypicalDay({
           />
           {!index && !indexError && <p className="muted">Loading foods…</p>}
           {indexError && <p className="error">Couldn’t load the food list. Check your connection, or enter it yourself.</p>}
-          {index && query.trim() && results.length === 0 && <p className="muted">No match for “{query}”.</p>}
+          {index && query.trim() && !found.pending && results.length === 0 && <p className="muted">No match for “{query}”.</p>}
           <ul className="results">
             {results.map((f) => {
               const e = extraFromFood(f)

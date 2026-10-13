@@ -1,7 +1,7 @@
 import { Suspense, lazy, useMemo, useState } from 'react'
 import type { Macros } from '../engine/diet'
 import { localDate } from '../log/types'
-import type { SearchIndex } from '../food/search'
+import type { FoodFinder } from '../food/finder'
 import { allowedExtras, dietItemsFor, estimateDiet, type DietExtra } from './currentDiet'
 import { NONVEG_OFF_DAYS, NO_ONION_GARLIC, cleanRules, excludedTags, hasNonvegOff, isNonvegOff } from './dietRules'
 import { TypicalDay } from './TypicalDay'
@@ -137,14 +137,14 @@ export function Onboarding({
   initial,
   onFinish,
   onSkip,
-  loadIndex,
+  loadFoods,
   today = localDate(),
 }: {
   initial: ProfileInfo
   onFinish: (r: OnboardingResult) => Promise<void>
   onSkip: () => Promise<void>
   /** Loads the food database for "Add another food". */
-  loadIndex?: () => Promise<SearchIndex>
+  loadFoods?: () => Promise<FoodFinder>
   today?: string
 }) {
   const [step, setStep] = useState(0)
@@ -456,7 +456,7 @@ export function Onboarding({
           counts={counts}
           extras={keptExtras}
           weightKg={weightKg}
-          loadIndex={loadIndex}
+          loadFoods={loadFoods}
           onChange={(c, e) => {
             setCounts(c)
             setExtras(e)
