@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Typical day: any food or your own entry (T-017)
+
+- The typical-day step in onboarding was limited to 14 everyday foods. Now "+ Add another food" searches the whole food database (one usual portion, or 100 g), and "Can't find it? Enter it yourself" takes a name, calories a day and optional protein. Added foods get the same + and − counters, and the daily estimate updates as you go.
+- Saved inside `current_diet` (jsonb) as `extras`, so no database change.
+- Tests: `src/profile/profile.test.ts` (20), `src/profile/Onboarding.test.tsx` (9); whole suite 244 passing.
+
 ## 2026-10-13: Onboarding, suggested targets and progress (T-017, T-021, T-022)
 
 - Researched onboarding in MacroFactor, MyFitnessPal, Noom, Cronometer, Lose It!, HealthifyMe, Fitbod, Carbon, RP and FitNotes; findings and our choices in `docs/onboarding-research.md`.

@@ -36,3 +36,12 @@
   .onboarding textarea, .stepper button { background: #161d1b; color: inherit; border-color: #3a4643; }
   .counters li { border-color: #2c3734; }
 }
+.add-other { display: grid; gap: 4px; margin: 8px 0; }
+.add-other .add { background: none; border: 1.5px dashed #b9c5c0; border-radius: 10px; width: 100%; padding: 10px; font: inherit; color: #0f7a5c; font-weight: 600; cursor: pointer; }
+.add-panel { border: 1.5px solid #dfe5e2; border-radius: 12px; padding: 10px 12px; margin: 8px 0; }
+.add-panel .search { margin: 4px 0 8px; }
+.add-panel .link { display: block; margin: 6px auto 0; }
+.onboarding .field input { box-sizing: border-box; width: 100%; }
+@media (prefers-color-scheme: dark) {
+  .add-panel { border-color: #3a4643; }
+}

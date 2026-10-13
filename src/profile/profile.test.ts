@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { catalogue } from '../food/catalogueData'
 import { amountFor } from '../food/types'
-import { DIET_ITEMS, PORTION_GRAMS, describeDiet, estimateDiet } from './currentDiet'
+import { DIET_ITEMS, PORTION_GRAMS, checkCustom, describeDiet, estimateDiet, extraFromFood } from './currentDiet'
 import { bmiResult, buildPlan, checkTargetWeight, goalTimeline, paceOptions, waistNote } from './goal'
 import { fromRow, memoryProfileStore, toRow } from './stores'
 import { EMPTY_PROFILE, ageOn, bodySize, checkAboutYou, healthNotes, isOnboarded, questionsFor, type ProfileInfo } from './types'
@@ -137,6 +137,35 @@ describe('current diet', () => {
     expect(d.proteinG).toBe(35)
     expect(describeDiet(d, 64)).toMatch(/about 950 kcal and 35 g protein a day\. Protein is low at 0\.5 g per kg/)
     expect(describeDiet(estimateDiet({}), 64)).toMatch(/Add what you eat/)
+  })
+})
+
+describe('foods beyond the list', () => {
+  it('turns any database food into a row of one usual portion', () => {
+    const poha = catalogue.find((f) => f.id === 'tmf:dish:idli')!
+    const e = extraFromFood(poha)
+    const a = amountFor(poha, poha.portions[0].grams)
+    expect(e).toEqual({ id: 'tmf:dish:idli', name: poha.name, portion: poha.portions[0].label, kcal: a.kcal, proteinG: a.proteinG, count: 1 })
+    const noPortion = { ...poha, portions: [] }
+    expect(extraFromFood(noPortion)).toMatchObject({ portion: '100 g', kcal: poha.per100g.kcal })
+  })
+
+  it('checks a typed-in food', () => {
+    expect(checkCustom('', '200', '')).toMatch(/what the food is/)
+    expect(checkCustom('Protein bar', '0', '')).toMatch(/between 1 and 5000/)
+    expect(checkCustom('Protein bar', '200', '60')).toMatch(/more calories/)
+    expect(checkCustom('Protein bar', '200', '20')).toBeNull()
+    expect(checkCustom('Protein bar', '200', '')).toBeNull()
+  })
+
+  it('adds extras to the estimate and drops ones set to zero', () => {
+    const bar = { id: 'custom:1:Protein bar', name: 'Protein bar', portion: 'your amount', kcal: 200, proteinG: 20, count: 1 }
+    const gone = { ...bar, id: 'custom:2:x', count: 0 }
+    const d = estimateDiet({ 'tmf:dish:roti': 2 }, [bar, gone])
+    expect(d.extras).toEqual([bar])
+    expect(d.kcal).toBe(400) // 204 + 200
+    expect(d.proteinG).toBe(28)
+    expect(estimateDiet({ 'tmf:dish:roti': 2 })).not.toHaveProperty('extras')
   })
 })
 

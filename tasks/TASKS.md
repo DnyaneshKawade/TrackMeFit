@@ -56,7 +56,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-014 | Data model and privacy rules (users, coaches, food, progress, training) | `src/db/rls.test.ts` (17), run in PGlite |
 | T-030 | Load USDA values for our ingredients: 26 of 28 matched, 22 of 25 dishes computed | `src/food/indian/database.test.ts` (6) |
 | T-039 | Progression migration run on the live Supabase project | DK ran it in the SQL Editor |
-| T-017 | Onboarding in 7 steps (about you with live BMI and waist, health checklist, training, goal with pace and goal date, Indian food habits and fasting, typical day of eating, plan with optional suggested targets); skip remembered | `src/profile/profile.test.ts` (17), `src/profile/Onboarding.test.tsx` (8), `src/App.test.tsx` (5), `src/db/rls.test.ts` (+1) |
+| T-017 | Onboarding in 7 steps (about you with live BMI and waist, health checklist, training, goal with pace and goal date, Indian food habits and fasting, typical day of eating with any food from the database or the person's own entry, plan with optional suggested targets); skip remembered | `src/profile/profile.test.ts` (20), `src/profile/Onboarding.test.tsx` (9), `src/App.test.tsx` (5), `src/db/rls.test.ts` (+1) |
 | T-021 | Suggested targets at the end of onboarding, applied only when the person taps "Use these targets" | `src/profile/profile.test.ts` (plan), `src/App.test.tsx` |
 | T-022 | Progress tab: daily weigh-in, trend weight with weekly change and goal advice, 90-day chart, body measurements | `src/progress/progress.test.ts` (16), `src/progress/Progress.test.tsx` (4), `src/db/rls.test.ts` (+1) |
 | T-028 | Live on Vercel at track-me-fit-dpvu.vercel.app with Google sign-in | DK checked sign-in on the live site |
