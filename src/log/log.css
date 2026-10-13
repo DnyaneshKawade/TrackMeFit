@@ -95,3 +95,16 @@
   .form .info { background: #12302a; }
   .warning { color: #ffd88a; background: #3a2e12; }
 }
+
+.log > .info { background: #f1faf6; border-radius: 10px; padding: 10px 12px; margin: 10px 0; font-size: 14px; }
+.amount .info { background: #f1faf6; border-radius: 10px; padding: 10px 12px; margin: 8px 0; font-size: 14px; }
+.today-plan { border: 1px solid #dfe5e2; border-radius: 12px; padding: 10px 12px; margin: 10px 0; font-size: 14px; }
+.today-plan summary { cursor: pointer; font-weight: 600; }
+.today-plan h4 { margin: 10px 0 2px; font-size: 14px; }
+.today-plan ul { list-style: none; padding: 0; margin: 0; }
+.today-plan li { padding: 3px 0; }
+.today-plan .reason { display: block; }
+@media (prefers-color-scheme: dark) {
+  .log > .info, .amount .info { background: #12302a; }
+  .today-plan { border-color: #2c3734; }
+}

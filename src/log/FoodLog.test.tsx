@@ -243,3 +243,77 @@ describe('faster logging', () => {
     expect(await foods.list()).toHaveLength(0)
   })
 })
+
+describe('non-veg-free days (T-058c)', () => {
+  const CHICKEN: Food = {
+    id: 'tmf:dish:chicken-curry',
+    name: 'Chicken curry',
+    state: 'cooked',
+    per100g: { kcal: 180, proteinG: 15, carbG: 4, fatG: 11 },
+    portions: [{ label: '1 katori (150 g)', grams: 150 }],
+    source: 'trackMeFit',
+    tags: ['meat', 'onion_garlic'],
+  }
+  const TUESDAY = '2026-10-13'
+  const diet = { dietPref: 'nonveg' as const, foodRules: ['nonveg_off:tue'], allergies: [] }
+  const withPlan = async () => {
+    const { buildMealPlan } = await import('../engine/mealPlan')
+    const { PROTEIN_PICKS, planFoodsFor } = await import('../profile/planFoods')
+    const { memoryMealPlanStore } = await import('../profile/mealPlanStore')
+    const { excludedTags } = await import('../profile/dietRules')
+    const picks = PROTEIN_PICKS.filter((p) => ['chicken', 'paneer'].includes(p.key)).flatMap((p) => p.foods)
+    const plan = buildMealPlan({ targets: { kcal: 2400, proteinG: 130, fatG: 67, carbG: 319 }, weightKg: 80, base: [], picks, foods: planFoodsFor(excludedTags('nonveg')) })
+    const store = memoryMealPlanStore()
+    await store.save(plan, picks)
+    return store
+  }
+  const show = (mealPlans?: Awaited<ReturnType<typeof withPlan>>, today = TUESDAY) =>
+    render(
+      <FoodLog store={memoryLogStore()} loadIndex={() => Promise.resolve(createSearchIndex([...foods, CHICKEN]))} today={today} diet={diet} mealPlans={mealPlans} />,
+    )
+  afterEach(() => localStorage.clear())
+
+  it('4, 5. shows the saved plan, with chicken swapped for a veg food on a non-veg-free day', async () => {
+    show(await withPlan())
+    expect(screen.getByRole('status', { name: 'Non-veg-free day' }).textContent).toMatch(/Today is Tuesday, your non-veg-free day/)
+    const plan = await screen.findByRole('group', { name: 'Your meal plan' })
+    expect(plan.textContent).toMatch(/veg today/)
+    expect(plan.textContent).not.toMatch(/Chicken/)
+    expect(plan.textContent).toMatch(/so chicken is swapped for paneer/)
+  })
+
+  it('4. shows the usual plan on other days, with no day note', async () => {
+    show(await withPlan(), '2026-10-14')
+    const plan = await screen.findByRole('group', { name: 'Your meal plan' })
+    expect(plan.textContent).toMatch(/Chicken/)
+    expect(screen.queryByRole('status', { name: 'Non-veg-free day' })).toBeNull()
+  })
+
+  it('6. mentions the day when logging chicken, and still lets the person log it', async () => {
+    show()
+    await addFood('Dinner', 'chicken', 'Chicken curry')
+    expect(screen.getByRole('note', { name: 'Non-veg-free day' }).textContent).toMatch(/Today is Tuesday.*Paneer, dal or soya would fit instead/)
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Dinner' }))
+    const dinner = await screen.findByRole('region', { name: 'Dinner' })
+    expect(within(dinner).getByText('Chicken curry')).toBeTruthy()
+  })
+
+  it('6. says nothing extra when logging a veg food', async () => {
+    show()
+    await addFood('Lunch', 'yellow', 'Dal tadka')
+    expect(screen.queryByRole('note', { name: 'Non-veg-free day' })).toBeNull()
+  })
+
+  it('7. “I’m eating non-veg today” brings back the usual plan for that date only', async () => {
+    show(await withPlan())
+    fireEvent.click(screen.getByRole('button', { name: 'I’m eating non-veg today' }))
+    expect(screen.getByRole('status', { name: 'Non-veg-free day' }).textContent).toMatch(/you’re eating non-veg today/)
+    await waitFor(() => expect(screen.getByRole('group', { name: 'Your meal plan' }).textContent).toMatch(/Chicken/))
+    cleanup()
+    show(await withPlan())
+    expect(screen.getByRole('button', { name: 'Make it a veg day again' })).toBeTruthy()
+    cleanup()
+    show(undefined, '2026-10-20') // the next Tuesday is a veg day again
+    expect(screen.getByRole('button', { name: 'I’m eating non-veg today' })).toBeTruthy()
+  })
+})

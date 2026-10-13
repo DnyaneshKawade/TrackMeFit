@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Non-veg-free days in the plan and log (T-058c)
+
+- `src/profile/nonvegDays.ts` says whether a date is one of the person's non-veg-free days ("Tuesday", "Shravan"). Seasons use estimated dates for 2026 and 2027, with sources in the spec; Shravan follows the Amanta month (Maharashtra, Gujarat, south). In a year with no dates, seasons don't apply.
+- The Food tab now shows the saved meal plan ("Your meal plan"). On a non-veg-free day, chicken, fish and eggs are swapped for the person's veg protein picks, then paneer, dal, soya or tofu, within limits and with the reason; cereals are trimmed a little to keep calories about the same.
+- On those days the Food tab says so, and opening chicken, fish or egg to log it shows a gentle note with veg ideas. Logging still works. "I’m eating non-veg today" switches that date back (kept on the device only).
+- Fixed: the plan could put more oil in one meal than its per-meal limit; extra now spills to other meals.
+- Onboarding and the plan card load only when needed; main bundle 132.9 of 140 KB (was 138.7).
+- Tests: `src/profile/nonvegDays.test.ts` (4), 2 more in `src/engine/mealPlan.test.ts`, 5 in `src/log/FoodLog.test.tsx`. 339 tests pass.
+- Left open: Purnimanta Shravan (north India) as a setting; season dates for 2028 onward need adding each year.
+
 ## 2026-10-13: Meal plan screens (T-058b)
 
 - "Your plan" now asks "Want us to suggest a day of meals?" under the targets. Yes shows the protein foods the diet allows in plain words (no eggs or chicken for a vegetarian); picking them builds the plan live with the T-058a engine. If the picks can't reach the protein target, the app says how close they get and offers diet-appropriate additions or "Use N g protein instead".

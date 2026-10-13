@@ -1,11 +1,42 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
 import { withFoods, type SearchIndex } from '../food/search'
 import { memoryCustomFoodStore, type CustomFood, type CustomFoodStore, type NewCustomFood } from '../food/custom'
 import { AddFood } from './AddFood'
 import { TargetsForm } from '../targets/TargetsForm'
 import { remaining, type DietTarget, type TargetStore, type TargetValues } from '../targets/types'
 import { amountLabel, localDate, MEAL_NAMES, MEALS, shiftDate, totals, type LogEntry, type LogStore, type Meal, type NewLogEntry } from './types'
+import type { DietPref } from '../profile/types'
+import type { MealPlanStore, SavedMealPlan } from '../profile/mealPlanStore'
+import { excludedTags } from '../profile/dietRules'
+import { dayExcluded, nonvegOffReason } from '../profile/nonvegDays'
 import './log.css'
+
+const TodayPlan = lazy(() => import('./TodayPlan'))
+
+/** The person's diet answers, for non-veg-free days and the meal plan. */
+export interface DietAnswers {
+  dietPref: DietPref | null
+  foodRules: string[]
+  allergies: string[]
+}
+
+// "I’m eating non-veg today" is a per-device convenience; storage may be off.
+const eatingKey = (date: string) => `tmf:eating-nonveg:${date}`
+function readEating(date: string): boolean {
+  try {
+    return localStorage.getItem(eatingKey(date)) === '1'
+  } catch {
+    return false
+  }
+}
+function writeEating(date: string, on: boolean) {
+  try {
+    if (on) localStorage.setItem(eatingKey(date), '1')
+    else localStorage.removeItem(eatingKey(date))
+  } catch {
+    // Not kept; the choice still applies until the page reloads.
+  }
+}
 
 function dayLabel(date: string, today: string): string {
   if (date === today) return 'Today'
@@ -20,6 +51,8 @@ export function FoodLog({
   foods: foodStore,
   targets,
   userId,
+  diet,
+  mealPlans,
   today = localDate(),
 }: {
   store: LogStore
@@ -28,6 +61,8 @@ export function FoodLog({
   foods?: CustomFoodStore
   targets?: TargetStore
   userId?: string
+  diet?: DietAnswers
+  mealPlans?: MealPlanStore | null
   today?: string
 }) {
   const [date, setDate] = useState(today)
@@ -42,6 +77,36 @@ export function FoodLog({
   const [fallbackFoods] = useState(() => memoryCustomFoodStore())
   const custom = foodStore ?? fallbackFoods
   const allFoods = useMemo(() => (index ? withFoods(index, myFoods ?? []) : null), [index, myFoods])
+  const [saved, setSaved] = useState<SavedMealPlan | null>(null)
+  const [eating, setEating] = useState(() => readEating(date))
+  useEffect(() => setEating(readEating(date)), [date])
+  const offReason = useMemo(() => (diet ? nonvegOffReason(date, diet.foodRules) : null), [diet, date])
+  const offToday = !!offReason && !eating
+  const excluded = useMemo(
+    () => dayExcluded(diet ? excludedTags(diet.dietPref, diet.foodRules, diet.allergies) : new Set(), offToday),
+    [diet, offToday],
+  )
+  const nonvegNote = offToday
+    ? `Today is ${offReason}, your non-veg-free day. ${excluded.has('dairy') ? 'Dal or soya' : 'Paneer, dal or soya'} would fit instead. It’s your choice.`
+    : null
+
+  useEffect(() => {
+    if (!mealPlans) return
+    let live = true
+    // The plan is a convenience: if it can't load, the log still works.
+    mealPlans.latest().then(
+      (p) => live && setSaved(p),
+      () => live && setSaved(null),
+    )
+    return () => {
+      live = false
+    }
+  }, [mealPlans])
+
+  const toggleEating = () => {
+    writeEating(date, !eating)
+    setEating(!eating)
+  }
 
   useEffect(() => {
     if (!targets) return
@@ -133,6 +198,7 @@ export function FoodLog({
           onCreate={createFood}
           onRemoveFood={removeFood}
           onClose={() => setAdding(null)}
+          nonvegOff={nonvegNote}
         />
       </main>
     )
@@ -157,6 +223,20 @@ export function FoodLog({
       {targets && target && <LeftToday target={target} eaten={day} byCoach={!!userId && target.setBy !== userId} onEdit={() => setEditingTargets(true)} />}
       {targets && target === null && (
         <button className="set-targets" onClick={() => setEditingTargets(true)}>Set your daily targets</button>
+      )}
+
+      {offReason && (
+        <p className="info" role="status" aria-label="Non-veg-free day">
+          {eating ? `Today is ${offReason}, but you’re eating non-veg today.` : `Today is ${offReason}, your non-veg-free day.`}{' '}
+          <button className="link" aria-pressed={eating} onClick={toggleEating}>
+            {eating ? 'Make it a veg day again' : 'I’m eating non-veg today'}
+          </button>
+        </p>
+      )}
+      {saved && (
+        <Suspense fallback={null}>
+          <TodayPlan saved={saved} excluded={excluded} offReason={offToday ? offReason : null} />
+        </Suspense>
       )}
 
       {error && <p className="error" role="alert">{error}</p>}
