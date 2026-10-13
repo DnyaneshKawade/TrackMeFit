@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Food } from '../food/types'
 import { memoryLogStore } from './memoryStore'
 import { fromRow, toRow } from './supabaseStore'
-import { entryFor, localDate, shiftDate, totals } from './types'
+import { EMPTY_QUICK_FORM, entryFor, localDate, quickEntry, recentFoods, repeatEntry, shiftDate, totals, type LogEntry } from './types'
 
 const dal: Food = {
   id: 'tmf:dish:dal-tadka',
@@ -64,5 +64,58 @@ describe('stores', () => {
     const e = entryFor(dal, 150, 'lunch', '2026-10-12')
     const row = { id: 'x', ...toRow(e), grams: '150', kcal: '180', protein_g: '9', carb_g: '22.5', fat_g: '6' }
     expect(fromRow(row)).toEqual({ id: 'x', ...e })
+  })
+})
+
+describe('quick add', () => {
+  it('logs calories with optional macros and no weight', () => {
+    expect(quickEntry({ ...EMPTY_QUICK_FORM, name: ' Wedding buffet ', kcal: '900', protein: '30' }, 'dinner', '2026-10-13')).toEqual({
+      loggedOn: '2026-10-13', meal: 'dinner', foodId: 'quick', foodName: 'Wedding buffet', grams: null,
+      kcal: 900, proteinG: 30, carbG: 0, fatG: 0,
+    })
+    expect(quickEntry({ ...EMPTY_QUICK_FORM, kcal: '250' }, 'snacks', '2026-10-13')).toMatchObject({ foodName: 'Quick add' })
+  })
+
+  it('needs calories, and macros that fit inside them', () => {
+    expect(quickEntry(EMPTY_QUICK_FORM, 'lunch', '2026-10-13')).toMatch(/Calories should be between/)
+    expect(quickEntry({ ...EMPTY_QUICK_FORM, kcal: '9000' }, 'lunch', '2026-10-13')).toMatch(/Calories should be between/)
+    expect(quickEntry({ ...EMPTY_QUICK_FORM, kcal: '200', protein: 'x' }, 'lunch', '2026-10-13')).toMatch(/numbers/)
+    expect(quickEntry({ ...EMPTY_QUICK_FORM, kcal: '200', protein: '50', fat: '20' }, 'lunch', '2026-10-13')).toMatch(/more calories/)
+  })
+})
+
+describe('recent and frequent foods', () => {
+  const e = (id: string, foodId: string, grams: number | null = 100, foodName = foodId, kcal = 100): LogEntry => ({
+    id, loggedOn: '2026-10-12', meal: 'lunch', foodId, foodName, grams, kcal, proteinG: 1, carbG: 1, fatG: 1,
+  })
+
+  it('offers each food once with its latest amount, often-eaten ones first', () => {
+    // Newest first, as the store returns them.
+    const list = [e('6', 'roti', 80), e('5', 'dal'), e('4', 'roti', 40), e('3', 'chai'), e('2', 'roti', 40), e('1', 'quick', null, 'Biryani', 700)]
+    const { often, recent } = recentFoods(list)
+    expect(often.map((r) => [r.entry.id, r.times])).toEqual([['6', 3]])
+    expect(recent.map((r) => r.entry.foodName)).toEqual(['dal', 'chai', 'Biryani'])
+  })
+
+  it('keeps different quick adds apart', () => {
+    const { recent } = recentFoods([e('2', 'quick', null, 'Biryani', 700), e('1', 'quick', null, 'Biryani', 500)])
+    expect(recent).toHaveLength(2)
+  })
+
+  it('logs the same amount again on another day and meal', () => {
+    expect(repeatEntry(e('9', 'roti', 80), 'dinner', '2026-10-13')).toEqual({
+      loggedOn: '2026-10-13', meal: 'dinner', foodId: 'roti', foodName: 'roti', grams: 80, kcal: 100, proteinG: 1, carbG: 1, fatG: 1,
+    })
+  })
+
+  it('the memory store returns recent entries newest first', async () => {
+    const store = memoryLogStore([e('1', 'a'), e('2', 'b')])
+    await store.add({ ...repeatEntry(e('x', 'c'), 'lunch', '2026-10-13') })
+    expect((await store.recent()).map((r) => r.foodId)).toEqual(['c', 'b', 'a'])
+  })
+
+  it('reads a quick add row back with no weight', () => {
+    const row = { id: 'q', logged_on: '2026-10-13', meal: 'dinner' as const, food_id: 'quick', food_name: 'Biryani', grams: null, kcal: '700', protein_g: '0', carb_g: '0', fat_g: '0' }
+    expect(fromRow(row).grams).toBeNull()
   })
 })

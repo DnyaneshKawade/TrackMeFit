@@ -212,3 +212,36 @@ describe('onboarding and progress', () => {
     expect(await t.as(coach, (db) => count(db, 'measurements'))).toBe(1)
   })
 })
+
+describe('your own foods and quick add', () => {
+  it('keeps custom foods and recipes private to the person and their coach', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('me@x.in')
+    const other = await t.signUp('other@x.in')
+    const coach = await t.signUp('c@x.in', { role: 'coach' })
+    await t.as(coach, (db) => db.query(`insert into coach_clients (coach_id, client_id) values ($1, $2)`, [coach, me]))
+    await t.as(me, (db) => db.query(`update coach_clients set status = 'active' where client_id = $1`, [me]))
+    const add = `insert into custom_foods (name, state, kcal, protein_g, carb_g, fat_g, portions, recipe)
+                 values ('Mom''s dal', 'cooked', 103, 5.9, 16.8, 1.7, '[{"label":"1 serving","grams":150}]',
+                         '{"ingredients":[{"foodId":"usda:1","name":"Toor dal","grams":200}],"cookedWeightG":750,"servings":5}')`
+    await t.as(me, (db) => db.query(add))
+    expect(await t.as(coach, (db) => count(db, 'custom_foods'))).toBe(1)
+    expect(await t.as(other, (db) => count(db, 'custom_foods'))).toBe(0)
+    expect((await t.as(other, (db) => db.query(`delete from custom_foods`))).affectedRows).toBe(0)
+    expect((await t.as(coach, (db) => db.query(`delete from custom_foods`))).affectedRows).toBe(0)
+    expect((await t.as(me, (db) => db.query(`delete from custom_foods`))).affectedRows).toBe(1)
+  })
+
+  it('allows a log entry without a weight only for quick add', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('me@x.in')
+    const insert = (foodId: string) =>
+      `insert into food_logs (meal, food_id, food_name, grams, kcal, protein_g, carb_g, fat_g)
+       values ('dinner', '${foodId}', 'Biryani', null, 700, 0, 0, 0)`
+    await t.as(me, (db) => db.query(insert('quick')))
+    await expect(t.as(me, (db) => db.query(insert('tmf:dish:biryani')))).rejects.toThrow(/food_logs_quick_add_check/)
+    await expect(
+      t.as(me, (db) => db.query(`insert into food_logs (meal, food_id, food_name, grams, kcal, protein_g, carb_g, fat_g) values ('lunch', 'x', 'X', 0, 1, 0, 0, 0)`)),
+    ).rejects.toThrow(/food_logs_grams_check/)
+  })
+})

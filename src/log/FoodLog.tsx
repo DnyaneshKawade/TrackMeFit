@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
-import type { SearchIndex } from '../food/search'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { withFoods, type SearchIndex } from '../food/search'
+import { memoryCustomFoodStore, type CustomFood, type CustomFoodStore, type NewCustomFood } from '../food/custom'
 import { AddFood } from './AddFood'
 import { TargetsForm } from '../targets/TargetsForm'
 import { remaining, type DietTarget, type TargetStore, type TargetValues } from '../targets/types'
-import { localDate, MEAL_NAMES, MEALS, shiftDate, totals, type LogEntry, type LogStore, type Meal, type NewLogEntry } from './types'
+import { amountLabel, localDate, MEAL_NAMES, MEALS, shiftDate, totals, type LogEntry, type LogStore, type Meal, type NewLogEntry } from './types'
 import './log.css'
 
 function dayLabel(date: string, today: string): string {
@@ -16,12 +17,15 @@ function dayLabel(date: string, today: string): string {
 export function FoodLog({
   store,
   loadIndex,
+  foods: foodStore,
   targets,
   userId,
   today = localDate(),
 }: {
   store: LogStore
   loadIndex: () => Promise<SearchIndex>
+  /** The person's own foods and recipes. */
+  foods?: CustomFoodStore
   targets?: TargetStore
   userId?: string
   today?: string
@@ -33,6 +37,11 @@ export function FoodLog({
   const [index, setIndex] = useState<SearchIndex | null>(null)
   const [target, setTarget] = useState<DietTarget | null | undefined>(undefined)
   const [editingTargets, setEditingTargets] = useState(false)
+  const [recent, setRecent] = useState<LogEntry[] | null>(null)
+  const [myFoods, setMyFoods] = useState<CustomFood[] | null>(null)
+  const [fallbackFoods] = useState(() => memoryCustomFoodStore())
+  const custom = foodStore ?? fallbackFoods
+  const allFoods = useMemo(() => (index ? withFoods(index, myFoods ?? []) : null), [index, myFoods])
 
   useEffect(() => {
     if (!targets) return
@@ -71,12 +80,27 @@ export function FoodLog({
   const openAdd = (meal: Meal) => {
     setAdding(meal)
     if (!index) void loadIndex().then(setIndex)
+    // Offers are a convenience: if they can't load, search still works.
+    setRecent(null)
+    store.recent().then(setRecent, () => setRecent([]))
+    if (!myFoods) custom.list().then(setMyFoods, () => setMyFoods([]))
   }
 
   const add = async (entry: NewLogEntry) => {
     const saved = await store.add(entry)
-    setEntries((list) => [...(list ?? []), saved])
+    if (saved.loggedOn === date) setEntries((list) => [...(list ?? []), saved])
     setAdding(null)
+  }
+
+  const createFood = async (food: NewCustomFood) => {
+    const saved = await custom.add(food)
+    setMyFoods((list) => [saved, ...(list ?? [])])
+    return saved
+  }
+
+  const removeFood = async (id: string) => {
+    await custom.remove(id)
+    setMyFoods((list) => (list ?? []).filter((f) => f.id !== id))
   }
 
   const remove = async (id: string) => {
@@ -99,7 +123,17 @@ export function FoodLog({
   if (adding) {
     return (
       <main className="log">
-        <AddFood meal={adding} date={date} index={index} onAdd={add} onClose={() => setAdding(null)} />
+        <AddFood
+          meal={adding}
+          date={date}
+          index={allFoods}
+          recent={recent}
+          myFoods={myFoods ?? []}
+          onAdd={add}
+          onCreate={createFood}
+          onRemoveFood={removeFood}
+          onClose={() => setAdding(null)}
+        />
       </main>
     )
   }
@@ -143,7 +177,7 @@ export function FoodLog({
                     <div>
                       <span>{e.foodName}</span>
                       <span className="muted">
-                        {e.grams} g · {e.kcal} kcal · P {e.proteinG} · C {e.carbG} · F {e.fatG}
+                        {amountLabel(e)} · {e.kcal} kcal · P {e.proteinG} · C {e.carbG} · F {e.fatG}
                       </span>
                     </div>
                     <button className="link" aria-label={`Remove ${e.foodName}`} onClick={() => void remove(e.id)}>✕</button>

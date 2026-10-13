@@ -10,7 +10,7 @@ export interface FoodLogRow {
   meal: Meal
   food_id: string
   food_name: string
-  grams: number | string
+  grams: number | string | null
   kcal: number | string
   protein_g: number | string
   carb_g: number | string
@@ -24,7 +24,7 @@ export const fromRow = (r: FoodLogRow): LogEntry => ({
   meal: r.meal,
   foodId: r.food_id,
   foodName: r.food_name,
-  grams: Number(r.grams),
+  grams: r.grams === null ? null : Number(r.grams),
   kcal: Number(r.kcal),
   proteinG: Number(r.protein_g),
   carbG: Number(r.carb_g),
@@ -61,6 +61,16 @@ export function supabaseLogStore(sb: SupabaseClient, userId: string): LogStore {
       const { data, error } = await sb.from('food_logs').insert(toRow(entry)).select(COLUMNS).single()
       if (error) throw error
       return fromRow(data as FoodLogRow)
+    },
+    async recent() {
+      const { data, error } = await sb
+        .from('food_logs')
+        .select(COLUMNS)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(200)
+      if (error) throw error
+      return (data as FoodLogRow[]).map(fromRow)
     },
     async remove(id) {
       const { error } = await sb.from('food_logs').delete().eq('id', id)

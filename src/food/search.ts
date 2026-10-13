@@ -72,3 +72,13 @@ export function searchFoods(index: SearchIndex, query: string, limit = 30): Food
   )
   return hits.slice(0, limit).map((h) => h.e.food)
 }
+
+/** The index with extra foods (the person's own) added in front. */
+export function withFoods(index: SearchIndex, foods: Food[]): SearchIndex {
+  if (!foods.length) return index
+  const ids = new Set(foods.map((f) => f.id))
+  return { entries: [...createSearchIndex(foods).entries, ...index.entries.filter((e) => !ids.has(e.food.id))] }
+}
+
+/** A food by id, for re-opening recent foods. */
+export const findFood = (index: SearchIndex, id: string): Food | undefined => index.entries.find((e) => e.food.id === id)?.food
