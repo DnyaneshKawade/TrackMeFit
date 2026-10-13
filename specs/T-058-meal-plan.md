@@ -1,6 +1,6 @@
 # T-058: Suggested day of meals (opt-in)
 
-Status: draft, for DK to review before it is built
+Status: agreed (DK, 13 Oct 2026: "start with the appropriate tasks"); engine built (T-058a), screens next (T-058b)
 Tasks: [T-058a, T-058b, T-058c](../tasks/TASKS.md)
 
 ## Problem
@@ -124,6 +124,26 @@ protein sources they like, and never asks for silly amounts.
   foods (leanest per calorie first), then adjust carbs and fat.
 - Targets come from the person or coach. The plan never changes a target
   except through criterion 6, with consent.
+
+## How the engine decides (T-058a)
+- The typical day becomes raw foods: 1 roti = 30 g atta, 1 katori rice =
+  50 g raw rice, 1 katori dal = 25 g dry dal and 3 g ghee, 1 katori sabzi =
+  130 g vegetables and 6 g oil, chai = 60 g milk and 8 g sugar. Fried snacks
+  and sweets are not carried into a plan.
+- Protein gap: more of the picked foods the person already eats first, then
+  the leanest new ones (most protein per calorie). Cereals and vegetables
+  bring protein too, so any overshoot is taken back from the last food
+  added.
+- Fat goes to the person's own oil or ghee, kept near 27 g per 2,000 kcal.
+  Cereals are scaled to fit the calories, and a second cereal is added only
+  when the first is at its limit.
+- Meals: cereals at breakfast, lunch and dinner (rice at lunch and dinner),
+  dal, chicken and fish at lunch and dinner, fruit as the snack, protein
+  portions to the meal with the least so far. If a meal goes over 0.55 g/kg,
+  some dal or soya can move to breakfast and a roti to the snack.
+- Paneer, soya chunks and whey use values from a similar USDA food (queso
+  fresco, defatted soy flour, whey isolate) until we have Indian packet
+  labels (T-031); each such item says so.
 
 ## Data and privacy
 - New table `meal_plans` (person, plan JSON, created, accepted) with the same
