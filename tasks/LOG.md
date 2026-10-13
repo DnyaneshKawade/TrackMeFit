@@ -6,6 +6,14 @@ Newest first. One entry per finished piece of work: what changed, which tests co
 
 - DK: the build-muscle goal shows a beginner only "Lean", so an underweight person sees a target far away. Studied the code and the evidence (Iraki 2019, Garthe 2013, Helms 2023, NHS) and wrote the draft spec `specs/T-059-gain-pace.md`: Lean, Steady, Faster, and Catch up for underweight adults (at most 0.5 kg a week), recommended by experience and BMI, with health and age limits, the extra calories in each note, and a first milestone in the goal date.
 - Tasks T-059a (engine), T-059b (goal step), T-059c (Progress suggestion) added. Nothing built yet; waiting on DK's OK.
+## 2026-10-13: Food search from the database (T-038)
+
+- New migration `20261016000000_food_search.sql`: tables `foods` (our dishes and USDA) and `off_products` (Open Food Facts, ODbL, kept apart by a check), a trigram index, and functions `search_foods(q, lim)` and `foods_by_id(ids)`. Anyone can read; no app user can write.
+- The database ranks exactly like the app (exact name or alias, then whole words, then word starts; ties to our dishes, then raw foods, then packaged) and also finds small typos ("panner", "chiken") after the real matches. Name and alias now rank equally, so "dahi" finds our curd before packaged dahi.
+- The app searches the server as you type (150 ms wait, late answers ignored) and falls back to the bundled list when the foods are not imported yet or the server can't be reached. The person's own foods are searched on the device and shown first. Recent foods are looked up by id.
+- `npm run export-foods` writes `data/export/foods.csv` (4,020 rows) and `data/export/off_products.csv` (3,547) for the Supabase import; a test keeps them equal to the bundled list.
+- Tests: `src/food/finder.test.ts` (5), `src/db/foodSearch.test.ts` (4, real SQL in PGlite), `src/food/exportFoods.test.ts` (2).
+- Left open: DK runs the migration and imports the two CSVs; until then the app uses the bundled list. The bundled list is still shipped as the fallback; dropping it can follow once the server path has run for a while.
 
 ## 2026-10-13: Veg days in the plan and log (T-058c)
 

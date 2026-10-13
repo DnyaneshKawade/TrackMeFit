@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { Onboarding } from './Onboarding'
 import { EMPTY_PROFILE } from './types'
 import { createSearchIndex } from '../food/search'
+import { localFinder } from '../food/finder'
 import type { Food } from '../food/types'
 
 afterEach(cleanup)
@@ -148,7 +149,7 @@ describe('onboarding', () => {
   })
 
   it('adds any food from the database or a typed-in one to the typical day', async () => {
-    const { onFinish } = setup({ loadIndex: () => Promise.resolve(createSearchIndex([POHA])) })
+    const { onFinish } = setup({ loadFoods: () => Promise.resolve(localFinder(createSearchIndex([POHA]))) })
     aboutYou()
     pick('Health conditions', 'None of these')
     click('Next')
@@ -235,8 +236,8 @@ describe('onboarding', () => {
 describe('diet rules (T-057)', () => {
   const EGG: Food = { id: 'tmf:dish:egg-bhurji', name: 'Egg bhurji', state: 'cooked', per100g: { kcal: 180, proteinG: 12, carbG: 3, fatG: 13 }, portions: [], source: 'trackMeFit', tags: ['egg', 'onion_garlic'] }
   const PANEER: Food = { id: 'tmf:dish:paneer-bhurji', name: 'Paneer bhurji', state: 'cooked', per100g: { kcal: 250, proteinG: 14, carbG: 5, fatG: 19 }, portions: [], source: 'trackMeFit', tags: ['dairy'] }
-  const toFood = (loadIndex?: () => Promise<ReturnType<typeof createSearchIndex>>) => {
-    const r = setup(loadIndex ? { loadIndex } : {})
+  const toFood = (loadFoods?: () => Promise<ReturnType<typeof localFinder>>) => {
+    const r = setup(loadFoods ? { loadFoods } : {})
     aboutYou()
     pick('Health conditions', 'None of these')
     click('Next')
@@ -284,7 +285,7 @@ describe('diet rules (T-057)', () => {
   })
 
   it('8. filters "Add another food" search by diet', async () => {
-    toFood(() => Promise.resolve(createSearchIndex([EGG, PANEER])))
+    toFood(() => Promise.resolve(localFinder(createSearchIndex([EGG, PANEER]))))
     pick('What you eat', 'Vegetarian')
     click('Next')
     click('+ Add another food')

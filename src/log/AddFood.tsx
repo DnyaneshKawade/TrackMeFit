@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { amountFor, type Food } from '../food/types'
-import { findFood, searchFoods, type SearchIndex } from '../food/search'
+import type { FoodFinder } from '../food/finder'
+import { useFoodSearch } from '../food/useFoodSearch'
 import { OFF_ATTRIBUTION } from '../food/off'
 import type { CustomFood, NewCustomFood } from '../food/custom'
 import { CreateFood, CreateRecipe } from './CreateFood'
@@ -40,7 +41,7 @@ export function AddFood({
   meal: Meal
   date: string
   /** Every food, the person's own first; null while loading. */
-  index: SearchIndex | null
+  index: FoodFinder | null
   /** Recent log entries, newest first; null while loading. */
   recent: LogEntry[] | null
   myFoods: CustomFood[]
@@ -55,8 +56,22 @@ export function AddFood({
   const [query, setQuery] = useState('')
   const [picked, setPicked] = useState<Food | null>(null)
   const [repeatError, setRepeatError] = useState<string | null>(null)
-  const results = useMemo(() => (index ? searchFoods(index, query) : []), [index, query])
+  const { results, pending } = useFoodSearch(index, query)
   const offered = useMemo(() => recentFoods(recent ?? []), [recent])
+  // Recent foods open with their portions, looked up by id once.
+  const [recentFoodsById, setRecentFoodsById] = useState<Map<string, Food>>(new Map())
+  useEffect(() => {
+    const ids = [...new Set([...offered.often, ...offered.recent].map((r) => r.entry.foodId))]
+    if (!index || !ids.length) return
+    let live = true
+    index.byIds(ids).then(
+      (m) => live && setRecentFoodsById(m),
+      () => undefined,
+    )
+    return () => {
+      live = false
+    }
+  }, [index, offered])
 
   const repeat = async (e: LogEntry) => {
     setRepeatError(null)
@@ -113,7 +128,7 @@ export function AddFood({
         {searching ? (
           <>
             {!index && <p className="muted">Loading foods…</p>}
-            {index && results.length === 0 && (
+            {index && !pending && results.length === 0 && (
               <div className="not-found">
                 <p className="muted">No match for “{query}”.</p>
                 <button className="link" onClick={() => setView('create')}>Add “{query.trim()}” as a new food</button>
@@ -135,8 +150,8 @@ export function AddFood({
         ) : (
           <>
             {repeatError && <p className="error" role="alert">{repeatError}</p>}
-            <RecentList title="Often" items={offered.often} index={index} onPick={setPicked} onRepeat={repeat} />
-            <RecentList title="Recent" items={offered.recent} index={index} onPick={setPicked} onRepeat={repeat} />
+            <RecentList title="Often" items={offered.often} foods={recentFoodsById} onPick={setPicked} onRepeat={repeat} />
+            <RecentList title="Recent" items={offered.recent} foods={recentFoodsById} onPick={setPicked} onRepeat={repeat} />
           </>
         )}
       </>
@@ -159,13 +174,13 @@ export function AddFood({
 function RecentList({
   title,
   items,
-  index,
+  foods,
   onPick,
   onRepeat,
 }: {
   title: string
   items: RecentFood[]
-  index: SearchIndex | null
+  foods: Map<string, Food>
   onPick: (f: Food) => void
   onRepeat: (e: LogEntry) => Promise<void>
 }) {
@@ -175,7 +190,7 @@ function RecentList({
       <h3>{title}</h3>
       <ul>
         {items.map(({ entry: e, times }) => {
-          const food = index ? findFood(index, e.foodId) : undefined
+          const food = foods.get(e.foodId)
           const detail = `${amountLabel(e)} · ${e.kcal} kcal${times > 1 ? ` · ${times} times` : ''}`
           return (
             <li key={e.id}>
