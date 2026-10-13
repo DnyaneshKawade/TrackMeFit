@@ -450,9 +450,10 @@ export const VEG_FALLBACKS = ['tmf:ing:paneer', 'tmf:ing:toor-dal', 'tmf:ing:soy
 
 /** The plan for a non-veg-free day: each item the day leaves out is swapped
  * for an allowed protein food of about the same protein (the person's picks
- * first, then VEG_FALLBACKS), with the day's reason. Items with no allowed
+ * first, then VEG_FALLBACKS), with the day's reason (`why`, e.g. "Tuesday is
+ * your non-veg-free day"). Items with no allowed
  * swap are dropped with a note. Spec: specs/T-058c-nonveg-free-days.md. */
-export function vegDayPlan(plan: MealPlan, foods: PlanFood[], allowed: Set<string>, picks: string[], reason: string): MealPlan {
+export function vegDayPlan(plan: MealPlan, foods: PlanFood[], allowed: Set<string>, picks: string[], why: string): MealPlan {
   const byId = new Map(foods.map((f) => [f.id, f]))
   const choices = [...picks, ...VEG_FALLBACKS]
     .filter((id, i, all) => all.indexOf(id) === i && allowed.has(id))
@@ -469,7 +470,7 @@ export function vegDayPlan(plan: MealPlan, foods: PlanFood[], allowed: Set<strin
     for (const item of meal.items) {
       if (allowed.has(item.foodId)) continue
       const from = item.name.toLowerCase()
-      const why = (to: PlanFood) => `Today is ${reason}, your non-veg-free day, so ${from} is swapped for ${to.name.toLowerCase()}.`
+      const swappedFor = (to: PlanFood) => `${why}, so ${from} is swapped for ${to.name.toLowerCase()}.`
       // Fill the item's protein from the choices in order, each within its limits.
       let need = item.macros.proteinG
       const added: PlanItem[] = []
@@ -480,7 +481,7 @@ export function vegDayPlan(plan: MealPlan, foods: PlanFood[], allowed: Set<strin
         if (grams < Math.max(step(to), 20)) continue
         const merged = inMeal(meal.name, to.id) + grams
         const current = out.meals.find((m) => m.name === meal.name)!.items
-        const swapped: PlanItem = { foodId: to.id, name: to.name, grams: merged, weighed: to.weighed, hint: amountHint(to, merged), macros: macrosFor(to, merged), reason: why(to) }
+        const swapped: PlanItem = { foodId: to.id, name: to.name, grams: merged, weighed: to.weighed, hint: amountHint(to, merged), macros: macrosFor(to, merged), reason: swappedFor(to) }
         setMeal(meal.name, [...current.filter((i) => i.foodId !== to.id), swapped])
         added.push(swapped)
         need -= macrosFor(to, grams).proteinG
@@ -493,7 +494,7 @@ export function vegDayPlan(plan: MealPlan, foods: PlanFood[], allowed: Set<strin
       const others = rest.filter((i) => !moved.includes(i))
       others.splice(Math.max(0, Math.min(at, others.length)), 0, ...moved)
       setMeal(meal.name, others)
-      if (!added.length) notes.push(`Today is ${reason}, so ${from} is left out. Add dal or another protein food you eat.`)
+      if (!added.length) notes.push(`${why}, so ${from} is left out. Add dal or another protein food you eat.`)
     }
   if (out === plan) return plan
   // Veg protein foods bring more calories than chicken or fish, so take the

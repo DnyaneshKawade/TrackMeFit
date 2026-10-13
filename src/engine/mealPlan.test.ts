@@ -163,19 +163,19 @@ describe('non-veg-free day plan (T-058c)', () => {
   const vegIds = new Set(planFoodsFor(new Set([...excludedTags('nonveg'), 'meat', 'fish', 'egg'])).map((f) => f.id))
 
   it('5. swaps meat, fish and eggs for veg protein foods with about the same protein, and says why', () => {
-    const day = vegDayPlan(usual, nonveg, vegIds, picks('eggs', 'chicken', 'paneer'), 'Tuesday')
+    const day = vegDayPlan(usual, nonveg, vegIds, picks('eggs', 'chicken', 'paneer'), 'Tuesday is your non-veg-free day')
     expect(items(day).every((i) => vegIds.has(i.foodId))).toBe(true)
-    expect(items(day).some((i) => /^Today is Tuesday, your non-veg-free day, so chicken breast|^Today is Tuesday, your non-veg-free day, so chicken/i.test(i.reason))).toBe(true)
+    expect(items(day).some((i) => /^Tuesday is your non-veg-free day, so chicken is swapped for /.test(i.reason))).toBe(true)
     expect(Math.abs(day.totals.proteinG - usual.totals.proteinG)).toBeLessThanOrEqual(15) // cereals trimmed for calories carry some protein
     expect(Math.abs(day.totals.kcal - usual.totals.kcal)).toBeLessThanOrEqual(usual.totals.kcal * 0.05)
     for (const i of items(day)) expect(i.grams, i.name).toBeLessThanOrEqual(PLAN_FOODS_BY_ID.get(i.foodId)!.maxPerMealG)
-    expect(vegDayPlan(day, nonveg, vegIds, [], 'Tuesday')).toBe(day) // nothing left to swap
+    expect(vegDayPlan(day, nonveg, vegIds, [], 'Tuesday is your non-veg-free day')).toBe(day) // nothing left to swap
   })
 
   it('5. drops an item with a note when no veg protein food is allowed', () => {
     const none = new Set([...vegIds].filter((id) => !['pulse', 'dairy', 'soy', 'supplement'].includes(PLAN_FOODS_BY_ID.get(id)!.group)))
-    const day = vegDayPlan(usual, nonveg, none, [], 'Shravan')
+    const day = vegDayPlan(usual, nonveg, none, [], 'You made today a veg day')
     expect(items(day).some((i) => i.foodId === 'tmf:ing:chicken')).toBe(false)
-    expect(day.notes.some((n) => /^Today is Shravan, so .* is left out/.test(n))).toBe(true)
+    expect(day.notes.some((n) => /^You made today a veg day, so .* is left out/.test(n))).toBe(true)
   })
 })

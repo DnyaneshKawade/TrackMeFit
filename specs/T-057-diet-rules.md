@@ -25,6 +25,8 @@ answers in.
 2. Given the person eats everything or is eggetarian, when they open the
    food-habits step, then they can pick non-veg-free weekdays (Mon to Sun) and
    seasons (Shravan, Navratri, Chaturmas, Ramadan fasting days, Lent).
+   (Changed in T-058c: the season question is removed; people make any day
+   a veg day themselves on the Food tab.)
 3. Given the person is vegetarian, vegan or Jain, then the non-veg-free days
    question is hidden and any saved non-veg-free picks are cleared.
 4. Given a vegetarian or Jain, when they reach the typical day, then egg and

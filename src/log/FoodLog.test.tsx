@@ -244,7 +244,7 @@ describe('faster logging', () => {
   })
 })
 
-describe('non-veg-free days (T-058c)', () => {
+describe('veg days (T-058c)', () => {
   const CHICKEN: Food = {
     id: 'tmf:dish:chicken-curry',
     name: 'Chicken curry',
@@ -273,26 +273,30 @@ describe('non-veg-free days (T-058c)', () => {
     )
   afterEach(() => localStorage.clear())
 
-  it('4, 5. shows the saved plan, with chicken swapped for a veg food on a non-veg-free day', async () => {
+  it('4, 5. shows the saved plan, with chicken swapped for a veg food on a non-veg-free weekday', async () => {
     show(await withPlan())
-    expect(screen.getByRole('status', { name: 'Non-veg-free day' }).textContent).toMatch(/Today is Tuesday, your non-veg-free day/)
+    expect(screen.getByRole('status', { name: 'Veg day' }).textContent).toMatch(/Tuesday is your non-veg-free day/)
     const plan = await screen.findByRole('group', { name: 'Your meal plan' })
     expect(plan.textContent).toMatch(/veg today/)
     expect(plan.textContent).not.toMatch(/Chicken/)
     expect(plan.textContent).toMatch(/so chicken is swapped for paneer/)
   })
 
-  it('4. shows the usual plan on other days, with no day note', async () => {
+  it('4, 7. shows the usual plan on other days, and the person can make any day a veg day', async () => {
     show(await withPlan(), '2026-10-14')
     const plan = await screen.findByRole('group', { name: 'Your meal plan' })
     expect(plan.textContent).toMatch(/Chicken/)
-    expect(screen.queryByRole('status', { name: 'Non-veg-free day' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Make today a veg day' }))
+    expect(screen.getByRole('status', { name: 'Veg day' }).textContent).toMatch(/You made today a veg day/)
+    await waitFor(() => expect(screen.getByRole('group', { name: 'Your meal plan' }).textContent).not.toMatch(/Chicken/))
+    fireEvent.click(screen.getByRole('button', { name: 'Not a veg day' }))
+    await waitFor(() => expect(screen.getByRole('group', { name: 'Your meal plan' }).textContent).toMatch(/Chicken/))
   })
 
-  it('6. mentions the day when logging chicken, and still lets the person log it', async () => {
+  it('6. mentions the veg day when logging chicken, and still lets the person log it', async () => {
     show()
     await addFood('Dinner', 'chicken', 'Chicken curry')
-    expect(screen.getByRole('note', { name: 'Non-veg-free day' }).textContent).toMatch(/Today is Tuesday.*Paneer, dal or soya would fit instead/)
+    expect(screen.getByRole('note', { name: 'Non-veg-free day' }).textContent).toMatch(/Tuesday is your non-veg-free day.*Paneer, dal or soya would fit instead/)
     fireEvent.click(screen.getByRole('button', { name: 'Add to Dinner' }))
     const dinner = await screen.findByRole('region', { name: 'Dinner' })
     expect(within(dinner).getByText('Chicken curry')).toBeTruthy()
@@ -307,7 +311,7 @@ describe('non-veg-free days (T-058c)', () => {
   it('7. “I’m eating non-veg today” brings back the usual plan for that date only', async () => {
     show(await withPlan())
     fireEvent.click(screen.getByRole('button', { name: 'I’m eating non-veg today' }))
-    expect(screen.getByRole('status', { name: 'Non-veg-free day' }).textContent).toMatch(/you’re eating non-veg today/)
+    expect(screen.getByRole('status', { name: 'Veg day' }).textContent).toMatch(/you’re eating non-veg today/)
     await waitFor(() => expect(screen.getByRole('group', { name: 'Your meal plan' }).textContent).toMatch(/Chicken/))
     cleanup()
     show(await withPlan())
@@ -315,5 +319,10 @@ describe('non-veg-free days (T-058c)', () => {
     cleanup()
     show(undefined, '2026-10-20') // the next Tuesday is a veg day again
     expect(screen.getByRole('button', { name: 'I’m eating non-veg today' })).toBeTruthy()
+  })
+
+  it('shows no veg-day line for vegetarians', () => {
+    render(<FoodLog store={memoryLogStore()} loadIndex={loadIndex} today={TUESDAY} diet={{ dietPref: 'veg', foodRules: [], allergies: [] }} />)
+    expect(screen.queryByRole('status', { name: 'Veg day' })).toBeNull()
   })
 })

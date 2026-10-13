@@ -1,4 +1,4 @@
-// The saved meal plan on the Food tab (T-058c). On a non-veg-free day the
+// The saved meal plan on the Food tab (T-058c). On a veg day the
 // meat, fish and egg items are swapped for veg protein foods, with the reason.
 // Loaded only when the person has a saved plan.
 
@@ -8,17 +8,17 @@ import type { DietTag } from '../food/types'
 import type { SavedMealPlan } from '../profile/mealPlanStore'
 import { PLAN_FOODS, planFoodsFor } from '../profile/planFoods'
 
-export default function TodayPlan({ saved, excluded, offReason }: { saved: SavedMealPlan; excluded: Set<DietTag>; offReason: string | null }) {
+export default function TodayPlan({ saved, excluded, vegWhy }: { saved: SavedMealPlan; excluded: Set<DietTag>; vegWhy: string | null }) {
   const plan = useMemo(() => {
-    if (!offReason) return saved.plan
+    if (!vegWhy) return saved.plan
     const allowed = new Set(planFoodsFor(excluded).map((f) => f.id))
-    return vegDayPlan(saved.plan, PLAN_FOODS, allowed, saved.picks, offReason)
-  }, [saved, excluded, offReason])
+    return vegDayPlan(saved.plan, PLAN_FOODS, allowed, saved.picks, vegWhy)
+  }, [saved, excluded, vegWhy])
 
   return (
     <details className="today-plan" aria-label="Your meal plan">
       <summary>
-        Your meal plan{offReason ? ', veg today' : ''}{' '}
+        Your meal plan{vegWhy ? ', veg today' : ''}{' '}
         <span className="muted">
           about {plan.totals.kcal.toLocaleString('en-IN')} kcal, {Math.round(plan.totals.proteinG)} g protein
         </span>
@@ -31,14 +31,14 @@ export default function TodayPlan({ saved, excluded, offReason }: { saved: Saved
               <li key={i.foodId}>
                 <strong>{i.name}</strong> {i.grams} g {i.weighed}
                 {i.hint && <span className="muted">, {i.hint}</span>}
-                {i.reason.startsWith('Today is') && <small className="muted reason">{i.reason}</small>}
+                {vegWhy && i.reason.startsWith(vegWhy) && <small className="muted reason">{i.reason}</small>}
               </li>
             ))}
           </ul>
         </section>
       ))}
       {plan.notes
-        .filter((n) => n.startsWith('Today is') || n.startsWith('Cereals are'))
+        .filter((n) => (vegWhy && n.startsWith(vegWhy)) || n.startsWith('Cereals are'))
         .map((n) => (
           <p key={n} className="muted">
             {n}
