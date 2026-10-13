@@ -21,7 +21,8 @@ export interface DietTarget extends TargetValues {
 export interface TargetStore {
   /** The target in force on a date, or null if none has been set. */
   forDate(date: string): Promise<DietTarget | null>
-  save(values: TargetValues, startsOn: string): Promise<DietTarget>
+  /** `suggested` marks targets the engine proposed and the person accepted. */
+  save(values: TargetValues, startsOn: string, source?: DietTarget['source']): Promise<DietTarget>
 }
 
 export const LIMITS: Record<keyof TargetValues, [number, number]> = {
