@@ -68,6 +68,19 @@ export function supabaseLogStore(sb: SupabaseClient, userId: string): LogStore {
       if (error) throw error
       return fromRow(data as FoodLogRow)
     },
+    async listRange(from, to) {
+      // One query over the food_logs_user_day index.
+      const { data, error } = await sb
+        .from('food_logs')
+        .select(COLUMNS)
+        .eq('user_id', userId)
+        .gte('logged_on', from)
+        .lte('logged_on', to)
+        .order('logged_on')
+        .limit(5000)
+      if (error) throw error
+      return (data as FoodLogRow[]).map(fromRow)
+    },
     async recent() {
       const { data, error } = await sb
         .from('food_logs')

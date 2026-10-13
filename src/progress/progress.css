@@ -31,3 +31,19 @@
 .progress .suggest-card { border: 1px solid #0f7a5c; border-radius: 12px; padding: 10px 12px; margin: 12px 0; }
 .progress .suggest-card h3 { margin: 0 0 6px; font-size: 15px; }
 .progress .suggest-card .actions { display: flex; gap: 12px; align-items: center; }
+
+.diet-stats .range { display: flex; gap: 6px; }
+.diet-stats .chip.on { background: #0f7a5c; color: #fff; border-color: #0f7a5c; }
+.diet-stats h4 { font-size: 15px; margin: 12px 0 4px; }
+.top-foods li { grid-template-columns: 1fr auto; }
+.kcal-chart .bar { fill: #9fb3ab; }
+.kcal-chart .bar.on { fill: #0f7a5c; }
+.kcal-chart .bar.today { fill: #cfe3db; }
+.kcal-chart .target-line { fill: none; stroke: #c2410c; stroke-width: 2; stroke-dasharray: 4 3; }
+@media (prefers-color-scheme: dark) {
+  .kcal-chart .bar { fill: #5d6f69; }
+  .kcal-chart .bar.on { fill: #3fbf94; }
+  .kcal-chart .bar.today { fill: #2c3734; }
+  .kcal-chart .target-line { stroke: #fb923c; }
+}
+.diet-stats .macros dd .muted { display: block; font-size: 12px; font-weight: 400; }

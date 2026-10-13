@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { localDate, shiftDate } from '../log/types'
+import { localDate, shiftDate, type LogStore } from '../log/types'
+import { DietStats } from './DietStats'
 import { steadySwitch, type PaceSwitch } from '../profile/steady'
 import type { GoalChoice, ProfileInfo } from '../profile/types'
 import type { DietTarget, TargetStore, TargetValues } from '../targets/types'
@@ -141,6 +142,7 @@ export function Progress({
   profile,
   targets,
   onSwitchPace,
+  log,
   today = localDate(),
 }: {
   store: ProgressStore
@@ -150,6 +152,8 @@ export function Progress({
   targets?: TargetStore
   /** Saves the new pace, and the lower calorie target when there is one. */
   onSwitchPace?: (rate: number, target: TargetValues | null) => Promise<void>
+  /** The food log, for food stats (T-062). */
+  log?: LogStore
   today?: string
 }) {
   const [target, setTarget] = useState<DietTarget | null>(null)
@@ -287,6 +291,8 @@ export function Progress({
           </ul>
         </section>
       )}
+
+      {log && <DietStats log={log} targets={targets} today={today} />}
 
       <section aria-label="Measurements" className="measurements">
         <header className="sheet-head">

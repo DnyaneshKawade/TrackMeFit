@@ -7,6 +7,9 @@ export function memoryTargetStore(userId = 'me', initial: DietTarget[] = []): Ta
     async forDate(date) {
       return targetOn(rows, date)
     },
+    async history() {
+      return [...rows].sort((a, b) => a.startsOn.localeCompare(b.startsOn))
+    },
     async save(v, startsOn, source = 'manual') {
       const row: DietTarget = { ...v, id: String(rows.length + 1), startsOn, source, setBy: userId }
       rows.push(row)
@@ -54,6 +57,17 @@ export function supabaseTargetStore(sb: SupabaseClient, userId: string): TargetS
         .limit(1)
       if (error) throw error
       return data.length ? fromRow(data[0] as DietTargetRow) : null
+    },
+    async history() {
+      const { data, error } = await sb
+        .from('diet_targets')
+        .select(COLUMNS)
+        .eq('user_id', userId)
+        .order('starts_on')
+        .order('created_at')
+        .limit(500)
+      if (error) throw error
+      return (data as DietTargetRow[]).map(fromRow)
     },
     async save(v, startsOn, source = 'manual') {
       const { data, error } = await sb

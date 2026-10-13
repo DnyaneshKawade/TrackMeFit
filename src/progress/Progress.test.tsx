@@ -6,6 +6,7 @@ import { Progress } from './Progress'
 import { memoryProgressStore } from './stores'
 import { EMPTY_PROFILE, type ProfileInfo } from '../profile/types'
 import { memoryTargetStore } from '../targets/stores'
+import { memoryLogStore } from '../log/memoryStore'
 
 afterEach(cleanup)
 
@@ -14,6 +15,12 @@ const type = (label: string, value: string) => fireEvent.change(screen.getByLabe
 const click = (name: string) => fireEvent.click(screen.getByRole('button', { name }))
 
 describe('progress tab', () => {
+  it('shows food stats when the food log is given (T-062)', async () => {
+    render(<Progress store={memoryProgressStore()} goal="lose" today={TODAY} log={memoryLogStore()} />)
+    const stats = await screen.findByRole('region', { name: 'Food stats' })
+    expect(await within(stats).findByText('Log food for a few days to see your stats.')).toBeTruthy()
+  })
+
   it('saves today’s weight and updates it instead of adding a second one', async () => {
     const store = memoryProgressStore()
     render(<Progress store={store} goal="lose" today={TODAY} />)

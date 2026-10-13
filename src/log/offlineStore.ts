@@ -72,8 +72,25 @@ export function offlineLogStore(
     },
   }
 
+  const between = (from: string, to: string) => (e: { loggedOn: string }) => e.loggedOn >= from && e.loggedOn <= to
+  const listRange = remote.listRange?.bind(remote)
+
   return {
     sync,
+    ...(listRange && {
+      /** From the server, or the days kept on the phone when offline. */
+      async listRange(from: string, to: string) {
+        const keep = between(from, to)
+        try {
+          return withOutbox(await listRange(from, to), keep)
+        } catch (e) {
+          if (isRefusal(e)) throw e
+          const kept = days.filter(([d]) => keep({ loggedOn: d }))
+          if (!kept.length) throw e
+          return withOutbox(kept.flatMap(([, list]) => list), keep)
+        }
+      },
+    }),
     async listDay(date) {
       try {
         const entries = await remote.listDay(date)

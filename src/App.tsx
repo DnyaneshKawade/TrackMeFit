@@ -203,6 +203,7 @@ export function AppShell({
             goal={profile?.goal ?? null}
             profile={profile}
             targets={targets}
+            log={store!}
             onSwitchPace={async (rate, target) => {
               const p = { ...profile!, goalRate: rate }
               await profiles!.save(p)
