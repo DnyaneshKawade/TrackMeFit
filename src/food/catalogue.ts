@@ -6,6 +6,7 @@ import type { Food } from './types'
 import { buildIndianDatabase } from './indian/database'
 import { RAW_FOODS } from './indian/raw-foods'
 import { parseOffProducts } from './off'
+import { tagsFromText } from './dietTags'
 
 export function buildCatalogue(usdaCsv: string, offCsv: string): Food[] {
   const db = buildIndianDatabase(usdaCsv)
@@ -16,5 +17,12 @@ export function buildCatalogue(usdaCsv: string, offCsv: string): Food[] {
   }
   foods.push(...parseOffProducts(offCsv))
   const seen = new Set<string>()
-  return foods.filter((f) => !seen.has(f.id) && seen.add(f.id))
+  const out = foods.filter((f) => !seen.has(f.id) && seen.add(f.id))
+  // Foods without a recipe are tagged from their name, marked as a guess.
+  for (const f of out) {
+    if (f.tags) continue
+    f.tags = [...tagsFromText([f.name, ...(f.aliases ?? []), f.brand ?? ''].join(' '))].sort()
+    f.tagsGuessed = true
+  }
+  return out
 }

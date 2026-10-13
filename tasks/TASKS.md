@@ -10,7 +10,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Owner | Tests | Notes |
 |---|---|---|---|---|
-| T-057 | Diet rules ([spec](../specs/T-057-diet-rules.md)): "I eat everything" label, non-veg-free weekdays and seasons, typical day and its food search filtered by diet, Jain and onion-garlic rules, grams shown on the typical day | Claude | `src/profile/dietRules.test.ts`, `src/profile/Onboarding.test.tsx` | Spec agreed with DK 13 Oct |
 | T-016 | Indian food database: 3,336 dishes (2,559 computed), 3,547 packaged products, 1,461 raw foods. Goal 10,000 dishes + products: ~3,100 short | Claude | `src/food/recipe.test.ts`, `src/food/indian/resolve.test.ts` | See [docs/indian-food-database.md](../docs/indian-food-database.md) |
 
 ## Blocked
@@ -60,6 +59,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | ID | Task | Tests |
 |---|---|---|
 | T-001 | Research: market, competitors, RP Strength, FitNotes | n/a (docs) |
+| T-057 | Diet rules ([spec](../specs/T-057-diet-rules.md)): "I eat everything (veg and non-veg)" label, non-veg-free weekdays and seasons, typical day and its food search filtered by diet, Jain and no-onion-garlic versions of dal and sabzi, allergies respected, grams shown on the typical day, "only suggestions" note on targets | `src/profile/dietRules.test.ts` (18), `src/profile/Onboarding.test.tsx` (5 new), `src/profile/profile.test.ts` (grams in step) |
 | T-051 | Engineering standards ([docs/engineering.md](../docs/engineering.md)): spec-first workflow with `specs/` template, lint, dependency audit and size budget in CI, PR template, Dependabot, pinned Node, security headers, service worker cache cleared per build, map lookups for foods by id | `build/swStamp.test.ts` (3), `build/checkSize.test.ts` (4), `src/pwa.test.ts` (8), `src/food/search.test.ts` (9) |
 | T-050 | Competitor study: 30+ Indian and international apps, coaching software, FitNotes-style loggers and the RP engine, with gaps and planning details ([study](https://claude.ai/code/artifact/4637175c-d094-4c40-80be-e4826de7c0b3)) | n/a (docs) |
 | T-002 | App plan and engine spec docs | n/a (docs) |

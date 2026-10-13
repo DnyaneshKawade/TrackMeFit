@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { searchFoods, type SearchIndex } from '../food/search'
-import { DIET_ITEMS, MAX_COUNT, checkCustom, describeDiet, estimateDiet, extraFromFood, type DietExtra } from './currentDiet'
+import type { DietTag } from '../food/types'
+import { DIET_ITEMS, MAX_COUNT, checkCustom, describeDiet, estimateDiet, extraFromFood, type DietExtra, type DietItem } from './currentDiet'
+import { allowedFoods } from './dietRules'
+
+const NOTHING_EXCLUDED = new Set<DietTag>()
 
 function Stepper({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
   const set = (v: number) => onChange(Math.max(0, Math.min(MAX_COUNT, v)))
@@ -20,12 +24,18 @@ function Stepper({ label, value, onChange }: { label: string; value: number; onC
 /** Counts of everyday foods, plus any other food from the database or the
  * person's own entry, with a running estimate. */
 export function TypicalDay({
+  items = DIET_ITEMS,
+  excluded = NOTHING_EXCLUDED,
   counts,
   extras,
   weightKg,
   loadIndex,
   onChange,
 }: {
+  /** Everyday foods to show, already filtered by diet (dietItemsFor). */
+  items?: DietItem[]
+  /** What the diet leaves out; search results follow it too. */
+  excluded?: Set<DietTag>
   counts: Record<string, number>
   extras: DietExtra[]
   weightKg: number
@@ -51,8 +61,12 @@ export function TypicalDay({
     }
   }, [adding, index, loadIndex])
 
-  const results = useMemo(() => (index && query.trim() ? searchFoods(index, query, 8) : []), [index, query])
-  const diet = estimateDiet(counts, extras)
+  // Search wider, then drop what the diet leaves out, so 8 allowed foods show.
+  const results = useMemo(
+    () => (index && query.trim() ? allowedFoods(searchFoods(index, query, 40), excluded).slice(0, 8) : []),
+    [index, query, excluded],
+  )
+  const diet = estimateDiet(counts, extras, items)
 
   const setExtraCount = (id: string, count: number) =>
     onChange(
@@ -87,11 +101,13 @@ export function TypicalDay({
     <>
       <p className="muted">Roughly what you eat on a usual day, all meals together. A guess is fine.</p>
       <ul className="counters">
-        {DIET_ITEMS.map((item) => (
+        {items.map((item) => (
           <li key={item.id}>
             <span>
               {item.label}
-              <small className="muted">{item.portion}</small>
+              <small className="muted">
+                {item.portion}, {item.grams} g
+              </small>
             </span>
             <Stepper label={item.label} value={counts[item.id] ?? 0} onChange={(n) => onChange({ ...counts, [item.id]: n }, extras)} />
           </li>

@@ -113,13 +113,14 @@ describe('onboarding', () => {
     click('Next')
     expect(screen.getByRole('button', { name: 'Skip this step' })).toBeTruthy()
     for (let i = 0; i < 4; i++) click('More Roti or chapati')
-    click('More Dal')
+    click('More Dal (no onion or garlic)')
     expect(screen.getByRole('status', { name: 'Typical day' }).textContent).toMatch(/about 520 kcal and 22 g protein/)
     click('Next')
 
     expect(heading()).toBe('Your plan')
     const targets = screen.getByRole('region', { name: 'Suggested daily targets' })
     expect(targets.textContent).toMatch(/lose 0\.5 % of your weight a week/)
+    expect(targets.textContent).toMatch(/only suggestions, based on nutrition research\. They are not medical advice\. You decide whether to follow them\./)
     click('Use these targets')
     await waitFor(() => expect(onFinish).toHaveBeenCalled())
     const r = onFinish.mock.calls[0][0]
@@ -140,7 +141,7 @@ describe('onboarding', () => {
       dietPref: 'jain',
       fasting: ['ekadashi'],
       allergies: ['peanuts'],
-      currentDiet: { counts: { 'tmf:dish:roti': 4, 'tmf:dish:dal-tadka': 1 }, kcal: 520, proteinG: 22 },
+      currentDiet: { counts: { 'tmf:dish:roti': 4, 'tmf:dish:jain-dal-tadka': 1 }, kcal: 520, proteinG: 22 },
     })
     expect(r.profile.onboardedAt).toBeTruthy()
     expect(r.profile.medical).toMatchObject({ diabetes: false, pregnant: false })
@@ -228,5 +229,85 @@ describe('onboarding', () => {
     click('Skip this step')
     click('Use these targets')
     expect(await screen.findByText(/Couldn’t save/)).toBeTruthy()
+  })
+})
+
+describe('diet rules (T-057)', () => {
+  const EGG: Food = { id: 'tmf:dish:egg-bhurji', name: 'Egg bhurji', state: 'cooked', per100g: { kcal: 180, proteinG: 12, carbG: 3, fatG: 13 }, portions: [], source: 'trackMeFit', tags: ['egg', 'onion_garlic'] }
+  const PANEER: Food = { id: 'tmf:dish:paneer-bhurji', name: 'Paneer bhurji', state: 'cooked', per100g: { kcal: 250, proteinG: 14, carbG: 5, fatG: 19 }, portions: [], source: 'trackMeFit', tags: ['dairy'] }
+  const toFood = (loadIndex?: () => Promise<ReturnType<typeof createSearchIndex>>) => {
+    const r = setup(loadIndex ? { loadIndex } : {})
+    aboutYou()
+    pick('Health conditions', 'None of these')
+    click('Next')
+    training()
+    pick('Your main goal', 'Stay as I am')
+    click('Next')
+    return r
+  }
+
+  it('1. labels non-veg as "I eat everything"', () => {
+    toFood()
+    expect(within(screen.getByRole('group', { name: 'What you eat' })).getByRole('button', { name: 'I eat everything (veg and non-veg)' })).toBeTruthy()
+  })
+
+  it('2, 3. asks about non-veg-free days only for non-veg and egg eaters, and clears them for veg', async () => {
+    const { onFinish } = toFood()
+    expect(screen.queryByRole('group', { name: 'Days you skip non-veg' })).toBeNull()
+    pick('What you eat', 'I eat everything (veg and non-veg)')
+    pick('Days you skip non-veg', 'Tue')
+    pick('Days you skip non-veg', 'Sat')
+    pick('Seasons you skip non-veg', 'Shravan')
+    pick('Food rules', 'No onion or garlic')
+    expect(within(screen.getByRole('group', { name: 'Days you skip non-veg' })).getByRole('button', { name: 'Tue' }).getAttribute('aria-pressed')).toBe('true')
+    pick('What you eat', 'Eggetarian')
+    expect(screen.getByRole('group', { name: 'Seasons you skip non-veg' })).toBeTruthy()
+    pick('What you eat', 'Vegetarian')
+    expect(screen.queryByRole('group', { name: 'Days you skip non-veg' })).toBeNull()
+    pick('What you eat', 'I eat everything (veg and non-veg)')
+    expect(within(screen.getByRole('group', { name: 'Days you skip non-veg' })).getByRole('button', { name: 'Tue' }).getAttribute('aria-pressed')).toBe('false')
+    pick('Days you skip non-veg', 'Thu')
+    click('Next')
+    click('Skip this step')
+    click('I’ll set my own')
+    await waitFor(() => expect(onFinish).toHaveBeenCalled())
+    expect(onFinish.mock.calls[0][0].profile.foodRules).toEqual(['no_onion_garlic', 'nonveg_off:thu'])
+  })
+
+  it('4, 10. hides eggs and meat from a vegetarian and shows grams', () => {
+    toFood()
+    pick('What you eat', 'Vegetarian')
+    click('Next')
+    expect(screen.queryByRole('button', { name: 'More Eggs' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'More Chicken, fish or mutton' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'More Milk' })).toBeTruthy()
+    expect(screen.getByText('1 roti, 40 g')).toBeTruthy()
+  })
+
+  it('8. filters "Add another food" search by diet', async () => {
+    toFood(() => Promise.resolve(createSearchIndex([EGG, PANEER])))
+    pick('What you eat', 'Vegetarian')
+    click('Next')
+    click('+ Add another food')
+    type('Search foods', 'bhurji')
+    expect(await screen.findByRole('button', { name: /^Paneer bhurji/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Egg bhurji/ })).toBeNull()
+  })
+
+  it('9. drops counts for foods the diet no longer allows', async () => {
+    const { onFinish } = toFood()
+    pick('What you eat', 'I eat everything (veg and non-veg)')
+    click('Next')
+    click('More Eggs')
+    click('More Roti or chapati')
+    expect(screen.getByRole('status', { name: 'Typical day' }).textContent).toMatch(/about 170 kcal/)
+    click('Back')
+    pick('What you eat', 'Vegetarian')
+    click('Next')
+    expect(screen.getByRole('status', { name: 'Typical day' }).textContent).toMatch(/about 100 kcal/)
+    click('Next')
+    click('I’ll set my own')
+    await waitFor(() => expect(onFinish).toHaveBeenCalled())
+    expect(onFinish.mock.calls[0][0].profile.currentDiet.counts).toEqual({ 'tmf:dish:roti': 1 })
   })
 })

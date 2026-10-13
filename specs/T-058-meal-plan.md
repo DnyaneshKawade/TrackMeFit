@@ -54,6 +54,11 @@ protein sources they like, and never asks for silly amounts.
 8. Given a plan, then protein is spread over at least 3 meals plus a snack,
    aiming at about 0.4 g per kg body weight per meal and never more than
    0.55 g/kg in one meal, and each item has a one-line reason.
+9. Given a non-veg-free day, fasting day, onion-garlic rule or allergy, then
+   the plan for that day uses only allowed foods (for example paneer instead
+   of chicken on Tuesday).
+10. Given the plan, then the person can swap any item for another of the same
+    kind, and nothing is saved until they press "Use this plan".
 11. Given a plan, then it also keeps the basics from ICMR-NIN "My Plate":
     about 400 g raw vegetables (potato not counted) and 100 g fruit a day,
     fats and oils near 27 g per 2,000 kcal, and added sugar at most 25 g.
@@ -63,11 +68,11 @@ protein sources they like, and never asks for silly amounts.
 13. Given the health check advised seeing a doctor (for example kidney
     disease, pregnancy, diabetes on medicine), then the app does not offer an
     automatic plan and suggests a coach or doctor instead.
-9. Given a non-veg-free day, fasting day, onion-garlic rule or allergy, then
-   the plan for that day uses only allowed foods (for example paneer instead
-   of chicken on Tuesday).
-10. Given the plan, then the person can swap any item for another of the same
-    kind, and nothing is saved until they press "Use this plan".
+14. Given any suggested plan or target, then it carries this note, in these
+    words (DK, 13 Oct 2026): "Please note: these numbers are only
+    suggestions, based on nutrition research. They are not medical advice.
+    You decide whether to follow them. If you have a health problem, are
+    pregnant, or take regular medicine, talk to your doctor first."
 
 ## Caps (raw weight, first estimates for DK to check)
 | Food | Per meal | Per day |
@@ -136,5 +141,5 @@ protein sources they like, and never asks for silly amounts.
 ## Tests
 | Criterion | Test file |
 |---|---|
-| 1, 2, 10, 13 | `src/profile/MealPlan.test.tsx` |
+| 1, 2, 10, 13, 14 | `src/profile/MealPlan.test.tsx` |
 | 3 to 9, 11, 12 | `src/engine/mealPlan.test.ts` |

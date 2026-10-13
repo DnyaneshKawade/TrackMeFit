@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { catalogue } from '../food/catalogueData'
 import { amountFor } from '../food/types'
-import { DIET_ITEMS, PORTION_GRAMS, checkCustom, describeDiet, estimateDiet, extraFromFood } from './currentDiet'
+import { ALL_DIET_ITEMS, PORTION_GRAMS, checkCustom, describeDiet, estimateDiet, extraFromFood } from './currentDiet'
 import { bmiResult, buildPlan, checkTargetWeight, goalTimeline, paceOptions, waistNote } from './goal'
 import { fromRow, memoryProfileStore, toRow } from './stores'
 import { EMPTY_PROFILE, ageOn, bodySize, checkAboutYou, healthNotes, isOnboarded, questionsFor, type ProfileInfo } from './types'
@@ -122,11 +122,12 @@ describe('BMI and goal', () => {
 
 describe('current diet', () => {
   it('matches the foods in our database portion for portion', () => {
-    for (const item of DIET_ITEMS) {
+    for (const item of ALL_DIET_ITEMS) {
       const food = catalogue.find((f) => f.id === item.id)
       expect(food, item.id).toBeTruthy()
-      const a = amountFor(food!, PORTION_GRAMS[item.id] ?? food!.portions[0].grams)
-      expect([a.kcal, a.proteinG], item.id).toEqual([item.kcal, item.proteinG])
+      const grams = PORTION_GRAMS[item.id] ?? food!.portions[0].grams
+      const a = amountFor(food!, grams)
+      expect([a.kcal, a.proteinG, grams], item.id).toEqual([item.kcal, item.proteinG, item.grams])
     }
   })
 

@@ -1,6 +1,6 @@
 # T-057: Diet rules and a typical day that matches the diet
 
-Status: agreed (DK, 13 Oct 2026)
+Status: built
 Task: [T-057](../tasks/TASKS.md)
 
 ## Problem
@@ -33,9 +33,10 @@ answers in.
    are.
 6. Given a vegan, then milk, curd, paneer, ghee and milk sweets are not shown
    (and egg and meat).
-7. Given a Jain or "no onion or garlic", then items whose recipe uses potato,
-   onion, garlic or other root vegetables (Jain) or onion and garlic (the
-   rule) are not shown, and a Jain-safe sabzi is offered instead.
+7. Given a Jain or "no onion or garlic", then "Dal" and "Sabzi" become "Dal
+   (no onion or garlic)" and "Sabzi (no roots, onion or garlic)", using our
+   Jain recipes for the numbers. General rows such as "Fried snacks" stay,
+   since a Jain version exists for each.
 8. Given any diet, when the person searches for "+ Add another food" on the
    typical day, then results follow the same rules.
 9. Given a hidden item already had a count (diet changed after answering),
@@ -54,6 +55,10 @@ answers in.
   - jain: meat, fish, egg, root, onion_garlic, honey.
   - vegan: meat, fish, egg, dairy, honey.
   - rule no_onion_garlic adds onion_garlic.
+- Every suggested target carries the note: "Please note: these numbers are
+  only suggestions, based on nutrition research. They are not medical
+  advice. You decide whether to follow them. If you have a health problem,
+  are pregnant, or take regular medicine, talk to your doctor first."
 - Non-veg-free days do not change the typical day; they are used later by the
   meal plan and the log ("Tuesday is a veg day for you, so we suggest paneer
   instead of chicken").
@@ -71,6 +76,12 @@ answers in.
   instead but does not force it.
 - Diet changed from everything to veg: non-veg-free picks are removed.
 - A custom food the person entered: no tags, so it is always shown.
+- Packaged products and raw foods have no recipe, so their tags are guessed
+  from the name (marked `tagsGuessed`). A biscuit with milk not in its name
+  can still show for a vegan; reading the ingredient list is a later task.
+- Allergies to milk, egg and seafood also hide those foods.
+- Typical-day rows are tagged by hand for the general food ("Dal" means any
+  dal), so ghee in the dal recipe does not hide dal from vegans.
 
 ## Out of scope
 - Meal plan (T-058), filtering the main food log search (T-041).
@@ -80,4 +91,5 @@ answers in.
 |---|---|
 | 1, 2, 3 | `src/profile/Onboarding.test.tsx` |
 | 4, 5, 6, 7 | `src/profile/dietRules.test.ts` |
+| Tags | `src/profile/dietRules.test.ts` (food tags) |
 | 8, 9, 10 | `src/profile/dietRules.test.ts`, `src/profile/Onboarding.test.tsx` |

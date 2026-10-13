@@ -2,6 +2,7 @@
 // package labels, then every standard recipe computed from them.
 
 import type { Per100g } from '../types'
+import { tagsFromIngredients } from '../dietTags'
 import { computeRecipe, MissingIngredientsError, type RecipeResult } from '../recipe'
 import { INGREDIENTS } from './ingredients'
 import { RECIPES } from './recipes'
@@ -29,6 +30,11 @@ export function buildIndianDatabase(usdaCsv: string, labels: Record<string, Per1
     try {
       const result = computeRecipe(recipe, (id) => foods.get(id))
       result.food.aliases = recipe.aliases
+      const texts = recipe.ingredients.map((i) => {
+        const f = foods.get(i.foodId)!
+        return [f.name, ...(f.aliases ?? [])].join(' ')
+      })
+      result.food.tags = [...tagsFromIngredients(texts)].sort()
       dishes.push(result)
     } catch (e) {
       if (!(e instanceof MissingIngredientsError)) throw e
