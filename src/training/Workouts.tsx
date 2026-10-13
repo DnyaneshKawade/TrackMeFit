@@ -4,6 +4,7 @@ import { PlanEditor } from './PlanEditor'
 import { blockWeek, weekLabel } from './progression'
 import { ReviewView } from './ReviewView'
 import { SessionView } from './SessionView'
+import { SyncNote } from '../sync/SyncNote'
 import type { Plan, PlanDay, Session, WorkoutStore } from './types'
 import '../log/log.css'
 import './training.css'
@@ -130,6 +131,7 @@ export function Workouts({ store, today = localDate() }: { store: WorkoutStore; 
     <main className="log">
       <h2>Today’s training</h2>
       {error && <p className="error" role="alert">{error}</p>}
+      <SyncNote sync={store.sync} noun={['workout entry', 'workout entries']} />
       {sessions.length === 0 && <p className="muted">No workout logged today.</p>}
       <ul className="session-list">
         {sessions.map((s) => (

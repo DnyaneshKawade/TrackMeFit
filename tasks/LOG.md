@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Workouts without a connection (T-027b)
+
+- Second part of offline logging, so a gym with no signal works like the Food tab. Starting a workout, logging and removing sets, and the how-did-it-feel answers all work offline. Waiting sets show "Not synced yet", and the Training tab and the workout say how many entries are waiting.
+- Workouts and sets get their ids on the phone. The workout is sent before its sets, a lost answer is saved once, and a workout the server refuses takes its waiting sets with it so the queue never sticks.
+- The last plans, 14 viewed days, 60 exercise histories and the week review's answers are kept per account, so a planned day with "Last time" and the next-load suggestion runs offline. Editing plans and starting a block still need a connection.
+- Food and workouts now share one outbox (`src/sync/outbox.ts`) and one note component. Moving it found a race: a sync asked for just as another one gave up was skipped until the next trigger; fixed and tested.
+- Main bundle 136.8 of 140 KB.
+- Tests: `src/training/offlineStore.test.ts` (10), 1 in `src/training/Workouts.test.tsx`, `src/sync/outbox.test.ts` (1), 1 in `src/db/rls.test.ts`.
+
 ## 2026-10-13: Food logging without a connection (T-027a)
 
 - DK: "go as per the best possible choice"; picked offline logging first because mobile data drops often and logging is the daily habit. Spec `specs/T-027-offline-logging.md` covers food now (T-027a) and workout sets next (T-027b).

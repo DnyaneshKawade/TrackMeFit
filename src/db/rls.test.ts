@@ -282,4 +282,23 @@ describe('offline logging (T-027)', () => {
     expect(await t.as(me, (db) => count(db, 'food_logs'))).toBe(1)
     expect(await t.as(other, (db) => count(db, 'food_logs'))).toBe(0)
   })
+
+  it('11. a workout and a set sent twice with ids made on the phone are saved once (T-027b)', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('me@x.in')
+    const other = await t.signUp('other@x.in')
+    const sid = '11111111-2222-4333-8444-666666666666'
+    const setId = '11111111-2222-4333-8444-777777777777'
+    const session = `insert into workout_sessions (id, performed_on) values ('${sid}', '2026-10-13')`
+    const set = `insert into set_logs (id, session_id, exercise_id, set_index, weight_kg, reps) values ('${setId}', '${sid}', 'bench-press', 0, 60, 8)`
+    await t.as(me, (db) => db.query(session))
+    await t.as(me, (db) => db.query(set))
+    await expect(t.as(me, (db) => db.query(session))).rejects.toThrow(/duplicate key/)
+    await expect(t.as(me, (db) => db.query(set))).rejects.toThrow(/duplicate key/)
+    // Another person can't add a set to my workout by its id.
+    const theirs = set.replace(setId, '11111111-2222-4333-8444-888888888888')
+    await expect(t.as(other, (db) => db.query(theirs))).rejects.toThrow()
+    expect(await t.as(me, (db) => count(db, 'workout_sessions'))).toBe(1)
+    expect(await t.as(me, (db) => count(db, 'set_logs'))).toBe(1)
+  })
 })

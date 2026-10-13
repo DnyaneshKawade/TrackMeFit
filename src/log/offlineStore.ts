@@ -4,49 +4,12 @@
 // The last viewed days and recent foods are kept too, so the Food tab still
 // shows them offline.
 
+import { createOutbox, isRefusal, readJson, type KeyValue } from '../sync/outbox'
 import type { LogEntry, LogStore, LogSync, NewLogEntry } from './types'
 
-/** Small key-value storage; browser storage in the app, a map in tests. */
-export interface KeyValue {
-  get(key: string): string | null
-  set(key: string, value: string): void
-  remove(key: string): void
-}
-
-/** Browser storage that never throws (private windows can block it). */
-export const browserStorage: KeyValue = {
-  get: (k) => {
-    try {
-      return localStorage.getItem(k)
-    } catch {
-      return null
-    }
-  },
-  set: (k, v) => {
-    try {
-      localStorage.setItem(k, v)
-    } catch {
-      // Storage full or blocked: the outbox still works until reload.
-    }
-  },
-  remove: (k) => {
-    try {
-      localStorage.removeItem(k)
-    } catch {
-      // Nothing to clear.
-    }
-  },
-}
+export { browserStorage, isRefusal, type KeyValue } from '../sync/outbox'
 
 type Op = { kind: 'add'; entry: LogEntry } | { kind: 'remove'; id: string }
-
-/** Only data the server refuses outright is dropped: Postgres data and
- * constraint errors (classes 22, 23) and permission or syntax errors (42).
- * Anything else, a failed fetch above all, is retried later. */
-export function isRefusal(e: unknown): boolean {
-  const code = e && typeof e === 'object' && 'code' in e ? String((e as { code: unknown }).code ?? '') : ''
-  return /^(22|23|42)/.test(code)
-}
 
 /** How many viewed days the phone keeps. */
 export const CACHED_DAYS = 14
@@ -57,30 +20,11 @@ export function offlineLogStore(
 ): LogStore & { sync: LogSync } {
   const { storage, accountId } = opts
   const newId = opts.newId ?? (() => crypto.randomUUID())
-  const outboxKey = `tmf:outbox:${accountId}`
   const daysKey = `tmf:days:${accountId}`
   const recentKey = `tmf:recent:${accountId}`
 
-  const read = <T>(key: string, fallback: T): T => {
-    try {
-      const v = storage.get(key)
-      return v ? (JSON.parse(v) as T) : fallback
-    } catch {
-      return fallback
-    }
-  }
-
-  let outbox: Op[] = read<Op[]>(outboxKey, [])
   // Viewed days, most recently saved last; pruned to CACHED_DAYS.
-  let days: [string, LogEntry[]][] = read<[string, LogEntry[]][]>(daysKey, [])
-  let refused = 0
-  const listeners = new Set<() => void>()
-  const notify = () => listeners.forEach((l) => l())
-
-  const saveOutbox = () => {
-    storage.set(outboxKey, JSON.stringify(outbox))
-    notify()
-  }
+  let days: [string, LogEntry[]][] = readJson<[string, LogEntry[]][]>(storage, daysKey, [])
   const cachedDay = (date: string) => days.find(([d]) => d === date)?.[1]
   const cacheDay = (date: string, entries: LogEntry[]) => {
     days = [...days.filter(([d]) => d !== date), [date, entries] as [string, LogEntry[]]].slice(-CACHED_DAYS)
@@ -94,8 +38,20 @@ export function offlineLogStore(
     for (const [date, list] of days) if (list.some((e) => e.id === id)) cacheDay(date, list.filter((e) => e.id !== id))
   }
 
-  const pendingAdds = () => outbox.flatMap((o) => (o.kind === 'add' && !cancelled.has(o.entry.id) ? [o.entry] : []))
-  const pendingRemoves = () => new Set(outbox.flatMap((o) => (o.kind === 'remove' ? [o.id] : [])))
+  const outbox = createOutbox<Op>({
+    storage,
+    key: `tmf:outbox:${accountId}`,
+    send: (op) => (op.kind === 'add' ? remote.add(op.entry, op.entry.id).then(() => undefined) : remote.remove(op.id)),
+    createdId: (op) => (op.kind === 'add' ? op.entry.id : undefined),
+    undo: (op) => ({ kind: 'remove', id: op.kind === 'add' ? op.entry.id : op.id }),
+    onRefused: (op) => op.kind === 'add' && dropFromCache(op.entry.id),
+  })
+
+  const pendingAdds = () => {
+    const ids = outbox.pendingIds()
+    return outbox.ops().flatMap((o) => (o.kind === 'add' && ids.has(o.entry.id) ? [o.entry] : []))
+  }
+  const pendingRemoves = () => new Set(outbox.ops().flatMap((o) => (o.kind === 'remove' ? [o.id] : [])))
   /** Server or cached entries with the waiting work applied on top. */
   const withOutbox = (entries: LogEntry[], keep: (e: LogEntry) => boolean) => {
     const removed = pendingRemoves()
@@ -103,80 +59,12 @@ export function offlineLogStore(
     return [...entries.filter((e) => !removed.has(e.id)), ...pendingAdds().filter((e) => keep(e) && !ids.has(e.id))]
   }
 
-  const send = (op: Op) => (op.kind === 'add' ? remote.add(op.entry, op.entry.id).then(() => undefined) : remote.remove(op.id))
-
-  let running: Promise<void> | null = null
-  let inFlight: Op | null = null
-  // Waiting entries removed while being sent: settled when the send ends.
-  const cancelled = new Set<string>()
-  const loop = async () => {
-    while (outbox.length) {
-      const op = (inFlight = outbox[0])
-      const cancel = op.kind === 'add' && cancelled.has(op.entry.id)
-      try {
-        await send(op)
-        if (op.kind === 'add' && cancelled.delete(op.entry.id)) {
-          // Saved after the person removed it: remove it on the server too.
-          outbox = outbox.map((o): Op => (o === op ? { kind: 'remove', id: op.entry.id } : o))
-          saveOutbox()
-          continue
-        }
-      } catch (e) {
-        if (!isRefusal(e)) {
-          // The connection: try again later. A removed entry may still have
-          // reached the server, so send a removal for it instead.
-          if (cancel && op.kind === 'add') {
-            cancelled.delete(op.entry.id)
-            outbox = outbox.map((o): Op => (o === op ? { kind: 'remove', id: op.entry.id } : o))
-            saveOutbox()
-          }
-          return
-        }
-        if (op.kind === 'add') {
-          if (!cancelled.delete(op.entry.id)) refused++
-          dropFromCache(op.entry.id)
-        }
-      } finally {
-        inFlight = null
-      }
-      outbox = outbox.filter((o) => o !== op)
-      saveOutbox()
-    }
-  }
-  // One send loop at a time. A call while it runs (say, the phone just came
-  // back online) makes it go round once more when it ends.
-  let again = false
-  const run = (): Promise<void> => {
-    if (running) {
-      again = true
-      return running
-    }
-    running = (async () => {
-      do {
-        again = false
-        await loop()
-      } while (again)
-    })().finally(() => (running = null))
-    return running
-  }
-
-  const enqueue = (op: Op) => {
-    outbox = [...outbox, op]
-    saveOutbox()
-  }
-
   const sync: LogSync = {
-    pendingIds: () => new Set(pendingAdds().map((e) => e.id)),
-    refused: () => refused,
-    clearRefused: () => {
-      refused = 0
-      notify()
-    },
-    run,
-    subscribe(listener) {
-      listeners.add(listener)
-      return () => listeners.delete(listener)
-    },
+    pendingIds: outbox.pendingIds,
+    refused: outbox.refused,
+    clearRefused: outbox.clearRefused,
+    run: outbox.run,
+    subscribe: outbox.subscribe,
     clearCache() {
       days = []
       storage.remove(daysKey)
@@ -199,7 +87,7 @@ export function offlineLogStore(
     },
     async add(entry: NewLogEntry) {
       const full: LogEntry = { ...entry, id: newId() }
-      if (!outbox.length) {
+      if (outbox.isEmpty()) {
         try {
           const saved = await remote.add(entry, full.id)
           editCachedDay(saved.loggedOn, (list) => [...list, saved])
@@ -209,27 +97,18 @@ export function offlineLogStore(
         }
       }
       // Offline, or older work still waiting: keep the order.
-      enqueue({ kind: 'add', entry: full })
+      outbox.push({ kind: 'add', entry: full })
       editCachedDay(full.loggedOn, (list) => [...list, full])
-      void run()
+      void outbox.run()
       return full
     },
     async remove(id) {
-      if (inFlight?.kind === 'add' && inFlight.entry.id === id) {
-        // Being sent right now: settle it when the send ends.
-        cancelled.add(id)
-        dropFromCache(id)
-        notify()
-        return
-      }
-      if (outbox.some((o) => o.kind === 'add' && o.entry.id === id)) {
-        // Never sent: just forget it.
-        outbox = outbox.filter((o) => !(o.kind === 'add' && o.entry.id === id))
-        saveOutbox()
+      // Made on the phone and not sent yet (or being sent): cancel it.
+      if (outbox.cancel(id) !== 'none') {
         dropFromCache(id)
         return
       }
-      if (!outbox.length) {
+      if (outbox.isEmpty()) {
         try {
           await remote.remove(id)
           dropFromCache(id)
@@ -238,9 +117,9 @@ export function offlineLogStore(
           if (isRefusal(e)) throw e
         }
       }
-      enqueue({ kind: 'remove', id })
+      outbox.push({ kind: 'remove', id })
       dropFromCache(id)
-      void run()
+      void outbox.run()
     },
     async recent() {
       try {
@@ -248,7 +127,7 @@ export function offlineLogStore(
         storage.set(recentKey, JSON.stringify(entries))
         return withOutbox(entries, () => false)
       } catch (e) {
-        const cached = read<LogEntry[] | null>(recentKey, null)
+        const cached = readJson<LogEntry[] | null>(storage, recentKey, null)
         if (isRefusal(e) || !cached) throw e
         const removed = pendingRemoves()
         return [...pendingAdds().reverse(), ...cached.filter((x) => !removed.has(x.id))]

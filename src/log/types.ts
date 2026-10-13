@@ -2,6 +2,7 @@
 // at logging time, so later data fixes don't rewrite history.
 
 import { amountFor, type Food, type Per100g } from '../food/types'
+import type { Sync } from '../sync/outbox'
 
 export const MEALS = ['breakfast', 'lunch', 'snacks', 'dinner'] as const
 export type Meal = (typeof MEALS)[number]
@@ -33,19 +34,8 @@ export interface LogStore {
 }
 
 /** Entries saved on the phone while offline, and their sending. */
-export interface LogSync {
-  /** Ids of entries made on the phone and not yet on the server. */
-  pendingIds(): Set<string>
-  /** Entries the server refused since the person last saw the note. */
-  refused(): number
-  clearRefused(): void
-  /** Sends waiting work in order; stops at the first connection problem. */
-  run(): Promise<void>
-  /** Called whenever waiting work changes. Returns an unsubscribe. */
-  subscribe(listener: () => void): () => void
-  /** Forgets the copy of viewed days (on sign-out); waiting work stays. */
-  clearCache(): void
-}
+/** Waiting work on the phone (T-027); shared with workouts. */
+export type LogSync = Sync
 
 export const MAX_GRAMS = 5000
 
