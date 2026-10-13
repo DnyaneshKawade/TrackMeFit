@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Meal plan inside the meals (T-063)
+
+- DK asked why the plan sat in its own box above the meals. Spec `specs/T-063-plan-in-meals.md`.
+- Planned items now show faded under their meal (Snack under Snacks) with a tick box. A tick logs the item and it shows in the same place as a normal entry, still ticked, with "Change amount". Unticking makes it faded again. Each meal header has "Ate all of Breakfast" and so on.
+- One line above the meals says "Your meal plan", its kcal and protein, "N of M eaten", and has "Ate the whole plan". Veg-day and cereal notes show under it.
+- Food added by hand shows after the planned items with ✕. Totals count only what was ticked or added. No data change.
+- Meal sections and entry rows moved to `src/log/MealSection.tsx`, shared by the plain day and the day with a plan. Main bundle 127.5 KB.
+- Tests: 6 new and 8 updated in `src/log/TodayPlan.test.tsx`, 3 updated in `src/log/FoodLog.test.tsx`.
+
 ## 2026-10-13: Simple words across the app (T-064)
 
 - DK: "lets keep the verbiage simple around the whole app, to make easy for indians with not much english expierence to understand". Spec `specs/T-064-simple-words.md`, rules and word list in `docs/words.md`.

@@ -1,6 +1,7 @@
-// The saved meal plan on the Food tab (T-058c). On a veg day the
-// meat, fish and egg items are swapped for veg protein foods, with the reason.
-// Each item, meal and the whole plan can be ticked off to log it (T-060).
+// The day on the Food tab with the saved meal plan (T-058c) inside each meal
+// (T-063): planned items show faded under their meal with a tick box, and a
+// tick logs them as normal entries (T-060). On a veg day the meat, fish and
+// egg items are swapped for veg protein foods, with the reason.
 // Loaded only when the person has a saved plan.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -8,8 +9,9 @@ import { vegDayPlan } from '../engine/mealPlan'
 import type { DietTag } from '../food/types'
 import type { SavedMealPlan } from '../profile/mealPlanStore'
 import { PLAN_FOODS, planFoodsFor } from '../profile/planFoods'
-import { planEntry, planRows, resized, tickedEntries, tickState, type PlanRow, type TickState } from './planTicks'
-import { MAX_GRAMS, type LogEntry, type NewLogEntry } from './types'
+import { EntryInfo, EntryRow, MealSection } from './MealSection'
+import { PLAN_MEAL, planEntry, planRows, resized, tickedEntries, tickState, type PlanRow, type TickState } from './planTicks'
+import { MAX_GRAMS, MEALS, type LogEntry, type Meal, type NewLogEntry } from './types'
 
 function TickBox({ label, state, disabled, onChange }: { label: string; state: TickState; disabled: boolean; onChange: (on: boolean) => void }) {
   const ref = useRef<HTMLInputElement>(null)
@@ -25,16 +27,23 @@ export default function TodayPlan({
   vegWhy,
   date,
   entries,
+  pending,
   onTick,
+  onRemove,
+  onAdd,
 }: {
   saved: SavedMealPlan
   excluded: Set<DietTag>
   vegWhy: string | null
   date: string
-  /** The day's log; null while it loads. */
-  entries: LogEntry[] | null
+  /** The day's log, loaded. */
+  entries: LogEntry[]
+  /** Entries still waiting for internet. */
+  pending: Set<string>
   /** Logs the added entries and removes the entries with these ids. */
   onTick: (add: NewLogEntry[], remove: string[]) => Promise<void>
+  onRemove: (id: string) => void
+  onAdd: (meal: Meal) => void
 }) {
   const plan = useMemo(() => {
     if (!vegWhy) return saved.plan
@@ -42,7 +51,7 @@ export default function TodayPlan({
     return vegDayPlan(saved.plan, PLAN_FOODS, allowed, saved.picks, vegWhy)
   }, [saved, excluded, vegWhy])
   const rows = useMemo(() => planRows(saved.id, plan.meals), [saved.id, plan])
-  const ticked = useMemo(() => tickedEntries(entries ?? []), [entries])
+  const ticked = useMemo(() => tickedEntries(entries), [entries])
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<{ key: string; grams: string; problem?: string } | null>(null)
 
@@ -71,71 +80,82 @@ export default function TodayPlan({
   }
 
   const state = (list: PlanRow[]) => tickState(list.map((r) => r.key), ticked)
+  const planKeys = new Set(rows.map((r) => r.key))
   const done = rows.filter((r) => ticked.has(r.key)).length
-  const disabled = busy || entries === null
+
+  const plannedRow = (r: PlanRow) => {
+    const i = r.item
+    const logged = ticked.get(r.key)
+    const box = <TickBox label={`Ate ${i.name}`} state={logged ? 'all' : 'none'} disabled={busy} onChange={(on) => void set([r], on)} />
+    return (
+      <li key={r.key} className={logged ? 'planned ticked' : 'planned'}>
+        {box}
+        {logged ? (
+          <EntryInfo entry={logged} pending={pending.has(logged.id)} />
+        ) : (
+          <div>
+            <span>{i.name}</span>
+            <span className="muted">
+              {i.grams} g {i.weighed}
+              {i.hint && `, ${i.hint}`} · {Math.round(i.macros.kcal)} kcal
+            </span>
+          </div>
+        )}
+        {vegWhy && i.reason.startsWith(vegWhy) && <small className="muted reason">{i.reason}</small>}
+        {logged && editing?.key !== r.key && (
+          <button className="link" aria-label={`Change amount of ${i.name}`} onClick={() => setEditing({ key: r.key, grams: String(logged.grams ?? '') })}>
+            Change amount
+          </button>
+        )}
+        {editing?.key === r.key && (
+          <span className="set-row">
+            <input aria-label={`${i.name} amount eaten (g)`} inputMode="decimal" value={editing.grams} onChange={(e) => setEditing({ key: r.key, grams: e.target.value })} />
+            <button className="primary" disabled={busy} onClick={() => void saveAmount()}>Save</button>
+            {editing.problem && <span className="error" role="alert">{editing.problem}</span>}
+          </span>
+        )}
+      </li>
+    )
+  }
 
   return (
-    <details className="today-plan" aria-label="Your meal plan">
-      <summary>
-        Your meal plan{vegWhy ? ', veg today' : ''}{' '}
-        <span className="muted">
-          about {plan.totals.kcal.toLocaleString('en-IN')} kcal, {Math.round(plan.totals.proteinG)} g protein
-          {done > 0 && `, ${done} of ${rows.length} eaten`}
-        </span>
-      </summary>
-      <label className="tick">
-        <TickBox label="Ate the whole plan" state={state(rows)} disabled={disabled} onChange={(on) => void set(rows, on)} />
-        Ate the whole plan
-      </label>
-      {plan.meals.map((m) => {
-        const mealRows = rows.filter((r) => r.meal === m.name)
+    <>
+      <section className="today-plan" aria-label="Your meal plan">
+        <label className="tick">
+          <TickBox label="Ate the whole plan" state={state(rows)} disabled={busy} onChange={(on) => void set(rows, on)} />
+          <span>
+            <strong>Your meal plan{vegWhy ? ', veg today' : ''}</strong>{' '}
+            <span className="muted">
+              about {plan.totals.kcal.toLocaleString('en-IN')} kcal, {Math.round(plan.totals.proteinG)} g protein, {done} of {rows.length} eaten
+            </span>
+          </span>
+        </label>
+        {plan.notes
+          .filter((n) => (vegWhy && n.startsWith(vegWhy)) || n.startsWith('Cereals are'))
+          .map((n) => (
+            <p key={n} className="muted">
+              {n}
+            </p>
+          ))}
+      </section>
+      {MEALS.map((meal) => {
+        const mealRows = rows.filter((r) => PLAN_MEAL[r.meal] === meal)
+        const byHand = entries.filter((e) => e.meal === meal && !(e.planItem && planKeys.has(e.planItem)))
         return (
-          <section key={m.name} aria-label={`Plan ${m.name}`}>
-            <h4 className="tick">
-              <TickBox label={`Ate all of ${m.name}`} state={state(mealRows)} disabled={disabled} onChange={(on) => void set(mealRows, on)} />
-              {m.name}
-            </h4>
-            <ul>
-              {mealRows.map((r) => {
-                const i = r.item
-                const logged = ticked.get(r.key)
-                return (
-                  <li key={r.key}>
-                    <TickBox label={`Ate ${i.name}`} state={logged ? 'all' : 'none'} disabled={disabled} onChange={(on) => void set([r], on)} />{' '}
-                    <strong>{i.name}</strong> {logged?.grams ?? i.grams} g {i.weighed}
-                    {i.hint && !logged && <span className="muted">, {i.hint}</span>}
-                    {logged && editing?.key !== r.key && (
-                      <button className="link" aria-label={`Change amount of ${i.name}`} onClick={() => setEditing({ key: r.key, grams: String(logged.grams ?? '') })}>
-                        Change amount
-                      </button>
-                    )}
-                    {editing?.key === r.key && (
-                      <span className="set-row">
-                        <input
-                          aria-label={`${i.name} amount eaten (g)`}
-                          inputMode="decimal"
-                          value={editing.grams}
-                          onChange={(e) => setEditing({ key: r.key, grams: e.target.value })}
-                        />
-                        <button className="primary" disabled={disabled} onClick={() => void saveAmount()}>Save</button>
-                        {editing.problem && <span className="error" role="alert">{editing.problem}</span>}
-                      </span>
-                    )}
-                    {vegWhy && i.reason.startsWith(vegWhy) && <small className="muted reason">{i.reason}</small>}
-                  </li>
-                )
-              })}
-            </ul>
-          </section>
+          <MealSection
+            key={meal}
+            meal={meal}
+            entries={entries.filter((e) => e.meal === meal)}
+            tick={mealRows.length > 0 && <TickBox label={`Ate all of ${mealRows[0].meal}`} state={state(mealRows)} disabled={busy} onChange={(on) => void set(mealRows, on)} />}
+            onAdd={() => onAdd(meal)}
+          >
+            {mealRows.map(plannedRow)}
+            {byHand.map((e) => (
+              <EntryRow key={e.id} entry={e} pending={pending.has(e.id)} onRemove={() => onRemove(e.id)} />
+            ))}
+          </MealSection>
         )
       })}
-      {plan.notes
-        .filter((n) => (vegWhy && n.startsWith(vegWhy)) || n.startsWith('Cereals are'))
-        .map((n) => (
-          <p key={n} className="muted">
-            {n}
-          </p>
-        ))}
-    </details>
+    </>
   )
 }

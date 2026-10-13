@@ -27,13 +27,14 @@ async function setup(opts: { today?: string; store?: LogStore; entries?: LogEntr
   await mealPlans.save(plan, picks)
   const store = opts.store ?? memoryLogStore(opts.entries)
   render(<FoodLog store={store} loadFoods={() => Promise.resolve(localFinder(createSearchIndex([])))} today={opts.today ?? WEDNESDAY} diet={diet} mealPlans={mealPlans} />)
-  const box = await screen.findByRole('group', { name: 'Your meal plan' })
-  // Ticks are ready once the day has loaded.
-  await waitFor(() => expect((within(box).getByRole('checkbox', { name: 'Ate the whole plan' }) as HTMLInputElement).disabled).toBe(false))
+  await screen.findByRole('region', { name: 'Your meal plan' })
+  const box = screen.getByRole('main')
   return { plan, store, box }
 }
 const checkbox = (box: HTMLElement, name: string) => within(box).getByRole('checkbox', { name }) as HTMLInputElement
 const meal = (name: string) => screen.getByRole('region', { name })
+/** The Food tab meal a plan meal sits in (T-063). */
+const planMeal = (box: HTMLElement, name: string) => within(box).getByRole('region', { name: name === 'Snack' ? 'Snacks' : name })
 const logged = async (store: LogStore, date = WEDNESDAY) => (await store.listDay(date)).map((e) => e.foodName)
 
 describe('tick off the meal plan (T-060)', () => {
@@ -50,12 +51,12 @@ describe('tick off the meal plan (T-060)', () => {
     const { plan, store, box } = await setup()
     const snack = plan.meals.find((m) => m.name === 'Snack')!
     const item = snack.items[0]
-    fireEvent.click(within(within(box).getByRole('region', { name: 'Plan Snack' })).getAllByRole('checkbox', { name: `Ate ${item.name}` })[0])
+    fireEvent.click(within(planMeal(box, 'Snack')).getAllByRole('checkbox', { name: `Ate ${item.name}` })[0])
     await waitFor(async () => expect(await logged(store)).toEqual([item.name]))
     const [e] = await store.listDay(WEDNESDAY)
     expect(e).toMatchObject({ meal: 'snacks', grams: Math.round(item.grams), kcal: Math.round(item.macros.kcal) })
     expect(within(meal('Snacks')).getByText(item.name)).toBeTruthy()
-    await waitFor(() => expect(within(within(box).getByRole('region', { name: 'Plan Snack' })).getAllByRole('checkbox', { name: `Ate ${item.name}` })[0]).toHaveProperty('checked', true))
+    await waitFor(() => expect(within(planMeal(box, 'Snack')).getAllByRole('checkbox', { name: `Ate ${item.name}` })[0]).toHaveProperty('checked', true))
   })
 
   it('3. unticking removes only the entry the tick made, never one added by hand', async () => {
@@ -63,7 +64,7 @@ describe('tick off the meal plan (T-060)', () => {
     const item = plan.meals[0].items[0]
     // The same food, added by hand.
     await store.add({ loggedOn: WEDNESDAY, meal: 'breakfast', foodId: item.foodId, foodName: item.name, grams: 50, kcal: 50, proteinG: 1, carbG: 1, fatG: 1 })
-    const tick = () => within(within(box).getByRole('region', { name: `Plan ${plan.meals[0].name}` })).getAllByRole('checkbox', { name: `Ate ${item.name}` })[0]
+    const tick = () => within(planMeal(box, plan.meals[0].name)).getAllByRole('checkbox', { name: `Ate ${item.name}` })[0]
     fireEvent.click(tick())
     await waitFor(async () => expect((await store.listDay(WEDNESDAY)).length).toBe(2))
     await waitFor(() => expect((tick() as HTMLInputElement).checked).toBe(true))
@@ -74,7 +75,7 @@ describe('tick off the meal plan (T-060)', () => {
   it('4. ticking a meal logs its items; it shows part-ticked when some are', async () => {
     const { plan, store, box } = await setup()
     const lunch = plan.meals.find((m) => m.name === 'Lunch')!
-    const region = within(box).getByRole('region', { name: 'Plan Lunch' })
+    const region = planMeal(box, 'Lunch')
     fireEvent.click(within(region).getAllByRole('checkbox', { name: `Ate ${lunch.items[0].name}` })[0])
     await waitFor(() => expect(checkbox(box, 'Ate all of Lunch').indeterminate).toBe(true))
     fireEvent.click(checkbox(box, 'Ate all of Lunch'))
@@ -99,7 +100,7 @@ describe('tick off the meal plan (T-060)', () => {
   it('6. changing the amount of a ticked item keeps it ticked with the new calories', async () => {
     const { plan, store, box } = await setup()
     const item = plan.meals[0].items[0]
-    const region = within(box).getByRole('region', { name: `Plan ${plan.meals[0].name}` })
+    const region = planMeal(box, plan.meals[0].name)
     fireEvent.click(within(region).getAllByRole('checkbox', { name: `Ate ${item.name}` })[0])
     fireEvent.click(await within(region).findByRole('button', { name: `Change amount of ${item.name}` }))
     const half = Math.round(item.grams / 2)
@@ -132,5 +133,76 @@ describe('tick off the meal plan (T-060)', () => {
     // Another day starts unticked: nothing is logged ahead.
     const other = await setup({ entries, today: '2026-10-15' })
     expect(checkbox(other.box, 'Ate all of Breakfast').checked).toBe(false)
+  })
+})
+
+describe('meal plan inside the meals (T-063)', () => {
+  const dayKcal = () => document.querySelector('[aria-label="Day total"] dd')!.textContent
+
+  it('1. planned items show faded under their meal with a tick box, and there is no separate plan box', async () => {
+    const { plan, box } = await setup()
+    for (const m of plan.meals) {
+      const region = planMeal(box, m.name)
+      for (const i of m.items) {
+        const row = within(region).getAllByRole('checkbox', { name: `Ate ${i.name}` })[0].closest('li')!
+        expect(row.className).toBe('planned')
+      }
+    }
+    // The plan line has only the whole-plan tick; items live in the meals.
+    expect(within(screen.getByRole('region', { name: 'Your meal plan' })).getAllByRole('checkbox')).toHaveLength(1)
+    expect(screen.queryByRole('group', { name: 'Your meal plan' })).toBeNull()
+  })
+
+  it('2. a ticked item shows once, as an entry, and only ticked food counts in the totals', async () => {
+    const { plan, box } = await setup()
+    expect(dayKcal()).toBe('0')
+    const item = plan.meals[0].items[0]
+    const region = planMeal(box, plan.meals[0].name)
+    fireEvent.click(within(region).getAllByRole('checkbox', { name: `Ate ${item.name}` })[0])
+    await waitFor(() => expect(dayKcal()).toBe(String(Math.round(item.macros.kcal))))
+    const row = within(region).getAllByRole('checkbox', { name: `Ate ${item.name}` })[0].closest('li')!
+    expect(row.className).toBe('planned ticked')
+    expect(row.textContent).toMatch(/kcal · P /)
+    expect(within(region).getAllByText(item.name)).toHaveLength(plan.meals[0].items.filter((i) => i.name === item.name).length)
+  })
+
+  it('3. unticking shows the item faded again', async () => {
+    const { plan, box } = await setup()
+    const item = plan.meals[0].items[0]
+    const region = planMeal(box, plan.meals[0].name)
+    const tick = () => within(region).getAllByRole('checkbox', { name: `Ate ${item.name}` })[0] as HTMLInputElement
+    fireEvent.click(tick())
+    await waitFor(() => expect(tick().checked).toBe(true))
+    fireEvent.click(tick())
+    await waitFor(() => expect(tick().closest('li')!.className).toBe('planned'))
+    expect(dayKcal()).toBe('0')
+  })
+
+  it('4. each meal header has its own tick box', async () => {
+    const { plan, box } = await setup()
+    for (const m of plan.meals) {
+      const header = within(planMeal(box, m.name)).getByRole('heading')
+      expect(within(header).getByRole('checkbox', { name: `Ate all of ${m.name}` })).toBeTruthy()
+    }
+  })
+
+  it('5. one line above the meals gives the plan size, how much is eaten, and the whole-plan tick', async () => {
+    const { plan } = await setup()
+    const line = screen.getByRole('region', { name: 'Your meal plan' })
+    const items = plan.meals.flatMap((m) => m.items).length
+    expect(line.textContent).toMatch(new RegExp(`Your meal plan about ${plan.totals.kcal.toLocaleString('en-IN')} kcal, \\d+ g protein, 0 of ${items} eaten`))
+    expect(within(line).getByRole('checkbox', { name: 'Ate the whole plan' })).toBeTruthy()
+  })
+
+  it('6. food added by hand shows after the planned items, with ✕', async () => {
+    const { plan, store, box } = await setup({
+      entries: [{ id: 'h1', loggedOn: WEDNESDAY, meal: 'breakfast', foodId: 'x', foodName: 'Masala chai', grams: 150, kcal: 90, proteinG: 3, carbG: 12, fatG: 3 }],
+    })
+    const region = planMeal(box, 'Breakfast')
+    const rows = within(region).getAllByRole('listitem')
+    expect(rows).toHaveLength(plan.meals[0].items.length + 1)
+    expect(rows[rows.length - 1].textContent).toMatch(/Masala chai/)
+    fireEvent.click(within(region).getByRole('button', { name: 'Remove Masala chai' }))
+    await waitFor(async () => expect(await logged(store)).toEqual([]))
   })
 })

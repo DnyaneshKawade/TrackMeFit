@@ -4,13 +4,14 @@ import { memoryCustomFoodStore, type CustomFood, type CustomFoodStore, type NewC
 import { AddFood } from './AddFood'
 import { TargetsForm } from '../targets/TargetsForm'
 import { remaining, type DietTarget, type TargetStore, type TargetValues } from '../targets/types'
-import { amountLabel, localDate, MEAL_NAMES, MEALS, shiftDate, totals, type LogEntry, type LogStore, type Meal, type NewLogEntry } from './types'
+import { localDate, MEALS, shiftDate, totals, type LogEntry, type LogStore, type Meal, type NewLogEntry } from './types'
 import type { DietPref } from '../profile/types'
 import type { MealPlanStore, SavedMealPlan } from '../profile/mealPlanStore'
 import { SyncNote } from '../sync/SyncNote'
 import { useSync } from '../sync/useSync'
 import { excludedTags, hasNonvegOff } from '../profile/dietRules'
 import { dayExcluded, nonvegWeekday, vegDayReason, type DayChoice } from '../profile/nonvegDays'
+import { EntryRow, MealSection } from './MealSection'
 import './log.css'
 
 const TodayPlan = lazy(() => import('./TodayPlan'))
@@ -230,6 +231,16 @@ export function FoodLog({
   }
 
   const day = totals(entries ?? [])
+  const plainMeals = MEALS.map((meal) => {
+    const items = (entries ?? []).filter((e) => e.meal === meal)
+    return (
+      <MealSection key={meal} meal={meal} entries={items} onAdd={() => openAdd(meal)}>
+        {items.map((e) => (
+          <EntryRow key={e.id} entry={e} pending={pending.has(e.id)} onRemove={() => void remove(e.id)} />
+        ))}
+      </MealSection>
+    )
+  })
   return (
     <main className="log">
       <nav className="day-nav">
@@ -266,43 +277,28 @@ export function FoodLog({
           )}
         </p>
       )}
-      {saved && (
-        <Suspense fallback={null}>
-          <TodayPlan saved={saved} excluded={excluded} vegWhy={vegWhy} date={date} entries={entries} onTick={tick} />
-        </Suspense>
-      )}
-
       {error && <p className="error" role="alert">{error}</p>}
       <SyncNote sync={sync} noun={['entry', 'entries']} />
       {entries === null && <p className="muted">Loading…</p>}
 
       {entries &&
-        MEALS.map((meal) => {
-          const items = entries.filter((e) => e.meal === meal)
-          return (
-            <section key={meal} className="meal" aria-label={MEAL_NAMES[meal]}>
-              <header>
-                <h3>{MEAL_NAMES[meal]}</h3>
-                <span className="muted">{totals(items).kcal} kcal</span>
-              </header>
-              <ul>
-                {items.map((e) => (
-                  <li key={e.id}>
-                    <div>
-                      <span>{e.foodName}</span>
-                      <span className="muted">
-                        {amountLabel(e)} · {e.kcal} kcal · P {e.proteinG} · C {e.carbG} · F {e.fatG}
-                      </span>
-                      {pending.has(e.id) && <span className="muted">Waiting for internet</span>}
-                    </div>
-                    <button className="link" aria-label={`Remove ${e.foodName}`} onClick={() => void remove(e.id)}>✕</button>
-                  </li>
-                ))}
-              </ul>
-              <button className="add" onClick={() => openAdd(meal)}>+ Add food</button>
-            </section>
-          )
-        })}
+        (saved ? (
+          <Suspense fallback={plainMeals}>
+            <TodayPlan
+              saved={saved}
+              excluded={excluded}
+              vegWhy={vegWhy}
+              date={date}
+              entries={entries}
+              pending={pending}
+              onTick={tick}
+              onRemove={(id) => void remove(id)}
+              onAdd={openAdd}
+            />
+          </Suspense>
+        ) : (
+          plainMeals
+        ))}
     </main>
   )
 }
