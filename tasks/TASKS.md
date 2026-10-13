@@ -10,6 +10,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Owner | Tests | Notes |
 |---|---|---|---|---|
+| T-057 | Diet rules ([spec](../specs/T-057-diet-rules.md)): "I eat everything" label, non-veg-free weekdays and seasons, typical day and its food search filtered by diet, Jain and onion-garlic rules, grams shown on the typical day | Claude | `src/profile/dietRules.test.ts`, `src/profile/Onboarding.test.tsx` | Spec agreed with DK 13 Oct |
 | T-016 | Indian food database: 3,336 dishes (2,559 computed), 3,547 packaged products, 1,461 raw foods. Goal 10,000 dishes + products: ~3,100 short | Claude | `src/food/recipe.test.ts`, `src/food/indian/resolve.test.ts` | See [docs/indian-food-database.md](../docs/indian-food-database.md) |
 
 ## Blocked
@@ -30,6 +31,9 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 |---|---|---|
 | T-015 | USDA bulk importer (Foundation + SR Legacy) into our foods table | Mapper tests (started in T-007), import count check |
 | T-018c | Food logging extras: barcode scan (free for everyone, Open Food Facts kept separate under the ODbL), batch-cooked weighing | Component tests for each |
+| T-058a | Meal plan engine ([spec](../specs/T-058-meal-plan.md)), pure function: starts from the typical day, raw grams, per-meal and per-day caps, fills the protein gap from picked foods, 0.4 g/kg per meal, ICMR "My Plate" basics (vegetables, fruit, oil, sugar), cereal plus pulse pairing for vegetarians, feasibility check with reasons | `src/engine/mealPlan.test.ts` |
+| T-058b | Meal plan screens: "Want us to suggest a day of meals?", protein, carb and fat picks in plain words, plan with raw or cooked weight per item, swap, "Use this plan"; `meal_plans` table with RLS; no plan offered when the health check says see a doctor | `src/profile/MealPlan.test.tsx`; RLS tests |
+| T-058c | Non-veg-free days and seasons used by the plan and the log (veg swap suggested on those days); season dates per year | Engine tests; date tests |
 | T-038 | Serve food search from the database instead of a 535 KB (gzip) download; rank Indian matches first and search by regional names | Search tests against the server, including ranking |
 | T-041 | Use onboarding answers: filter food search by diet type, food rules and allergies; fasting days as flexible days; event date for goals; starter workouts by equipment | Search filter tests; plan tests |
 | T-022b | Progress extras: progress photos (private storage); strength trends moved to T-044 | Photo upload privacy tests |

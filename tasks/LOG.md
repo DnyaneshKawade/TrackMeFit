@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Specs for diet rules and the meal plan (T-057, T-058)
+
+- DK asked for non-veg-free weekdays and seasons, an "I eat everything" option, a typical day that only shows foods the diet allows, and an opt-in suggested day of meals: start from the typical day, add the protein foods the person picks, all in grams (raw by default, cooked at times), with per-food limits and a check that the picks can reach the target.
+- Wrote [specs/T-057-diet-rules.md](../specs/T-057-diet-rules.md) (agreed) and [specs/T-058-meal-plan.md](../specs/T-058-meal-plan.md) (draft for DK).
+- Checked the plan against ICMR-NIN "My Plate for the Day" (raw grams per food group, sugar 25 to 30 g), Morton et al. 2018 (1.6 g/kg protein), Schoenfeld and Aragon 2018 (0.4 g/kg per meal over 4 meals) and Reed et al. 2021 (soy does not change male hormones). Changes from that check: protein per meal in g/kg instead of a percentage, vegetables, fruit, oil and sugar limits added, cereal plus pulse pairing for vegetarians, no automatic plan when the health check says see a doctor, and soya limits explained as comfort and variety, not hormones.
+- Added T-057, T-058a, T-058b, T-058c.
+- Tests: none yet (specs only).
+
 ## 2026-10-14: Engineering standards (T-051)
 
 - DK asked for SDLC principles, specification-driven development, caching, data structures, architecture and other best practices, and for them to be followed from now on. Checked the project against them and wrote [docs/engineering.md](../docs/engineering.md), which `CLAUDE.md` now requires for every change.
