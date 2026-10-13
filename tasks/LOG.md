@@ -2,6 +2,11 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Fix white screen when opening some foods (T-038 follow-up)
+
+- DK: opening some foods from Add food search (packaged products named by barcode, and raw foods) showed a white screen. Cause: the CSV export wrote an empty portions list as `{}` instead of `[]`, so those foods arrived in the database with an object where the app expects a list, and the amount screen crashed.
+- Fixed the export (portions always JSON), re-exported both CSVs, made the app treat a non-list as no portions, and added migration `20261017000000_food_portions_fix.sql` to correct rows already imported.
+- Tests: 2 more in `src/food/exportFoods.test.ts`.
 ## 2026-10-13: More muscle-gain paces (T-059a, T-059b)
 
 - "Build muscle and gain weight" now offers Lean, Steady and Faster (0.25, 0.5 and 0.75 % of body weight a week; advanced lifters 0.125, 0.25 and 0.5 %), plus Catch up for underweight adults (up to 1 %, never more than 0.5 kg a week). The recommended pace is picked: Faster when underweight, Steady for healthy-weight beginners, Lean otherwise. A 50 kg beginner aiming for 60 kg now sees about 27 weeks at Faster or 20 at Catch up, instead of 40.
