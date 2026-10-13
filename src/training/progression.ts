@@ -42,7 +42,7 @@ export function blockWeek(blockStartedOn: string, today: string): number {
 export const isDeloadWeek = (week: number, hardWeeks: number) => week < 1 || week > hardWeeks
 
 /** "Week 2 of 4" or "Deload week". */
-export const weekLabel = (week: number, hardWeeks: number) => (isDeloadWeek(week, hardWeeks) ? 'Deload week' : `Week ${week} of ${hardWeeks}`)
+export const weekLabel = (week: number, hardWeeks: number) => (isDeloadWeek(week, hardWeeks) ? 'Light week' : `Week ${week} of ${hardWeeks}`)
 
 /** Best estimated one-rep max in a session's sets. */
 const bestE1rm = (sets: SetLog[]) => Math.max(0, ...sets.map((s) => estimatedOneRepMax(s.weightKg, s.reps, s.rir ?? 0)))
@@ -156,10 +156,10 @@ export function reviewWeek(input: {
   if (deload) {
     const why =
       input.week > input.hardWeeks
-        ? `You've finished ${input.hardWeeks} hard weeks, so this is a deload week.`
+        ? `You've finished ${input.hardWeeks} hard weeks, so this is a light week.`
         : input.runDown
-          ? 'You feel run down, so take a deload week now.'
-          : 'Performance dropped for half your muscles at once, so take a deload week now.'
+          ? 'You feel tired, so take a light week now.'
+          : 'Half your muscles got weaker at once, so take a light week now.'
     return { week: input.week, deload, why, muscles, proposed: input.plan }
   }
   return { week: input.week, deload, why: `Week ${input.week} of ${input.hardWeeks}.`, muscles, proposed }
@@ -167,4 +167,4 @@ export function reviewWeek(input: {
 
 /** What to do on a planned exercise in a deload week. */
 export const deloadAdvice = (sets: number) =>
-  `Deload: ${deloadSets(sets)} sets at your week-1 weights, stopping 4 or more reps short of failure.`
+  `Light week: ${deloadSets(sets)} sets at your week-1 weights. Stop while you could still do 4 more reps.`

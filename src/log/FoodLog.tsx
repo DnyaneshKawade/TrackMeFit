@@ -293,7 +293,7 @@ export function FoodLog({
                       <span className="muted">
                         {amountLabel(e)} · {e.kcal} kcal · P {e.proteinG} · C {e.carbG} · F {e.fatG}
                       </span>
-                      {pending.has(e.id) && <span className="muted">Not synced yet</span>}
+                      {pending.has(e.id) && <span className="muted">Waiting for internet</span>}
                     </div>
                     <button className="link" aria-label={`Remove ${e.foodName}`} onClick={() => void remove(e.id)}>✕</button>
                   </li>

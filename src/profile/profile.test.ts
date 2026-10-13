@@ -240,7 +240,7 @@ describe('gain paces (T-059)', () => {
 
   it('6. health conditions keep it to Lean, with a care-team note for an eating disorder', () => {
     for (const m of ['eatingDisorder', 'diabetes', 'kidney']) expect(labels(gain('beginner', body(50), { [m]: true }))).toEqual(['Lean'])
-    expect(gain('beginner', body(50), { eatingDisorder: true })[0].note).toMatch(/care team/)
+    expect(gain('beginner', body(50), { eatingDisorder: true })[0].note).toMatch(/doctors are helping you/)
     expect(gain('beginner', body(50), { diabetes: true })[0].note).not.toMatch(/care team/)
   })
 
@@ -286,7 +286,7 @@ describe('Catch up to Steady (T-059c)', () => {
     expect(s.healthyMinKg).toBe(54)
     expect(s.kcalLess).toBe(300)
     expect(s.target).toEqual({ kcal: 2300, proteinG: 120, fatG: 70, carbG: 298 })
-    expect(s.message).toMatch(/trend weight is 54.5 kg.*from 54 kg.*Catch up has done its job.*about 300 kcal a day less: 2,600 to 2,300 kcal/)
+    expect(s.message).toMatch(/average weight is 54.5 kg.*from 54 kg.*don’t need Catch up now.*about 300 kcal a day less: 2,600 to 2,300 kcal/)
   })
 
   it('2. says nothing while still underweight', () => {

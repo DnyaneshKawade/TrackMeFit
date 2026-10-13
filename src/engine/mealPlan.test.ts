@@ -45,7 +45,7 @@ describe('meal plan (T-058)', () => {
     const lots = buildMealPlan({ ...asha, base: [...asha.base, { foodId: 'tmf:ing:rice', grams: 500 }, { foodId: 'tmf:ing:soya-chunks', grams: 200 }] })
     expect(dayGrams(lots, 'tmf:ing:rice')).toBeLessThanOrEqual(150)
     expect(dayGrams(lots, 'tmf:ing:soya-chunks')).toBeLessThanOrEqual(50)
-    expect(lots.notes).toContain('Soya chunks is kept to 50 g dry a day, a sensible amount for one food.')
+    expect(lots.notes).toContain('Soya chunks is kept to 50 g dry a day, a fair amount for one food.')
   })
 
   it('6. says how much protein the picks can reach when it is not enough, and suggests more', () => {

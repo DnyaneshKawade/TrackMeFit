@@ -146,7 +146,7 @@ export function describeDiet(d: CurrentDiet, weightKg: number | null): string {
   const base = `That’s about ${d.kcal.toLocaleString('en-IN')} kcal and ${d.proteinG} g protein a day.`
   if (perKg === null) return base
   const r = Math.round(perKg * 10) / 10
-  if (perKg < 0.8) return `${base} Protein is low at ${r} g per kg of body weight; most people do better with 1.2 to 2.`
+  if (perKg < 0.8) return `${base} Protein is low at ${r} g per kg of body weight. Most people do better with 1.2 to 2 g.`
   if (perKg < 1.2) return `${base} Protein is ${r} g per kg; more would help you keep or build muscle.`
   return `${base} Protein is ${r} g per kg, a good amount.`
 }

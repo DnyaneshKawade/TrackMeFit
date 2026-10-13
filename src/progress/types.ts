@@ -90,8 +90,8 @@ export function weightSummary(weighIns: WeighIn[]): WeightSummary | null {
   const rate = (now - before.kg) / before.kg
   const message =
     change === 0
-      ? `Your trend weight is ${round1(now)} kg, steady over the last week.`
-      : `Your trend weight is ${round1(now)} kg, ${change < 0 ? 'down' : 'up'} ${Math.abs(change)} kg over the last week.`
+      ? `Your average weight is ${round1(now)} kg, steady over the last week.`
+      : `Your average weight is ${round1(now)} kg, ${change < 0 ? 'down' : 'up'} ${Math.abs(change)} kg over the last week.`
   return { latestKg: last.kg, latestDate: last.date, trendKg: round1(now), weekChangeKg: change, weekRate: rate, message }
 }
 
@@ -111,7 +111,7 @@ export function goalNote(goal: GoalChoice | null, weekRate: number | null): stri
     return 'Your weight isn’t going up yet. Add a little food if this holds for two weeks.'
   }
   if (Math.abs(weekRate) <= 0.0025) return 'Your weight is holding steady, which is what your goal needs.'
-  return `Your weight moved ${pct(weekRate)} this week. Small swings are normal; watch the trend over a few weeks.`
+  return `Your weight moved ${pct(weekRate)} this week. Small changes are normal. Look at the average over a few weeks.`
 }
 
 export interface ChartPoint {

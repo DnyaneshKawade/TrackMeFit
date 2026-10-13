@@ -18,7 +18,7 @@ describe('checking targets', () => {
     // 140*4 + 250*4 + 70*9 = 2190
     expect(macroMismatch({ kcal: 2200, proteinG: 140, carbG: 250, fatG: 70 })).toBeNull()
     expect(macroMismatch({ kcal: 1800, proteinG: 140, carbG: 250, fatG: 70 })).toBe(
-      'Your macros add up to 2190 kcal, 390 more than your calorie target.',
+      'Your protein, carbs and fat add up to 2190 kcal, 390 more than your calorie target.',
     )
   })
   it('fills carbs from the calories left, never below zero', () => {

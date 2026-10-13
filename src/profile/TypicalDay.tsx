@@ -98,7 +98,7 @@ export function TypicalDay({
 
   return (
     <>
-      <p className="muted">Roughly what you eat on a usual day, all meals together. A guess is fine.</p>
+      <p className="muted">About what you eat on a usual day, all meals together. A guess is fine.</p>
       <ul className="counters">
         {items.map((item) => (
           <li key={item.id}>

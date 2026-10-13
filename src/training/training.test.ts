@@ -87,7 +87,7 @@ describe('sets and progression', () => {
     expect(checkSet(60, 10, 2)).toBeNull()
     expect(checkSet(-1, 10, null)).toMatch(/Weight/)
     expect(checkSet(60, 8.5, null)).toMatch(/whole number/)
-    expect(checkSet(60, 8, 11)).toMatch(/reserve/)
+    expect(checkSet(60, 8, 11)).toMatch(/Reps left/)
   })
   it('describes sets grouped by weight', () => {
     expect(describeSets([set(2, 60, 9), set(0, 60, 10), set(1, 60, 10), set(3, 50, 12)])).toBe('60 kg × 10, 10, 9 · 50 kg × 12')

@@ -46,22 +46,22 @@ export function ReviewView({ store, plan, today, onDone }: { store: WorkoutStore
       </header>
       {error && <p className="error" role="alert">{error}</p>}
       {week < 1 && (
-        <p>This is your deload week. The new block starts on {started}; review again after a week of training.</p>
+        <p>This is your light week (in gyms it is called a deload). The new block starts on {started}. Check your week again after a week of training.</p>
       )}
       {week >= 1 && !review && !error && <p className="muted">Loading…</p>}
       {week >= 1 && review && (
         <>
           <p>{review.why}</p>
           <label className="pain">
-            <input type="checkbox" checked={runDown} onChange={(e) => setRunDown(e.target.checked)} /> I feel run down overall (poor sleep, tired, joints achy)
+            <input type="checkbox" checked={runDown} onChange={(e) => setRunDown(e.target.checked)} /> I feel tired overall (poor sleep, low energy, joint pain)
           </label>
           {review.deload ? (
             <>
               <p>
-                For one week, do half your sets at your week-1 weights and stop 4 or more reps short of failure. Then start a new block.
+                For one week, do half your sets at your week-1 weights. Stop while you could still do 4 more reps. Then start a new block.
               </p>
               <button className="primary" onClick={() => act(() => store.startBlock(plan.id!, shiftDate(today, 7)))}>
-                Deload this week, new block next week
+                Light week now, new block next week
               </button>
             </>
           ) : (

@@ -103,7 +103,7 @@ export function bodySize(a: AboutYou): { heightCm: number; weightKg: number } | 
 export function checkAboutYou(a: AboutYou, today: string): Partial<Record<keyof AboutYou, string>> {
   const errors: Partial<Record<keyof AboutYou, string>> = {}
   if (!a.fullName.trim()) errors.fullName = 'Tell us what to call you.'
-  if (!a.sex) errors.sex = 'Pick one. It changes the calorie estimate.'
+  if (!a.sex) errors.sex = 'Pick one. It changes how many calories you need.'
   if (!/^\d{4}-\d{2}-\d{2}$/.test(a.birthDate)) errors.birthDate = 'Enter your date of birth.'
   else {
     const age = ageOn(a.birthDate, today)
@@ -133,7 +133,7 @@ export const HEALTH_QUESTIONS: HealthQuestion[] = [
   {
     key: 'diabetes',
     label: 'Diabetes or pre-diabetes',
-    note: 'Talk to your doctor before changing your calories or carbs, especially if you take insulin or tablets that lower blood sugar.',
+    note: 'Talk to your doctor before changing your calories or carbs. This matters most if you take insulin or sugar tablets.',
   },
   {
     key: 'heart',
@@ -148,7 +148,7 @@ export const HEALTH_QUESTIONS: HealthQuestion[] = [
   {
     key: 'pcos',
     label: 'PCOS',
-    note: 'Steady, moderate fat loss and strength training both help with PCOS. Check your plan with your doctor.',
+    note: 'Slow, steady fat loss and strength training both help with PCOS. Check your plan with your doctor.',
     onlyFor: 'female',
   },
   {
@@ -159,13 +159,13 @@ export const HEALTH_QUESTIONS: HealthQuestion[] = [
   {
     key: 'pregnant',
     label: 'Pregnant or breastfeeding',
-    note: 'Don’t diet to lose weight right now. We won’t suggest a calorie deficit; follow your doctor’s advice on food and exercise.',
+    note: 'Don’t diet to lose weight right now. We won’t ask you to eat less. Follow your doctor’s advice on food and exercise.',
     onlyFor: 'female',
   },
   {
     key: 'glp1',
     label: 'Weight-loss medicine (like Ozempic or Mounjaro)',
-    note: 'Eat enough protein and keep lifting to protect muscle while on this medicine, and tell your doctor about big diet changes.',
+    note: 'Eat enough protein and keep lifting weights to protect muscle on this medicine. Tell your doctor about big diet changes.',
   },
   {
     key: 'eatingDisorder',
