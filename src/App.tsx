@@ -8,6 +8,10 @@ import { supabaseLogStore } from './log/supabaseStore'
 import type { LogStore } from './log/types'
 import { memoryTargetStore, supabaseTargetStore } from './targets/stores'
 import type { TargetStore } from './targets/types'
+import { Workouts } from './training/Workouts'
+import { memoryWorkoutStore } from './training/memoryStore'
+import { supabaseWorkoutStore } from './training/supabaseStore'
+import type { WorkoutStore } from './training/types'
 import type { SearchIndex } from './food/search'
 
 const loadIndex = (): Promise<SearchIndex> => import('./food/catalogueData').then((m) => m.searchIndex)
@@ -16,13 +20,17 @@ export function AppShell({
   auth,
   logStoreFor = () => memoryLogStore(),
   targetStoreFor = (a) => memoryTargetStore(a.id),
+  workoutStoreFor = () => memoryWorkoutStore(),
 }: {
   auth: AuthService | null
   logStoreFor?: (account: Account) => LogStore
   targetStoreFor?: (account: Account) => TargetStore
+  workoutStoreFor?: (account: Account) => WorkoutStore
 }) {
   const [account, setAccount] = useState<Account | null | undefined>(undefined)
   const store = useMemo(() => (account ? logStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const workouts = useMemo(() => (account ? workoutStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const [tab, setTab] = useState<'food' | 'training'>('food')
   const targets = useMemo(() => (account ? targetStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -57,7 +65,15 @@ export function AppShell({
         </span>
         <button onClick={() => void auth.signOut()}>Sign out</button>
       </header>
-      <FoodLog store={store!} loadIndex={loadIndex} targets={targets} userId={account.id} />
+      <nav className="tabs" role="tablist">
+        <button role="tab" aria-selected={tab === 'food'} onClick={() => setTab('food')}>Food</button>
+        <button role="tab" aria-selected={tab === 'training'} onClick={() => setTab('training')}>Training</button>
+      </nav>
+      {tab === 'food' ? (
+        <FoodLog store={store!} loadIndex={loadIndex} targets={targets} userId={account.id} />
+      ) : (
+        <Workouts store={workouts!} />
+      )}
     </>
   )
 }
@@ -70,6 +86,7 @@ export default function App() {
       auth={auth}
       logStoreFor={(a) => supabaseLogStore(sb!, a.id)}
       targetStoreFor={(a) => supabaseTargetStore(sb!, a.id)}
+      workoutStoreFor={(a) => supabaseWorkoutStore(sb!, a.id)}
     />
   )
 }

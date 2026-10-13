@@ -1,0 +1,29 @@
+.log h2 { font-size: 20px; }
+.plans-head { margin-top: 28px; }
+.session-list { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 8px; }
+.day-button { display: grid; gap: 2px; width: 100%; text-align: left; font: inherit; color: inherit; padding: 12px; border: 1.5px solid #dfe5e2; border-radius: 12px; background: none; cursor: pointer; margin-bottom: 8px; }
+.start-plan h3 { margin: 16px 0 8px; font-size: 16px; }
+.field { display: grid; gap: 6px; font-weight: 600; margin: 12px 0; }
+.field input, .plan-day input, .set-row input { font: inherit; padding: 10px; border: 1.5px solid #cdd6d2; border-radius: 10px; min-width: 0; }
+.plan-day { border: 1.5px solid #dfe5e2; border-radius: 12px; padding: 12px; margin: 12px 0; }
+.plan-day .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 8px; }
+.plan-ex { display: grid; grid-template-columns: 1fr 56px 110px auto; gap: 8px; align-items: end; padding: 8px 0; border-top: 1px solid #eef2f0; }
+.plan-ex label { display: grid; gap: 2px; font-size: 12px; }
+.plan-ex-name { font-weight: 600; align-self: center; }
+.plan-ex .reps { display: grid; grid-template-columns: 1fr auto 1fr; gap: 4px; align-items: center; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.danger { color: #b42318 !important; display: block; margin: 16px auto 0; }
+.exercise { border-top: 1px solid #dfe5e2; padding: 12px 0; }
+.exercise header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.exercise h3 { margin: 0; font-size: 17px; }
+.exercise p { margin: 6px 0; }
+.suggest { font-size: 14px; }
+.sets { padding-left: 0; list-style: none; margin: 6px 0; }
+.sets li { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+.set-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 6px; }
+.set-row .primary { width: auto; padding: 10px 14px; }
+@media (prefers-color-scheme: dark) {
+  .day-button, .plan-day { border-color: #3a4643; }
+  .field input, .plan-day input, .set-row input { background: #161d1b; color: inherit; border-color: #3a4643; }
+  .plan-ex, .exercise { border-color: #2c3734; }
+}

@@ -1,0 +1,120 @@
+import { describe, expect, it } from 'vitest'
+import { LANDMARKS } from '../engine/training'
+import { EXERCISES, exerciseById, searchExercises } from './exercises'
+import { memoryWorkoutStore } from './memoryStore'
+import { planFromRow } from './supabaseStore'
+import { checkPlan, checkSet, describeSets, nextDayIndex, suggestNext, type Plan, type SetLog } from './types'
+
+const set = (setIndex: number, weightKg: number, reps: number): SetLog => ({ id: String(setIndex), exerciseId: 'bench-press', setIndex, weightKg, reps, rir: null })
+const bench = exerciseById.get('bench-press')!
+
+describe('exercise library', () => {
+  it('has 60+ exercises with unique ids and known muscles', () => {
+    expect(EXERCISES.length).toBeGreaterThanOrEqual(60)
+    expect(new Set(EXERCISES.map((e) => e.id)).size).toBe(EXERCISES.length)
+    for (const e of EXERCISES) {
+      expect(LANDMARKS[e.primary], e.id).toBeDefined()
+      for (const m of e.secondary) expect(LANDMARKS[m], `${e.id} ${m}`).toBeDefined()
+      expect(e.secondary).not.toContain(e.primary)
+      expect(e.increment).toBeGreaterThan(0)
+    }
+  })
+  it('trains every muscle the engine plans for', () => {
+    for (const m of Object.keys(LANDMARKS)) expect(EXERCISES.some((e) => e.primary === m), m).toBe(true)
+  })
+  it('finds exercises by name, gym slang and muscle', () => {
+    expect(searchExercises('rdl').map((e) => e.id)).toContain('romanian-deadlift')
+    expect(searchExercises('ohp')[0].id).toBe('overhead-press')
+    expect(searchExercises('bice').every((e) => e.primary === 'biceps')).toBe(true)
+    expect(searchExercises('zzz')).toEqual([])
+  })
+})
+
+describe('plans', () => {
+  const ok: Plan = { name: 'PPL', days: [{ dayIndex: 0, name: 'Push', exercises: [{ exerciseId: 'bench-press', sets: 3, repMin: 6, repMax: 10 }] }] }
+  it('accepts a complete plan', () => {
+    expect(checkPlan(ok)).toEqual([])
+  })
+  it('explains what is missing or out of range', () => {
+    expect(
+      checkPlan({
+        name: ' ',
+        days: [
+          { dayIndex: 0, name: '', exercises: [] },
+          { dayIndex: 1, name: 'Legs', exercises: [{ exerciseId: 'back-squat', sets: 12, repMin: 10, repMax: 6 }] },
+        ],
+      }),
+    ).toEqual([
+      'Give the plan a name.',
+      'Name day 1.',
+      'Day 1: add at least one exercise.',
+      'Legs: sets must be 1 to 10.',
+      'Legs: the lowest reps can\'t be above the highest.',
+    ])
+    expect(checkPlan({ name: 'x', days: [] })).toEqual(['Add at least one day.'])
+  })
+  it('reuses the lowest free day position', () => {
+    expect(nextDayIndex([])).toBe(0)
+    expect(nextDayIndex([{ dayIndex: 0, name: 'a', exercises: [] }, { dayIndex: 2, name: 'b', exercises: [] }])).toBe(1)
+  })
+  it('reads plans from database rows in order', () => {
+    const p = planFromRow({
+      id: 'p',
+      name: 'Upper Lower',
+      plan_days: [
+        { id: 'd2', day_index: 1, name: 'Lower', plan_exercises: [] },
+        {
+          id: 'd1',
+          day_index: 0,
+          name: 'Upper',
+          plan_exercises: [
+            { position: 1, exercise_id: 'db-row', sets: 3, rep_min: 8, rep_max: 12 },
+            { position: 0, exercise_id: 'bench-press', sets: 3, rep_min: 6, rep_max: 10 },
+          ],
+        },
+      ],
+    })
+    expect(p.days.map((d) => d.name)).toEqual(['Upper', 'Lower'])
+    expect(p.days[0].exercises.map((e) => e.exerciseId)).toEqual(['bench-press', 'db-row'])
+  })
+})
+
+describe('sets and progression', () => {
+  it('checks set values', () => {
+    expect(checkSet(60, 10, null)).toBeNull()
+    expect(checkSet(60, 10, 2)).toBeNull()
+    expect(checkSet(-1, 10, null)).toMatch(/Weight/)
+    expect(checkSet(60, 8.5, null)).toMatch(/whole number/)
+    expect(checkSet(60, 8, 11)).toMatch(/reserve/)
+  })
+  it('describes sets grouped by weight', () => {
+    expect(describeSets([set(2, 60, 9), set(0, 60, 10), set(1, 60, 10), set(3, 50, 12)])).toBe('60 kg × 10, 10, 9 · 50 kg × 12')
+  })
+  it('adds weight after hitting the top of the range on every set, with the reason', () => {
+    const s = suggestNext([{ performedOn: '2026-10-10', sets: [set(0, 60, 10), set(1, 60, 10), set(2, 60, 10)] }], bench, [6, 10])
+    expect(s).toEqual({ weight: 62.5, targetReps: 6, why: 'Hit 10 reps on every set, so the weight goes up.' })
+  })
+  it('asks for one more rep otherwise, and drops the weight after two misses', () => {
+    expect(suggestNext([{ performedOn: 'a', sets: [set(0, 60, 8), set(1, 60, 7)] }], bench, [6, 10])).toMatchObject({ weight: 60, targetReps: 9 })
+    const twoMisses = [
+      { performedOn: 'b', sets: [set(0, 60, 5)] },
+      { performedOn: 'a', sets: [set(0, 60, 4)] },
+    ]
+    expect(suggestNext(twoMisses, bench, [6, 10])).toMatchObject({ weight: 55, targetReps: 6 })
+    expect(suggestNext([], bench, [6, 10])).toBeNull()
+  })
+})
+
+describe('memory store', () => {
+  it('returns earlier sessions with the exercise, newest first', async () => {
+    const store = memoryWorkoutStore()
+    for (const [date, w] of [['2026-10-01', 50], ['2026-10-05', 55], ['2026-10-12', 60]] as const) {
+      const s = await store.startSession(date, null)
+      await store.addSet(s.id, { exerciseId: 'bench-press', setIndex: 0, weightKg: w, reps: 8, rir: null })
+    }
+    const other = await store.startSession('2026-10-08', null)
+    await store.addSet(other.id, { exerciseId: 'back-squat', setIndex: 0, weightKg: 80, reps: 5, rir: null })
+    const h = await store.history('bench-press', '2026-10-12')
+    expect(h.map((x) => x.performedOn)).toEqual(['2026-10-05', '2026-10-01'])
+  })
+})
