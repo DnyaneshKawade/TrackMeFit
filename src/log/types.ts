@@ -31,6 +31,8 @@ export interface LogStore {
   remove(id: string): Promise<void>
   /** Recent entries across days, newest first, to offer again. */
   recent(): Promise<LogEntry[]>
+  /** Entries from one date to another, both included (T-062). */
+  listRange?(from: string, to: string): Promise<LogEntry[]>
   /** Present when entries can wait on the phone to sync (T-027). */
   sync?: LogSync
 }

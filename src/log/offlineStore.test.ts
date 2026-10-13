@@ -21,6 +21,7 @@ function flakyServer() {
   const server: LogStore = {
     listDay: (d) => (state.online ? inner.listDay(d) : offline()),
     recent: () => (state.online ? inner.recent() : offline()),
+    listRange: (from, to) => (state.online ? inner.listRange!(from, to) : offline()),
     remove: (id) => (state.online ? inner.remove(id) : offline()),
     async add(e, id) {
       if (!state.online) return offline()
@@ -201,5 +202,16 @@ describe('offline food logging (T-027)', () => {
     state.online = true
     await store.sync.run()
     expect((await inner.listDay(DAY))[0].planItem).toBe('p:Lunch:0:dal')
+  })
+
+  it('T-062. food stats use the days kept on the phone when offline', async () => {
+    const { store, state } = setup()
+    await store.add(entry('dal'))
+    expect(names(await store.listRange!(DAY, DAY))).toEqual(['dal'])
+    await store.listDay(DAY)
+    state.online = false
+    await store.add(entry('chai'))
+    expect(names(await store.listRange!(DAY, DAY))).toEqual(['dal', 'chai'])
+    await expect(store.listRange!('2020-01-01', '2020-01-02')).rejects.toThrow()
   })
 })

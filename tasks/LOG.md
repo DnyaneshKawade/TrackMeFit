@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Food stats (T-062)
+
+- DK said to go ahead with T-062 after T-061b. Spec `specs/T-062-diet-stats.md`.
+- Progress has a new "Food stats" part with "7 days" and "30 days". It shows average calories, protein, carbs and fat per logged day, each next to the target, and how many logged days were on target (calories within 10%).
+- It also shows the protein streak (days in a row with at least 90% of the protein target), a calorie chart with the target as a line, and the five foods logged most often.
+- Today is left out of averages until it is over, and days with nothing logged are left out too. Each day is compared with the target in force that day. Quick adds count for calories but not for "most logged".
+- Engine: `dietStats` in `src/engine/dietStats.ts`, pure, one pass over the entries with a `Map` per day and per food.
+- Data: `LogStore.listRange` reads 30 days in one query on the `food_logs_user_day` index; `TargetStore.history` reads the targets once. Offline, the stats use the days kept on the phone. No database change. Progress chunk 4.7 KB; main bundle 128.2 KB.
+- Tests: 6 in `src/engine/dietStats.test.ts`, 4 in `src/progress/DietStats.test.tsx`, 1 in `src/progress/Progress.test.tsx`, 1 in `src/log/offlineStore.test.ts`.
+
 ## 2026-10-13: Full food search in the plan and usual day (T-061b)
 
 - DK asked why "Change plan > Add a food" offered only a short list, and why the usual day's "Add another food" didn't open the search page. Spec `specs/T-061-change-plan.md`, criteria 7 and 8.

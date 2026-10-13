@@ -16,6 +16,9 @@ export function memoryLogStore(initial: LogEntry[] = []): LogStore {
       rows.push(row)
       return row
     },
+    async listRange(from, to) {
+      return rows.filter((r) => r.loggedOn >= from && r.loggedOn <= to)
+    },
     async recent() {
       return [...rows].reverse().slice(0, 200)
     },

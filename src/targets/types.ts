@@ -23,6 +23,8 @@ export interface TargetStore {
   forDate(date: string): Promise<DietTarget | null>
   /** `suggested` marks targets the engine proposed and the person accepted. */
   save(values: TargetValues, startsOn: string, source?: DietTarget['source']): Promise<DietTarget>
+  /** Every target the person has had, oldest first (T-062). */
+  history(): Promise<DietTarget[]>
 }
 
 export const LIMITS: Record<keyof TargetValues, [number, number]> = {
