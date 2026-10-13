@@ -135,3 +135,34 @@ describe('coaches', () => {
     expect(await t.as(coach, (db) => count(db, 'diet_targets'))).toBe(0)
   })
 })
+
+describe('muscle feedback', () => {
+  it('only the person writes feedback on their own sessions; their coach can read it', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('fb-me@x.in')
+    const coach = await t.signUp('fb-coach@x.in', { role: 'coach' })
+    const stranger = await t.signUp('fb-other@x.in')
+    const session = await t.as(me, async (db) => {
+      const { rows } = await db.query<{ id: string }>('insert into public.workout_sessions default values returning id')
+      await db.query(`insert into public.muscle_feedback (session_id, muscle, recovery, effort) values ($1, 'chest', 'fresh', 'right')`, [rows[0].id])
+      return rows[0].id
+    })
+    await expect(
+      t.as(stranger, (db) => db.query(`insert into public.muscle_feedback (session_id, muscle, recovery, effort) values ($1, 'back', 'fresh', 'right')`, [session])),
+    ).rejects.toThrow(/row-level security/)
+    await t.as(coach, (db) => db.query(`insert into public.coach_clients (coach_id, client_id) values ($1, $2)`, [coach, me]))
+    await t.as(me, (db) => db.query(`update public.coach_clients set status = 'active' where client_id = $1`, [me]))
+    const seen = await t.as(coach, (db) => db.query('select muscle from public.muscle_feedback'))
+    expect(seen.rows).toEqual([{ muscle: 'chest' }])
+    expect((await t.as(stranger, (db) => db.query('select muscle from public.muscle_feedback'))).rows).toEqual([])
+  })
+
+  it('new plans start their block today', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('blk@x.in')
+    const { rows } = await t.as(me, (db) =>
+      db.query<{ ok: boolean }>(`insert into public.workout_plans (user_id, name) values ($1, 'PPL') returning block_started_on = current_date as ok`, [me]),
+    )
+    expect(rows[0].ok).toBe(true)
+  })
+})

@@ -3,7 +3,10 @@
 // row-level security can be tested without a server.
 
 import { PGlite } from '@electric-sql/pglite'
-import initSql from '../../supabase/migrations/20261012000000_init.sql?raw'
+// Every migration, in file-name (date) order, as Supabase applies them.
+const MIGRATIONS = Object.entries(import.meta.glob('../../supabase/migrations/*.sql', { query: '?raw', import: 'default', eager: true }))
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([, sql]) => sql as string)
 
 const AUTH_STUB = `
   create role authenticated nologin;
@@ -29,7 +32,7 @@ let counter = 0
 export async function createTestDb(): Promise<TestDb> {
   const db = new PGlite()
   await db.exec(AUTH_STUB)
-  await db.exec(initSql)
+  for (const sql of MIGRATIONS) await db.exec(sql)
 
   return {
     db,

@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Weekly progression and deloads (T-024)
+
+- After a workout, "How did it feel?" asks per muscle trained: sore going in, how hard, anything hurt. Skippable.
+- Plans show "Week 2 of 4" (or "Deload week"). "Review week" shows each muscle's sets now and next week with the training engine's reason, from the last 7 days of answers and the strength trend (best estimated one-rep max per session). Nothing changes until "Apply these changes"; sets are added to the exercise with the fewest and removed from the one with the most, within 1-10 sets per exercise and 10 per muscle per session.
+- A deload is suggested after the hard weeks, when the person feels run down, or when half the muscles drop at once. In a deload week the logger shows half the sets at week-1 weights and stops suggesting increases; the new block starts the week after.
+- The logger shows each week's effort target (reps short of failure) from the engine.
+- New migration `20261013000000_progression.sql` (block start date, `muscle_feedback` with privacy rules). Tests now run every migration in order.
+- Tests: `src/training/progression.test.ts` (10), `src/training/Review.test.tsx` (3), `src/db/rls.test.ts` (+2); whole suite 182 passing.
+
 ## 2026-10-13: Workout plans and logger (T-023, T-025)
 
 - The app now has two tabs, Food and Training. Training shows today's workouts, "Start a workout" (a plan day or an empty workout) and your plans.

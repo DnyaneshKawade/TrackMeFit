@@ -2,6 +2,7 @@
 // person and their active coach; only the person logs sessions and sets.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Feedback } from './progression'
 import type { PastSession, Plan, Session, SetLog, WorkoutStore } from './types'
 
 interface SetRow { id: string; exercise_id: string; set_index: number; weight_kg: number | string; reps: number; rir: number | null }
@@ -18,12 +19,16 @@ export const setFromRow = (r: SetRow): SetLog => ({
 interface PlanRow {
   id: string
   name: string
+  hard_weeks: number
+  block_started_on: string
   plan_days: { id: string; day_index: number; name: string; plan_exercises: { position: number; exercise_id: string; sets: number; rep_min: number; rep_max: number }[] }[]
 }
 
 export const planFromRow = (r: PlanRow): Plan => ({
   id: r.id,
   name: r.name,
+  hardWeeks: r.hard_weeks,
+  blockStartedOn: r.block_started_on,
   days: [...r.plan_days]
     .sort((a, b) => a.day_index - b.day_index)
     .map((d) => ({
@@ -48,7 +53,7 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): Workou
       const rows = check(
         await sb
           .from('workout_plans')
-          .select('id, name, plan_days(id, day_index, name, plan_exercises(position, exercise_id, sets, rep_min, rep_max))')
+          .select('id, name, hard_weeks, block_started_on, plan_days(id, day_index, name, plan_exercises(position, exercise_id, sets, rep_min, rep_max))')
           .eq('user_id', userId)
           .eq('is_active', true)
           .order('created_at'),
@@ -132,6 +137,33 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): Workou
           .limit(limit),
       ) as unknown as { performed_on: string; set_logs: SetRow[] }[]
       return rows.map((r): PastSession => ({ performedOn: r.performed_on, sets: r.set_logs.map(setFromRow) }))
+    },
+  
+    async saveFeedback(sessionId, list) {
+      if (!list.length) return
+      check(
+        await sb.from('muscle_feedback').upsert(
+          list.map((f) => ({ session_id: sessionId, muscle: f.muscle, recovery: f.recovery, effort: f.effort, pain: f.pain })),
+          { onConflict: 'session_id,muscle' },
+        ),
+      )
+    },
+    async feedbackSince(date) {
+      const rows = check(
+        await sb
+          .from('muscle_feedback')
+          .select('muscle, recovery, effort, pain, created_at, workout_sessions!inner(performed_on, user_id)')
+          .eq('workout_sessions.user_id', userId)
+          .gte('workout_sessions.performed_on', date)
+          .order('created_at'),
+      ) as unknown as (Feedback & { workout_sessions: { performed_on: string } })[]
+      const latest = new Map<string, Feedback>()
+      for (const r of [...rows].sort((a, b) => a.workout_sessions.performed_on.localeCompare(b.workout_sessions.performed_on)))
+        latest.set(r.muscle, { muscle: r.muscle, recovery: r.recovery, effort: r.effort, pain: r.pain })
+      return [...latest.values()]
+    },
+    async startBlock(planId, date) {
+      check(await sb.from('workout_plans').update({ block_started_on: date }).eq('id', planId))
     },
   }
 }

@@ -1,12 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import { localDate } from '../log/types'
 import { PlanEditor } from './PlanEditor'
+import { blockWeek, weekLabel } from './progression'
+import { ReviewView } from './ReviewView'
 import { SessionView } from './SessionView'
 import type { Plan, PlanDay, Session, WorkoutStore } from './types'
 import '../log/log.css'
 import './training.css'
 
-type View = { kind: 'home' } | { kind: 'plan'; plan: Plan } | { kind: 'session'; session: Session } | { kind: 'start' }
+type View =
+  | { kind: 'home' }
+  | { kind: 'plan'; plan: Plan }
+  | { kind: 'review'; plan: Plan }
+  | { kind: 'session'; session: Session }
+  | { kind: 'start' }
 
 export function Workouts({ store, today = localDate() }: { store: WorkoutStore; today?: string }) {
   const [plans, setPlans] = useState<Plan[] | null>(null)
@@ -31,6 +38,8 @@ export function Workouts({ store, today = localDate() }: { store: WorkoutStore; 
   }, [load])
 
   const dayOf = (id: string | null): PlanDay | undefined => plans?.flatMap((p) => p.days).find((d) => d.id === id)
+  const planOf = (dayId: string | null) => plans?.find((p) => p.days.some((d) => d.id === dayId))
+  const blockOf = (p?: Plan) => (p ? { week: blockWeek(p.blockStartedOn ?? today, today), hardWeeks: p.hardWeeks ?? 4 } : undefined)
 
   const start = async (day: PlanDay | null) => {
     try {
@@ -70,10 +79,24 @@ export function Workouts({ store, today = localDate() }: { store: WorkoutStore; 
     )
   }
 
+  if (view.kind === 'review') {
+    return (
+      <main className="log">
+        <ReviewView store={store} plan={view.plan} today={today} onDone={back} />
+      </main>
+    )
+  }
+
   if (view.kind === 'session') {
     return (
       <main className="log">
-        <SessionView store={store} session={view.session} planned={dayOf(view.session.planDayId)?.exercises ?? []} onClose={back} />
+        <SessionView
+          store={store}
+          session={view.session}
+          planned={dayOf(view.session.planDayId)?.exercises ?? []}
+          block={blockOf(planOf(view.session.planDayId))}
+          onClose={back}
+        />
       </main>
     )
   }
@@ -124,14 +147,21 @@ export function Workouts({ store, today = localDate() }: { store: WorkoutStore; 
       {plans === null && <p className="muted">Loading…</p>}
       {plans?.length === 0 && <p className="muted">No plan yet. A plan is a few training days, each with its exercises, sets and rep ranges.</p>}
       <ul className="session-list">
-        {plans?.map((p) => (
-          <li key={p.id}>
-            <button className="day-button" onClick={() => setView({ kind: 'plan', plan: p })}>
-              <strong>{p.name}</strong>
-              <span className="muted">{p.days.map((d) => d.name).join(' · ')}</span>
-            </button>
-          </li>
-        ))}
+        {plans?.map((p) => {
+          const b = blockOf(p)!
+          return (
+            <li key={p.id} className="plan-card">
+              <button className="day-button" onClick={() => setView({ kind: 'plan', plan: p })}>
+                <strong>{p.name}</strong>
+                <span className="muted">{p.days.map((d) => d.name).join(' · ')}</span>
+                <span className="muted">{weekLabel(b.week, b.hardWeeks)}</span>
+              </button>
+              <button className="link" aria-label={`Review week for ${p.name}`} onClick={() => setView({ kind: 'review', plan: p })}>
+                Review week
+              </button>
+            </li>
+          )
+        })}
       </ul>
       <button className="add" onClick={() => setView({ kind: 'plan', plan: { name: '', days: [{ dayIndex: 0, name: '', exercises: [] }] } })}>
         + New plan

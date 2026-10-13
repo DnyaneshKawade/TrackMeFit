@@ -10,6 +10,15 @@ Supabase hosts the database and sign-in. The free plan is enough to start.
 
 Then `npm run dev` shows the sign-in screen.
 
+## When a new migration is added
+
+Each change to the database is a new file in `supabase/migrations/`, named by date. When a pull request adds one, open **SQL Editor**, paste the new file and click **Run** before using the app from that pull request. Run them in name order; each runs once.
+
+| File | What it adds |
+|---|---|
+| `20261012000000_init.sql` | All tables and privacy rules |
+| `20261013000000_progression.sql` | Training block start date on plans, and how-did-it-feel answers after workouts |
+
 ## What the privacy rules guarantee
 
 Tested in `src/db/rls.test.ts`:

@@ -3,6 +3,7 @@
 
 import { nextLoad, type LoadDecision } from '../engine/training'
 import type { Exercise } from './exercises'
+import type { Feedback } from './progression'
 
 export interface PlanExercise {
   exerciseId: string
@@ -23,6 +24,10 @@ export interface Plan {
   id?: string
   name: string
   days: PlanDay[]
+  /** Hard weeks before a deload (default 4). */
+  hardWeeks?: number
+  /** Local date the current training block started. */
+  blockStartedOn?: string
 }
 
 export interface SetLog {
@@ -60,6 +65,11 @@ export interface WorkoutStore {
   removeSet(id: string): Promise<void>
   /** Earlier sessions with this exercise, newest first. */
   history(exerciseId: string, beforeDate: string, limit?: number): Promise<PastSession[]>
+  saveFeedback(sessionId: string, feedback: Feedback[]): Promise<void>
+  /** The latest answers per muscle from sessions on or after a date. */
+  feedbackSince(date: string): Promise<Feedback[]>
+  /** Starts a new training block (after a deload) from a date. */
+  startBlock(planId: string, date: string): Promise<void>
 }
 
 export const MAX_DAYS = 14
