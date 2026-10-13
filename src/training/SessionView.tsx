@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { targetRir } from '../engine/training'
 import { exerciseById, type Exercise } from './exercises'
-import { ExercisePicker } from './ExercisePicker'
+import { ExercisePicker, type ExerciseLibrary } from './ExercisePicker'
 import { SyncNote } from '../sync/SyncNote'
 import { useSync } from '../sync/useSync'
 import { FeedbackSheet } from './FeedbackSheet'
 import { deloadAdvice, isDeloadWeek, weekLabel } from './progression'
-import { formatRest, REST_STEP, restLeft, restSeconds } from './restTimer'
+import { formatRest, REST_STEP, restAfterSet, restLeft, supersetGroups } from './restTimer'
 import {
   checkSet,
   describeSets,
@@ -80,6 +80,7 @@ export function SessionView({
   session: initial,
   planned,
   block,
+  library,
   onClose,
 }: {
   store: WorkoutStore
@@ -87,9 +88,14 @@ export function SessionView({
   planned: PlanExercise[]
   /** The plan's training block, when the session follows a plan day. */
   block?: { week: number; hardWeeks: number }
+  library?: ExerciseLibrary
   onClose: () => void
 }) {
   const [session, setSession] = useState(initial)
+  // Exercises done as a superset with the next one; starts from the plan.
+  const [linked, setLinked] = useState(() => new Set(planned.filter((p) => p.supersetNext).map((p) => p.exerciseId)))
+  // In a superset, the exercise to do next after a set is logged.
+  const [now, setNow] = useState<string | null>(null)
   const [extra, setExtra] = useState<string[]>([])
   const [picking, setPicking] = useState(false)
   const [askFeedback, setAskFeedback] = useState(false)
@@ -115,6 +121,7 @@ export function SessionView({
   if (picking) {
     return (
       <ExercisePicker
+        library={library}
         onClose={() => setPicking(false)}
         onPick={(e) => {
           setExtra((x) => [...x, e.id])
@@ -133,20 +140,50 @@ export function SessionView({
       {block && <p className="muted">{weekLabel(block.week, block.hardWeeks)}</p>}
       {restEnds !== null && <RestTimer key={restEnds} endsAt={restEnds} onChange={setRestEnds} />}
       <SyncNote sync={store.sync} noun={['workout entry', 'workout entries']} />
-      {ids.map((id) => {
-        const exercise = exerciseById.get(id)
-        if (!exercise) return null
+      {supersetGroups(ids, linked).map((group) => {
+        const exercises = group.flatMap((id) => exerciseById.get(id) ?? [])
+        const cards = exercises.map((exercise, i) => {
+          const next = ids[ids.indexOf(exercise.id) + 1]
+          return (
+            <ExerciseLog
+              key={exercise.id}
+              store={store}
+              session={session}
+              exercise={exercise}
+              plan={planned.find((p) => p.exerciseId === exercise.id)}
+              block={block}
+              current={now === exercise.id}
+              superset={
+                next
+                  ? {
+                      on: linked.has(exercise.id),
+                      toggle: () =>
+                        setLinked((l) => {
+                          const copy = new Set(l)
+                          if (copy.has(exercise.id)) copy.delete(exercise.id)
+                          else copy.add(exercise.id)
+                          return copy
+                        }),
+                    }
+                  : undefined
+              }
+              onChange={setSession}
+              onLogged={() => {
+                const rest = restAfterSet(exercises, exercise.id)
+                // In a superset, go straight to the next exercise; rest after the last.
+                setNow(rest === null ? exercises[i + 1].id : exercises.length > 1 ? exercises[0].id : null)
+                setRestEnds(rest === null ? null : Date.now() + rest * 1000)
+              }}
+            />
+          )
+        })
+        if (exercises.length < 2) return cards
         return (
-          <ExerciseLog
-            key={id}
-            store={store}
-            session={session}
-            exercise={exercise}
-            plan={planned.find((p) => p.exerciseId === id)}
-            block={block}
-            onChange={setSession}
-            onLogged={() => setRestEnds(Date.now() + restSeconds(exercise) * 1000)}
-          />
+          <section key={group.join('+')} className="superset" aria-label={`Superset: ${exercises.map((e) => e.name).join(' and ')}`}>
+            <p className="superset-head">Superset: do one set of each, then rest.</p>
+            {now && group.includes(now) && <p className="superset-now" role="status">Now do {exerciseById.get(now)?.name}</p>}
+            {cards}
+          </section>
         )
       })}
       <button className="add" onClick={() => setPicking(true)}>+ Add exercise</button>
@@ -161,6 +198,8 @@ function ExerciseLog({
   exercise,
   plan,
   block,
+  current,
+  superset,
   onChange,
   onLogged,
 }: {
@@ -169,6 +208,10 @@ function ExerciseLog({
   exercise: Exercise
   plan?: PlanExercise
   block?: { week: number; hardWeeks: number }
+  /** The exercise to do now in a superset. */
+  current?: boolean
+  /** Link with the next exercise; absent for the last one. */
+  superset?: { on: boolean; toggle: () => void }
   onChange: (s: Session) => void
   /** Starts the rest timer. */
   onLogged: () => void
@@ -253,11 +296,16 @@ function ExerciseLog({
   }
 
   return (
-    <section className="exercise" aria-label={exercise.name}>
+    <section className={current ? 'exercise current' : 'exercise'} aria-label={exercise.name}>
       <header>
         <h3>{exercise.name}</h3>
         {plan && <span className="muted">{plan.sets} × {plan.repMin}–{plan.repMax}</span>}
       </header>
+      {superset && (
+        <button className="chip superset-link" aria-label={`Superset ${exercise.name} with the next exercise`} aria-pressed={superset.on} onClick={superset.toggle}>
+          {superset.on ? 'End superset' : 'Superset with next'}
+        </button>
+      )}
       {history && history[0] && workingSets(history[0].sets).length > 0 && <p className="muted">Last time: {describeSets(workingSets(history[0].sets))}</p>}
       {deload && plan && <p className="suggest">{deloadAdvice(plan.sets)}</p>}
       {block && !deload && (

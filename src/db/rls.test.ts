@@ -285,6 +285,47 @@ describe('set tags and notes (T-043a)', () => {
   })
 })
 
+describe('exercise library (T-043b)', () => {
+  it('own exercises and favourites are written by the person and read by their active coach only', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('me@x.in')
+    const other = await t.signUp('other@x.in')
+    const myCoach = await t.signUp('coach@x.in', { role: 'coach' })
+    await t.as(myCoach, (db) => db.query(`insert into coach_clients (coach_id, client_id) values ($1, $2)`, [myCoach, me]))
+    await t.as(me, (db) => db.query(`update coach_clients set status = 'active' where coach_id = $1`, [myCoach]))
+    await t.as(me, async (db) => {
+      await db.query(`insert into custom_exercises (name, primary_muscle, equipment, isolation) values ('Landmine press', 'sideDelts', 'barbell', false)`)
+      await db.query(`insert into favourite_exercises (exercise_id) values ('leg-press')`)
+    })
+    const mine = await t.as(me, async (db) => (await db.query<{ equipment: string }>('select equipment from custom_exercises')).rows)
+    expect(mine).toEqual([{ equipment: 'barbell' }])
+    expect(await t.as(myCoach, (db) => count(db, 'custom_exercises'))).toBe(1)
+    expect(await t.as(myCoach, (db) => count(db, 'favourite_exercises'))).toBe(1)
+    expect(await t.as(other, (db) => count(db, 'custom_exercises'))).toBe(0)
+    expect(await t.as(other, (db) => count(db, 'favourite_exercises'))).toBe(0)
+    // Nobody writes for someone else, the coach included.
+    await expect(t.as(myCoach, (db) => db.query(`insert into favourite_exercises (user_id, exercise_id) values ($1, 'squat')`, [me]))).rejects.toThrow(/row-level security/)
+    await expect(t.as(other, (db) => db.query(`insert into custom_exercises (owner_id, name, primary_muscle) values ($1, 'X', 'chest')`, [me]))).rejects.toThrow(/row-level security/)
+    // A favourite is kept once; bad values are refused.
+    await expect(t.as(me, (db) => db.query(`insert into favourite_exercises (exercise_id) values ('leg-press')`))).rejects.toThrow(/duplicate/)
+    await expect(t.as(me, (db) => db.query(`insert into custom_exercises (name, primary_muscle) values ('Wing', 'wings')`))).rejects.toThrow(/check/)
+    await expect(t.as(me, (db) => db.query(`insert into custom_exercises (name, primary_muscle, equipment) values ('Rope', 'back', 'rope')`))).rejects.toThrow(/check/)
+  })
+
+  it('plan exercises keep their superset link', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('me@x.in')
+    const rows = await t.as(me, async (db) => {
+      const p = (await db.query<{ id: string }>(`insert into workout_plans (user_id, name) values ($1, 'Upper') returning id`, [me])).rows[0].id
+      const d = (await db.query<{ id: string }>(`insert into plan_days (plan_id, day_index, name) values ($1, 0, 'Upper') returning id`, [p])).rows[0].id
+      await db.query(`insert into plan_exercises (day_id, position, exercise_id, sets, rep_min, rep_max, superset_next) values ($1, 0, 'bench-press', 3, 6, 10, true)`, [d])
+      await db.query(`insert into plan_exercises (day_id, position, exercise_id, sets, rep_min, rep_max) values ($1, 1, 'db-row', 3, 8, 12)`, [d])
+      return (await db.query<{ superset_next: boolean }>('select superset_next from plan_exercises order by position')).rows
+    })
+    expect(rows.map((r) => r.superset_next)).toEqual([true, false])
+  })
+})
+
 describe('ticking the meal plan (T-060)', () => {
   it('an entry keeps its plan item; entries logged by hand have none', async () => {
     const t = await createTestDb()

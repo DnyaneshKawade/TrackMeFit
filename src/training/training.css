@@ -57,3 +57,18 @@
   .feedback-muscle { border-color: #3a4643; }
   .choice button { border-color: #3a4643; }
 }
+.exercise-row { display: grid; grid-template-columns: 1fr auto; align-items: center; }
+.results .exercise-row .star { width: auto; display: block; border: 0; border-bottom: 1px solid #eef2f0; padding: 12px 10px; font-size: 20px; color: #9fb3ab; }
+.results .exercise-row .star.on { color: #d97706; }
+.sheet h3 { font-size: 15px; margin: 14px 0 4px; }
+.superset { border-left: 3px solid #0f7a5c; padding-left: 10px; margin: 12px 0; }
+.superset > .superset-head { margin: 0 0 4px; font-size: 13px; font-weight: 600; color: #0f7a5c; }
+.superset-now { font-weight: 600; }
+.plan-ex .superset-link { grid-column: 1 / -1; justify-self: start; }
+@media (prefers-color-scheme: dark) {
+  .results .exercise-row .star { border-color: #2c3734; }
+  .superset { border-color: #3fbf94; }
+  .superset > .superset-head { color: #3fbf94; }
+}
+.form .check { display: flex; gap: 8px; align-items: center; margin: 10px 0; }
+.exercise.current { outline: 2px solid #0f7a5c; outline-offset: 4px; border-radius: 8px; }

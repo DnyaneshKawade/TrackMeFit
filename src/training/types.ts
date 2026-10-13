@@ -11,6 +11,8 @@ export interface PlanExercise {
   sets: number
   repMin: number
   repMax: number
+  /** Done as a superset with the next exercise of the day (T-043b). */
+  supersetNext?: boolean
 }
 
 export interface PlanDay {

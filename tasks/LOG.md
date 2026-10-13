@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Workout logger, part 2 (T-043b)
+
+- DK said yes to T-043b. Spec `specs/T-043-workout-logger.md`, criteria 9 to 13.
+- Supersets: in the plan editor and in a session, "Superset with next" links an exercise to the one after it. Plans save the link.
+- In a superset there is no rest between exercises. A "Now do X" note shows the next one. After the last exercise of the group, the longest rest of the group starts.
+- Favourites: a star on each exercise in the picker. Favourites show first under "Favourites".
+- Own exercises: "+ New exercise" (or "Add … as a new exercise" when nothing matches) asks for a name, main muscle, equipment and whether it works one joint. Names are checked for blanks, length and repeats.
+- Data: migration `supabase/migrations/20261020000000_exercise_library.sql` adds equipment and one-joint columns to `custom_exercises`, a `favourite_exercises` table with row-level security, and `plan_exercises.superset_next`. It must be run in Supabase. Main bundle 128.7 KB. Own exercises and favourites are saved online only; logging sets still works offline.
+- Tests: 6 in `src/training/Workouts.test.tsx`, 4 in `src/training/training.test.ts`, 1 in `src/training/restTimer.test.ts`, 2 in `src/db/rls.test.ts`.
+
 ## 2026-10-13: Food stats (T-062)
 
 - DK said to go ahead with T-062 after T-061b. Spec `specs/T-062-diet-stats.md`.

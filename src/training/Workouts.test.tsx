@@ -6,8 +6,13 @@ import { memoryWorkoutStore } from './memoryStore'
 import { offlineWorkoutStore } from './offlineStore'
 import type { KeyValue } from '../sync/outbox'
 import type { Plan, WorkoutStore } from './types'
+import { memoryExerciseStore } from './exerciseStore'
+import { exerciseById, setCustomExercises } from './exercises'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  setCustomExercises([])
+})
 
 const TODAY = '2026-10-12'
 const click = (name: string | RegExp) => fireEvent.click(screen.getByRole('button', { name }))
@@ -241,5 +246,130 @@ describe('logger (T-043a)', () => {
     click('Done')
     fireEvent.click(await screen.findByRole('button', { name: /sets logged/ }))
     expect(((await screen.findByLabelText('Workout notes')) as HTMLTextAreaElement).value).toBe('Gym was packed, short rests')
+  })
+})
+
+describe('logger (T-043b)', () => {
+  const pushPull: Plan = {
+    id: 'p2',
+    name: 'Upper',
+    days: [
+      {
+        id: 'u1',
+        dayIndex: 0,
+        name: 'Upper',
+        exercises: [
+          { exerciseId: 'bench-press', sets: 3, repMin: 6, repMax: 10, supersetNext: true },
+          { exerciseId: 'lat-pulldown', sets: 3, repMin: 8, repMax: 12 },
+          { exerciseId: 'db-curl', sets: 2, repMin: 10, repMax: 15 },
+        ],
+      },
+    ],
+  }
+  const startUpper = async (store = memoryWorkoutStore({ plans: [pushPull] })) => {
+    render(<Workouts store={store} exercises={memoryExerciseStore()} today={TODAY} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Start a workout' }))
+    click(/^Upper/)
+    return screen.findByRole('region', { name: 'Superset: Bench press (barbell) and Lat pulldown' })
+  }
+  const logSet = (name: string, w: string, r: string) => {
+    type(`${name} weight (kg)`, w)
+    type(`${name} reps`, r)
+    fireEvent.click(within(screen.getByRole('region', { name })).getByRole('button', { name: 'Log set' }))
+  }
+
+  it('9, 10. a plan superset shows together; rest comes after the last exercise, for the longest rest', async () => {
+    const group = await startUpper()
+    expect(within(group).getByText('Superset: do one set of each, then rest.')).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Dumbbell curl' }).closest('.superset')).toBeNull()
+    logSet('Bench press (barbell)', '60', '8')
+    expect(await within(group).findByRole('status')).toHaveProperty('textContent', 'Now do Lat pulldown')
+    expect(screen.queryByRole('timer', { name: 'Rest' })).toBeNull()
+    logSet('Lat pulldown', '50', '10')
+    // Bench press is a big lift, so the group rests 2:30, not the 1:30 of a pulldown's partner curl.
+    expect((await screen.findByRole('timer', { name: 'Rest' })).textContent).toMatch(/Rest 2:30/)
+    expect(within(group).getByRole('status').textContent).toBe('Now do Bench press (barbell)')
+  })
+
+  it('9. a superset can be made or ended during a workout', async () => {
+    await startUpper()
+    click('Superset Bench press (barbell) with the next exercise')
+    expect(screen.queryByRole('region', { name: /^Superset:/ })).toBeNull()
+    click('Superset Lat pulldown with the next exercise')
+    expect(screen.getByRole('region', { name: 'Superset: Lat pulldown and Dumbbell curl' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Superset Dumbbell curl with the next exercise' })).toBeNull()
+  })
+
+  it('9. a superset is saved with the plan', async () => {
+    const store = memoryWorkoutStore({ plans: [ppl] })
+    render(<Workouts store={store} today={TODAY} />)
+    fireEvent.click(await screen.findByRole('button', { name: /^Push Pull Legs/ }))
+    fireEvent.click(screen.getAllByRole('button', { name: '+ Add exercise' })[0])
+    type('Search exercises', 'pec deck')
+    click(/^Pec deck/)
+    const link = screen.getByRole('button', { name: 'Superset Bench press (barbell) with the next exercise' })
+    fireEvent.click(link)
+    expect(link.textContent).toBe('Superset with Pec deck')
+    click('Save plan')
+    await screen.findByRole('button', { name: /^Push Pull Legs/ })
+    const [saved] = await store.plans()
+    expect(saved.days[0].exercises.map((e) => [e.exerciseId, !!e.supersetNext])).toEqual([['bench-press', true], ['pec-deck', false]])
+  })
+
+  it('11. favourites show first and stay', async () => {
+    const exercises = memoryExerciseStore()
+    render(<Workouts store={memoryWorkoutStore()} exercises={exercises} today={TODAY} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Start a workout' }))
+    click('Empty workout')
+    fireEvent.click(await screen.findByRole('button', { name: '+ Add exercise' }))
+    click('Favourite Leg press')
+    const favs = await screen.findByRole('region', { name: 'Favourites' })
+    expect(within(favs).getAllByRole('listitem').map((li) => li.querySelector('.result-name')!.textContent)).toEqual(['Leg press'])
+    expect(await exercises.favourites()).toEqual(['leg-press'])
+    click('Favourite Leg press')
+    expect(screen.queryByRole('region', { name: 'Favourites' })).toBeNull()
+    expect(await exercises.favourites()).toEqual([])
+  })
+
+  it('12, 13. a new exercise is checked, saved, logged and found again', async () => {
+    const exercises = memoryExerciseStore()
+    const store = memoryWorkoutStore()
+    render(<Workouts store={store} exercises={exercises} today={TODAY} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Start a workout' }))
+    click('Empty workout')
+    fireEvent.click(await screen.findByRole('button', { name: '+ Add exercise' }))
+    type('Search exercises', 'landmine press')
+    click('Add “landmine press” as a new exercise')
+    type('Exercise name', 'Leg press')
+    click('Save exercise')
+    expect(screen.getByRole('alert').textContent).toBe('Leg press is already in the list.')
+    type('Exercise name', 'Landmine press')
+    fireEvent.change(screen.getByLabelText('Main muscle'), { target: { value: 'sideDelts' } })
+    fireEvent.change(screen.getByLabelText('Equipment'), { target: { value: 'barbell' } })
+    click('Save exercise')
+    const card = await screen.findByRole('region', { name: 'Landmine press' })
+    type('Landmine press weight (kg)', '20')
+    click('More weight for Landmine press')
+    expect((screen.getByLabelText('Landmine press weight (kg)') as HTMLInputElement).value).toBe('22.5')
+    type('Landmine press reps', '10')
+    fireEvent.click(within(card).getByRole('button', { name: 'Log set' }))
+    expect((await screen.findByRole('timer', { name: 'Rest' })).textContent).toMatch(/Rest 2:30/)
+    const [saved] = await exercises.custom()
+    expect(saved).toMatchObject({ name: 'Landmine press', primary: 'sideDelts', equipment: 'barbell', isolation: false })
+    expect(exerciseById.get(saved.id)?.primary).toBe('sideDelts')
+    fireEvent.click(screen.getByRole('button', { name: '+ Add exercise' }))
+    type('Search exercises', 'landmine')
+    expect(screen.getByRole('button', { name: /^Landmine press.*your exercise/ })).toBeTruthy()
+  })
+
+  it('12. own exercises load with the workouts', async () => {
+    const exercises = memoryExerciseStore({ custom: [{ id: 'custom:9', name: 'Neck curl', primary: 'traps', equipment: 'machine', isolation: true }] })
+    const store = memoryWorkoutStore({
+      sessions: [{ id: 's1', performedOn: TODAY, planDayId: null, name: 'Workout', sets: [{ id: 'a', exerciseId: 'custom:9', setIndex: 0, weightKg: 10, reps: 15, rir: null }] }],
+    })
+    render(<Workouts store={store} exercises={exercises} today={TODAY} />)
+    fireEvent.click(await screen.findByRole('button', { name: /sets logged/ }))
+    expect(await screen.findByText('Set 1: 10 kg × 15')).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Neck curl' })).toBeTruthy()
   })
 })
