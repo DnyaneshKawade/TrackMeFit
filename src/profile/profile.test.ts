@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { catalogue } from '../food/catalogueData'
 import { amountFor } from '../food/types'
 import { ALL_DIET_ITEMS, PORTION_GRAMS, checkCustom, describeDiet, estimateDiet, extraFromFood } from './currentDiet'
-import { bmiResult, buildPlan, checkTargetWeight, goalTimeline, paceOptions, waistNote } from './goal'
+import { bmiResult, buildPlan, checkTargetWeight, goalTimeline, paceOptions, recommendedPace, waistNote, type PaceBody } from './goal'
 import { fromRow, memoryProfileStore, toRow } from './stores'
 import { EMPTY_PROFILE, ageOn, bodySize, checkAboutYou, healthNotes, isOnboarded, questionsFor, type ProfileInfo } from './types'
 
@@ -98,8 +98,6 @@ describe('BMI and goal', () => {
     expect(paceOptions('lose', 'beginner', {}).map((p) => p.rate)).toEqual([-0.005, -0.0025, -0.0075])
     expect(paceOptions('lose', 'beginner', { eatingDisorder: true }).map((p) => p.rate)).toEqual([-0.0025])
     expect(paceOptions('lose', 'beginner', { pregnant: true })).toEqual([])
-    expect(paceOptions('gain', 'advanced', {}).map((p) => p.rate)).toEqual([0.00125, 0.005])
-    expect(paceOptions('gain', 'beginner', {}).map((p) => p.rate)).toEqual([0.005])
     expect(paceOptions('maintain', 'beginner', {})).toEqual([])
   })
 
@@ -112,10 +110,10 @@ describe('BMI and goal', () => {
   })
 
   it('works out a goal date from the pace', () => {
-    const t = goalTimeline(70, 65, -0.005, TODAY)!
-    expect(t.weeks).toBe(15) // 0.35 kg a week for 5 kg
-    expect(t.byDate).toBe('2027-01-26')
-    expect(t.message).toMatch(/0\.35 kg a week .* 65 kg in around 15 weeks, by January 2027/)
+    const t = goalTimeline(70, 68, -0.005, TODAY)!
+    expect(t.weeks).toBe(6) // 0.35 kg a week for 2 kg
+    expect(t.byDate).toBe('2026-11-24')
+    expect(t.message).toBe('At about 0.35 kg a week you’d reach 68 kg in around 6 weeks, by November 2026.')
     expect(goalTimeline(70, 70, -0.005, TODAY)).toBeNull()
   })
 })
@@ -192,5 +190,86 @@ describe('plan', () => {
     const plan = buildPlan({ ...asha, medical: { pregnant: true } }, 64, TODAY)
     expect(plan.suggested).toBeNull()
     expect(plan.reasons[0]).toMatch(/pregnancy/)
+  })
+})
+
+describe('gain paces (T-059)', () => {
+  // 170 cm: BMI 18.5 at 53.5 kg, 23 at 66.5 kg, 25 at 72.3 kg.
+  const body = (weightKg: number, ageYears = 25): PaceBody => ({ weightKg, heightCm: 170, ageYears })
+  const gain = (exp: 'beginner' | 'intermediate' | 'advanced', b?: PaceBody, medical: Record<string, boolean> = {}) =>
+    paceOptions('gain', exp, medical, b)
+  const labels = (ps: ReturnType<typeof gain>) => ps.map((p) => p.label)
+  const rec = (ps: ReturnType<typeof gain>) => recommendedPace(ps)?.label
+
+  it('1. a healthy-weight beginner gets Lean, Steady and Faster, with Steady recommended', () => {
+    const ps = gain('beginner', body(60))
+    expect(labels(ps)).toEqual(['Lean', 'Steady', 'Faster'])
+    expect(ps.map((p) => p.rate)).toEqual([0.0025, 0.005, 0.0075])
+    expect(rec(ps)).toBe('Steady')
+  })
+
+  it('2. intermediate lifters are steered to Lean; advanced lifters get a slower ladder', () => {
+    expect(rec(gain('intermediate', body(60)))).toBe('Lean')
+    const adv = gain('advanced', body(60))
+    expect(adv.map((p) => p.rate)).toEqual([0.00125, 0.0025, 0.005])
+    expect(rec(adv)).toBe('Lean')
+  })
+
+  it('3, 4. an underweight adult also gets Catch up, never above 0.5 kg a week, and Faster is recommended', () => {
+    const ps = gain('beginner', body(50))
+    expect(labels(ps)).toEqual(['Lean', 'Steady', 'Faster', 'Catch up'])
+    expect(rec(ps)).toBe('Faster')
+    const catchUp = ps[3]
+    expect(catchUp.rate * 50).toBeLessThanOrEqual(0.5)
+    expect(catchUp.rate).toBeCloseTo(0.01)
+    expect(catchUp.note).toMatch(/Switch to Steady once you reach 54 kg/)
+    // A heavier underweight person: capped at 0.5 kg a week, below 1 %.
+    const tall = paceOptions('gain', 'beginner', {}, { weightKg: 62, heightCm: 185, ageYears: 25 })
+    expect(tall[3].rate * 62).toBeCloseTo(0.5)
+  })
+
+  it('5. overweight gets Lean and Steady; obese only Lean with a hint', () => {
+    const over = gain('beginner', body(68))
+    expect(labels(over)).toEqual(['Lean', 'Steady'])
+    expect(rec(over)).toBe('Lean')
+    const obese = gain('beginner', body(80))
+    expect(labels(obese)).toEqual(['Lean'])
+    expect(obese[0].note).toMatch(/Lose fat and build muscle/)
+  })
+
+  it('6. health conditions keep it to Lean, with a care-team note for an eating disorder', () => {
+    for (const m of ['eatingDisorder', 'diabetes', 'kidney']) expect(labels(gain('beginner', body(50), { [m]: true }))).toEqual(['Lean'])
+    expect(gain('beginner', body(50), { eatingDisorder: true })[0].note).toMatch(/care team/)
+    expect(gain('beginner', body(50), { diabetes: true })[0].note).not.toMatch(/care team/)
+  })
+
+  it('7. no gain pace during pregnancy, and no calorie targets', () => {
+    expect(gain('beginner', body(50), { pregnant: true })).toEqual([])
+    const plan = buildPlan({ ...asha, goal: 'gain', goalRate: 0.005, medical: { pregnant: true } }, 50, TODAY)
+    expect(plan.suggested).toBeNull()
+  })
+
+  it('8. under 18: no Faster or Catch up', () => {
+    const ps = gain('beginner', body(50, 17))
+    expect(labels(ps)).toEqual(['Lean', 'Steady'])
+    expect(rec(ps)).toBe('Steady')
+  })
+
+  it('9. each note gives the kg a week and the extra calories a day', () => {
+    const steady = gain('beginner', body(60))[1]
+    expect(steady.note).toBe('0.5 % of your weight a week: about 0.3 kg a week and 330 extra kcal a day. A good mix of muscle and size for most people.')
+  })
+
+  it('10. a long goal starts with a first milestone and is said in months', () => {
+    const t = goalTimeline(50, 60, 0.005, TODAY)!
+    expect(t.weeks).toBe(40)
+    expect(t.message).toBe('First 2 kg by 8 December. At about 0.25 kg a week you’d reach 60 kg in about 9 months, by July 2027.')
+    const faster = goalTimeline(50, 60, 0.0075, TODAY)!
+    expect(faster.weeks).toBe(27)
+  })
+
+  it('12. gain is capped at 1 % a week, and the plan says how many extra calories it adds', () => {
+    const plan = buildPlan({ ...asha, goal: 'gain', goalRate: 0.005, experience: 'beginner' }, 50, TODAY)
+    expect(plan.reasons[0]).toBe('Calories are set to gain 0.5 % of your weight a week, about 280 kcal a day above what you burn.')
   })
 })

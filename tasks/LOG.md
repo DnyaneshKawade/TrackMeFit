@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: More muscle-gain paces (T-059a, T-059b)
+
+- "Build muscle and gain weight" now offers Lean, Steady and Faster (0.25, 0.5 and 0.75 % of body weight a week; advanced lifters 0.125, 0.25 and 0.5 %), plus Catch up for underweight adults (up to 1 %, never more than 0.5 kg a week). The recommended pace is picked: Faster when underweight, Steady for healthy-weight beginners, Lean otherwise. A 50 kg beginner aiming for 60 kg now sees about 27 weeks at Faster or 20 at Catch up, instead of 40.
+- Each pace says the kg a week and the extra calories a day. Overweight people get Lean and Steady; obese only Lean with a hint to try "Lose fat and build muscle". An eating disorder, diabetes or kidney disease keeps it to Lean (with a care-team note for an eating disorder); no gain pace in pregnancy; no Faster or Catch up under 18.
+- Long goals start with a first milestone ("First 2 kg by 8 December") and are said in months. Calorie targets cap gain at 1 % a week, and the plan says how many calories a day it adds. The intermediate default is now 0.25 % (was 0.3 %).
+- Tests: 9 in `src/profile/profile.test.ts`, 1 in `src/engine/diet.test.ts`, 4 in `src/profile/Onboarding.test.tsx`.
+- Left open: T-059c (suggest Steady from Progress once Catch up reaches a healthy BMI).
+
 ## 2026-10-13: Plan for more muscle-gain paces (T-059)
 
 - DK: the build-muscle goal shows a beginner only "Lean", so an underweight person sees a target far away. Studied the code and the evidence (Iraki 2019, Garthe 2013, Helms 2023, NHS) and wrote the draft spec `specs/T-059-gain-pace.md`: Lean, Steady, Faster, and Catch up for underweight adults (at most 0.5 kg a week), recommended by experience and BMI, with health and age limits, the extra calories in each note, and a first milestone in the goal date.

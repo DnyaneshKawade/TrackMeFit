@@ -16,12 +16,12 @@ const pick = (group: string, option: string | RegExp) =>
   fireEvent.click(within(screen.getByRole('group', { name: group })).getByRole('button', { name: option }))
 const heading = () => screen.getByRole('heading', { level: 1 }).textContent
 
-function aboutYou(sex: 'Male' | 'Female' = 'Female', waist = '') {
+function aboutYou(sex: 'Male' | 'Female' = 'Female', waist = '', weight = '64') {
   type('Your name', 'Asha')
   pick('Sex', sex)
   type('Date of birth', '1995-06-15')
   type('Height (cm)', '160')
-  type('Weight today (kg)', '64')
+  type('Weight today (kg)', weight)
   if (waist) type('Waist at the belly button (cm, optional)', waist)
   click('Next')
 }
@@ -96,7 +96,7 @@ describe('onboarding', () => {
     type('Target weight (kg, optional)', '66')
     expect(screen.getByText(/should be below your weight today/)).toBeTruthy()
     type('Target weight (kg, optional)', '58')
-    expect(screen.getByRole('status', { name: 'Goal date' }).textContent).toMatch(/0\.32 kg a week you’d reach 58 kg in around 19 weeks/)
+    expect(screen.getByRole('status', { name: 'Goal date' }).textContent).toMatch(/^First 2 kg by 1 December\. At about 0\.32 kg a week you’d reach 58 kg in about 4 months/)
   })
 
   it('estimates a typical day, then offers targets the person can accept', async () => {
@@ -378,5 +378,64 @@ describe('suggested day of meals (T-058b)', () => {
     toPlan('Diabetes or pre-diabetes')
     await waitFor(() => expect(plan().textContent).toMatch(/we don’t make an automatic meal plan/))
     expect(screen.queryByRole('button', { name: 'Yes, suggest a plan' })).toBeNull()
+  })
+})
+
+describe('gain paces (T-059)', () => {
+  const paceButtons = () => within(screen.getByRole('group', { name: 'Pace' })).getAllByRole('button').map((b) => b.textContent)
+  const pressed = () => within(screen.getByRole('group', { name: 'Pace' })).getAllByRole('button').find((b) => b.getAttribute('aria-pressed') === 'true')?.textContent
+
+  it('1. a healthy-weight beginner sees three paces with Steady picked, and the extra calories', () => {
+    setup()
+    aboutYou('Female', '', '56')
+    pick('Health conditions', 'None of these')
+    click('Next')
+    training()
+    pick('Your main goal', 'Build muscle and gain weight')
+    expect(paceButtons()).toEqual(['Lean', 'Steady (recommended)', 'Faster'])
+    expect(pressed()).toBe('Steady (recommended)')
+    expect(screen.getByText(/about 0\.28 kg a week and 310 extra kcal a day/)).toBeTruthy()
+  })
+
+  it('3, 10. an underweight person gets Catch up, Faster picked, and a first milestone', () => {
+    setup()
+    aboutYou('Female', '', '45')
+    pick('Health conditions', 'None of these')
+    click('Next')
+    training()
+    pick('Your main goal', 'Build muscle and gain weight')
+    expect(paceButtons()).toEqual(['Lean', 'Steady', 'Faster (recommended)', 'Catch up'])
+    expect(pressed()).toBe('Faster (recommended)')
+    type('Target weight (kg, optional)', '55')
+    expect(screen.getByRole('status', { name: 'Goal date' }).textContent).toMatch(/^First 2 kg by .* you’d reach 55 kg in about 7 months/)
+  })
+
+  it('6, 11. a health answer changed later keeps the pace gentle and re-picks it', () => {
+    setup()
+    aboutYou('Female', '', '45')
+    pick('Health conditions', 'None of these')
+    click('Next')
+    training()
+    pick('Your main goal', 'Build muscle and gain weight')
+    pick('Pace', 'Catch up')
+    click('Back')
+    click('Back')
+    pick('Health conditions', 'An eating disorder, now or in the past')
+    click('Next')
+    click('Next')
+    expect(paceButtons()).toEqual(['Lean'])
+    expect(pressed()).toBe('Lean')
+    expect(screen.getByText(/follow their plan/)).toBeTruthy()
+  })
+
+  it('7. no gain pace during pregnancy', () => {
+    setup()
+    aboutYou('Female', '', '45')
+    pick('Health conditions', /pregnant/i)
+    click('Next')
+    training()
+    pick('Your main goal', 'Build muscle and gain weight')
+    expect(screen.queryByRole('group', { name: 'Pace' })).toBeNull()
+    expect(screen.getByText(/won’t set a weight-gain pace/)).toBeTruthy()
   })
 })

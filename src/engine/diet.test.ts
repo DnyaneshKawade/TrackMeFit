@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   activityFactor,
   calorieTarget,
+  gainLadder,
+  surplusKcal,
   indianBmiBand,
   bmi,
   initialExpenditure,
@@ -68,6 +70,14 @@ describe('updateExpenditure', () => {
 })
 
 describe('calorieTarget', () => {
+  it('caps gain at 1 % of body weight a week (T-059)', () => {
+    const fast = calorieTarget({ tdee: 2000, weightKg: 50, rate: 0.03, sex: 'male' })
+    expect(fast).toBe(calorieTarget({ tdee: 2000, weightKg: 50, rate: 0.01, sex: 'male' }))
+    expect(fast).toBe(2550)
+    expect(surplusKcal(0.005, 60)).toBe(330)
+    expect(gainLadder('advanced')).toEqual([0.00125, 0.0025, 0.005])
+  })
+
   it('sets a deficit from the weekly loss rate', () => {
     // 0.5% of 70 kg = 0.35 kg/week -> 385 kcal/day deficit.
     expect(calorieTarget({ tdee: 2400, weightKg: 70, rate: -0.005, sex: 'male' })).toBe(2020)

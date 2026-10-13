@@ -5,11 +5,14 @@ import {
   bmi,
   calorieFloor,
   calorieTarget,
-  defaultRate,
+  gainLadder,
   indianBmiBand,
   initialExpenditure,
   macroTargets,
+  MAX_GAIN_KG_PER_WEEK,
+  MAX_GAIN_RATE,
   proteinTarget,
+  surplusKcal,
   type BmiBand,
   type DayType,
   type Macros,
@@ -63,29 +66,79 @@ export interface Pace {
   rate: number
   label: string
   note: string
+  /** The pace we suggest for this person. */
+  recommended?: boolean
 }
 
-/** Pace choices for a goal. The first is the recommended one. */
-export function paceOptions(goal: GoalChoice, experience: Experience, medical: Record<string, boolean>): Pace[] {
-  const pct = (r: number) => `${Math.abs(r * 100)} % of your weight a week`
+/** What we know about the person when choosing paces. */
+export interface PaceBody {
+  weightKg: number
+  heightCm: number
+  ageYears: number
+}
+
+const pctText = (r: number) => `${Number(Math.abs(r * 100).toFixed(3))} %`
+
+/** Pace choices for a goal, with the recommended one marked. */
+export function paceOptions(goal: GoalChoice, experience: Experience, medical: Record<string, boolean>, body?: PaceBody): Pace[] {
+  const pct = (r: number) => `${pctText(r)} of your weight a week`
   if (goal === 'lose') {
     if (noDeficit(medical)) return []
     const gentle = { rate: -0.0025, label: 'Gentle', note: `${pct(-0.0025)}. Easiest to keep up.` }
-    if (gentleOnly(medical)) return [gentle]
+    if (gentleOnly(medical)) return [{ ...gentle, recommended: true }]
     return [
-      { rate: -0.005, label: 'Steady', note: `${pct(-0.005)}. Keeps muscle and is easy to stick to.` },
+      { rate: -0.005, label: 'Steady', note: `${pct(-0.005)}. Keeps muscle and is easy to stick to.`, recommended: true },
       gentle,
       { rate: -0.0075, label: 'Faster', note: `${pct(-0.0075)}. Harder; hunger and tiredness are more likely.` },
     ]
   }
-  if (goal === 'gain') {
-    const rec = defaultRate('buildMuscle', experience)
-    const options: Pace[] = [{ rate: rec, label: 'Lean', note: `${pct(rec)}. Right for your training experience; mostly muscle.` }]
-    if (rec < 0.005) options.push({ rate: 0.005, label: 'Faster', note: `${pct(0.005)}. More of the gain will be fat.` })
-    return options
-  }
+  if (goal === 'gain') return gainPaces(experience, medical, body)
   return []
 }
+
+/** Build-muscle paces (spec T-059). Faster gain mostly adds fat, not more
+ * muscle (Garthe 2013, Helms 2023), so the notes say so plainly. */
+function gainPaces(experience: Experience, medical: Record<string, boolean>, body?: PaceBody): Pace[] {
+  if (noDeficit(medical)) return []
+  const [lean, steady, faster] = gainLadder(experience)
+  const band = body ? indianBmiBand(bmi(body.weightKg, body.heightCm)) : 'normal'
+  const adult = !body || body.ageYears >= 18
+  const pct = (r: number) => `${pctText(r)} of your weight a week`
+  const amounts = (rate: number) => {
+    if (!body) return `${pct(rate)}.`
+    const kg = Math.round(rate * body.weightKg * 100) / 100
+    return `${pctText(rate)} of your weight a week: about ${kg} kg a week and ${surplusKcal(rate, body.weightKg)} extra kcal a day.`
+  }
+  const pace = (rate: number, label: string, text: string): Pace => ({ rate, label, note: `${amounts(rate)} ${text}` })
+  const leanPace = pace(lean, 'Lean', 'Slow and clean: most of what you gain is muscle.')
+
+  if (gentleOnly(medical)) {
+    const care = medical.eatingDisorder ? ' If a care team is helping you regain weight, follow their plan.' : ''
+    return [{ ...leanPace, note: `${leanPace.note} Because of your health answers, we keep the pace gentle.${care}`, recommended: true }]
+  }
+  if (band === 'obese') {
+    return [{ ...leanPace, note: `${leanPace.note} At your weight, “Lose fat and build muscle” may suit you better.`, recommended: true }]
+  }
+  const options: Pace[] = [leanPace, pace(steady, 'Steady', 'A good mix of muscle and size for most people.')]
+  if (band !== 'overweight' && adult) options.push(pace(faster, 'Faster', 'The scale moves sooner; more of the gain will be fat.'))
+  if (band === 'under' && adult && body) {
+    const catchUp = Math.min(MAX_GAIN_RATE, MAX_GAIN_KG_PER_WEEK / body.weightKg)
+    const healthyMin = bmiResult(body.weightKg, body.heightCm).healthyMinKg
+    if (catchUp > faster + 1e-9) {
+      const kg = Math.round(catchUp * body.weightKg * 100) / 100
+      options.push({
+        rate: catchUp,
+        label: 'Catch up',
+        note: `About ${kg} kg a week and ${surplusKcal(catchUp, body.weightKg)} extra kcal a day. Reach a healthy weight sooner; more of it is fat, which is fine while you’re underweight. Switch to Steady once you reach ${healthyMin} kg.`,
+      })
+    }
+  }
+  const pick = band === 'under' ? (adult ? faster : steady) : band === 'normal' && experience === 'beginner' ? steady : lean
+  return options.map((o) => (o.rate === pick ? { ...o, recommended: true } : o))
+}
+
+/** The pace to select: the recommended one, or the first. */
+export const recommendedPace = (paces: Pace[]) => paces.find((x) => x.recommended) ?? paces[0]
 
 /** Checks an optional target weight against the goal. Null when fine. */
 export function checkTargetWeight(text: string, currentKg: number, goal: GoalChoice | null): string | null {
@@ -106,14 +159,25 @@ export interface Timeline {
 
 const monthOf = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
 
-/** How long reaching the target takes at a weekly rate. */
+const dayMonth = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })
+
+/** How long reaching the target takes at a weekly rate. Long goals start with
+ * a nearer first milestone (2 kg) and are said in months (spec T-059). */
 export function goalTimeline(currentKg: number, targetKg: number, rate: number, today: string): Timeline | null {
   if (!rate || targetKg === currentKg) return null
   const perWeek = Math.abs(rate) * currentKg
-  const weeks = Math.max(1, Math.ceil(Math.abs(targetKg - currentKg) / perWeek))
+  const gap = Math.abs(targetKg - currentKg)
+  const weeks = Math.max(1, Math.ceil(gap / perWeek))
   const byDate = shiftDate(today, weeks * 7)
   const pace = Math.round(perWeek * 100) / 100
-  return { weeks, byDate, message: `At about ${pace} kg a week you’d reach ${targetKg} kg in around ${weeks} weeks, by ${monthOf(byDate)}.` }
+  const span = weeks > 12 ? `about ${Math.round(weeks / 4.35)} months` : `around ${weeks} weeks`
+  let message = `At about ${pace} kg a week you’d reach ${targetKg} kg in ${span}, by ${monthOf(byDate)}.`
+  if (weeks > 8) {
+    const firstKg = Math.min(2, gap)
+    const first = shiftDate(today, Math.max(1, Math.ceil(firstKg / perWeek)) * 7)
+    message = `First ${Math.round(firstKg * 10) / 10} kg by ${dayMonth(first)}. ${message}`
+  }
+  return { weeks, byDate, message }
 }
 
 const DAY_TYPE: Record<Activity, DayType> = { desk: 'desk', on_feet: 'onFeet', physical: 'physical' }
@@ -165,7 +229,7 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
     p.targetWeightKg !== null && p.goalRate ? goalTimeline(weightKg, p.targetWeightKg, p.goalRate, today) : null
 
   const reasons: string[] = []
-  if (p.goal === 'lose' && noDeficit(p.medical)) {
+  if ((p.goal === 'lose' || p.goal === 'gain') && noDeficit(p.medical)) {
     reasons.push('We don’t suggest calorie targets during pregnancy or breastfeeding. Set them with your doctor, or track without targets.')
     return { maintenance, intakeNote, timeline, suggested: null, reasons }
   }
@@ -180,7 +244,10 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
   })
   const suggested = macroTargets(kcal, protein.grams, weightKg)
   if (rate < 0) reasons.push(`Calories are set to lose ${Math.abs(rate * 100)} % of your weight a week.`)
-  else if (rate > 0) reasons.push(`Calories are set to gain ${rate * 100} % of your weight a week.`)
+  else if (rate > 0) {
+    const r = Math.min(MAX_GAIN_RATE, rate)
+    reasons.push(`Calories are set to gain ${pctText(r)} of your weight a week, about ${surplusKcal(r, weightKg)} kcal a day above what you burn.`)
+  }
   else reasons.push('Calories are set to keep your weight where it is.')
   if (p.goal === 'recomp') reasons.push('For losing fat while building muscle, that’s a small deficit with high protein.')
   if (rate < 0 && kcal <= calorieFloor(p.sex!)) reasons.push('Calories don’t go below the safe minimum without a coach.')
