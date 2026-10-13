@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import type { Macros } from '../engine/diet'
 import { localDate } from '../log/types'
-import { DIET_ITEMS, MAX_COUNT, describeDiet, estimateDiet } from './currentDiet'
+import type { SearchIndex } from '../food/search'
+import { estimateDiet, type DietExtra } from './currentDiet'
+import { TypicalDay } from './TypicalDay'
 import { bmiResult, buildPlan, checkTargetWeight, goalTimeline, paceOptions, waistNote } from './goal'
 import {
   ALLERGIES,
@@ -124,11 +126,14 @@ export function Onboarding({
   initial,
   onFinish,
   onSkip,
+  loadIndex,
   today = localDate(),
 }: {
   initial: ProfileInfo
   onFinish: (r: OnboardingResult) => Promise<void>
   onSkip: () => Promise<void>
+  /** Loads the food database for "Add another food". */
+  loadIndex?: () => Promise<SearchIndex>
   today?: string
 }) {
   const [step, setStep] = useState(0)
@@ -147,6 +152,7 @@ export function Onboarding({
   const [fastNone, setFastNone] = useState(false)
   const [targetText, setTargetText] = useState(initial.targetWeightKg === null ? '' : String(initial.targetWeightKg))
   const [counts, setCounts] = useState<Record<string, number>>(initial.currentDiet?.counts ?? {})
+  const [extras, setExtras] = useState<DietExtra[]>(initial.currentDiet?.extras ?? [])
   const [missing, setMissing] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -174,7 +180,7 @@ export function Onboarding({
     // Answers to questions that don't apply (e.g. pregnancy for men) are dropped.
     medical: Object.fromEntries(questions.map((q) => [q.key, !!p.medical[q.key]])),
     targetWeightKg: (p.goal === 'lose' || p.goal === 'gain') && targetText.trim() && !targetError ? Number(targetText) : null,
-    currentDiet: Object.keys(estimateDiet(counts).counts).length ? estimateDiet(counts) : null,
+    currentDiet: estimateDiet(counts, extras).kcal ? estimateDiet(counts, extras) : null,
   })
 
   const next = () => {
@@ -231,7 +237,7 @@ export function Onboarding({
   const text = (key: keyof Omit<AboutYou, 'sex'>, label: string, extra: React.InputHTMLAttributes<HTMLInputElement> = { inputMode: 'decimal' }) =>
     field(key, label, <input aria-label={label} value={about[key]} onChange={(e) => setAbout({ ...about, [key]: e.target.value })} {...extra} />)
 
-  const diet = estimateDiet(counts)
+  const diet = estimateDiet(counts, extras)
   const plan = step === STEPS.length - 1 ? buildPlan(merged(), weightKg, today) : null
 
   return (
@@ -411,35 +417,16 @@ export function Onboarding({
       )}
 
       {step === 5 && (
-        <>
-          <p className="muted">Roughly what you eat on a usual day, all meals together. A guess is fine.</p>
-          <ul className="counters">
-            {DIET_ITEMS.map((item) => {
-              const n = counts[item.id] ?? 0
-              const set = (v: number) => setCounts({ ...counts, [item.id]: Math.max(0, Math.min(MAX_COUNT, v)) })
-              return (
-                <li key={item.id}>
-                  <span>
-                    {item.label}
-                    <small className="muted">{item.portion}</small>
-                  </span>
-                  <span className="stepper">
-                    <button type="button" aria-label={`Less ${item.label}`} onClick={() => set(n - 1)} disabled={!n}>
-                      −
-                    </button>
-                    <output aria-label={`${item.label} per day`}>{n}</output>
-                    <button type="button" aria-label={`More ${item.label}`} onClick={() => set(n + 1)}>
-                      +
-                    </button>
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
-          <p className="info" role="status" aria-label="Typical day">
-            {describeDiet(diet, weightKg)}
-          </p>
-        </>
+        <TypicalDay
+          counts={counts}
+          extras={extras}
+          weightKg={weightKg}
+          loadIndex={loadIndex}
+          onChange={(c, e) => {
+            setCounts(c)
+            setExtras(e)
+          }}
+        />
       )}
 
       {step === 6 && plan && (

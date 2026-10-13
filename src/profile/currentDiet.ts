@@ -1,6 +1,9 @@
 // A rough picture of what someone eats now, from counts of everyday Indian
 // foods. Values per portion come from foods in our database (the test keeps
-// them in step), so the estimate is only as rough as the counts.
+// them in step), so the estimate is only as rough as the counts. People can
+// add any other food from the database, or type in their own.
+
+import { amountFor, type Food } from '../food/types'
 
 export interface DietItem {
   /** Food id in the catalogue. */
@@ -31,27 +34,72 @@ export const DIET_ITEMS: DietItem[] = [
 /** Grams per portion for the items whose catalogue entry has no portion. */
 export const PORTION_GRAMS: Record<string, number> = { 'usda:170886': 150, 'usda:173944': 118 }
 
+/** A food added by the person beyond the list: any food from the database,
+ * or their own entry with calories they type in. */
+export interface DietExtra {
+  /** Food id, or `custom:<n>` for their own entry. */
+  id: string
+  name: string
+  portion: string
+  /** Per portion. */
+  kcal: number
+  proteinG: number
+  count: number
+}
+
 export interface CurrentDiet {
   counts: Record<string, number>
+  extras?: DietExtra[]
   kcal: number
   proteinG: number
 }
 
 export const MAX_COUNT = 20
+export const MAX_CUSTOM_KCAL = 5000
 
-/** Daily calories and protein for the counts given. */
-export function estimateDiet(counts: Record<string, number>): CurrentDiet {
+const clampCount = (n: number) => Math.min(MAX_COUNT, Math.max(0, Math.round(n || 0)))
+
+/** An extra row for a food from the database, one usual portion (or 100 g). */
+export function extraFromFood(food: Food): DietExtra {
+  const portion = food.portions[0]
+  const grams = portion?.grams ?? 100
+  const a = amountFor(food, grams)
+  const name = food.brand ? `${food.name}, ${food.brand}` : food.name
+  return { id: food.id, name, portion: portion?.label ?? '100 g', kcal: a.kcal, proteinG: a.proteinG, count: 1 }
+}
+
+/** Checks a typed-in food. Returns an error message, or null when fine. */
+export function checkCustom(name: string, kcal: string, protein: string): string | null {
+  if (!name.trim()) return 'Say what the food is.'
+  const k = Number(kcal)
+  if (!kcal.trim() || !Number.isFinite(k) || k <= 0 || k > MAX_CUSTOM_KCAL) return `Calories should be between 1 and ${MAX_CUSTOM_KCAL}.`
+  if (protein.trim()) {
+    const p = Number(protein)
+    if (!Number.isFinite(p) || p < 0 || p * 4 > k + 1) return 'Protein can’t give more calories than the food has.'
+  }
+  return null
+}
+
+/** Daily calories and protein for the counts and extras given. */
+export function estimateDiet(counts: Record<string, number>, extras: DietExtra[] = []): CurrentDiet {
   let kcal = 0
   let protein = 0
   const kept: Record<string, number> = {}
   for (const item of DIET_ITEMS) {
-    const n = Math.min(MAX_COUNT, Math.max(0, Math.round(counts[item.id] ?? 0)))
+    const n = clampCount(counts[item.id] ?? 0)
     if (!n) continue
     kept[item.id] = n
     kcal += n * item.kcal
     protein += n * item.proteinG
   }
-  return { counts: kept, kcal: Math.round(kcal / 10) * 10, proteinG: Math.round(protein) }
+  const keptExtras = extras.map((e) => ({ ...e, count: clampCount(e.count) })).filter((e) => e.count > 0)
+  for (const e of keptExtras) {
+    kcal += e.count * e.kcal
+    protein += e.count * e.proteinG
+  }
+  const out: CurrentDiet = { counts: kept, kcal: Math.round(kcal / 10) * 10, proteinG: Math.round(protein) }
+  if (keptExtras.length) out.extras = keptExtras
+  return out
 }
 
 /** One plain sentence about the estimate, with protein per kg when the

@@ -111,6 +111,7 @@ export function AppShell({
             if (suggested && targets) await targets.save(suggested, today, 'suggested')
             setProfile(p)
           }}
+          loadIndex={loadIndex}
           onSkip={async () => {
             const p = { ...profile, fullName: profile.fullName || account.name, onboardedAt: new Date().toISOString() }
             await profiles!.save(p)

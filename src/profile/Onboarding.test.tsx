@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { Onboarding } from './Onboarding'
 import { EMPTY_PROFILE } from './types'
+import { createSearchIndex } from '../food/search'
+import type { Food } from '../food/types'
 
 afterEach(cleanup)
 
@@ -39,6 +41,15 @@ const setup = (over: Partial<Parameters<typeof Onboarding>[0]> = {}) => {
   const onSkip = vi.fn().mockResolvedValue(undefined)
   render(<Onboarding initial={EMPTY_PROFILE} onFinish={onFinish} onSkip={onSkip} today={TODAY} {...over} />)
   return { onFinish, onSkip }
+}
+
+const POHA: Food = {
+  id: 'tmf:dish:poha',
+  name: 'Poha',
+  state: 'cooked',
+  per100g: { kcal: 160, proteinG: 3, carbG: 28, fatG: 4 },
+  portions: [{ label: '1 plate (200 g)', grams: 200 }],
+  source: 'trackMeFit',
 }
 
 describe('onboarding', () => {
@@ -133,6 +144,44 @@ describe('onboarding', () => {
     })
     expect(r.profile.onboardedAt).toBeTruthy()
     expect(r.profile.medical).toMatchObject({ diabetes: false, pregnant: false })
+  })
+
+  it('adds any food from the database or a typed-in one to the typical day', async () => {
+    const { onFinish } = setup({ loadIndex: () => Promise.resolve(createSearchIndex([POHA])) })
+    aboutYou()
+    pick('Health conditions', 'None of these')
+    click('Next')
+    training()
+    pick('Your main goal', 'Stay as I am')
+    click('Next')
+    food()
+
+    click('+ Add another food')
+    type('Search foods', 'poha')
+    fireEvent.click(await screen.findByRole('button', { name: /^Poha/ }))
+    click('More Poha')
+    expect(screen.getByLabelText('Poha per day').textContent).toBe('2')
+
+    click('Can’t find it? Enter it yourself')
+    click('Add')
+    expect(screen.getByText('Say what the food is.')).toBeTruthy()
+    type('Food name', 'Protein bar')
+    type('Calories a day', '200')
+    type('Protein (g, optional)', '20')
+    click('Add')
+    expect(screen.getByRole('status', { name: 'Typical day' }).textContent).toMatch(/about 840 kcal and 32 g protein/) // 2 x 320 + 200
+    click('Next')
+    click('I’ll set my own')
+    await waitFor(() => expect(onFinish).toHaveBeenCalled())
+    expect(onFinish.mock.calls[0][0].profile.currentDiet).toEqual({
+      counts: {},
+      extras: [
+        { id: 'tmf:dish:poha', name: 'Poha', portion: '1 plate (200 g)', kcal: 320, proteinG: 6, count: 2 },
+        { id: 'custom:1:Protein bar', name: 'Protein bar', portion: 'your amount', kcal: 200, proteinG: 20, count: 1 },
+      ],
+      kcal: 840,
+      proteinG: 32,
+    })
   })
 
   it('lets the person decline the suggestion and set their own', async () => {
