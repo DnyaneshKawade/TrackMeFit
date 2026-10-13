@@ -5,6 +5,7 @@ import type { Account, AuthService } from './auth/types'
 import { FoodLog } from './log/FoodLog'
 import { memoryLogStore } from './log/memoryStore'
 import { supabaseLogStore } from './log/supabaseStore'
+import { browserStorage, offlineLogStore } from './log/offlineStore'
 import type { LogStore } from './log/types'
 import { memoryTargetStore, supabaseTargetStore } from './targets/stores'
 import type { TargetStore } from './targets/types'
@@ -52,6 +53,21 @@ export function AppShell({
 }) {
   const [account, setAccount] = useState<Account | null | undefined>(undefined)
   const store = useMemo(() => (account ? logStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Entries saved offline go out when the app opens, when the phone is back
+  // online and when the app returns to the front (T-027).
+  useEffect(() => {
+    const sync = store?.sync
+    if (!sync) return
+    const run = () => void sync.run()
+    const onVisible = () => document.visibilityState === 'visible' && run()
+    run()
+    window.addEventListener('online', run)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('online', run)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [store])
   const workouts = useMemo(() => (account ? workoutStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const [tab, setTab] = useState<'food' | 'training' | 'progress'>('food')
   const targets = useMemo(() => (account ? targetStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -105,7 +121,14 @@ export function AppShell({
         {account.name || account.email}
         {account.role === 'coach' ? ' (coach)' : ''}
       </span>
-      <button onClick={() => void auth.signOut()}>Sign out</button>
+      <button
+        onClick={() => {
+          store?.sync?.clearCache()
+          void auth.signOut()
+        }}
+      >
+        Sign out
+      </button>
     </header>
   )
 
@@ -176,7 +199,7 @@ export default function App() {
   return (
     <AppShell
       auth={auth}
-      logStoreFor={(a) => supabaseLogStore(sb!, a.id)}
+      logStoreFor={(a) => offlineLogStore(supabaseLogStore(sb!, a.id), { storage: browserStorage, accountId: a.id })}
       targetStoreFor={(a) => supabaseTargetStore(sb!, a.id)}
       workoutStoreFor={(a) => supabaseWorkoutStore(sb!, a.id)}
       profileStoreFor={(a) => supabaseProfileStore(sb!, a.id)}

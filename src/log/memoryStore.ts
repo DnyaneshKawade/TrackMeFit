@@ -9,8 +9,10 @@ export function memoryLogStore(initial: LogEntry[] = []): LogStore {
     async listDay(date) {
       return rows.filter((r) => r.loggedOn === date)
     },
-    async add(entry: NewLogEntry) {
-      const row = { ...entry, id: String(next++) }
+    async add(entry: NewLogEntry, id?: string) {
+      const same = id ? rows.find((r) => r.id === id) : undefined
+      if (same) return same
+      const row = { ...entry, id: id ?? String(next++) }
       rows.push(row)
       return row
     },

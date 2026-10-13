@@ -57,8 +57,11 @@ export function supabaseLogStore(sb: SupabaseClient, userId: string): LogStore {
       if (error) throw error
       return (data as FoodLogRow[]).map(fromRow)
     },
-    async add(entry) {
-      const { data, error } = await sb.from('food_logs').insert(toRow(entry)).select(COLUMNS).single()
+    async add(entry, id) {
+      const row: Partial<FoodLogRow> = id ? { ...toRow(entry), id } : toRow(entry)
+      const { data, error } = await sb.from('food_logs').insert(row).select(COLUMNS).single()
+      // Already saved by an earlier send whose answer was lost (T-027).
+      if (error?.code === '23505' && id) return { ...entry, id }
       if (error) throw error
       return fromRow(data as FoodLogRow)
     },

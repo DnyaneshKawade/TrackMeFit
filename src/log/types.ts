@@ -23,10 +23,28 @@ export interface LogEntry extends NewLogEntry {
 
 export interface LogStore {
   listDay(date: string): Promise<LogEntry[]>
-  add(entry: NewLogEntry): Promise<LogEntry>
+  /** Saves an entry. An id made on the phone makes a repeat send save once. */
+  add(entry: NewLogEntry, id?: string): Promise<LogEntry>
   remove(id: string): Promise<void>
   /** Recent entries across days, newest first, to offer again. */
   recent(): Promise<LogEntry[]>
+  /** Present when entries can wait on the phone to sync (T-027). */
+  sync?: LogSync
+}
+
+/** Entries saved on the phone while offline, and their sending. */
+export interface LogSync {
+  /** Ids of entries made on the phone and not yet on the server. */
+  pendingIds(): Set<string>
+  /** Entries the server refused since the person last saw the note. */
+  refused(): number
+  clearRefused(): void
+  /** Sends waiting work in order; stops at the first connection problem. */
+  run(): Promise<void>
+  /** Called whenever waiting work changes. Returns an unsubscribe. */
+  subscribe(listener: () => void): () => void
+  /** Forgets the copy of viewed days (on sign-out); waiting work stays. */
+  clearCache(): void
 }
 
 export const MAX_GRAMS = 5000

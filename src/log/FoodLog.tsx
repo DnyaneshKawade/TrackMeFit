@@ -82,6 +82,12 @@ export function FoodLog({
   const allFoods = useMemo(() => (index ? withMine(index, myFoods ?? []) : null), [index, myFoods])
   const [saved, setSaved] = useState<SavedMealPlan | null>(null)
   const [choice, setChoice] = useState<DayChoice>(() => readChoice(date))
+  // Entries waiting on the phone to sync (T-027).
+  const sync = store.sync
+  const [, setSyncTick] = useState(0)
+  useEffect(() => sync?.subscribe(() => setSyncTick((n) => n + 1)), [sync])
+  const pending = sync?.pendingIds() ?? new Set<string>()
+  const refused = sync?.refused() ?? 0
   useEffect(() => setChoice(readChoice(date)), [date])
   const eatsNonveg = !!diet && hasNonvegOff(diet.dietPref)
   const weekday = eatsNonveg ? nonvegWeekday(date, diet!.foodRules) : null
@@ -251,6 +257,17 @@ export function FoodLog({
       )}
 
       {error && <p className="error" role="alert">{error}</p>}
+      {pending.size > 0 && (
+        <p className="info" role="status" aria-label="Sync">
+          {pending.size === 1 ? '1 entry' : `${pending.size} entries`} saved on this phone. They’ll sync when you’re online.
+        </p>
+      )}
+      {refused > 0 && (
+        <p className="error" role="alert">
+          {refused === 1 ? '1 entry' : `${refused} entries`} couldn’t be saved.{' '}
+          <button className="link" onClick={() => sync?.clearRefused()}>OK</button>
+        </p>
+      )}
       {entries === null && <p className="muted">Loading…</p>}
 
       {entries &&
@@ -270,6 +287,7 @@ export function FoodLog({
                       <span className="muted">
                         {amountLabel(e)} · {e.kcal} kcal · P {e.proteinG} · C {e.carbG} · F {e.fatG}
                       </span>
+                      {pending.has(e.id) && <span className="muted">Not synced yet</span>}
                     </div>
                     <button className="link" aria-label={`Remove ${e.foodName}`} onClick={() => void remove(e.id)}>✕</button>
                   </li>

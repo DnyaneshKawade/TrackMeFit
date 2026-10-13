@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Food logging without a connection (T-027a)
+
+- DK: "go as per the best possible choice"; picked offline logging first because mobile data drops often and logging is the daily habit. Spec `specs/T-027-offline-logging.md` covers food now (T-027a) and workout sets next (T-027b).
+- Adds and removals now work offline. Entries show at once with "Not synced yet", and the Food tab says how many are waiting. They are sent in order when the phone is back online, when the app opens and when it returns to the front.
+- Each entry gets its id on the phone, so a send whose answer was lost is saved once, not twice. An entry the server refuses outright is dropped and reported ("1 entry couldn't be saved") so the queue never sticks. Removing an entry while it is being sent removes it on the server too.
+- The last 14 viewed days and the recent-foods list are kept on the phone per account, so they show offline; signing out clears them, waiting entries stay for the same account.
+- Main bundle 134.9 of 140 KB.
+- Tests: `src/log/offlineStore.test.ts` (12), 2 in `src/log/FoodLog.test.tsx`, 1 in `src/db/rls.test.ts`.
+- Next: T-027b, workout sets offline.
+
 ## 2026-10-13: Fix white screen when opening some foods (T-038 follow-up)
 
 - DK: opening some foods from Add food search (packaged products named by barcode, and raw foods) showed a white screen. Cause: the CSV export wrote an empty portions list as `{}` instead of `[]`, so those foods arrived in the database with an object where the app expects a list, and the amount screen crashed.
