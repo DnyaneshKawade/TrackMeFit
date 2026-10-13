@@ -166,3 +166,41 @@ describe('muscle feedback', () => {
     expect(rows[0].ok).toBe(true)
   })
 })
+
+describe('onboarding and progress', () => {
+  it('saves every onboarding answer on the person’s own profile only', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('me@x.in')
+    const other = await t.signUp('other@x.in')
+    const answers = [`Asha`, 'female', '1995-06-15', 160, 'on_feet', 3, 'beginner', 'recomp', 'eggetarian', { diabetes: true, pregnant: false }]
+    const update = `update profiles set full_name = $1, sex = $2, birth_date = $3, height_cm = $4, activity = $5, training_days = $6,
+                    experience = $7, goal = $8, diet_pref = $9, medical = $10 where id = $11`
+    const mine = await t.as(me, (db) => db.query(update, [...answers, me]))
+    expect(mine.affectedRows).toBe(1)
+    const theirs = await t.as(me, (db) => db.query(update, [...answers, other]))
+    expect(theirs.affectedRows).toBe(0)
+    const row = (await t.db.query<{ goal: string; medical: object }>('select goal, medical from profiles where id = $1', [me])).rows[0]
+    expect(row).toEqual({ goal: 'recomp', medical: { diabetes: true, pregnant: false } })
+  })
+
+  it('keeps one weigh-in and one set of measurements per day, written only by the person', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('me@x.in')
+    const coach = await t.signUp('c@x.in', { role: 'coach' })
+    await t.as(coach, (db) => db.query(`insert into coach_clients (coach_id, client_id) values ($1, $2)`, [coach, me]))
+    await t.as(me, (db) => db.query(`update coach_clients set status = 'active' where client_id = $1`, [me]))
+    const weigh = (kg: number) =>
+      `insert into weigh_ins (user_id, measured_on, weight_kg) values ('${me}', '2026-10-13', ${kg})
+       on conflict (user_id, measured_on) do update set weight_kg = excluded.weight_kg`
+    await t.as(me, async (db) => {
+      await db.query(weigh(70))
+      await db.query(weigh(69.6))
+      await db.query(`insert into measurements (measured_on, waist_cm) values ('2026-10-13', 82)
+                      on conflict (user_id, measured_on) do update set waist_cm = excluded.waist_cm`)
+    })
+    const seen = await t.as(coach, (db) => db.query<{ weight_kg: string }>('select weight_kg from weigh_ins'))
+    expect(seen.rows.map((r) => Number(r.weight_kg))).toEqual([69.6])
+    await expect(t.as(coach, (db) => db.query(weigh(50)))).rejects.toThrow()
+    expect(await t.as(coach, (db) => count(db, 'measurements'))).toBe(1)
+  })
+})

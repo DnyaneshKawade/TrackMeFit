@@ -1,0 +1,14 @@
+.onboarding h1 { margin: 4px 0 12px; font-size: 24px; }
+.onboarding .step-count { margin: 8px 0 0; }
+.onboarding .choice { margin: 14px 0; }
+.onboarding .choice > span { font-weight: 600; }
+.onboarding .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.step-buttons { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; margin-top: 20px; }
+.step-buttons .primary:only-child { grid-column: 1 / -1; }
+.doctor-note { border: 1.5px solid #e0a43a; background: #fff8eb; border-radius: 12px; padding: 12px; margin: 16px 0; }
+.doctor-note ul { margin: 8px 0; padding-left: 18px; }
+.doctor-note li { margin: 4px 0; }
+.doctor-note p { margin: 0; font-size: 13px; }
+@media (prefers-color-scheme: dark) {
+  .doctor-note { background: #2a2214; border-color: #8a6420; }
+}

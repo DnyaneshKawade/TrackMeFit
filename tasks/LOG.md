@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Onboarding and progress (T-017, T-022)
+
+- New users answer four short steps once, before the app opens: about you (name, sex, date of birth, height, today's weight), your day (activity, workouts a week, lifting experience), your goal and what you eat, and a health check. Any "yes" in the health check shows a plain note to talk to a doctor first. Coaches skip it. Answers go to the existing `profiles` row and today's weight becomes the first weigh-in. If the profile can't load, the app opens anyway.
+- New Progress tab: save or update today's weight, the trend weight (the diet engine's smoothing) with its change over the last week, advice against the goal (for example, losing faster than 1 % a week), a 90-day chart of daily weights and the trend line, recent weigh-ins with remove, and body measurements with the change since the first.
+- No database change: the profile, weigh-in and measurement tables were already in the first migration.
+- Tests: `src/profile/profile.test.ts` (7), `src/profile/Onboarding.test.tsx` (5), `src/progress/progress.test.ts` (16), `src/progress/Progress.test.tsx` (4), `src/App.test.tsx` (4), `src/db/rls.test.ts` (+2); whole suite 226 passing.
+- Open: progress photos and strength trends (T-022b).
+
 ## 2026-10-13: Live on Vercel (T-028)
 
 - The app is live at https://track-me-fit-dpvu.vercel.app with the Supabase address and anon key set in Vercel. DK signed in with Google on the live site.

@@ -29,12 +29,11 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | ID | Task | Tests planned |
 |---|---|---|
 | T-015 | USDA bulk importer (Foundation + SR Legacy) into our foods table | Mapper tests (started in T-007), import count check |
-| T-017 | Onboarding: quick start + health check | Component tests for each step; health "yes" shows the doctor note |
 | T-018b | Food logging extras: quick add (calories only), barcode scan, batch-cooked weighing, recent and frequent foods | Component tests for each |
 | T-038 | Serve food search from the database instead of a 535 KB (gzip) download | Search tests against the server |
 | T-019 | Add your own food, product, recipe | Recipe per-100 g maths tests |
+| T-022b | Progress extras: progress photos (private storage) and strength trends per exercise | Photo upload privacy tests; strength trend tests |
 | T-021 | Optional "suggest my targets" using the diet engine | Engine tests (done); UI test for accept / ignore |
-| T-022 | Progress tracking: weight trend, measurements, photos, strength | Trend tests (done); chart data tests |
 | T-027 | Offline logging: save food and sets without a connection and sync later | Offline queue tests |
 | T-026 | Coach dashboard: client list, flags, plan editing, check-ins, chat | Permission tests; flag rule tests |
 
@@ -57,6 +56,8 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-014 | Data model and privacy rules (users, coaches, food, progress, training) | `src/db/rls.test.ts` (17), run in PGlite |
 | T-030 | Load USDA values for our ingredients: 26 of 28 matched, 22 of 25 dishes computed | `src/food/indian/database.test.ts` (6) |
 | T-039 | Progression migration run on the live Supabase project | DK ran it in the SQL Editor |
+| T-017 | Onboarding: about you, your day, goal and food preference, health check with doctor notes; first weigh-in saved | `src/profile/profile.test.ts` (7), `src/profile/Onboarding.test.tsx` (5), `src/App.test.tsx` (4), `src/db/rls.test.ts` (+1) |
+| T-022 | Progress tab: daily weigh-in, trend weight with weekly change and goal advice, 90-day chart, body measurements | `src/progress/progress.test.ts` (16), `src/progress/Progress.test.tsx` (4), `src/db/rls.test.ts` (+1) |
 | T-028 | Live on Vercel at track-me-fit-dpvu.vercel.app with Google sign-in | DK checked sign-in on the live site |
 | T-040 | Installable app: icon, manifest, service worker (opens offline), Vercel settings | `src/pwa.test.ts` (6) |
 | T-024 | Weekly progression: how-did-it-feel questions after workouts, week review with per-muscle set changes (applied only when accepted), effort targets per week, deloads and new blocks | `src/training/progression.test.ts` (10), `src/training/Review.test.tsx` (3), `src/db/rls.test.ts` (+2) |

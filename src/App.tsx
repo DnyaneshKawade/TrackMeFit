@@ -13,6 +13,13 @@ import { memoryWorkoutStore } from './training/memoryStore'
 import { supabaseWorkoutStore } from './training/supabaseStore'
 import type { WorkoutStore } from './training/types'
 import type { SearchIndex } from './food/search'
+import { localDate } from './log/types'
+import { Onboarding } from './profile/Onboarding'
+import { memoryProfileStore, supabaseProfileStore } from './profile/stores'
+import { isComplete, type ProfileInfo, type ProfileStore } from './profile/types'
+import { Progress } from './progress/Progress'
+import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
+import type { ProgressStore } from './progress/types'
 
 const loadIndex = (): Promise<SearchIndex> => import('./food/catalogueData').then((m) => m.searchIndex)
 
@@ -21,17 +28,38 @@ export function AppShell({
   logStoreFor = () => memoryLogStore(),
   targetStoreFor = (a) => memoryTargetStore(a.id),
   workoutStoreFor = () => memoryWorkoutStore(),
+  profileStoreFor = () => memoryProfileStore(),
+  progressStoreFor = () => memoryProgressStore(),
 }: {
   auth: AuthService | null
   logStoreFor?: (account: Account) => LogStore
   targetStoreFor?: (account: Account) => TargetStore
   workoutStoreFor?: (account: Account) => WorkoutStore
+  profileStoreFor?: (account: Account) => ProfileStore
+  progressStoreFor?: (account: Account) => ProgressStore
 }) {
   const [account, setAccount] = useState<Account | null | undefined>(undefined)
   const store = useMemo(() => (account ? logStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const workouts = useMemo(() => (account ? workoutStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
-  const [tab, setTab] = useState<'food' | 'training'>('food')
+  const [tab, setTab] = useState<'food' | 'training' | 'progress'>('food')
   const targets = useMemo(() => (account ? targetStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const profiles = useMemo(() => (account ? profileStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const progress = useMemo(() => (account ? progressStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  // undefined while loading; null when it couldn't be loaded (the app still works).
+  const [profile, setProfile] = useState<ProfileInfo | null | undefined>(undefined)
+
+  useEffect(() => {
+    setProfile(undefined)
+    if (!profiles) return
+    let live = true
+    profiles.get().then(
+      (p) => live && setProfile(p),
+      () => live && setProfile(null),
+    )
+    return () => {
+      live = false
+    }
+  }, [profiles])
 
   useEffect(() => {
     if (!auth) return
@@ -54,26 +82,47 @@ export function AppShell({
   }
   if (account === undefined) return <main className="auth">Loading…</main>
   if (!account) return <SignIn auth={auth} />
+  if (profile === undefined) return <main className="auth">Loading…</main>
+
+  const topbar = (
+    <header className="topbar">
+      <strong className="topbar-brand">Track Me Fit</strong>
+      <span>
+        {account.name || account.email}
+        {account.role === 'coach' ? ' (coach)' : ''}
+      </span>
+      <button onClick={() => void auth.signOut()}>Sign out</button>
+    </header>
+  )
+
+  // Coaches go straight to the app; everyone else answers the first-run questions once.
+  if (profile && account.role === 'user' && !isComplete(profile)) {
+    return (
+      <>
+        {topbar}
+        <Onboarding
+          initial={{ ...profile, fullName: profile.fullName || account.name }}
+          onFinish={async (p, kg) => {
+            await profiles!.save(p)
+            await progress!.saveWeighIn(localDate(), kg)
+            setProfile(p)
+          }}
+        />
+      </>
+    )
+  }
 
   return (
     <>
-      <header className="topbar">
-        <strong className="topbar-brand">Track Me Fit</strong>
-        <span>
-          {account.name || account.email}
-          {account.role === 'coach' ? ' (coach)' : ''}
-        </span>
-        <button onClick={() => void auth.signOut()}>Sign out</button>
-      </header>
+      {topbar}
       <nav className="tabs" role="tablist">
         <button role="tab" aria-selected={tab === 'food'} onClick={() => setTab('food')}>Food</button>
         <button role="tab" aria-selected={tab === 'training'} onClick={() => setTab('training')}>Training</button>
+        <button role="tab" aria-selected={tab === 'progress'} onClick={() => setTab('progress')}>Progress</button>
       </nav>
-      {tab === 'food' ? (
-        <FoodLog store={store!} loadIndex={loadIndex} targets={targets} userId={account.id} />
-      ) : (
-        <Workouts store={workouts!} />
-      )}
+      {tab === 'food' && <FoodLog store={store!} loadIndex={loadIndex} targets={targets} userId={account.id} />}
+      {tab === 'training' && <Workouts store={workouts!} />}
+      {tab === 'progress' && <Progress store={progress!} goal={profile?.goal ?? null} />}
     </>
   )
 }
@@ -87,6 +136,8 @@ export default function App() {
       logStoreFor={(a) => supabaseLogStore(sb!, a.id)}
       targetStoreFor={(a) => supabaseTargetStore(sb!, a.id)}
       workoutStoreFor={(a) => supabaseWorkoutStore(sb!, a.id)}
+      profileStoreFor={(a) => supabaseProfileStore(sb!, a.id)}
+      progressStoreFor={(a) => supabaseProgressStore(sb!, a.id)}
     />
   )
 }
