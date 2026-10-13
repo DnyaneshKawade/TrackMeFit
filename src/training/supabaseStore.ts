@@ -106,21 +106,26 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): Workou
         }),
       )
     },
-    async startSession(date, day) {
-      const r = check(
-        await sb.from('workout_sessions').insert({ performed_on: date, plan_day_id: day?.id ?? null }).select('id').single(),
-      ) as { id: string }
-      return { id: r.id, performedOn: date, planDayId: day?.id ?? null, name: day?.name ?? 'Workout', sets: [] }
+    async startSession(date, day, id) {
+      const session = (sid: string): Session => ({ id: sid, performedOn: date, planDayId: day?.id ?? null, name: day?.name ?? 'Workout', sets: [] })
+      const { data, error } = await sb
+        .from('workout_sessions')
+        .insert({ performed_on: date, plan_day_id: day?.id ?? null, ...(id ? { id } : {}) })
+        .select('id')
+        .single()
+      // Sent before but the answer was lost: it is already saved.
+      if (error && id && (error as { code?: string }).code === '23505') return session(id)
+      return session((check({ data, error }) as { id: string }).id)
     },
-    async addSet(sessionId, s) {
-      const r = check(
-        await sb
-          .from('set_logs')
-          .insert({ session_id: sessionId, exercise_id: s.exerciseId, set_index: s.setIndex, weight_kg: s.weightKg, reps: s.reps, rir: s.rir })
-          .select(SET_COLUMNS)
-          .single(),
-      )
-      return setFromRow(r as SetRow)
+    async addSet(sessionId, s, id) {
+      const row = { session_id: sessionId, exercise_id: s.exerciseId, set_index: s.setIndex, weight_kg: s.weightKg, reps: s.reps, rir: s.rir }
+      const { data, error } = await sb
+        .from('set_logs')
+        .insert({ ...row, ...(id ? { id } : {}) })
+        .select(SET_COLUMNS)
+        .single()
+      if (error && id && (error as { code?: string }).code === '23505') return { ...s, id }
+      return setFromRow(check({ data, error }) as SetRow)
     },
     async removeSet(id) {
       check(await sb.from('set_logs').delete().eq('id', id))

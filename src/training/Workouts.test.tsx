@@ -1,15 +1,22 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { Workouts } from './Workouts'
 import { memoryWorkoutStore } from './memoryStore'
-import type { Plan } from './types'
+import { offlineWorkoutStore } from './offlineStore'
+import type { KeyValue } from '../sync/outbox'
+import type { Plan, WorkoutStore } from './types'
 
 afterEach(cleanup)
 
 const TODAY = '2026-10-12'
 const click = (name: string | RegExp) => fireEvent.click(screen.getByRole('button', { name }))
 const type = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } })
+
+const mapStorage = (): KeyValue => {
+  const data = new Map<string, string>()
+  return { get: (k) => data.get(k) ?? null, set: (k, v) => void data.set(k, v), remove: (k) => void data.delete(k) }
+}
 
 const ppl: Plan = {
   id: 'p1',
@@ -109,5 +116,33 @@ describe('logging a workout', () => {
     type('Triceps pushdown reps', '12')
     click('Log set')
     expect(await screen.findByText('Set 1: 25 kg × 12')).toBeTruthy()
+  })
+})
+
+describe('offline workouts (T-027b)', () => {
+  it('logs a workout with no connection, marks the sets, and clears the marks once synced', async () => {
+    const server = memoryWorkoutStore({ plans: [ppl] })
+    const net = { online: true }
+    const gated = Object.fromEntries(
+      Object.entries(server).map(([k, f]) => [k, (...a: unknown[]) => (net.online ? (f as (...a: unknown[]) => unknown)(...a) : Promise.reject(new TypeError('Failed to fetch')))]),
+    ) as unknown as WorkoutStore
+    const store = offlineWorkoutStore(gated, { storage: mapStorage(), accountId: 'me' })
+    render(<Workouts store={store} today={TODAY} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Start a workout' }))
+    net.online = false
+    click(/^Push/)
+    const bench = await screen.findByRole('region', { name: 'Bench press (barbell)' })
+    type('Bench press (barbell) weight (kg)', '60')
+    type('Bench press (barbell) reps', '8')
+    click('Log set')
+    expect(await within(bench).findByText('Set 1: 60 kg × 8')).toBeTruthy()
+    expect(within(bench).getByText('· Not synced yet')).toBeTruthy()
+    expect(screen.getByRole('status', { name: 'Sync' }).textContent).toBe('2 workout entries saved on this phone. They’ll sync when you’re online.')
+
+    net.online = true
+    await act(() => store.sync.run())
+    expect(within(bench).queryByText('· Not synced yet')).toBeNull()
+    expect(screen.queryByRole('status', { name: 'Sync' })).toBeNull()
+    expect((await server.sessionsOn(TODAY))[0].sets.map((s) => s.weightKg)).toEqual([60])
   })
 })

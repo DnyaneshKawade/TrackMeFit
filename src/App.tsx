@@ -5,13 +5,15 @@ import type { Account, AuthService } from './auth/types'
 import { FoodLog } from './log/FoodLog'
 import { memoryLogStore } from './log/memoryStore'
 import { supabaseLogStore } from './log/supabaseStore'
-import { browserStorage, offlineLogStore } from './log/offlineStore'
+import { offlineLogStore } from './log/offlineStore'
+import { browserStorage } from './sync/outbox'
 import type { LogStore } from './log/types'
 import { memoryTargetStore, supabaseTargetStore } from './targets/stores'
 import type { TargetStore } from './targets/types'
 import { Workouts } from './training/Workouts'
 import { memoryWorkoutStore } from './training/memoryStore'
 import { supabaseWorkoutStore } from './training/supabaseStore'
+import { offlineWorkoutStore } from './training/offlineStore'
 import type { WorkoutStore } from './training/types'
 import { localFinder, serverFinder, type FoodFinder } from './food/finder'
 import { memoryCustomFoodStore, supabaseCustomFoodStore, type CustomFoodStore } from './food/custom'
@@ -53,12 +55,13 @@ export function AppShell({
 }) {
   const [account, setAccount] = useState<Account | null | undefined>(undefined)
   const store = useMemo(() => (account ? logStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
-  // Entries saved offline go out when the app opens, when the phone is back
-  // online and when the app returns to the front (T-027).
+  const workouts = useMemo(() => (account ? workoutStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Food entries and workouts saved offline go out when the app opens, when
+  // the phone is back online and when the app returns to the front (T-027).
   useEffect(() => {
-    const sync = store?.sync
-    if (!sync) return
-    const run = () => void sync.run()
+    const syncs = [store?.sync, workouts?.sync].filter((x) => x !== undefined)
+    if (!syncs.length) return
+    const run = () => syncs.forEach((x) => void x.run())
     const onVisible = () => document.visibilityState === 'visible' && run()
     run()
     window.addEventListener('online', run)
@@ -67,8 +70,7 @@ export function AppShell({
       window.removeEventListener('online', run)
       document.removeEventListener('visibilitychange', onVisible)
     }
-  }, [store])
-  const workouts = useMemo(() => (account ? workoutStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [store, workouts])
   const [tab, setTab] = useState<'food' | 'training' | 'progress'>('food')
   const targets = useMemo(() => (account ? targetStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const profiles = useMemo(() => (account ? profileStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -124,6 +126,7 @@ export function AppShell({
       <button
         onClick={() => {
           store?.sync?.clearCache()
+          workouts?.sync?.clearCache()
           void auth.signOut()
         }}
       >
@@ -201,7 +204,7 @@ export default function App() {
       auth={auth}
       logStoreFor={(a) => offlineLogStore(supabaseLogStore(sb!, a.id), { storage: browserStorage, accountId: a.id })}
       targetStoreFor={(a) => supabaseTargetStore(sb!, a.id)}
-      workoutStoreFor={(a) => supabaseWorkoutStore(sb!, a.id)}
+      workoutStoreFor={(a) => offlineWorkoutStore(supabaseWorkoutStore(sb!, a.id), { storage: browserStorage, accountId: a.id })}
       profileStoreFor={(a) => supabaseProfileStore(sb!, a.id)}
       progressStoreFor={(a) => supabaseProgressStore(sb!, a.id)}
       foodStoreFor={(a) => supabaseCustomFoodStore(sb!, a.id)}

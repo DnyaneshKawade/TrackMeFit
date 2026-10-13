@@ -4,6 +4,7 @@
 import { nextLoad, type LoadDecision } from '../engine/training'
 import type { Exercise } from './exercises'
 import type { Feedback } from './progression'
+import type { Sync } from '../sync/outbox'
 
 export interface PlanExercise {
   exerciseId: string
@@ -60,8 +61,9 @@ export interface WorkoutStore {
   savePlan(plan: Plan): Promise<Plan>
   deletePlan(id: string): Promise<void>
   sessionsOn(date: string): Promise<Session[]>
-  startSession(date: string, day: PlanDay | null): Promise<Session>
-  addSet(sessionId: string, set: NewSet): Promise<SetLog>
+  /** An id made on the phone makes a repeat send save once (T-027). */
+  startSession(date: string, day: PlanDay | null, id?: string): Promise<Session>
+  addSet(sessionId: string, set: NewSet, id?: string): Promise<SetLog>
   removeSet(id: string): Promise<void>
   /** Earlier sessions with this exercise, newest first. */
   history(exerciseId: string, beforeDate: string, limit?: number): Promise<PastSession[]>
@@ -70,6 +72,8 @@ export interface WorkoutStore {
   feedbackSince(date: string): Promise<Feedback[]>
   /** Starts a new training block (after a deload) from a date. */
   startBlock(planId: string, date: string): Promise<void>
+  /** Present when sessions and sets can wait on the phone to sync (T-027). */
+  sync?: Sync
 }
 
 export const MAX_DAYS = 14
