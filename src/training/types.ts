@@ -128,7 +128,7 @@ export function nextDayIndex(days: PlanDay[]): number {
 export function checkSet(weightKg: number, reps: number, rir: number | null): string | null {
   if (!(weightKg >= 0 && weightKg <= 600)) return 'Weight must be 0 to 600 kg.'
   if (!Number.isInteger(reps) || reps < 0 || reps > 100) return 'Reps must be a whole number from 0 to 100.'
-  if (rir !== null && (!Number.isInteger(rir) || rir < 0 || rir > 10)) return 'Reps in reserve must be 0 to 10.'
+  if (rir !== null && (!Number.isInteger(rir) || rir < 0 || rir > 10)) return 'Reps left must be 0 to 10.'
   return null
 }
 

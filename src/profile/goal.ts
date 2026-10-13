@@ -85,10 +85,10 @@ export function paceOptions(goal: GoalChoice, experience: Experience, medical: R
   const pct = (r: number) => `${pctText(r)} of your weight a week`
   if (goal === 'lose') {
     if (noDeficit(medical)) return []
-    const gentle = { rate: -0.0025, label: 'Gentle', note: `${pct(-0.0025)}. Easiest to keep up.` }
+    const gentle = { rate: -0.0025, label: 'Gentle', note: `${pct(-0.0025)}. The easiest to follow.` }
     if (gentleOnly(medical)) return [{ ...gentle, recommended: true }]
     return [
-      { rate: -0.005, label: 'Steady', note: `${pct(-0.005)}. Keeps muscle and is easy to stick to.`, recommended: true },
+      { rate: -0.005, label: 'Steady', note: `${pct(-0.005)}. Keeps muscle and is easy to follow.`, recommended: true },
       gentle,
       { rate: -0.0075, label: 'Faster', note: `${pct(-0.0075)}. Harder; hunger and tiredness are more likely.` },
     ]
@@ -114,7 +114,7 @@ function gainPaces(experience: Experience, medical: Record<string, boolean>, bod
   const leanPace = pace(lean, 'Lean', 'Slow and clean: most of what you gain is muscle.')
 
   if (gentleOnly(medical)) {
-    const care = medical.eatingDisorder ? ' If a care team is helping you regain weight, follow their plan.' : ''
+    const care = medical.eatingDisorder ? ' If doctors are helping you gain back weight, follow their plan.' : ''
     return [{ ...leanPace, note: `${leanPace.note} Because of your health answers, we keep the pace gentle.${care}`, recommended: true }]
   }
   if (band === 'obese') {
@@ -130,7 +130,7 @@ function gainPaces(experience: Experience, medical: Record<string, boolean>, bod
       options.push({
         rate: catchUp,
         label: 'Catch up',
-        note: `About ${kg} kg a week and ${surplusKcal(catchUp, body.weightKg)} extra kcal a day. Reach a healthy weight sooner; more of it is fat, which is fine while you’re underweight. Switch to Steady once you reach ${healthyMin} kg.`,
+        note: `About ${kg} kg a week and ${surplusKcal(catchUp, body.weightKg)} extra kcal a day. Reach a healthy weight sooner. More of the gain is fat, which is fine while you are underweight. Switch to Steady once you reach ${healthyMin} kg.`,
       })
     }
   }
@@ -212,7 +212,7 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
   const maintenance = {
     low,
     high,
-    message: `You likely burn about ${low.toLocaleString('en-IN')} to ${high.toLocaleString('en-IN')} kcal a day. This is a formula’s guess; it gets accurate after 2 to 3 weeks of logging food and weight.`,
+    message: `You likely burn about ${low.toLocaleString('en-IN')} to ${high.toLocaleString('en-IN')} kcal a day. This is a first guess. It gets better after 2 to 3 weeks of logging food and weight.`,
   }
 
   let intakeNote: string | null = null
@@ -250,7 +250,7 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
     reasons.push(`Calories are set to gain ${pctText(r)} of your weight a week, about ${surplusKcal(r, weightKg)} kcal a day above what you burn.`)
   }
   else reasons.push('Calories are set to keep your weight where it is.')
-  if (p.goal === 'recomp') reasons.push('For losing fat while building muscle, that’s a small deficit with high protein.')
+  if (p.goal === 'recomp') reasons.push('For losing fat while building muscle, you eat a little less than you burn, with high protein.')
   if (rate < 0 && kcal <= calorieFloor(p.sex!)) reasons.push('Calories don’t go below the safe minimum without a coach.')
   reasons.push(
     protein.referToDoctor

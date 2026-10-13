@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Simple words across the app (T-064)
+
+- DK: "lets keep the verbiage simple around the whole app, to make easy for indians with not much english expierence to understand". Spec `specs/T-064-simple-words.md`, rules and word list in `docs/words.md`.
+- Rewrote the text on every screen and in the engine reasons: trend weight is now average weight, deload is light week (the gym word explained once), reps in reserve is reps left, "Not synced yet" is "Waiting for internet", macros is protein, carbs and fat, and deficit, surplus, sensible, roughly, moderate, regain and the idioms ("done its job", "stick to", "run down") are gone. Long sentences were split; none is over 20 words.
+- `src/words.test.ts` reads the text in every source file and fails on a word from the list or a sentence over 20 words, so new screens stay simple. Code names keep their gym terms.
+- Tests: `src/words.test.ts` (3); expected text updated in 10 existing test files.
+
 ## 2026-10-13: Workout logger, part 1 (T-043a)
 
 - DK: "go by best possible approach, proceed". First part of the FitNotes-standard logger from the competitor study. Spec `specs/T-043-workout-logger.md`.

@@ -9,8 +9,8 @@ export function SyncNote({ sync, noun }: { sync: Sync | undefined; noun: [one: s
   return (
     <>
       {pending.size > 0 && (
-        <p className="info" role="status" aria-label="Sync">
-          {count(pending.size)} saved on this phone. They’ll sync when you’re online.
+        <p className="info" role="status" aria-label="Waiting for internet">
+          {count(pending.size)} saved on this phone. They will go online when you have internet.
         </p>
       )}
       {refused > 0 && (

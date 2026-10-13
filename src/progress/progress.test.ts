@@ -28,7 +28,7 @@ describe('weight summary', () => {
     expect(s.weekChangeKg).toBe(expected)
     expect(s.weekChangeKg!).toBeLessThan(0)
     expect(s.trendKg).toBe(Math.round(trend[13].kg * 10) / 10)
-    expect(s.message).toBe(`Your trend weight is ${s.trendKg} kg, down ${Math.abs(expected)} kg over the last week.`)
+    expect(s.message).toBe(`Your average weight is ${s.trendKg} kg, down ${Math.abs(expected)} kg over the last week.`)
   })
 
   it('uses the latest trend point at least a week old when days are missing', () => {
@@ -56,7 +56,7 @@ describe('goal notes', () => {
   })
   it('expects maintenance and recomp to hold steady', () => {
     expect(goalNote('maintain', 0.001)).toMatch(/holding steady/)
-    expect(goalNote('recomp', -0.008)).toMatch(/Small swings are normal/)
+    expect(goalNote('recomp', -0.008)).toMatch(/Small changes are normal/)
   })
   it('says nothing without a rate or a goal', () => {
     expect(goalNote('lose', null)).toBeNull()

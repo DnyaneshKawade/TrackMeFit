@@ -84,9 +84,9 @@ export function nextWeekSets(current: number, f: MuscleFeedback, landmarks: Land
     if (f.downStreak >= 2) {
       change = -2
       recoverySession = true
-      why = 'Performance dropped two sessions running, so we cut sets and add an easier session.'
+      why = 'You got weaker two workouts in a row, so we cut sets and add an easier workout.'
     } else {
-      why = 'Performance dipped once; holding sets to see if it was a one-off.'
+      why = 'You were a little weaker once. Sets stay the same to see if it happens again.'
     }
   } else if (f.recovery === 'bitSore') {
     why = 'A bit sore going in, so sets stay the same.'

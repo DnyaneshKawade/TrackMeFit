@@ -247,10 +247,10 @@ export function Progress({
       </form>
 
       {summary && (
-        <section aria-label="Weight trend" className="trend">
+        <section aria-label="Average weight" className="trend">
           <p className="trend-message">{summary.message}</p>
           {note && <p>{note}</p>}
-          <p className="muted">Daily weight jumps with water and salt. The trend smooths that out, so go by the trend.</p>
+          <p className="muted">Your weight goes up and down each day with water and salt. The average shows the real change, so go by the average.</p>
         </section>
       )}
 

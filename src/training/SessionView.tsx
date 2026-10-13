@@ -277,9 +277,9 @@ function ExerciseLog({
         {done.map((s, i) => (
           <li key={s.id}>
             <span>
-              Set {i + 1}: {s.weightKg} kg × {s.reps}{s.rir !== null ? ` · ${s.rir} in reserve` : ''}
+              Set {i + 1}: {s.weightKg} kg × {s.reps}{s.rir !== null ? ` · ${s.rir} reps left` : ''}
               {s.tag ? ` · ${SET_TAGS.find((t) => t.tag === s.tag)!.shown}` : ''}
-              {pending.has(s.id) && <span className="muted"> · Not synced yet</span>}
+              {pending.has(s.id) && <span className="muted"> · Waiting for internet</span>}
               {s.note && <small className="muted set-note">{s.note}</small>}
             </span>
             <button className="link" aria-label={`Remove set ${i + 1} of ${exercise.name}`} onClick={() => void remove(s.id)}>✕</button>
@@ -297,7 +297,7 @@ function ExerciseLog({
           <input aria-label={`${exercise.name} reps`} placeholder="reps" inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)} />
           <button className="step" aria-label={`More reps for ${exercise.name}`} onClick={() => step(reps, 1, setReps)}>+</button>
         </span>
-        <input aria-label={`${exercise.name} reps in reserve`} placeholder="RIR" inputMode="numeric" value={rir} onChange={(e) => setRir(e.target.value)} />
+        <input aria-label={`${exercise.name} reps left`} placeholder="Left" inputMode="numeric" value={rir} onChange={(e) => setRir(e.target.value)} />
         <button className="primary" disabled={busy} onClick={log}>Log set</button>
       </div>
       <div className="set-extras">

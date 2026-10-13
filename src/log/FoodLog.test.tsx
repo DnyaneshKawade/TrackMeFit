@@ -355,12 +355,12 @@ describe('offline logging (T-027)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add to Lunch' }))
     const lunch = await screen.findByRole('region', { name: 'Lunch' })
     expect(within(lunch).getByText('Dal tadka')).toBeTruthy()
-    expect(within(lunch).getByText('Not synced yet')).toBeTruthy()
-    expect(screen.getByRole('status', { name: 'Sync' }).textContent).toMatch(/1 entry saved on this phone/)
+    expect(within(lunch).getByText('Waiting for internet')).toBeTruthy()
+    expect(screen.getByRole('status', { name: 'Waiting for internet' }).textContent).toMatch(/1 entry saved on this phone/)
     net.online = true
     await store.sync!.run()
-    await waitFor(() => expect(screen.queryByText('Not synced yet')).toBeNull())
-    expect(screen.queryByRole('status', { name: 'Sync' })).toBeNull()
+    await waitFor(() => expect(screen.queryByText('Waiting for internet')).toBeNull())
+    expect(screen.queryByRole('status', { name: 'Waiting for internet' })).toBeNull()
     expect(await inner.listDay(TODAY)).toHaveLength(1)
   })
 
