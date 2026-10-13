@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Meal plan engine (T-058a)
+
+- DK agreed the meal-plan spec and limits ("start with the appropriate tasks"). Built `src/engine/mealPlan.ts`, a pure engine: it turns the typical day into raw foods, keeps them within each food's per-meal and per-day limit, fills the protein gap with the foods the person picked (more of what they already eat first), fits fat and then calories with their own cereals, adds ICMR basics (400 g vegetables, 100 g fruit, oil near 27 g per 2,000 kcal, sugar at most 25 g), and splits the day into breakfast, lunch, snack and dinner with no meal above 0.55 g protein per kg. Vegetarian lunch and dinner pair a cereal with dal, dairy or soya. Every item has a reason; amounts are raw or dry grams with a cooked or piece hint ("about 230 g cooked", "about 3 roti").
+- The protein check comes from the plan itself: "With these foods you can reach about X g of your Y g protein", with diet-appropriate suggestions.
+- `src/profile/planFoods.ts`: 23 raw plan foods with the agreed limits, plain-word protein choices filtered by diet, and the typical-day to raw-food mapping. Values match our ingredient database; paneer, soya chunks and whey borrow USDA values (queso fresco, defatted soy flour, whey isolate) until we have Indian packet labels (T-031), and the plan says so on those items.
+- Tests: `src/engine/mealPlan.test.ts` (11), `src/profile/planFoods.test.ts` (4).
+- Next: T-058b screens (opt-in question, protein picks, the plan with swaps and "Use this plan").
+
 ## 2026-10-13: Diet rules and a typical day that matches the diet (T-057)
 
 - "Non-veg" now reads "I eat everything (veg and non-veg)". People who eat non-veg or eggs can pick days (Mon to Sun) and seasons (Shravan, Navratri, Chaturmas, Ramadan fasting days, Lent) when they skip it; stored in `food_rules` as `nonveg_off:*`, no migration. Picking a vegetarian, vegan or Jain diet clears them.
