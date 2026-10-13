@@ -14,6 +14,9 @@ export type FoodSource =
   | 'user' // added by a user, private to them
   | 'aiEstimate' // estimated, always labelled as an estimate
 
+/** Something in a food that some diets leave out (see dietTags.ts). */
+export type DietTag = 'meat' | 'fish' | 'egg' | 'dairy' | 'honey' | 'root' | 'onion_garlic'
+
 export interface Per100g {
   kcal: number
   proteinG: number
@@ -40,6 +43,10 @@ export interface Food {
   /** Id in the source database, for refreshing and attribution. */
   sourceId?: string
   barcode?: string
+  /** What the food contains that some diets leave out. */
+  tags?: DietTag[]
+  /** True when tags were guessed from the name rather than a recipe. */
+  tagsGuessed?: boolean
 }
 
 export interface MacroAmount extends Per100g {

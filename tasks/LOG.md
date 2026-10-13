@@ -2,6 +2,23 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Diet rules and a typical day that matches the diet (T-057)
+
+- "Non-veg" now reads "I eat everything (veg and non-veg)". People who eat non-veg or eggs can pick days (Mon to Sun) and seasons (Shravan, Navratri, Chaturmas, Ramadan fasting days, Lent) when they skip it; stored in `food_rules` as `nonveg_off:*`, no migration. Picking a vegetarian, vegan or Jain diet clears them.
+- Every food in the catalogue now carries tags (meat, fish, egg, dairy, honey, root, onion_garlic): dishes from their recipe ingredients, other foods guessed from the name and marked as a guess (`src/food/dietTags.ts`).
+- `src/profile/dietRules.ts` decides what a diet, the no-onion-garlic rule and milk, egg or seafood allergies leave out. The typical day shows only allowed rows (Jain and no-onion-garlic get Jain dal and sabzi), filters "Add another food" search the same way, drops counts for rows the diet no longer allows, and shows grams per portion ("1 roti, 40 g").
+- Suggested targets now carry DK's note: these are only suggestions, not medical advice, the person decides, and should talk to a doctor if they have a health problem, are pregnant or take regular medicine.
+- Tests: `src/profile/dietRules.test.ts` (18), 5 new in `src/profile/Onboarding.test.tsx`, grams checked against the catalogue in `src/profile/profile.test.ts`.
+- Left open: packaged foods are tagged by name only (milk in a biscuit is missed until ingredient lists are read); non-veg-free days are used by the meal plan and log in T-058c.
+
+## 2026-10-13: Specs for diet rules and the meal plan (T-057, T-058)
+
+- DK asked for non-veg-free weekdays and seasons, an "I eat everything" option, a typical day that only shows foods the diet allows, and an opt-in suggested day of meals: start from the typical day, add the protein foods the person picks, all in grams (raw by default, cooked at times), with per-food limits and a check that the picks can reach the target.
+- Wrote [specs/T-057-diet-rules.md](../specs/T-057-diet-rules.md) (agreed) and [specs/T-058-meal-plan.md](../specs/T-058-meal-plan.md) (draft for DK).
+- Checked the plan against ICMR-NIN "My Plate for the Day" (raw grams per food group, sugar 25 to 30 g), Morton et al. 2018 (1.6 g/kg protein), Schoenfeld and Aragon 2018 (0.4 g/kg per meal over 4 meals) and Reed et al. 2021 (soy does not change male hormones). Changes from that check: protein per meal in g/kg instead of a percentage, vegetables, fruit, oil and sugar limits added, cereal plus pulse pairing for vegetarians, no automatic plan when the health check says see a doctor, and soya limits explained as comfort and variety, not hormones.
+- Added T-057, T-058a, T-058b, T-058c.
+- Tests: none yet (specs only).
+
 ## 2026-10-14: Engineering standards (T-051)
 
 - DK asked for SDLC principles, specification-driven development, caching, data structures, architecture and other best practices, and for them to be followed from now on. Checked the project against them and wrote [docs/engineering.md](../docs/engineering.md), which `CLAUDE.md` now requires for every change.

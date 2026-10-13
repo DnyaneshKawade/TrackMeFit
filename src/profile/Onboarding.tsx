@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Macros } from '../engine/diet'
 import { localDate } from '../log/types'
 import type { SearchIndex } from '../food/search'
-import { estimateDiet, type DietExtra } from './currentDiet'
+import { allowedExtras, dietItemsFor, estimateDiet, type DietExtra } from './currentDiet'
+import { NONVEG_OFF_DAYS, NONVEG_OFF_SEASONS, NO_ONION_GARLIC, cleanRules, excludedTags, hasNonvegOff, isNonvegOff } from './dietRules'
 import { TypicalDay } from './TypicalDay'
 import { bmiResult, buildPlan, checkTargetWeight, goalTimeline, paceOptions, waistNote } from './goal'
 import {
@@ -58,7 +59,7 @@ const GOALS: [GoalChoice, string][] = [
 const DIETS: [DietPref, string][] = [
   ['veg', 'Vegetarian'],
   ['eggetarian', 'Eggetarian'],
-  ['nonveg', 'Non-veg'],
+  ['nonveg', 'I eat everything (veg and non-veg)'],
   ['vegan', 'Vegan'],
   ['jain', 'Jain'],
 ]
@@ -117,6 +118,10 @@ function Multi({
   )
 }
 
+/** Shown with every suggested number. */
+export const SUGGESTION_NOTE =
+  'Please note: these numbers are only suggestions, based on nutrition research. They are not medical advice. You decide whether to follow them. If you have a health problem, are pregnant, or take regular medicine, talk to your doctor first.'
+
 const fmt = (n: number) => n.toLocaleString('en-IN')
 
 /** First-run questions in short steps, ending with a plan the person can
@@ -158,6 +163,11 @@ export function Onboarding({
   const [saveError, setSaveError] = useState<string | null>(null)
 
   const patch = (x: Partial<ProfileInfo>) => setP((old) => ({ ...old, ...x }))
+  // The typical day only shows and counts foods the diet allows.
+  const excluded = useMemo(() => excludedTags(p.dietPref, p.foodRules, p.allergies), [p.dietPref, p.foodRules, p.allergies])
+  const dietItems = useMemo(() => dietItemsFor(excluded), [excluded])
+  const keptExtras = allowedExtras(extras, excluded)
+  const estimate = () => estimateDiet(counts, keptExtras, dietItems)
   const size = bodySize(about)
   const weightKg = Number(about.weightKg)
   const questions = questionsFor(about.sex)
@@ -180,7 +190,7 @@ export function Onboarding({
     // Answers to questions that don't apply (e.g. pregnancy for men) are dropped.
     medical: Object.fromEntries(questions.map((q) => [q.key, !!p.medical[q.key]])),
     targetWeightKg: (p.goal === 'lose' || p.goal === 'gain') && targetText.trim() && !targetError ? Number(targetText) : null,
-    currentDiet: estimateDiet(counts, extras).kcal ? estimateDiet(counts, extras) : null,
+    currentDiet: estimate().kcal ? estimate() : null,
   })
 
   const next = () => {
@@ -237,7 +247,7 @@ export function Onboarding({
   const text = (key: keyof Omit<AboutYou, 'sex'>, label: string, extra: React.InputHTMLAttributes<HTMLInputElement> = { inputMode: 'decimal' }) =>
     field(key, label, <input aria-label={label} value={about[key]} onChange={(e) => setAbout({ ...about, [key]: e.target.value })} {...extra} />)
 
-  const diet = estimateDiet(counts, extras)
+  const diet = estimate()
   const plan = step === STEPS.length - 1 ? buildPlan(merged(), weightKg, today) : null
 
   return (
@@ -385,14 +395,37 @@ export function Onboarding({
 
       {step === 4 && (
         <>
-          <Choice label="What you eat" options={DIETS} value={p.dietPref} onChange={(dietPref) => patch({ dietPref })} />
+          <Choice
+            label="What you eat"
+            options={DIETS}
+            value={p.dietPref}
+            onChange={(dietPref) => patch({ dietPref, foodRules: cleanRules(dietPref, p.foodRules) })}
+          />
           <Multi
             label="Food rules"
-            options={[['no_onion_garlic', 'No onion or garlic']]}
-            value={p.foodRules}
+            options={[[NO_ONION_GARLIC, 'No onion or garlic']]}
+            value={p.foodRules.filter((r) => !isNonvegOff(r))}
             none={true}
-            onChange={(foodRules) => patch({ foodRules })}
+            onChange={(rules) => patch({ foodRules: [...rules, ...p.foodRules.filter(isNonvegOff)] })}
           />
+          {hasNonvegOff(p.dietPref) && (
+            <>
+              <Multi
+                label="Days you skip non-veg"
+                options={NONVEG_OFF_DAYS}
+                value={p.foodRules.filter((r) => NONVEG_OFF_DAYS.some(([k]) => k === r))}
+                none={true}
+                onChange={(days) => patch({ foodRules: [...p.foodRules.filter((r) => !NONVEG_OFF_DAYS.some(([k]) => k === r)), ...days] })}
+              />
+              <Multi
+                label="Seasons you skip non-veg"
+                options={NONVEG_OFF_SEASONS}
+                value={p.foodRules.filter((r) => NONVEG_OFF_SEASONS.some(([k]) => k === r))}
+                none={true}
+                onChange={(seasons) => patch({ foodRules: [...p.foodRules.filter((r) => !NONVEG_OFF_SEASONS.some(([k]) => k === r)), ...seasons] })}
+              />
+            </>
+          )}
           <Multi
             label="Do you fast?"
             options={FASTING}
@@ -418,8 +451,10 @@ export function Onboarding({
 
       {step === 5 && (
         <TypicalDay
+          items={dietItems}
+          excluded={excluded}
           counts={counts}
-          extras={extras}
+          extras={keptExtras}
           weightKg={weightKg}
           loadIndex={loadIndex}
           onChange={(c, e) => {
@@ -464,6 +499,7 @@ export function Onboarding({
                 ))}
               </ul>
               <p className="muted">Have a coach or your own numbers? Choose “I’ll set my own” and enter them on the Food tab.</p>
+              <p className="muted disclaimer">{SUGGESTION_NOTE}</p>
             </section>
           ) : (
             <p className="info">{plan.reasons[0]}</p>
