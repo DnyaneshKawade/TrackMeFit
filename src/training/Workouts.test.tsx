@@ -146,3 +146,100 @@ describe('offline workouts (T-027b)', () => {
     expect((await server.sessionsOn(TODAY))[0].sets.map((s) => s.weightKg)).toEqual([60])
   })
 })
+
+describe('logger (T-043a)', () => {
+  const lastPush = (sets: { w: number; reps: number; tag?: 'warmup' | 'drop' }[]) =>
+    memoryWorkoutStore({
+      plans: [ppl],
+      sessions: [
+        {
+          id: 's0',
+          performedOn: '2026-10-09',
+          planDayId: 'd1',
+          name: 'Push',
+          sets: sets.map((s, i) => ({ id: `x${i}`, exerciseId: 'bench-press', setIndex: i, weightKg: s.w, reps: s.reps, rir: null, ...(s.tag ? { tag: s.tag } : {}) })),
+        },
+      ],
+    })
+  const openPush = async (store: WorkoutStore) => {
+    render(<Workouts store={store} today={TODAY} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Start a workout' }))
+    click(/^Push/)
+    return screen.findByRole('region', { name: 'Bench press (barbell)' })
+  }
+  const value = (label: string) => (screen.getByLabelText(label) as HTMLInputElement).value
+
+  it('1, 5. fills in from last time, ignoring warm-ups, so the next set is one tap', async () => {
+    const bench = await openPush(lastPush([{ w: 40, reps: 12, tag: 'warmup' }, { w: 60, reps: 10 }, { w: 60, reps: 10 }, { w: 60, reps: 10 }]))
+    expect(await within(bench).findByText('Last time: 60 kg × 10, 10, 10')).toBeTruthy()
+    // The warm-up doesn't pull the suggestion down: 60 × 10 at the top of the range means go up.
+    expect(within(bench).getByText(/Try 62.5 kg × 6/)).toBeTruthy()
+    click('Log set')
+    await within(bench).findByText('Set 1: 62.5 kg × 6')
+    click('Log set')
+    expect(await within(bench).findByText('Set 2: 62.5 kg × 6')).toBeTruthy()
+  })
+
+  it('2. − and + move weight by the usual jump and reps by one, never below 0', async () => {
+    await openPush(memoryWorkoutStore({ plans: [ppl] }))
+    type('Bench press (barbell) weight (kg)', '2.5')
+    type('Bench press (barbell) reps', '1')
+    click('More weight for Bench press (barbell)')
+    expect(value('Bench press (barbell) weight (kg)')).toBe('5')
+    click('Less weight for Bench press (barbell)')
+    click('Less weight for Bench press (barbell)')
+    click('Less weight for Bench press (barbell)')
+    expect(value('Bench press (barbell) weight (kg)')).toBe('0')
+    click('More reps for Bench press (barbell)')
+    expect(value('Bench press (barbell) reps')).toBe('2')
+    click('Fewer reps for Bench press (barbell)')
+    click('Fewer reps for Bench press (barbell)')
+    click('Fewer reps for Bench press (barbell)')
+    expect(value('Bench press (barbell) reps')).toBe('0')
+  })
+
+  it('3. a set starts the rest timer, which can be changed, runs out and is skipped', async () => {
+    await openPush(memoryWorkoutStore({ plans: [ppl] }))
+    type('Bench press (barbell) weight (kg)', '60')
+    type('Bench press (barbell) reps', '8')
+    click('Log set')
+    const timer = await screen.findByRole('timer', { name: 'Rest' })
+    expect(timer.textContent).toMatch(/Rest 2:30/)
+    click('15 seconds more rest')
+    expect(screen.getByRole('timer', { name: 'Rest' }).textContent).toMatch(/Rest 2:4[45]/)
+    while (screen.queryByRole('button', { name: '15 seconds less rest' })) click('15 seconds less rest')
+    expect(await screen.findByText('Rest over')).toBeTruthy()
+    click('OK')
+    expect(screen.queryByRole('timer', { name: 'Rest' })).toBeNull()
+  })
+
+  it('4, 6. a tag and a note go with the next set only', async () => {
+    const store = memoryWorkoutStore({ plans: [ppl] })
+    const bench = await openPush(store)
+    type('Bench press (barbell) weight (kg)', '40')
+    type('Bench press (barbell) reps', '10')
+    click('Warm-up')
+    click('+ Note')
+    type('Bench press (barbell) set note', 'Shoulder felt tight')
+    click('Log set')
+    await waitFor(() => expect(within(bench).getByRole('list').textContent).toMatch(/Set 1: 40 kg × 10 · warm-up/))
+    expect(within(bench).getByText('Shoulder felt tight')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Warm-up' }).getAttribute('aria-pressed')).toBe('false')
+    click('Log set')
+    expect(await within(bench).findByText('Set 2: 40 kg × 10')).toBeTruthy()
+    const [s] = await store.sessionsOn(TODAY)
+    expect(s.sets.map((x) => [x.tag, x.note])).toEqual([['warmup', 'Shoulder felt tight'], [undefined, undefined]])
+  })
+
+  it('7. workout notes are saved and show when the workout is opened again', async () => {
+    const store = memoryWorkoutStore({ plans: [ppl] })
+    await openPush(store)
+    const notes = screen.getByLabelText('Workout notes')
+    fireEvent.change(notes, { target: { value: 'Gym was packed, short rests' } })
+    fireEvent.blur(notes)
+    await waitFor(async () => expect((await store.sessionsOn(TODAY))[0].note).toBe('Gym was packed, short rests'))
+    click('Done')
+    fireEvent.click(await screen.findByRole('button', { name: /sets logged/ }))
+    expect(((await screen.findByLabelText('Workout notes')) as HTMLTextAreaElement).value).toBe('Gym was packed, short rests')
+  })
+})

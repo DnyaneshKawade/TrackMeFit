@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Workout logger, part 1 (T-043a)
+
+- DK: "go by best possible approach, proceed". First part of the FitNotes-standard logger from the competitor study. Spec `specs/T-043-workout-logger.md`.
+- Weight and reps are filled in from the suggestion or last time's first working set and stay after each set, so the next set is one tap. − and + move weight by the exercise's usual jump (2.5 kg barbell, 5 kg machine) and reps by one.
+- A rest timer starts on every set: 2 min 30 s for big lifts, 1 min 30 s for isolation work, with −15 s, +15 s and Skip; it counts from the clock and vibrates at zero.
+- Sets can be tagged warm-up, drop set or failure, and carry a note; warm-ups and drop sets are left out of "Last time" and the next-load suggestion. Each workout has notes. All of it waits and syncs offline. Migration `20261019000000_set_tags_notes.sql` (DK runs it before the merge).
+- The Training and Progress tabs now load when first opened: the main bundle dropped from 137.6 to 127.3 KB.
+- Added tasks from DK's questions: T-061 (change the meal plan from the Food tab), T-062 (diet stats), T-063 (planned items inside each meal instead of a separate box). T-043 split; T-043b is supersets, favourites and custom exercises.
+- Tests: 5 in `src/training/Workouts.test.tsx`, `src/training/restTimer.test.ts` (2), 1 in `src/training/training.test.ts`, 1 in `src/training/offlineStore.test.ts`, 1 in `src/db/rls.test.ts`.
+
 ## 2026-10-13: Catch up to Steady (T-059c)
 
 - Someone gaining on Catch up now gets a card on the Progress tab once their trend weight reaches a healthy BMI: Catch up has done its job, Steady keeps more of the gain as muscle, and it says how many calories a day less (2,600 to 2,300 kcal, for example).

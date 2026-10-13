@@ -269,6 +269,22 @@ describe('meal plans (T-058b)', () => {
   })
 })
 
+describe('set tags and notes (T-043a)', () => {
+  it('sets keep a tag and a note, workouts a note; bad values are refused', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('me@x.in')
+    const sid = '11111111-2222-4333-8444-999999999999'
+    const rows = await t.as(me, async (db) => {
+      await db.query(`insert into workout_sessions (id, performed_on, note) values ('${sid}', '2026-10-13', 'Packed gym')`)
+      await db.query(`insert into set_logs (session_id, exercise_id, set_index, weight_kg, reps, tag, is_warmup, note) values ('${sid}', 'bench-press', 0, 40, 10, 'warmup', true, 'easy')`)
+      return (await db.query<{ tag: string; note: string }>('select tag, note from set_logs')).rows
+    })
+    expect(rows).toEqual([{ tag: 'warmup', note: 'easy' }])
+    await expect(t.as(me, (db) => db.query(`insert into set_logs (session_id, exercise_id, set_index, weight_kg, reps, tag) values ('${sid}', 'bench-press', 1, 40, 10, 'superset')`))).rejects.toThrow(/check/)
+    await expect(t.as(me, (db) => db.query(`update workout_sessions set note = '${'a'.repeat(501)}'`))).rejects.toThrow(/check/)
+  })
+})
+
 describe('ticking the meal plan (T-060)', () => {
   it('an entry keeps its plan item; entries logged by hand have none', async () => {
     const t = await createTestDb()

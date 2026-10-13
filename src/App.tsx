@@ -10,7 +10,6 @@ import { browserStorage } from './sync/outbox'
 import type { LogStore } from './log/types'
 import { memoryTargetStore, supabaseTargetStore } from './targets/stores'
 import type { TargetStore } from './targets/types'
-import { Workouts } from './training/Workouts'
 import { memoryWorkoutStore } from './training/memoryStore'
 import { supabaseWorkoutStore } from './training/supabaseStore'
 import { offlineWorkoutStore } from './training/offlineStore'
@@ -21,9 +20,11 @@ import { localDate } from './log/types'
 import { memoryProfileStore, supabaseProfileStore } from './profile/stores'
 import { memoryMealPlanStore, supabaseMealPlanStore, type MealPlanStore } from './profile/mealPlanStore'
 import { isOnboarded, type ProfileInfo, type ProfileStore } from './profile/types'
-import { Progress } from './progress/Progress'
 
 // First-run questions are seen once, so they load only when needed.
+// Training and Progress load when their tab is first opened, to keep the first load small.
+const Workouts = lazy(() => import('./training/Workouts').then((m) => ({ default: m.Workouts })))
+const Progress = lazy(() => import('./progress/Progress').then((m) => ({ default: m.Progress })))
 const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ default: m.Onboarding })))
 import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
 import type { ProgressStore } from './progress/types'
@@ -185,21 +186,23 @@ export function AppShell({
           mealPlans={mealPlans}
         />
       )}
-      {tab === 'training' && <Workouts store={workouts!} />}
-      {tab === 'progress' && (
-        <Progress
-          store={progress!}
-          goal={profile?.goal ?? null}
-          profile={profile}
-          targets={targets}
-          onSwitchPace={async (rate, target) => {
-            const p = { ...profile!, goalRate: rate }
-            await profiles!.save(p)
-            if (target && targets) await targets.save(target, localDate(), 'suggested')
-            setProfile(p)
-          }}
-        />
-      )}
+      <Suspense fallback={<main className="log">Loading…</main>}>
+        {tab === 'training' && <Workouts store={workouts!} />}
+        {tab === 'progress' && (
+          <Progress
+            store={progress!}
+            goal={profile?.goal ?? null}
+            profile={profile}
+            targets={targets}
+            onSwitchPace={async (rate, target) => {
+              const p = { ...profile!, goalRate: rate }
+              await profiles!.save(p)
+              if (target && targets) await targets.save(target, localDate(), 'suggested')
+              setProfile(p)
+            }}
+          />
+        )}
+      </Suspense>
     </>
   )
 }

@@ -53,6 +53,12 @@ export function memoryWorkoutStore(
         .slice(0, limit)
     },
   
+    async saveNote(sessionId, note) {
+      const s = sessions.find((x) => x.id === sessionId)
+      if (!s) throw Object.assign(new Error('no such session'), { code: '23503' })
+      if (note.trim()) s.note = note.trim()
+      else delete s.note
+    },
     async saveFeedback(sessionId, list) {
       for (const f of list) {
         const i = feedback.findIndex((x) => x.sessionId === sessionId && x.muscle === f.muscle)
