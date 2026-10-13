@@ -3,6 +3,7 @@ import { fromRow, memoryProfileStore, toRow } from './stores'
 import { EMPTY_PROFILE, ageOn, checkAboutYou, healthNotes, isComplete, questionsFor, type ProfileInfo } from './types'
 
 const done: ProfileInfo = {
+  ...EMPTY_PROFILE,
   fullName: 'Asha',
   sex: 'female',
   birthDate: '1995-06-15',
@@ -55,7 +56,7 @@ describe('profile', () => {
   it('maps database rows both ways', () => {
     const row = toRow({ ...done, fullName: ' Asha ' })
     expect(row).toMatchObject({ full_name: 'Asha', birth_date: '1995-06-15', training_days: 3, diet_pref: 'veg' })
-    expect(fromRow({ ...row, height_cm: '160.0', medical: null })).toEqual({ ...done, medical: {} })
+    expect(fromRow({ ...row, height_cm: '160.0', medical: null, allergies: null, other_health: null })).toEqual({ ...done, medical: {} })
   })
 
   it('keeps the saved profile in the memory store', async () => {

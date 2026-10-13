@@ -1,6 +1,8 @@
 // A person's profile from onboarding: what the engines need to know about
 // them, plus the health check.
 
+import type { CurrentDiet } from './currentDiet'
+
 export type Sex = 'male' | 'female'
 export type Activity = 'desk' | 'on_feet' | 'physical'
 export type Experience = 'beginner' | 'intermediate' | 'advanced'
@@ -19,6 +21,12 @@ export interface ProfileInfo {
   dietPref: DietPref | null
   /** Health check answers, e.g. { diabetes: true, kidney: false }. */
   medical: Record<string, boolean>
+  targetWeightKg: number | null
+  /** Rough estimate of what they eat now; null if skipped. */
+  currentDiet: CurrentDiet | null
+  allergies: string[]
+  /** Other conditions or medicines, in their own words. */
+  otherHealth: string
 }
 
 export interface ProfileStore {
@@ -37,6 +45,10 @@ export const EMPTY_PROFILE: ProfileInfo = {
   goal: null,
   dietPref: null,
   medical: {},
+  targetWeightKg: null,
+  currentDiet: null,
+  allergies: [],
+  otherHealth: '',
 }
 
 /** Onboarding is finished once every answer the engines use is filled in. */
@@ -136,6 +148,18 @@ export const HEALTH_QUESTIONS: HealthQuestion[] = [
     note: 'Skip any exercise that hurts and see a doctor or physiotherapist.',
   },
 ]
+
+export const ALLERGIES: [string, string][] = [
+  ['milk', 'Milk or lactose'],
+  ['peanuts', 'Peanuts'],
+  ['treeNuts', 'Other nuts'],
+  ['gluten', 'Wheat or gluten'],
+  ['egg', 'Egg'],
+  ['seafood', 'Fish or shellfish'],
+  ['soy', 'Soy'],
+]
+
+export const MAX_OTHER_HEALTH = 500
 
 export const questionsFor = (sex: Sex | null) => HEALTH_QUESTIONS.filter((q) => !q.onlyFor || q.onlyFor === sex)
 

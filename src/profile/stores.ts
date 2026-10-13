@@ -24,9 +24,13 @@ export interface ProfileRow {
   goal: ProfileInfo['goal']
   diet_pref: ProfileInfo['dietPref']
   medical: Record<string, boolean> | null
+  target_weight_kg: number | string | null
+  current_diet: ProfileInfo['currentDiet']
+  allergies: string[] | null
+  other_health: string | null
 }
 
-const COLUMNS = 'full_name, sex, birth_date, height_cm, activity, training_days, experience, goal, diet_pref, medical'
+const COLUMNS = 'full_name, sex, birth_date, height_cm, activity, training_days, experience, goal, diet_pref, medical, target_weight_kg, current_diet, allergies, other_health'
 
 export const fromRow = (r: ProfileRow): ProfileInfo => ({
   fullName: r.full_name ?? '',
@@ -39,6 +43,10 @@ export const fromRow = (r: ProfileRow): ProfileInfo => ({
   goal: r.goal,
   dietPref: r.diet_pref,
   medical: r.medical ?? {},
+  targetWeightKg: r.target_weight_kg === null || r.target_weight_kg === undefined ? null : Number(r.target_weight_kg),
+  currentDiet: r.current_diet ?? null,
+  allergies: r.allergies ?? [],
+  otherHealth: r.other_health ?? '',
 })
 
 export const toRow = (p: ProfileInfo): ProfileRow => ({
@@ -52,6 +60,10 @@ export const toRow = (p: ProfileInfo): ProfileRow => ({
   goal: p.goal,
   diet_pref: p.dietPref,
   medical: p.medical,
+  target_weight_kg: p.targetWeightKg,
+  current_diet: p.currentDiet,
+  allergies: p.allergies,
+  other_health: p.otherHealth.trim(),
 })
 
 /** The signed-in person's own profile. Every sign-up already has a row,
