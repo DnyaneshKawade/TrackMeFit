@@ -29,21 +29,29 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | ID | Task | Tests planned |
 |---|---|---|
 | T-015 | USDA bulk importer (Foundation + SR Legacy) into our foods table | Mapper tests (started in T-007), import count check |
-| T-018c | Food logging extras: barcode scan, batch-cooked weighing | Component tests for each |
-| T-038 | Serve food search from the database instead of a 535 KB (gzip) download | Search tests against the server |
+| T-018c | Food logging extras: barcode scan (free for everyone, Open Food Facts kept separate under the ODbL), batch-cooked weighing | Component tests for each |
+| T-038 | Serve food search from the database instead of a 535 KB (gzip) download; rank Indian matches first and search by regional names | Search tests against the server, including ranking |
 | T-041 | Use onboarding answers: filter food search by diet type, food rules and allergies; fasting days as flexible days; event date for goals; starter workouts by equipment | Search filter tests; plan tests |
-| T-022b | Progress extras: progress photos (private storage) and strength trends per exercise | Photo upload privacy tests; strength trend tests |
+| T-022b | Progress extras: progress photos (private storage); strength trends moved to T-044 | Photo upload privacy tests |
 | T-027 | Offline logging: save food and sets without a connection and sync later | Offline queue tests |
-| T-026 | Coach dashboard: client list, flags, plan editing, check-ins, chat | Permission tests; flag rule tests |
+| T-026 | Coach dashboard: clients sorted by who needs attention with a plain reason per flag, coach-set targets with a tolerance band, weekly averages, check-in forms with weight trend and side-by-side photos, plan editing, chat with easy WhatsApp sharing, program templates clients can join midway, a client limit per coach. No paid add-ons ([study](https://claude.ai/code/artifact/4637175c-d094-4c40-80be-e4826de7c0b3)) | Permission tests; flag rule tests |
 | T-042a | Admin phase 1, safe access: admin role in its own table with a required second factor, append-only audit log, Edge Function for blocking and deleting accounts, People page, coach approval, data export and delete ([plan](https://claude.ai/code/artifact/8810062d-8117-486a-8550-1d59ff91c52a)) | Non-admins and admins without a second factor refused; every admin action logged; log cannot be edited |
 | T-042b | Admin phase 2, food and content (after T-038): food editor, review queue for user-submitted foods, wrong-food reports, exercise library | Approved foods public with reviewer recorded; rejected stay private |
 | T-042c | Admin phase 3, running the app: health numbers from the database, Sentry with personal data scrubbed, feature switches, banners, grievance queue with a 90-day clock | Numbers match a seeded database; no health field reaches Sentry |
+| T-043 | Workout logger to FitNotes standard: one-tap set filled in from last time, +/- steps per exercise, rest timer that starts on save, set and workout notes, set tags (warm-up, drop, failure), optional RPE/RIR, supersets, favourites and custom exercises ([study](https://claude.ai/code/artifact/4637175c-d094-4c40-80be-e4826de7c0b3)) | Logger component tests; set tag and RPE store tests |
+| T-044 | Records and strength graphs: personal records, rep maxes, estimated 1RM with a rep cap, graphs per exercise, calendar, plate calculator with Indian gym plates | Record and 1RM tests; plate calculator tests |
+| T-045 | Export and import: CSV and JSON for food, workouts and body data; import from Strong, Hevy and FitNotes | Round-trip export/import tests; sample files from each app |
+| T-046 | Training engine extras: block weeks counted by sessions done, illness advice (restart, deload or continue), learned MEV and MRV per person, fresh exercises at a new block, optional "felt the muscle" tie-breaker | Engine tests, each with its reason |
+| T-047 | Diet suggestion extras, all opt-in: "don't raise calories during a cut", weekly target split across training and rest days, stall options (ease the goal, maintenance break, end the diet) | Engine tests, each with its reason |
+| T-048 | Copy a whole meal or day; weekly averages in the log | Log tests; component tests |
+| T-049 | Food source and checked badge in search and on the amount screen; merge duplicate entries | Search and component tests |
 
 ## Done
 
 | ID | Task | Tests |
 |---|---|---|
 | T-001 | Research: market, competitors, RP Strength, FitNotes | n/a (docs) |
+| T-050 | Competitor study: 30+ Indian and international apps, coaching software, FitNotes-style loggers and the RP engine, with gaps and planning details ([study](https://claude.ai/code/artifact/4637175c-d094-4c40-80be-e4826de7c0b3)) | n/a (docs) |
 | T-002 | App plan and engine spec docs | n/a (docs) |
 | T-003 | Clickable prototype | n/a (prototype) |
 | T-004 | Project setup: React + TypeScript + Vite | `npm run build` |
