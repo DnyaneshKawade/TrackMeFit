@@ -1,5 +1,5 @@
 import type { Feedback } from './progression'
-import type { NewSet, Plan, PlanDay, Session, SetLog, WorkoutStore } from './types'
+import { MAX_RECORD_SESSIONS, MAX_SUMMARIES, type NewSet, type Plan, type PlanDay, type Session, type SessionSummary, type SetLog, type WorkoutStore } from './types'
 
 export function memoryWorkoutStore(
   init: { plans?: Plan[]; sessions?: Session[]; feedback?: (Feedback & { sessionId: string })[] } = {},
@@ -9,7 +9,7 @@ export function memoryWorkoutStore(
   let plans: Plan[] = structuredClone(init.plans ?? [])
   const sessions: Session[] = structuredClone(init.sessions ?? [])
   const feedback: (Feedback & { sessionId: string; order: number })[] = (init.feedback ?? []).map((f, order) => ({ ...f, order }))
-  return {
+  const store: WorkoutStore = {
     async plans() {
       return structuredClone(plans)
     },
@@ -52,7 +52,16 @@ export function memoryWorkoutStore(
         .sort((a, b) => b.performedOn.localeCompare(a.performedOn))
         .slice(0, limit)
     },
-  
+    async exerciseHistory(exerciseId, limit = MAX_RECORD_SESSIONS) {
+      return store.history(exerciseId, '9999-12-31', limit)
+    },
+    async summaries(from, to) {
+      return sessions
+        .filter((s) => s.performedOn >= from && s.performedOn <= to)
+        .sort((a, b) => b.performedOn.localeCompare(a.performedOn))
+        .slice(0, MAX_SUMMARIES)
+        .map((s): SessionSummary => ({ id: s.id, performedOn: s.performedOn, name: s.name, exerciseIds: [...new Set(s.sets.map((x) => x.exerciseId))] }))
+    },
     async saveNote(sessionId, note) {
       const s = sessions.find((x) => x.id === sessionId)
       if (!s) throw Object.assign(new Error('no such session'), { code: '23503' })
@@ -79,4 +88,5 @@ export function memoryWorkoutStore(
       plans = plans.map((p) => (p.id === planId ? { ...p, blockStartedOn: date } : p))
     },
   }
+  return store
 }

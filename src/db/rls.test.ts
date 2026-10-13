@@ -326,6 +326,14 @@ describe('exercise library (T-043b)', () => {
   })
 })
 
+describe('workout indexes (T-044)', () => {
+  it('workouts are found by person and date, and sets by workout and exercise', async () => {
+    const t = await createTestDb()
+    const names = (await t.db.query<{ indexname: string }>(`select indexname from pg_indexes where tablename in ('workout_sessions', 'set_logs') order by indexname`)).rows.map((r) => r.indexname)
+    expect(names).toEqual(expect.arrayContaining(['set_logs_exercise', 'set_logs_session', 'workout_sessions_user_day']))
+  })
+})
+
 describe('ticking the meal plan (T-060)', () => {
   it('an entry keeps its plan item; entries logged by hand have none', async () => {
     const t = await createTestDb()

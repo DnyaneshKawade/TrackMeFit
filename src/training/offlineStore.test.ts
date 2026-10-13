@@ -36,6 +36,8 @@ function flakyServer(init: Parameters<typeof memoryWorkoutStore>[0] = { plans: [
     saveFeedback: gate(inner.saveFeedback),
     saveNote: gate(inner.saveNote),
     feedbackSince: gate(inner.feedbackSince),
+    summaries: gate(inner.summaries),
+    exerciseHistory: gate(inner.exerciseHistory),
     async startSession(date, day, id) {
       if (!state.online) return offline()
       if (state.refuse === 'start') return refusal()
@@ -231,5 +233,16 @@ describe('offline workouts (T-027b)', () => {
     state.online = true
     await store.sync.run()
     expect((await inner.sessionsOn(DAY))[0].note).toBeUndefined()
+  })
+
+  it('the calendar uses the days kept on the phone offline; records need a connection (T-044)', async () => {
+    const past: Session = { id: 's0', performedOn: '2026-10-10', planDayId: 'd1', name: 'Push', sets: [{ id: 'x', ...set(0, 57.5) }] }
+    const { store, state } = setup(mapStorage(), 'me', { plans: [plan], sessions: [past] })
+    expect((await store.summaries('2026-10-01', '2026-10-31')).map((x) => x.name)).toEqual(['Push'])
+    await store.sessionsOn('2026-10-10')
+    state.online = false
+    expect(await store.summaries('2026-10-01', '2026-10-31')).toEqual([{ id: 's0', performedOn: '2026-10-10', name: 'Push', exerciseIds: ['bench'] }])
+    await expect(store.summaries('2026-09-01', '2026-09-30')).rejects.toThrow()
+    await expect(store.exerciseHistory('bench')).rejects.toThrow()
   })
 })

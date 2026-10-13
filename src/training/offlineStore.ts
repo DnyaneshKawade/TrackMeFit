@@ -6,7 +6,7 @@
 
 import { createOutbox, isRefusal, readJson, type KeyValue, type Outbox, type Sync } from '../sync/outbox'
 import type { Feedback } from './progression'
-import type { PastSession, Plan, PlanDay, Session, SetLog, WorkoutStore } from './types'
+import type { PastSession, Plan, PlanDay, Session, SessionSummary, SetLog, WorkoutStore } from './types'
 
 type Op =
   | { kind: 'start'; session: Session; day: PlanDay | null }
@@ -187,6 +187,21 @@ export function offlineWorkoutStore(
         () => histories.find(([x]) => x === k)?.[1],
       )
     },
+    // Records read many workouts, so they are not kept on the phone.
+    exerciseHistory: (exerciseId, limit) => remote.exerciseHistory(exerciseId, limit),
+    summaries: (from, to) =>
+      cached(
+        () => remote.summaries(from, to),
+        () => {},
+        // Offline, the calendar shows the days kept on the phone.
+        () => {
+          const kept = days.filter(([d]) => d >= from && d <= to).sort(([a], [b]) => b.localeCompare(a))
+          if (!kept.length) return undefined
+          return kept.flatMap(([, list]) =>
+            list.map((x): SessionSummary => ({ id: x.id, performedOn: x.performedOn, name: x.name, exerciseIds: [...new Set(x.sets.map((y) => y.exerciseId))] })),
+          )
+        },
+      ),
     async saveFeedback(sessionId, feedback) {
       if (!feedback.length) return
       await sendOrQueue(() => remote.saveFeedback(sessionId, feedback), { kind: 'feedback', sessionId, feedback })
