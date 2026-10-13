@@ -2,6 +2,11 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Plan for ticking off the meal plan (T-060)
+
+- DK asked whether a meal plan can be set for weeks ahead and filled in each day. Today the saved plan is one day of meals shown every day as a guide; nothing is logged from it. A plan laid out by date would go stale when targets change and would fill the log with food not eaten, so DK chose tick boxes instead: tick an item, a meal or the whole day to log it with the planned amount; untick to remove it.
+- Draft spec `specs/T-060-tick-plan.md`, task T-060 added. A weekly plan with different days stays a separate, later idea.
+
 ## 2026-10-13: Food logging without a connection (T-027a)
 
 - DK: "go as per the best possible choice"; picked offline logging first because mobile data drops often and logging is the daily habit. Spec `specs/T-027-offline-logging.md` covers food now (T-027a) and workout sets next (T-027b).
