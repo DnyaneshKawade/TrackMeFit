@@ -17,6 +17,7 @@ import { memoryCustomFoodStore, supabaseCustomFoodStore, type CustomFoodStore } 
 import { localDate } from './log/types'
 import { Onboarding } from './profile/Onboarding'
 import { memoryProfileStore, supabaseProfileStore } from './profile/stores'
+import { memoryMealPlanStore, supabaseMealPlanStore, type MealPlanStore } from './profile/mealPlanStore'
 import { isOnboarded, type ProfileInfo, type ProfileStore } from './profile/types'
 import { Progress } from './progress/Progress'
 import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
@@ -32,6 +33,7 @@ export function AppShell({
   profileStoreFor = () => memoryProfileStore(),
   progressStoreFor = () => memoryProgressStore(),
   foodStoreFor = () => memoryCustomFoodStore(),
+  mealPlanStoreFor = () => memoryMealPlanStore(),
 }: {
   auth: AuthService | null
   logStoreFor?: (account: Account) => LogStore
@@ -40,6 +42,7 @@ export function AppShell({
   profileStoreFor?: (account: Account) => ProfileStore
   progressStoreFor?: (account: Account) => ProgressStore
   foodStoreFor?: (account: Account) => CustomFoodStore
+  mealPlanStoreFor?: (account: Account) => MealPlanStore
 }) {
   const [account, setAccount] = useState<Account | null | undefined>(undefined)
   const store = useMemo(() => (account ? logStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -49,6 +52,7 @@ export function AppShell({
   const profiles = useMemo(() => (account ? profileStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const progress = useMemo(() => (account ? progressStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const foods = useMemo(() => (account ? foodStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const mealPlans = useMemo(() => (account ? mealPlanStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   // undefined while loading; null when it couldn't be loaded (the app still works).
   const [profile, setProfile] = useState<ProfileInfo | null | undefined>(undefined)
 
@@ -107,12 +111,14 @@ export function AppShell({
         {topbar}
         <Onboarding
           initial={{ ...profile, fullName: profile.fullName || account.name }}
-          onFinish={async ({ profile: p, weightKg, waistCm, targets: suggested }) => {
+          onFinish={async ({ profile: p, weightKg, waistCm, targets: suggested, mealPlan }) => {
             const today = localDate()
             await profiles!.save(p)
             await progress!.saveWeighIn(today, weightKg)
             if (waistCm !== null) await progress!.saveMeasurement({ date: today, waistCm })
             if (suggested && targets) await targets.save(suggested, today, 'suggested')
+            // The plan is optional: if it can't be saved, setup still finishes.
+            if (mealPlan && mealPlans) await mealPlans.save(mealPlan.plan, mealPlan.picks).catch(() => null)
             setProfile(p)
           }}
           loadIndex={loadIndex}
@@ -153,6 +159,7 @@ export default function App() {
       profileStoreFor={(a) => supabaseProfileStore(sb!, a.id)}
       progressStoreFor={(a) => supabaseProgressStore(sb!, a.id)}
       foodStoreFor={(a) => supabaseCustomFoodStore(sb!, a.id)}
+      mealPlanStoreFor={(a) => supabaseMealPlanStore(sb!, a.id)}
     />
   )
 }

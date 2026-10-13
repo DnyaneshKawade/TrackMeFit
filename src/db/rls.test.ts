@@ -245,3 +245,26 @@ describe('your own foods and quick add', () => {
     ).rejects.toThrow(/food_logs_grams_check/)
   })
 })
+
+describe('meal plans (T-058b)', () => {
+  it('keeps a saved plan to the person and their active coach, recorded as saved by whoever saved it', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('me@x.in')
+    const other = await t.signUp('other@x.in')
+    const coach = await t.signUp('c@x.in', { role: 'coach' })
+    const save = (userId: string) =>
+      `insert into meal_plans (user_id, plan, picks) values ('${userId}', '{"meals":[]}', '{tmf:ing:paneer}')`
+    await t.as(me, (db) => db.query(save(me)))
+    expect(await t.as(other, (db) => count(db, 'meal_plans'))).toBe(0)
+    await expect(t.as(other, (db) => db.query(save(me)))).rejects.toThrow(/row-level security/)
+    await expect(t.as(coach, (db) => db.query(save(me)))).rejects.toThrow(/row-level security/)
+    await t.as(coach, (db) => db.query(`insert into coach_clients (coach_id, client_id) values ($1, $2)`, [coach, me]))
+    await t.as(me, (db) => db.query(`update coach_clients set status = 'active' where client_id = $1`, [me]))
+    await t.as(coach, (db) => db.query(save(me)))
+    const rows = await t.as(me, async (db) => (await db.query<{ created_by: string }>('select created_by from meal_plans order by created_at')).rows)
+    expect(rows.map((r) => r.created_by).sort()).toEqual([me, coach].sort())
+    await expect(
+      t.as(coach, (db) => db.query(`insert into meal_plans (user_id, plan, created_by) values ($1, '{}', $1)`, [me])),
+    ).rejects.toThrow(/row-level security/)
+  })
+})

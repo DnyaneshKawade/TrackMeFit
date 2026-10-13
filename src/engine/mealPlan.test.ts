@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_PROTEIN_PER_MEAL_KG, SUGAR_MAX_G, VEG_G, amountHint, buildMealPlan, checkFeasibility, type MealPlan, type MealPlanInput } from './mealPlan'
+import { MAX_PROTEIN_PER_MEAL_KG, SUGAR_MAX_G, VEG_G, amountHint, buildMealPlan, checkFeasibility, cookedGrams, swapItem, swapOptions, type MealPlan, type MealPlanInput } from './mealPlan'
 import { PLAN_FOODS_BY_ID, PROTEIN_PICKS, planFoodsFor, typicalDayToBase } from '../profile/planFoods'
 import { excludedTags } from '../profile/dietRules'
 
@@ -112,5 +112,47 @@ describe('meal plan (T-058)', () => {
     if (paneer) expect(paneer.reason).toMatch(/until we have an Indian label/)
     const soya = items(plan).find((i) => i.foodId === 'tmf:ing:soya-chunks')!
     expect(soya.reason).toMatch(/USDA defatted soy flour/)
+  })
+})
+
+describe('swaps and cooked weights (T-058b)', () => {
+  const plan = buildMealPlan(asha)
+  const food = (id: string) => PLAN_FOODS_BY_ID.get(id)!
+
+  it('10. offers any protein food for a protein food and the same kind otherwise', () => {
+    const forDal = swapOptions(food('tmf:ing:toor-dal'), asha.foods).map((f) => f.id)
+    expect(forDal).toContain('tmf:ing:paneer')
+    expect(forDal).not.toContain('tmf:ing:toor-dal')
+    expect(forDal).not.toContain('tmf:ing:chicken') // not in a veg plan
+    expect(swapOptions(food('tmf:ing:rice'), asha.foods).every((f) => f.group === 'cereal')).toBe(true)
+  })
+
+  it('10. swaps keep about the same protein, stay within limits, and update the totals', () => {
+    const lunch = plan.meals.find((m) => m.name === 'Lunch')!
+    const dal = lunch.items.find((i) => i.foodId === 'tmf:ing:toor-dal')!
+    const swapped = swapItem(plan, 'Lunch', dal.foodId, food('tmf:ing:paneer'), asha.foods)
+    const after = swapped.meals.find((m) => m.name === 'Lunch')!
+    expect(after.items.some((i) => i.foodId === 'tmf:ing:toor-dal')).toBe(false)
+    const paneer = after.items.find((i) => i.foodId === 'tmf:ing:paneer')!
+    expect(paneer.grams).toBeLessThanOrEqual(food('tmf:ing:paneer').maxPerMealG)
+    expect(paneer.reason).toMatch(/^Swapped in for toor dal/)
+    expect(Math.abs(after.macros.proteinG - lunch.macros.proteinG)).toBeLessThan(5)
+    const sum = swapped.meals.reduce((s, m) => s + m.macros.kcal, 0)
+    expect(swapped.totals.kcal).toBeCloseTo(sum, 5)
+    expect(plan.meals.find((m) => m.name === 'Lunch')).toBe(lunch) // the original plan is untouched
+  })
+
+  it('10. swaps a cereal for the same calories', () => {
+    const lunch = plan.meals.find((m) => m.name === 'Lunch')!
+    const rice = lunch.items.find((i) => i.foodId === 'tmf:ing:rice')!
+    const after = swapItem(plan, 'Lunch', rice.foodId, food('tmf:ing:atta'), asha.foods).meals.find((m) => m.name === 'Lunch')!
+    expect(after.items.find((i) => i.foodId === 'tmf:ing:atta')).toBeTruthy()
+    expect(Math.abs(after.macros.kcal - lunch.macros.kcal)).toBeLessThan(60)
+  })
+
+  it('4. gives a cooked weight for foods that change when cooked', () => {
+    expect(cookedGrams(food('tmf:ing:rice'), 60)).toBeGreaterThan(150)
+    expect(cookedGrams(food('tmf:ing:toor-dal'), 25)).toBe(150)
+    expect(cookedGrams(food('tmf:ing:milk'), 200)).toBeNull()
   })
 })

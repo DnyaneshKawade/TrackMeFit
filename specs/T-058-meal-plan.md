@@ -1,6 +1,6 @@
 # T-058: Suggested day of meals (opt-in)
 
-Status: agreed (DK, 13 Oct 2026: "start with the appropriate tasks"); engine built (T-058a), screens next (T-058b)
+Status: agreed (DK, 13 Oct 2026: "start with the appropriate tasks"); engine built (T-058a), screens built (T-058b), non-veg-free days next (T-058c)
 Tasks: [T-058a, T-058b, T-058c](../tasks/TASKS.md)
 
 ## Problem
@@ -146,9 +146,22 @@ protein sources they like, and never asks for silly amounts.
   labels (T-031); each such item says so.
 
 ## Data and privacy
-- New table `meal_plans` (person, plan JSON, created, accepted) with the same
-  RLS as food logs; migration named in the build PR.
-- Protein, carb and fat picks are stored on the profile.
+- Table `meal_plans` (migration `20261015000000_meal_plans.sql`): person,
+  the plan as shown (JSON), the protein foods picked, who saved it, when.
+  The person or their active coach can read and save; a row always records
+  who saved it. A row is written only after "Use this plan" and "Use these
+  targets".
+- Picks are stored on the plan row, not the profile, so each plan keeps the
+  picks it was built from.
+
+## How the screens work (T-058b)
+- The question appears under the suggested targets on "Your plan". The plan
+  screen loads only when shown, to keep the app's first load small.
+- Carb and fat foods come from the typical day; the person changes them with
+  Swap (one cereal for another, oil for ghee) instead of a separate picker.
+- Protein foods swap for any other protein food the diet allows, keeping
+  about the same protein; other foods keep about the same calories.
+- If saving the plan fails, setup still finishes and the targets are kept.
 
 ## Edge cases
 - Typical day empty: start from a simple default of their diet type.
@@ -161,5 +174,6 @@ protein sources they like, and never asks for silly amounts.
 ## Tests
 | Criterion | Test file |
 |---|---|
-| 1, 2, 10, 13, 14 | `src/profile/MealPlan.test.tsx` |
-| 3 to 9, 11, 12 | `src/engine/mealPlan.test.ts` |
+| 1, 2, 4, 10, 13, 14 | `src/profile/Onboarding.test.tsx` (suggested day of meals) |
+| 3 to 12 | `src/engine/mealPlan.test.ts` |
+| Data and privacy | `src/db/rls.test.ts` (meal plans), `src/profile/mealPlanStore.test.ts` |
