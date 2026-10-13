@@ -80,4 +80,11 @@ describe('your own foods in search', () => {
     expect(withFoods(index, [{ ...mine, name: 'Poha v2' }]).entries.filter((e) => e.food.id === 'custom:1')).toHaveLength(1)
     expect(withFoods(base, [])).toBe(base)
   })
+  it('looks up by id through a map, with your edited food winning', () => {
+    const base = createSearchIndex([food('custom:1', 'Poha', { source: 'user' })])
+    const index = withFoods(base, [food('custom:1', 'Poha v2', { source: 'user' })])
+    expect(index.byId.size).toBe(1)
+    expect(findFood(index, 'custom:1')?.name).toBe('Poha v2')
+    expect(findFood(index, 'missing')).toBeUndefined()
+  })
 })

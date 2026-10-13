@@ -20,17 +20,25 @@ interface Entry {
 
 export interface SearchIndex {
   entries: Entry[]
+  /** Constant-time lookup by id; the first entry with an id wins. */
+  byId: Map<string, Food>
+}
+
+const indexOf = (entries: Entry[]): SearchIndex => {
+  const byId = new Map<string, Food>()
+  for (const e of entries) if (!byId.has(e.food.id)) byId.set(e.food.id, e.food)
+  return { entries, byId }
 }
 
 export function createSearchIndex(foods: Food[]): SearchIndex {
-  return {
-    entries: foods.map((food) => {
+  return indexOf(
+    foods.map((food) => {
       const name = normalize(food.name)
       const aliases = (food.aliases ?? []).map(normalize).filter(Boolean)
       const words = [name, ...aliases, normalize(food.brand ?? '')].join(' ').split(' ').filter(Boolean)
       return { food, name, aliases, words }
     }),
-  }
+  )
 }
 
 // Home-cooked dishes first, then raw ingredients, then packaged products.
@@ -77,8 +85,8 @@ export function searchFoods(index: SearchIndex, query: string, limit = 30): Food
 export function withFoods(index: SearchIndex, foods: Food[]): SearchIndex {
   if (!foods.length) return index
   const ids = new Set(foods.map((f) => f.id))
-  return { entries: [...createSearchIndex(foods).entries, ...index.entries.filter((e) => !ids.has(e.food.id))] }
+  return indexOf([...createSearchIndex(foods).entries, ...index.entries.filter((e) => !ids.has(e.food.id))])
 }
 
 /** A food by id, for re-opening recent foods. */
-export const findFood = (index: SearchIndex, id: string): Food | undefined => index.entries.find((e) => e.food.id === id)?.food
+export const findFood = (index: SearchIndex, id: string): Food | undefined => index.byId.get(id)

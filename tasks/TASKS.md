@@ -45,12 +45,18 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-047 | Diet suggestion extras, all opt-in: "don't raise calories during a cut", weekly target split across training and rest days, stall options (ease the goal, maintenance break, end the diet) | Engine tests, each with its reason |
 | T-048 | Copy a whole meal or day; weekly averages in the log | Log tests; component tests |
 | T-049 | Food source and checked badge in search and on the amount screen; merge duplicate entries | Search and component tests |
+| T-052 | Content security policy header, after listing every place Supabase and Google sign-in load from | Header test; manual sign-in check on a preview |
+| T-053 | Separate Supabase project for previews, and migrations run by the Supabase CLI in CI instead of by hand | CI migration step; RLS tests still pass |
+| T-054 | End-to-end tests in a real browser (Playwright) against the preview link: sign in, log food, log a set | E2E suite in CI |
+| T-055 | Automated accessibility checks (lint rules and axe in component tests) | Lint in CI; axe assertions |
+| T-056 | Versions and a changelog built from `tasks/LOG.md` | Release script test |
 
 ## Done
 
 | ID | Task | Tests |
 |---|---|---|
 | T-001 | Research: market, competitors, RP Strength, FitNotes | n/a (docs) |
+| T-051 | Engineering standards ([docs/engineering.md](../docs/engineering.md)): spec-first workflow with `specs/` template, lint, dependency audit and size budget in CI, PR template, Dependabot, pinned Node, security headers, service worker cache cleared per build, map lookups for foods by id | `build/swStamp.test.ts` (3), `build/checkSize.test.ts` (4), `src/pwa.test.ts` (8), `src/food/search.test.ts` (9) |
 | T-050 | Competitor study: 30+ Indian and international apps, coaching software, FitNotes-style loggers and the RP engine, with gaps and planning details ([study](https://claude.ai/code/artifact/4637175c-d094-4c40-80be-e4826de7c0b3)) | n/a (docs) |
 | T-002 | App plan and engine spec docs | n/a (docs) |
 | T-003 | Clickable prototype | n/a (prototype) |
