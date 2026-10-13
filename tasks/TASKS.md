@@ -50,6 +50,9 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-054 | End-to-end tests in a real browser (Playwright) against the preview link: sign in, log food, log a set | E2E suite in CI |
 | T-055 | Automated accessibility checks (lint rules and axe in component tests) | Lint in CI; axe assertions |
 | T-056 | Versions and a changelog built from `tasks/LOG.md` | Release script test |
+| T-059a | Gain pace ladder ([spec](../specs/T-059-gain-pace.md)): Lean, Steady, Faster, and Catch up for BMI under 18.5, by experience, BMI and age; gentle-only, pregnancy and under-18 rules for gain; kg a week and extra kcal in each note; gain capped at 1 % a week (Catch up at 0.5 kg); extra-kcal reason in the plan | `src/engine/diet.test.ts`, `src/profile/profile.test.ts` |
+| T-059b | Goal step: up to four paces with the recommended one marked, re-picked when weight or health answers change; first milestone and months in the goal date | `src/profile/Onboarding.test.tsx`, `src/profile/profile.test.ts` |
+| T-059c | Progress tab: when someone on Catch up reaches a healthy BMI, suggest switching to Steady, applied only on their OK | `src/progress/progress.test.ts` |
 
 ## Done
 

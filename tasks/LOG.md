@@ -2,6 +2,11 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Plan for more muscle-gain paces (T-059)
+
+- DK: the build-muscle goal shows a beginner only "Lean", so an underweight person sees a target far away. Studied the code and the evidence (Iraki 2019, Garthe 2013, Helms 2023, NHS) and wrote the draft spec `specs/T-059-gain-pace.md`: Lean, Steady, Faster, and Catch up for underweight adults (at most 0.5 kg a week), recommended by experience and BMI, with health and age limits, the extra calories in each note, and a first milestone in the goal date.
+- Tasks T-059a (engine), T-059b (goal step), T-059c (Progress suggestion) added. Nothing built yet; waiting on DK's OK.
+
 ## 2026-10-13: Veg days in the plan and log (T-058c)
 
 - A veg day is one of the person's non-veg-free weekdays, or any day they mark with "Make today a veg day". On a usual veg day they can tap "I’m eating non-veg today". The choice is per date and kept on the device. DK asked not to over-customise ("people will choose as per their wish"), so there is no festival calendar, and the onboarding season question is gone.
