@@ -20,11 +20,26 @@
 .suggest { font-size: 14px; }
 .sets { padding-left: 0; list-style: none; margin: 6px 0; }
 .sets li { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
-.set-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 6px; }
+.set-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.set-row .stepper { display: grid; grid-template-columns: 40px 1fr 40px; gap: 4px; }
+.set-row .stepper input { text-align: center; }
+.step { font: inherit; font-size: 18px; font-weight: 700; border: 1.5px solid #cdd6d2; border-radius: 10px; background: none; color: #0f7a5c; cursor: pointer; min-height: 44px; }
+.set-extras { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+.set-extras .chip { padding: 6px 10px; font-size: 13px; }
+.set-extras .chip[aria-pressed='true'] { background: #0f7a5c; color: #fff; border-color: #0f7a5c; }
+.set-extras input { font: inherit; padding: 8px 10px; border: 1.5px solid #cdd6d2; border-radius: 10px; flex: 1; min-width: 140px; }
+.set-note { display: block; }
+.rest-timer { position: sticky; top: 0; z-index: 2; display: flex; gap: 8px; align-items: center; padding: 8px 12px; margin: 8px 0; border-radius: 12px; background: #f1faf6; border: 1px solid #0f7a5c; }
+.rest-timer strong { flex: 1; font-variant-numeric: tabular-nums; }
+.rest-timer .step { font-size: 14px; padding: 0 10px; min-height: 36px; }
+.workout-note { display: grid; gap: 4px; margin: 16px 0; font-size: 14px; }
+.workout-note textarea { font: inherit; padding: 10px; border: 1.5px solid #cdd6d2; border-radius: 10px; resize: vertical; }
 .set-row .primary { width: auto; padding: 10px 14px; }
 @media (prefers-color-scheme: dark) {
   .day-button, .plan-day { border-color: #3a4643; }
-  .field input, .plan-day input, .set-row input { background: #161d1b; color: inherit; border-color: #3a4643; }
+  .field input, .plan-day input, .set-row input, .set-extras input, .workout-note textarea { background: #161d1b; color: inherit; border-color: #3a4643; }
+  .step { border-color: #3a4643; color: #6fd3b0; }
+  .rest-timer { background: #12302a; }
   .plan-ex, .exercise { border-color: #2c3734; }
 }
 .plan-card { display: grid; }

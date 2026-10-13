@@ -39,7 +39,22 @@ export interface SetLog {
   reps: number
   /** Reps in reserve, if the person noted it. */
   rir: number | null
+  /** Warm-up, drop set or taken to failure (T-043). */
+  tag?: SetTag
+  note?: string
 }
+
+export type SetTag = 'warmup' | 'drop' | 'failure'
+export const SET_TAGS: { tag: SetTag; label: string; shown: string }[] = [
+  { tag: 'warmup', label: 'Warm-up', shown: 'warm-up' },
+  { tag: 'drop', label: 'Drop set', shown: 'drop set' },
+  { tag: 'failure', label: 'Failure', shown: 'to failure' },
+]
+export const MAX_SET_NOTE = 200
+export const MAX_WORKOUT_NOTE = 500
+
+/** Sets that count for progress: warm-ups and drop sets are left out. */
+export const workingSets = (sets: SetLog[]) => sets.filter((s) => s.tag !== 'warmup' && s.tag !== 'drop')
 
 export type NewSet = Omit<SetLog, 'id'>
 
@@ -49,6 +64,8 @@ export interface Session {
   planDayId: string | null
   name: string
   sets: SetLog[]
+  /** Workout notes (T-043). */
+  note?: string
 }
 
 export interface PastSession {
@@ -68,6 +85,8 @@ export interface WorkoutStore {
   /** Earlier sessions with this exercise, newest first. */
   history(exerciseId: string, beforeDate: string, limit?: number): Promise<PastSession[]>
   saveFeedback(sessionId: string, feedback: Feedback[]): Promise<void>
+  /** Saves the workout notes; empty clears them. */
+  saveNote(sessionId: string, note: string): Promise<void>
   /** The latest answers per muscle from sessions on or after a date. */
   feedbackSince(date: string): Promise<Feedback[]>
   /** Starts a new training block (after a deload) from a date. */
@@ -127,7 +146,8 @@ export function describeSets(sets: SetLog[]): string {
 
 /** Weight and reps for next time from the last sessions (double progression).
  * Null when there is no history or no rep range to aim for. */
-export function suggestNext(history: PastSession[], exercise: Exercise, repRange: [number, number]): LoadDecision | null {
+export function suggestNext(all: PastSession[], exercise: Exercise, repRange: [number, number]): LoadDecision | null {
+  const history = all.map((h) => ({ ...h, sets: workingSets(h.sets) })).filter((h) => h.sets.length)
   const last = history[0]
   if (!last || last.sets.length === 0) return null
   const top = Math.max(...last.sets.map((s) => s.weightKg))

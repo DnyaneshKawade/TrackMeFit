@@ -3,7 +3,7 @@ import { LANDMARKS } from '../engine/training'
 import { EXERCISES, exerciseById, searchExercises } from './exercises'
 import { memoryWorkoutStore } from './memoryStore'
 import { planFromRow } from './supabaseStore'
-import { checkPlan, checkSet, describeSets, nextDayIndex, suggestNext, type Plan, type SetLog } from './types'
+import { checkPlan, checkSet, describeSets, nextDayIndex, suggestNext, workingSets, type Plan, type SetLog } from './types'
 
 const set = (setIndex: number, weightKg: number, reps: number): SetLog => ({ id: String(setIndex), exerciseId: 'bench-press', setIndex, weightKg, reps, rir: null })
 const bench = exerciseById.get('bench-press')!
@@ -118,5 +118,20 @@ describe('memory store', () => {
     await store.addSet(other.id, { exerciseId: 'back-squat', setIndex: 0, weightKg: 80, reps: 5, rir: null })
     const h = await store.history('bench-press', '2026-10-12')
     expect(h.map((x) => x.performedOn)).toEqual(['2026-10-05', '2026-10-01'])
+  })
+})
+
+describe('set tags (T-043a)', () => {
+  const bench = exerciseById.get('bench-press')!
+  it('5. warm-ups and drop sets are left out of the suggestion and the missed-reps count', () => {
+    const warm: SetLog = { ...set(0, 100, 3), tag: 'warmup' }
+    const drop: SetLog = { ...set(4, 40, 4), tag: 'drop' }
+    const hard: SetLog = { ...set(3, 60, 10), tag: 'failure' }
+    const last = { performedOn: '2026-10-10', sets: [warm, set(1, 60, 10), set(2, 60, 10), hard, drop] }
+    // Without the tags the 100 kg warm-up would be the "top" weight and the drop set a missed rep.
+    expect(suggestNext([last], bench, [6, 10])).toMatchObject({ weight: 62.5, targetReps: 6 })
+    expect(workingSets(last.sets).map((s) => s.setIndex)).toEqual([1, 2, 3])
+    // A session of only warm-ups gives no suggestion.
+    expect(suggestNext([{ performedOn: 'a', sets: [warm] }], bench, [6, 10])).toBeNull()
   })
 })

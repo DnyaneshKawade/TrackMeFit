@@ -34,6 +34,7 @@ function flakyServer(init: Parameters<typeof memoryWorkoutStore>[0] = { plans: [
     history: gate(inner.history),
     removeSet: gate(inner.removeSet),
     saveFeedback: gate(inner.saveFeedback),
+    saveNote: gate(inner.saveNote),
     feedbackSince: gate(inner.feedbackSince),
     async startSession(date, day, id) {
       if (!state.online) return offline()
@@ -206,5 +207,29 @@ describe('offline workouts (T-027b)', () => {
     state.online = true
     await store.sync.run()
     expect(await inner.feedbackSince(DAY)).toEqual(fb)
+  })
+
+  it('8 (T-043a). tagged sets with notes and workout notes wait and sync', async () => {
+    const { store, state, inner } = setup()
+    await store.sessionsOn(DAY)
+    state.online = false
+    const session = await store.startSession(DAY, null)
+    await store.addSet(session.id, { ...set(0, 40), tag: 'warmup', note: 'easy' })
+    await store.saveNote(session.id, '  Short on time  ')
+    const [shown] = await store.sessionsOn(DAY)
+    expect(shown.note).toBe('Short on time')
+    expect(shown.sets[0]).toMatchObject({ tag: 'warmup', note: 'easy' })
+    state.online = true
+    await store.sync.run()
+    const [saved] = await inner.sessionsOn(DAY)
+    expect(saved.note).toBe('Short on time')
+    expect(saved.sets[0]).toMatchObject({ tag: 'warmup', note: 'easy' })
+    // Clearing the note offline clears it on the server too.
+    state.online = false
+    await store.saveNote(session.id, '')
+    expect((await store.sessionsOn(DAY))[0].note).toBeUndefined()
+    state.online = true
+    await store.sync.run()
+    expect((await inner.sessionsOn(DAY))[0].note).toBeUndefined()
   })
 })

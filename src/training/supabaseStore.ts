@@ -3,9 +3,9 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Feedback } from './progression'
-import type { PastSession, Plan, Session, SetLog, WorkoutStore } from './types'
+import type { PastSession, Plan, Session, SetLog, SetTag, WorkoutStore } from './types'
 
-interface SetRow { id: string; exercise_id: string; set_index: number; weight_kg: number | string; reps: number; rir: number | null }
+interface SetRow { id: string; exercise_id: string; set_index: number; weight_kg: number | string; reps: number; rir: number | null; tag?: SetTag | null; note?: string | null }
 
 export const setFromRow = (r: SetRow): SetLog => ({
   id: r.id,
@@ -14,6 +14,8 @@ export const setFromRow = (r: SetRow): SetLog => ({
   weightKg: Number(r.weight_kg),
   reps: r.reps,
   rir: r.rir,
+  ...(r.tag ? { tag: r.tag } : {}),
+  ...(r.note ? { note: r.note } : {}),
 })
 
 interface PlanRow {
@@ -41,7 +43,7 @@ export const planFromRow = (r: PlanRow): Plan => ({
     })),
 })
 
-const SET_COLUMNS = 'id, exercise_id, set_index, weight_kg, reps, rir'
+const SET_COLUMNS = 'id, exercise_id, set_index, weight_kg, reps, rir, tag, note'
 
 export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): WorkoutStore {
   const check = <T>({ data, error }: { data: T; error: unknown }): T => {
@@ -91,11 +93,11 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): Workou
       const rows = check(
         await sb
           .from('workout_sessions')
-          .select(`id, performed_on, plan_day_id, plan_days(name), set_logs(${SET_COLUMNS})`)
+          .select(`id, performed_on, plan_day_id, note, plan_days(name), set_logs(${SET_COLUMNS})`)
           .eq('user_id', userId)
           .eq('performed_on', date)
           .order('id'),
-      ) as unknown as { id: string; performed_on: string; plan_day_id: string | null; plan_days: { name: string } | null; set_logs: SetRow[] }[]
+      ) as unknown as { id: string; performed_on: string; plan_day_id: string | null; note: string | null; plan_days: { name: string } | null; set_logs: SetRow[] }[]
       return rows.map(
         (r): Session => ({
           id: r.id,
@@ -103,6 +105,7 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): Workou
           planDayId: r.plan_day_id,
           name: r.plan_days?.name ?? 'Workout',
           sets: r.set_logs.map(setFromRow),
+          ...(r.note ? { note: r.note } : {}),
         }),
       )
     },
@@ -118,7 +121,7 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): Workou
       return session((check({ data, error }) as { id: string }).id)
     },
     async addSet(sessionId, s, id) {
-      const row = { session_id: sessionId, exercise_id: s.exerciseId, set_index: s.setIndex, weight_kg: s.weightKg, reps: s.reps, rir: s.rir }
+      const row = { session_id: sessionId, exercise_id: s.exerciseId, set_index: s.setIndex, weight_kg: s.weightKg, reps: s.reps, rir: s.rir, tag: s.tag ?? null, is_warmup: s.tag === 'warmup', note: s.note ?? null }
       const { data, error } = await sb
         .from('set_logs')
         .insert({ ...row, ...(id ? { id } : {}) })
@@ -144,6 +147,9 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): Workou
       return rows.map((r): PastSession => ({ performedOn: r.performed_on, sets: r.set_logs.map(setFromRow) }))
     },
   
+    async saveNote(sessionId, note) {
+      check(await sb.from('workout_sessions').update({ note: note.trim() || null }).eq('id', sessionId))
+    },
     async saveFeedback(sessionId, list) {
       if (!list.length) return
       check(

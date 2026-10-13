@@ -13,6 +13,15 @@ type Op =
   | { kind: 'set'; sessionId: string; set: SetLog }
   | { kind: 'unset'; id: string }
   | { kind: 'feedback'; sessionId: string; feedback: Feedback[] }
+  | { kind: 'note'; sessionId: string; note: string }
+
+/** The session with this note, or none when it is empty. */
+function withNote(s: Session, note: string | undefined): Session {
+  const copy = { ...s }
+  if (note) copy.note = note
+  else delete copy.note
+  return copy
+}
 
 /** How many viewed days and exercise histories the phone keeps. */
 export const CACHED_DAYS = 14
@@ -56,6 +65,7 @@ export function offlineWorkoutStore(
         const { id, ...set } = op.set
         await remote.addSet(op.sessionId, set, id)
       } else if (op.kind === 'unset') await remote.removeSet(op.id)
+      else if (op.kind === 'note') await remote.saveNote(op.sessionId, op.note)
       else await remote.saveFeedback(op.sessionId, op.feedback)
     },
     createdId: (op) => (op.kind === 'start' ? op.session.id : op.kind === 'set' ? op.set.id : undefined),
@@ -66,7 +76,7 @@ export function offlineWorkoutStore(
       if (op.kind === 'start') {
         // Its sets and answers can't be saved without it.
         const id = op.session.id
-        outbox.drop((o) => (o.kind === 'set' || o.kind === 'feedback') && o.sessionId === id)
+        outbox.drop((o) => (o.kind === 'set' || o.kind === 'feedback' || o.kind === 'note') && o.sessionId === id)
         dropSessionFromCache(id)
       }
     },
@@ -82,7 +92,9 @@ export function offlineWorkoutStore(
     return [...sessions, ...started].map((s) => {
       const have = new Set(s.sets.map((x) => x.id))
       const added = ops.flatMap((o) => (o.kind === 'set' && o.sessionId === s.id && pending.has(o.set.id) && !have.has(o.set.id) ? [o.set] : []))
-      return { ...s, sets: [...s.sets, ...added].filter((x) => !removed.has(x.id)) }
+      // The latest waiting note wins over the saved one.
+      const note = ops.reduce<string | undefined>((n, o) => (o.kind === 'note' && o.sessionId === s.id ? o.note.trim() : n), s.note)
+      return withNote({ ...s, sets: [...s.sets, ...added].filter((x) => !removed.has(x.id)) }, note)
     })
   }
 
@@ -178,6 +190,11 @@ export function offlineWorkoutStore(
     async saveFeedback(sessionId, feedback) {
       if (!feedback.length) return
       await sendOrQueue(() => remote.saveFeedback(sessionId, feedback), { kind: 'feedback', sessionId, feedback })
+    },
+    async saveNote(sessionId, note) {
+      await sendOrQueue(() => remote.saveNote(sessionId, note), { kind: 'note', sessionId, note })
+      const clean = note.trim()
+      editCachedSessions((s) => (s.id === sessionId ? withNote(s, clean) : s))
     },
     feedbackSince: (date) =>
       cached(
