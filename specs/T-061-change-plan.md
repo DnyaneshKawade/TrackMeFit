@@ -28,6 +28,16 @@ from the Food tab.
    then no automatic plan is made (same rule as signup); changing an
    existing plan by hand is still allowed.
 
+7. (T-061b) Given the editor, when the person taps "+ Add a food" under a
+   meal, then the full Add food page opens: search every food, pick an
+   amount, or make a new food. Quick add is not offered, because a plan
+   needs a food. Foods the diet leaves out are hidden. The food can then be
+   changed in amount or removed, but has no Swap. A non-veg food added this
+   way is swapped out on a veg day, like the plan's own foods.
+8. (T-061b) Given the usual day at signup, when the person taps "+ Add
+   another food", then the same Add food page opens, with amounts and quick
+   add. Foods the diet leaves out are hidden.
+
 ## Rules and reasons
 - Changes are the person's own: the app never changes the plan by itself.
   An item changed by hand shows "You changed this."
@@ -58,3 +68,5 @@ as signup does. Row-level security unchanged.
 |---|---|
 | 1, 2 | `src/engine/mealPlan.test.ts` (edits and the check), `src/log/PlanEditor.test.tsx` |
 | 3, 4, 5, 6 | `src/log/PlanEditor.test.tsx` |
+| 7 | `src/engine/mealPlan.test.ts` (1 T-061b), `src/log/PlanEditor.test.tsx` (7) |
+| 8 | `src/profile/Onboarding.test.tsx` (10 T-061b, 8, and the typical day test) |

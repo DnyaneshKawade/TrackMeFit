@@ -161,7 +161,8 @@ describe('onboarding', () => {
     click('+ Add another food')
     type('Search foods', 'poha')
     fireEvent.click(await screen.findByRole('button', { name: /^Poha/ }))
-    click('More Poha')
+    click('Add to your usual day')
+    fireEvent.click(await screen.findByRole('button', { name: 'More Poha' }))
     expect(screen.getByLabelText('Poha per day').textContent).toBe('2')
 
     click('Can’t find it? Enter it yourself')
@@ -292,6 +293,27 @@ describe('diet rules (T-057)', () => {
     type('Search foods', 'bhurji')
     expect(await screen.findByRole('button', { name: /^Paneer bhurji/ })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /^Egg bhurji/ })).toBeNull()
+  })
+
+  it('10 (T-061b). "Add another food" opens the Add food page, with amounts and quick add', async () => {
+    toFood(() => Promise.resolve(localFinder(createSearchIndex([POHA, EGG]))))
+    pick('What you eat', 'Vegetarian')
+    click('Next')
+    click('+ Add another food')
+    expect(screen.getByRole('region', { name: 'Add food to your usual day' })).toBeTruthy()
+    type('Search foods', 'poha')
+    fireEvent.click(await screen.findByRole('button', { name: /^Poha/ }))
+    type('Amount', '2')
+    click('Add to your usual day')
+    expect(await screen.findByText('400 g, 640 kcal')).toBeTruthy()
+
+    click('+ Add another food')
+    click('Quick add')
+    type('What was it? (optional)', 'Office thali')
+    type('Calories', '700')
+    click('Add to your usual day')
+    expect(await screen.findByText('your amount, 700 kcal')).toBeTruthy()
+    expect(screen.getByRole('status', { name: 'Typical day' }).textContent).toMatch(/about 1,?340 kcal/)
   })
 
   it('9. drops counts for foods the diet no longer allows', async () => {

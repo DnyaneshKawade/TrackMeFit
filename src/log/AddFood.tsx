@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { amountFor, type Food } from '../food/types'
+import { amountFor, type DietTag, type Food } from '../food/types'
+import { allowedFoods } from '../profile/dietRules'
 import type { FoodFinder } from '../food/finder'
 import { useFoodSearch } from '../food/useFoodSearch'
 import { OFF_ATTRIBUTION } from '../food/off'
@@ -37,6 +38,9 @@ export function AddFood({
   onRemoveFood,
   onClose,
   nonvegOff = null,
+  target,
+  quickAdd = true,
+  excluded,
 }: {
   meal: Meal
   date: string
@@ -51,12 +55,22 @@ export function AddFood({
   onClose: () => void
   /** On a non-veg-free day: a gentle note for meat, fish and egg foods. */
   nonvegOff?: string | null
+  /** Where the food goes, for the heading and buttons; the meal by default. */
+  target?: string
+  /** Offer "Quick add" (calories only, no weight). */
+  quickAdd?: boolean
+  /** Foods the diet leaves out, hidden from search; none by default. */
+  excluded?: Set<DietTag>
 }) {
+  const to = target ?? MEAL_NAMES[meal]
   const [view, setView] = useState<View>('search')
   const [query, setQuery] = useState('')
   const [picked, setPicked] = useState<Food | null>(null)
   const [repeatError, setRepeatError] = useState<string | null>(null)
-  const { results, pending } = useFoodSearch(index, query)
+  // With a diet, search wider and drop what it leaves out.
+  const found = useFoodSearch(index, query, excluded?.size ? 60 : 30)
+  const pending = found.pending
+  const results = useMemo(() => (excluded ? allowedFoods(found.results, excluded).slice(0, 30) : found.results), [found.results, excluded])
   const offered = useMemo(() => recentFoods(recent ?? []), [recent])
   // Recent foods open with their portions, looked up by id once.
   const [recentFoodsById, setRecentFoodsById] = useState<Map<string, Food>>(new Map())
@@ -93,6 +107,7 @@ export function AddFood({
       <Amount
         food={picked}
         meal={meal}
+        target={to}
         date={date}
         onAdd={onAdd}
         onBack={() => setPicked(null)}
@@ -100,7 +115,7 @@ export function AddFood({
       />
     )
   } else if (view === 'quick') {
-    body = <QuickAdd meal={meal} date={date} onAdd={onAdd} onBack={() => setView('search')} />
+    body = <QuickAdd meal={meal} target={to} date={date} onAdd={onAdd} onBack={() => setView('search')} />
   } else if (view === 'create') {
     body = <CreateFood initialName={query} onCreate={onCreate} onCreated={created} onBack={() => setView('search')} />
   } else if (view === 'recipe') {
@@ -120,7 +135,7 @@ export function AddFood({
           autoFocus
         />
         <div className="shortcuts">
-          <button className="chip" onClick={() => setView('quick')}>Quick add</button>
+          {quickAdd && <button className="chip" onClick={() => setView('quick')}>Quick add</button>}
           <button className="chip" onClick={() => setView('create')}>New food</button>
           <button className="chip" onClick={() => setView('recipe')}>New recipe</button>
           {myFoods.length > 0 && <button className="chip" onClick={() => setView('mine')}>My foods</button>}
@@ -159,9 +174,9 @@ export function AddFood({
   }
 
   return (
-    <section className="sheet" aria-label={`Add food to ${MEAL_NAMES[meal]}`}>
+    <section className="sheet" aria-label={`Add food to ${to}`}>
       <header className="sheet-head">
-        <h2>Add to {MEAL_NAMES[meal]}</h2>
+        <h2>Add to {to}</h2>
         <button className="link" onClick={onClose}>Close</button>
       </header>
       {body}
@@ -218,11 +233,13 @@ function RecentList({
 
 function QuickAdd({
   meal,
+  target,
   date,
   onAdd,
   onBack,
 }: {
   meal: Meal
+  target: string
   date: string
   onAdd: (entry: NewLogEntry) => Promise<void>
   onBack: () => void
@@ -264,7 +281,7 @@ function QuickAdd({
         {field('fat', 'Fat (g)')}
       </div>
       {error && <p className="error" role="alert">{error}</p>}
-      <button className="primary" disabled={busy}>Add to {MEAL_NAMES[meal]}</button>
+      <button className="primary" disabled={busy}>Add to {target}</button>
     </form>
   )
 }
@@ -325,6 +342,7 @@ function MyFoods({
 function Amount({
   food,
   meal,
+  target,
   date,
   onAdd,
   onBack,
@@ -332,6 +350,7 @@ function Amount({
 }: {
   food: Food
   meal: Meal
+  target: string
   date: string
   onAdd: (entry: NewLogEntry) => Promise<void>
   onBack: () => void
@@ -399,7 +418,7 @@ function Amount({
       )}
       {error && <p className="error" role="alert">{error}</p>}
       <button className="primary" disabled={!valid || busy} onClick={add}>
-        Add to {MEAL_NAMES[meal]}
+        Add to {target}
       </button>
       {food.source === 'openFoodFacts' && <p className="credit">{OFF_ATTRIBUTION}</p>}
       {food.state === 'cooked' && food.source === 'trackMeFit' && (

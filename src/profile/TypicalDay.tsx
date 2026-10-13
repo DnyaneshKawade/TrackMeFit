@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
+import { memoryCustomFoodStore, type CustomFood } from '../food/custom'
 import type { FoodFinder } from '../food/finder'
-import { useFoodSearch } from '../food/useFoodSearch'
 import type { DietTag } from '../food/types'
-import { DIET_ITEMS, MAX_COUNT, checkCustom, describeDiet, estimateDiet, extraFromFood, type DietExtra, type DietItem } from './currentDiet'
-import { allowedFoods } from './dietRules'
+import { AddFood } from '../log/AddFood'
+import { QUICK_ADD_ID, type LogEntry, type NewLogEntry } from '../log/types'
+import { DIET_ITEMS, MAX_COUNT, checkCustom, describeDiet, estimateDiet, type DietExtra, type DietItem } from './currentDiet'
 
 const NOTHING_EXCLUDED = new Set<DietTag>()
+const NO_RECENT: LogEntry[] = []
+const NO_FOODS: CustomFood[] = []
 
 function Stepper({ label, value, onChange }: { label: string; value: number; onChange: (n: number) => void }) {
   const set = (v: number) => onChange(Math.max(0, Math.min(MAX_COUNT, v)))
@@ -46,7 +49,6 @@ export function TypicalDay({
   const [adding, setAdding] = useState<'search' | 'custom' | null>(null)
   const [index, setIndex] = useState<FoodFinder | null>(null)
   const [indexError, setIndexError] = useState(false)
-  const [query, setQuery] = useState('')
   const [custom, setCustom] = useState({ name: '', kcal: '', protein: '' })
   const [customError, setCustomError] = useState<string | null>(null)
 
@@ -62,9 +64,8 @@ export function TypicalDay({
     }
   }, [adding, index, loadFoods])
 
-  // Search wider, then drop what the diet leaves out, so 8 allowed foods show.
-  const found = useFoodSearch(index, query, 40)
-  const results = useMemo(() => allowedFoods(found.results, excluded).slice(0, 8), [found.results, excluded])
+  // Foods made with "New food" here are kept only in the usual day.
+  const created = useMemo(() => memoryCustomFoodStore(), [])
   const diet = estimateDiet(counts, extras, items)
 
   const setExtraCount = (id: string, count: number) =>
@@ -77,7 +78,21 @@ export function TypicalDay({
     const existing = extras.find((x) => x.id === e.id)
     onChange(counts, existing ? extras.map((x) => (x.id === e.id ? { ...x, count: Math.min(MAX_COUNT, x.count + 1) } : x)) : [...extras, e])
     setAdding(null)
-    setQuery('')
+  }
+
+  /** A food from the Add food page as one usual-day item, with its tags. */
+  const extraFromEntry = async (e: NewLogEntry): Promise<DietExtra> => {
+    if (e.foodId === QUICK_ADD_ID) {
+      const n = extras.filter((x) => x.id.startsWith('custom:')).length + 1
+      return { id: `custom:${n}:${e.foodName}`, name: e.foodName, portion: 'your amount', kcal: e.kcal, proteinG: e.proteinG, count: 1 }
+    }
+    const food = (await index?.byIds([e.foodId]).catch(() => null))?.get(e.foodId)
+    // One of the food's portions keeps its name; the first keeps the plain id.
+    const portion = food?.portions.find((p) => p.grams === e.grams)
+    const id = portion && portion === food?.portions[0] ? e.foodId : `${e.foodId}:${e.grams}`
+    const x: DietExtra = { id, name: e.foodName, portion: portion?.label ?? `${e.grams} g`, kcal: e.kcal, proteinG: e.proteinG, count: 1 }
+    if (food?.tags?.length) x.tags = food.tags
+    return x
   }
 
   const addCustom = () => {
@@ -138,41 +153,21 @@ export function TypicalDay({
       )}
 
       {adding === 'search' && (
-        <section className="add-panel" aria-label="Add another food">
-          <input
-            className="search"
-            aria-label="Search foods"
-            placeholder="Search: poha, upma, paneer, biscuits…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            autoFocus
-          />
-          {!index && !indexError && <p className="muted">Loading foods…</p>}
-          {indexError && <p className="error">Couldn’t load the food list. Check your connection, or enter it yourself.</p>}
-          {index && query.trim() && !found.pending && results.length === 0 && <p className="muted">No match for “{query}”.</p>}
-          <ul className="results">
-            {results.map((f) => {
-              const e = extraFromFood(f)
-              return (
-                <li key={f.id}>
-                  <button type="button" onClick={() => addExtra(e)}>
-                    <span className="result-name">{e.name}</span>
-                    <span className="muted">
-                      {e.portion}, {e.kcal} kcal
-                    </span>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-          <button type="button" className="link" onClick={() => setAdding('custom')}>
-            Can’t find it? Enter it yourself
-          </button>
-          <button type="button" className="link" onClick={() => setAdding(null)}>
-            Cancel
-          </button>
-        </section>
+        <AddFood
+          meal="snacks"
+          target="your usual day"
+          date=""
+          excluded={excluded}
+          index={index}
+          recent={NO_RECENT}
+          myFoods={NO_FOODS}
+          onAdd={async (entry) => addExtra(await extraFromEntry(entry))}
+          onCreate={(food) => created.add(food)}
+          onRemoveFood={async () => undefined}
+          onClose={() => setAdding(null)}
+        />
       )}
+      {adding === 'search' && indexError && <p className="error">Couldn’t load the food list. Check your connection, or enter it yourself.</p>}
 
       {adding === 'custom' && (
         <section className="add-panel" aria-label="Enter a food yourself">

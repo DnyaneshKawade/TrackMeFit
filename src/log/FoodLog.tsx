@@ -163,13 +163,17 @@ export function FoodLog({
     void load()
   }, [load])
 
-  const openAdd = (meal: Meal) => {
-    setAdding(meal)
+  /** Loads food search, recent foods and the person's own foods. */
+  const prepareSearch = () => {
     if (!index) void loadFoods().then(setIndex)
     // Offers are a convenience: if they can't load, search still works.
     setRecent(null)
     store.recent().then(setRecent, () => setRecent([]))
     if (!myFoods) custom.list().then(setMyFoods, () => setMyFoods([]))
+  }
+  const openAdd = (meal: Meal) => {
+    setAdding(meal)
+    prepareSearch()
   }
 
   const add = async (entry: NewLogEntry) => {
@@ -234,6 +238,7 @@ export function FoodLog({
             blocked={!!diet?.medical && noAutoMealPlan(diet.medical)}
             counts={diet?.currentDiet?.counts ?? {}}
             loadWeight={latestWeight}
+            search={{ index: allFoods, recent, myFoods: myFoods ?? [], prepare: prepareSearch, onCreate: createFood, onRemoveFood: removeFood }}
             onSave={async (plan, picks) => {
               setSaved(await mealPlans.save(plan, picks))
               setPlanning(false)

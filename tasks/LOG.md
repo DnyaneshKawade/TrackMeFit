@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Full food search in the plan and usual day (T-061b)
+
+- DK asked why "Change plan > Add a food" offered only a short list, and why the usual day's "Add another food" didn't open the search page. Spec `specs/T-061-change-plan.md`, criteria 7 and 8.
+- "+ Add a food" in the plan editor now opens the same Add food page as the meals: search every food, pick an amount, or make a new food. No quick add, since a plan needs a food. The food can be changed in amount or removed. Adding the same food again adds to it.
+- Searched foods keep their diet tags, so a non-veg dish added this way is swapped out on a veg day.
+- "+ Add another food" at signup opens the same page, with amounts and quick add. "Enter it yourself" stays.
+- The Add food page can hide foods the diet leaves out (`excluded`); both places use it.
+- Engine: `addFoundItem` in `src/engine/mealPlan.ts`; `setItemGrams` scales searched foods by weight.
+- Tests: 1 new in `src/engine/mealPlan.test.ts`, 1 new and 8 updated in `src/log/PlanEditor.test.tsx`, 1 new and 1 updated in `src/profile/Onboarding.test.tsx`.
+
 ## 2026-10-13: Change the meal plan from the Food tab (T-061)
 
 - DK asked for a way to make a new plan or change the current one after signup. Spec `specs/T-061-change-plan.md`.

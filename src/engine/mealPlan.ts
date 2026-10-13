@@ -49,11 +49,14 @@ export interface PlanItem {
   foodId: string
   name: string
   grams: number
-  weighed: PlanFood['weighed']
+  /** How the grams are meant; "as eaten" for a food added from search (T-061b). */
+  weighed: PlanFood['weighed'] | 'as eaten'
   /** "about 180 g cooked", "3 roti", "2 eggs". */
   hint?: string
   macros: Macros
   reason: string
+  /** Diet tags of a food added from search, so a veg day can swap it. */
+  tags?: DietTag[]
 }
 
 export interface Meal {
@@ -538,13 +541,36 @@ function changedItem(f: PlanFood, grams: number): PlanItem {
   return { foodId: f.id, name: f.name, grams, weighed: f.weighed, hint: amountHint(f, grams), macros: macrosFor(f, grams), reason: `You changed this.${over}` }
 }
 
-/** The item at this place with a new amount, from 1 to MAX_PLAN_GRAMS g. */
+const scale = (m: Macros, k: number): Macros => ({ kcal: m.kcal * k, proteinG: m.proteinG * k, carbG: m.carbG * k, fatG: m.fatG * k })
+
+/** The item at this place with a new amount, from 1 to MAX_PLAN_GRAMS g.
+ * A food added from search keeps its calories per gram. */
 export function setItemGrams(plan: MealPlan, meal: MealName, index: number, grams: number, foods: PlanFood[]): MealPlan {
   const item = plan.meals.find((m) => m.name === meal)?.items[index]
-  const f = item && foods.find((x) => x.id === item.foodId)
-  if (!f) return plan
+  if (!item) return plan
   const g = Math.round(Math.min(MAX_PLAN_GRAMS, Math.max(1, grams)))
-  return withItems(plan, meal, (items) => items.map((x, i) => (i === index ? changedItem(f, g) : x)))
+  const f = foods.find((x) => x.id === item.foodId)
+  const next: PlanItem | null = f
+    ? changedItem(f, g)
+    : item.grams > 0
+      ? { ...item, grams: g, macros: scale(item.macros, g / item.grams), reason: 'You changed this.' }
+      : null
+  return next ? withItems(plan, meal, (items) => items.map((x, i) => (i === index ? next : x))) : plan
+}
+
+/** A food from the full food search (T-061b), as the person chose its
+ * amount; the same food already in the meal gets the amount added. */
+export function addFoundItem(plan: MealPlan, meal: MealName, found: { foodId: string; name: string; grams: number; macros: Macros; tags?: DietTag[] }): MealPlan {
+  return withItems(plan, meal, (items) => {
+    const at = items.findIndex((i) => i.foodId === found.foodId && i.weighed === 'as eaten')
+    if (at >= 0) {
+      const old = items[at]
+      return items.map((x, i) => (i === at ? { ...old, grams: Math.min(MAX_PLAN_GRAMS, old.grams + found.grams), macros: add(old.macros, found.macros) } : x))
+    }
+    const item: PlanItem = { foodId: found.foodId, name: found.name, grams: Math.min(MAX_PLAN_GRAMS, found.grams), weighed: 'as eaten', macros: found.macros, reason: 'You added this.' }
+    if (found.tags?.length) item.tags = found.tags
+    return [...items, item]
+  })
 }
 
 export function removeItem(plan: MealPlan, meal: MealName, index: number): MealPlan {
