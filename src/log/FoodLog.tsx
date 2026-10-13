@@ -176,6 +176,23 @@ export function FoodLog({
     setMyFoods((list) => (list ?? []).filter((f) => f.id !== id))
   }
 
+  // Ticking the meal plan (T-060): log or remove entries one by one, in order,
+  // so a lost connection leaves the day as far as it got.
+  const tick = async (add: NewLogEntry[], removeIds: string[]) => {
+    try {
+      for (const id of removeIds) {
+        await store.remove(id)
+        setEntries((list) => (list ?? []).filter((e) => e.id !== id))
+      }
+      for (const entry of add) {
+        const saved = await store.add(entry)
+        setEntries((list) => [...(list ?? []), saved])
+      }
+    } catch {
+      setError('Couldn’t update the plan ticks. Try again.')
+    }
+  }
+
   const remove = async (id: string) => {
     try {
       await store.remove(id)
@@ -251,7 +268,7 @@ export function FoodLog({
       )}
       {saved && (
         <Suspense fallback={null}>
-          <TodayPlan saved={saved} excluded={excluded} vegWhy={vegWhy} />
+          <TodayPlan saved={saved} excluded={excluded} vegWhy={vegWhy} date={date} entries={entries} onTick={tick} />
         </Suspense>
       )}
 

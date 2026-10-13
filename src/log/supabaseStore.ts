@@ -15,6 +15,7 @@ export interface FoodLogRow {
   protein_g: number | string
   carb_g: number | string
   fat_g: number | string
+  plan_item?: string | null
 }
 
 // Postgres numeric columns arrive as strings.
@@ -29,6 +30,7 @@ export const fromRow = (r: FoodLogRow): LogEntry => ({
   proteinG: Number(r.protein_g),
   carbG: Number(r.carb_g),
   fatG: Number(r.fat_g),
+  ...(r.plan_item ? { planItem: r.plan_item } : {}),
 })
 
 export const toRow = (e: NewLogEntry): Omit<FoodLogRow, 'id'> => ({
@@ -41,9 +43,10 @@ export const toRow = (e: NewLogEntry): Omit<FoodLogRow, 'id'> => ({
   protein_g: e.proteinG,
   carb_g: e.carbG,
   fat_g: e.fatG,
+  ...(e.planItem ? { plan_item: e.planItem } : {}),
 })
 
-const COLUMNS = 'id, logged_on, meal, food_id, food_name, grams, kcal, protein_g, carb_g, fat_g'
+const COLUMNS = 'id, logged_on, meal, food_id, food_name, grams, kcal, protein_g, carb_g, fat_g, plan_item'
 
 export function supabaseLogStore(sb: SupabaseClient, userId: string): LogStore {
   return {

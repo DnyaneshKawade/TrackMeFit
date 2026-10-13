@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Tick off the meal plan (T-060)
+
+- The meal plan on the Food tab now has a tick box on each item, each meal and "Ate the whole plan". A tick logs the planned amount under the matching meal; an untick removes only the entry the tick made, never food added by hand. A meal shows part-ticked when some of it is eaten, and the plan heading says "5 of 12 eaten".
+- A ticked item can have its amount changed; it stays ticked with the new calories. Veg days tick the veg items. Ticks work offline (T-027) and on any date, and nothing is logged unless ticked.
+- Entries keep the plan item they came from in a new `plan_item` column (migration `20261018000000_food_log_plan_item.sql`; DK runs it before the merge so the Food tab can read the column).
+- Main bundle 136.9 of 140 KB; the plan view loads on its own (1.7 KB).
+- Tests: `src/log/TodayPlan.test.tsx` (8), 2 in `src/log/log.test.ts`, 1 in `src/log/offlineStore.test.ts`, 1 in `src/db/rls.test.ts`.
+
 ## 2026-10-13: Plan for ticking off the meal plan (T-060)
 
 - DK asked whether a meal plan can be set for weeks ahead and filled in each day. Today the saved plan is one day of meals shown every day as a guide; nothing is logged from it. A plan laid out by date would go stale when targets change and would fill the log with food not eaten, so DK chose tick boxes instead: tick an item, a meal or the whole day to log it with the planned amount; untick to remove it.

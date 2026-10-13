@@ -190,4 +190,16 @@ describe('offline food logging (T-027)', () => {
     expect(storage.data.has('tmf:days:asha')).toBe(false)
     expect(storage.data.has('tmf:outbox:asha')).toBe(true)
   })
+
+  it('8 (T-060). a tick made offline is shown at once with its plan item, waits, and syncs', async () => {
+    const { store, state, inner } = setup()
+    await store.listDay(DAY)
+    state.online = false
+    const ticked = await store.add({ ...entry('dal'), planItem: 'p:Lunch:0:dal' })
+    expect(store.sync.pendingIds()).toEqual(new Set([ticked.id]))
+    expect((await store.listDay(DAY))[0].planItem).toBe('p:Lunch:0:dal')
+    state.online = true
+    await store.sync.run()
+    expect((await inner.listDay(DAY))[0].planItem).toBe('p:Lunch:0:dal')
+  })
 })
