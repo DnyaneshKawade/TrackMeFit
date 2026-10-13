@@ -24,6 +24,12 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-034 | Review leafy-green and juice recipes: some got extra oil or sugar to pass an energy check that was too strict (now relaxed) | Review pass |
 | T-032 | Verify cooked weights | Someone cooks each dish and weighs the pot |
 
+## Waiting on DK
+
+| ID | Task | What to do |
+|---|---|---|
+| T-039 | Run `supabase/migrations/20261013000000_progression.sql` in the Supabase SQL Editor | Needed before the Training tab works on the live project |
+
 ## To do
 
 | ID | Task | Tests planned |
@@ -35,7 +41,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-019 | Add your own food, product, recipe | Recipe per-100 g maths tests |
 | T-021 | Optional "suggest my targets" using the diet engine | Engine tests (done); UI test for accept / ignore |
 | T-022 | Progress tracking: weight trend, measurements, photos, strength | Trend tests (done); chart data tests |
-| T-024 | Auto-progression per muscle: weekly set changes from soreness and performance feedback, deloads (weight and rep suggestions per exercise already shown in the logger) | Engine tests (done); feedback form tests |
 | T-026 | Coach dashboard: client list, flags, plan editing, check-ins, chat | Permission tests; flag rule tests |
 | T-027 | Installable web app (PWA): offline logging, sync when online | Offline queue tests |
 | T-028 | Deploy to Vercel with preview builds per pull request | CI green |
@@ -58,6 +63,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-013 | Sign-in screens: email, Google, password reset, user or coach | `src/auth/SignIn.test.tsx` (13) |
 | T-014 | Data model and privacy rules (users, coaches, food, progress, training) | `src/db/rls.test.ts` (17), run in PGlite |
 | T-030 | Load USDA values for our ingredients: 26 of 28 matched, 22 of 25 dishes computed | `src/food/indian/database.test.ts` (6) |
+| T-024 | Weekly progression: how-did-it-feel questions after workouts, week review with per-muscle set changes (applied only when accepted), effort targets per week, deloads and new blocks | `src/training/progression.test.ts` (10), `src/training/Review.test.tsx` (3), `src/db/rls.test.ts` (+2) |
 | T-023 | Workout plans (days, exercises, sets, rep ranges) and FitNotes-style logger with last time and next-load suggestion | `src/training/training.test.ts` (12), `src/training/Workouts.test.tsx` (5) |
 | T-025 | Exercise library: 63 exercises with primary and secondary muscles, gym-slang search | `src/training/training.test.ts` |
 | T-020 | Manual daily targets (calories, protein, carbs, fat) set by the person or coach; food log shows what is left | `src/targets/targets.test.ts` (8), `src/targets/TargetsFood.test.tsx` (4) |

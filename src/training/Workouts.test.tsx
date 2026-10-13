@@ -33,7 +33,7 @@ describe('workout plans', () => {
     expect((screen.getByLabelText('Back squat lowest reps') as HTMLInputElement).value).toBe('6')
     type('Back squat sets', '4')
     click('Save plan')
-    expect(await screen.findByRole('button', { name: /Full body/ })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: /^Full body/ })).toBeTruthy()
     const [saved] = await store.plans()
     expect(saved.days[0]).toMatchObject({ name: 'Day A', exercises: [{ exerciseId: 'back-squat', sets: 4, repMin: 6, repMax: 10 }] })
   })
@@ -50,9 +50,9 @@ describe('workout plans', () => {
   it('deletes a plan', async () => {
     const store = memoryWorkoutStore({ plans: [ppl] })
     render(<Workouts store={store} today={TODAY} />)
-    fireEvent.click(await screen.findByRole('button', { name: /Push Pull Legs/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Push Pull Legs/ }))
     click('Delete plan')
-    await waitFor(() => expect(screen.queryByRole('button', { name: /Push Pull Legs/ })).toBeNull())
+    await waitFor(() => expect(screen.queryByRole('button', { name: /^Push Pull Legs/ })).toBeNull())
     expect(await store.plans()).toEqual([])
   })
 })
@@ -92,6 +92,7 @@ describe('logging a workout', () => {
     await waitFor(() => expect(within(bench).queryByText(/Set 2/)).toBeNull())
 
     click('Done')
+    click('Skip')
     expect(await screen.findByText('1 sets logged')).toBeTruthy()
   })
 

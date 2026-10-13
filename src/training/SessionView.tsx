@@ -1,22 +1,44 @@
 import { useEffect, useState } from 'react'
+import { targetRir } from '../engine/training'
 import { exerciseById, type Exercise } from './exercises'
 import { ExercisePicker } from './ExercisePicker'
+import { FeedbackSheet } from './FeedbackSheet'
+import { deloadAdvice, isDeloadWeek, weekLabel } from './progression'
 import { checkSet, describeSets, suggestNext, type PastSession, type PlanExercise, type Session, type WorkoutStore } from './types'
 
 export function SessionView({
   store,
   session: initial,
   planned,
+  block,
   onClose,
 }: {
   store: WorkoutStore
   session: Session
   planned: PlanExercise[]
+  /** The plan's training block, when the session follows a plan day. */
+  block?: { week: number; hardWeeks: number }
   onClose: () => void
 }) {
   const [session, setSession] = useState(initial)
   const [extra, setExtra] = useState<string[]>([])
   const [picking, setPicking] = useState(false)
+  const [askFeedback, setAskFeedback] = useState(false)
+
+  const trained = [...new Set(session.sets.map((s) => exerciseById.get(s.exerciseId)?.primary).filter((m) => m !== undefined))]
+
+  if (askFeedback) {
+    return (
+      <FeedbackSheet
+        muscles={trained}
+        onSkip={onClose}
+        onSave={async (f) => {
+          await store.saveFeedback(session.id, f)
+          onClose()
+        }}
+      />
+    )
+  }
 
   const ids = [...new Set([...planned.map((p) => p.exerciseId), ...session.sets.map((s) => s.exerciseId), ...extra])]
 
@@ -36,8 +58,9 @@ export function SessionView({
     <section className="session" aria-label={session.name}>
       <header className="sheet-head">
         <h2>{session.name}</h2>
-        <button className="link" onClick={onClose}>Done</button>
+        <button className="link" onClick={() => (trained.length ? setAskFeedback(true) : onClose())}>Done</button>
       </header>
+      {block && <p className="muted">{weekLabel(block.week, block.hardWeeks)}</p>}
       {ids.map((id) => {
         const exercise = exerciseById.get(id)
         if (!exercise) return null
@@ -48,6 +71,7 @@ export function SessionView({
             session={session}
             exercise={exercise}
             plan={planned.find((p) => p.exerciseId === id)}
+            block={block}
             onChange={setSession}
           />
         )
@@ -62,14 +86,17 @@ function ExerciseLog({
   session,
   exercise,
   plan,
+  block,
   onChange,
 }: {
   store: WorkoutStore
   session: Session
   exercise: Exercise
   plan?: PlanExercise
+  block?: { week: number; hardWeeks: number }
   onChange: (s: Session) => void
 }) {
+  const deload = !!block && isDeloadWeek(block.week, block.hardWeeks)
   const [history, setHistory] = useState<PastSession[] | null>(null)
   const [weight, setWeight] = useState('')
   const [reps, setReps] = useState('')
@@ -78,7 +105,8 @@ function ExerciseLog({
   const [busy, setBusy] = useState(false)
 
   const range: [number, number] = plan ? [plan.repMin, plan.repMax] : exercise.isolation ? [10, 15] : [6, 10]
-  const suggestion = history ? suggestNext(history, exercise, range) : null
+  // No weight increases in a deload week.
+  const suggestion = history && !deload ? suggestNext(history, exercise, range) : null
 
   useEffect(() => {
     let live = true
@@ -86,7 +114,7 @@ function ExerciseLog({
       (h) => {
         if (!live) return
         setHistory(h)
-        const s = suggestNext(h, exercise, range)
+        const s = deload ? null : suggestNext(h, exercise, range)
         if (s) {
           setWeight((w) => w || String(s.weight))
           setReps((r) => r || String(s.targetReps))
@@ -137,6 +165,15 @@ function ExerciseLog({
         {plan && <span className="muted">{plan.sets} × {plan.repMin}–{plan.repMax}</span>}
       </header>
       {history && history[0] && <p className="muted">Last time: {describeSets(history[0].sets)}</p>}
+      {deload && plan && <p className="suggest">{deloadAdvice(plan.sets)}</p>}
+      {block && !deload && (
+        <p className="muted">
+          {(() => {
+            const rir = targetRir(block.week, block.hardWeeks, exercise.isolation)
+            return rir === 0 ? 'Last hard week: take the final set close to failure.' : `Stop each set about ${rir} rep${rir > 1 ? 's' : ''} short of failure.`
+          })()}
+        </p>
+      )}
       {suggestion && (
         <p className="suggest">
           Try {suggestion.weight} kg × {suggestion.targetReps}. <span className="muted">{suggestion.why}</span>

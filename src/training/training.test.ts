@@ -61,6 +61,8 @@ describe('plans', () => {
     const p = planFromRow({
       id: 'p',
       name: 'Upper Lower',
+      hard_weeks: 4,
+      block_started_on: '2026-10-01',
       plan_days: [
         { id: 'd2', day_index: 1, name: 'Lower', plan_exercises: [] },
         {

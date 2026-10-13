@@ -27,3 +27,18 @@
   .field input, .plan-day input, .set-row input { background: #161d1b; color: inherit; border-color: #3a4643; }
   .plan-ex, .exercise { border-color: #2c3734; }
 }
+.plan-card { display: grid; }
+.plan-card .link { justify-self: end; margin-top: -4px; }
+.feedback-muscle { border: 1.5px solid #dfe5e2; border-radius: 12px; padding: 10px 12px; margin: 10px 0; }
+.feedback-muscle legend { font-weight: 700; padding: 0 4px; }
+.choice { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
+.choice > span { width: 100%; }
+.choice button { font: inherit; padding: 8px 12px; border-radius: 999px; border: 1.5px solid #cdd6d2; background: none; color: inherit; cursor: pointer; }
+.choice button[aria-pressed='true'] { background: #0f7a5c; border-color: #0f7a5c; color: #fff; }
+.pain { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+.review-list { list-style: none; padding: 0; display: grid; gap: 10px; }
+.review-list li { display: grid; gap: 2px; }
+@media (prefers-color-scheme: dark) {
+  .feedback-muscle { border-color: #3a4643; }
+  .choice button { border-color: #3a4643; }
+}
