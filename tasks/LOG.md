@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-12: Food log (T-018)
+
+- After sign-in the app opens on today's food log: Breakfast, Lunch, Snacks and Dinner with calories per meal and day totals for calories, protein, carbs and fat. Arrows move to earlier days (never the future).
+- "+ Add food" searches 7,567 foods (2,559 dishes, 1,461 raw foods, 3,547 packaged products) by name, Hinglish or regional alias, or brand; whole-word matches rank first, home dishes before products (`src/food/catalogue.ts`, `src/food/search.ts`).
+- Amounts in portions (1 katori, 1 roti, ...) or grams, with a raw / cooked / as-sold hint and a live macro preview. Entries keep a snapshot of name and macros (`src/log/types.ts`); saved to `food_logs` through `src/log/supabaseStore.ts`.
+- Tests: `src/log/log.test.ts` (7), `src/log/FoodLog.test.tsx` (7), `src/food/search.test.ts` (7); whole suite passing.
+- Open: the food list is a 535 KB (gzip) download on first search (T-038); quick add, barcode and batch cooking are T-018b. Paneer and jaggery dishes still wait on labels (T-031).
+
 ## 2026-10-12: Database and sign-in (T-013, T-014)
 
 - `supabase/migrations/20261012000000_init.sql`: profiles (user or coach, onboarding history), coach links, custom foods, food logs, diet targets, weigh-ins, measurements, custom exercises, workout plans, sessions and sets. Row-level security on every table.
