@@ -3,7 +3,7 @@ import type { Macros } from '../engine/diet'
 import { localDate } from '../log/types'
 import type { SearchIndex } from '../food/search'
 import { allowedExtras, dietItemsFor, estimateDiet, type DietExtra } from './currentDiet'
-import { NONVEG_OFF_DAYS, NONVEG_OFF_SEASONS, NO_ONION_GARLIC, cleanRules, excludedTags, hasNonvegOff, isNonvegOff } from './dietRules'
+import { NONVEG_OFF_DAYS, NO_ONION_GARLIC, cleanRules, excludedTags, hasNonvegOff, isNonvegOff } from './dietRules'
 import { TypicalDay } from './TypicalDay'
 import type { AcceptedMealPlan } from './MealPlanStep'
 import { bmiResult, buildPlan, checkTargetWeight, goalTimeline, paceOptions, waistNote } from './goal'
@@ -418,22 +418,13 @@ export function Onboarding({
             onChange={(rules) => patch({ foodRules: [...rules, ...p.foodRules.filter(isNonvegOff)] })}
           />
           {hasNonvegOff(p.dietPref) && (
-            <>
-              <Multi
-                label="Days you skip non-veg"
-                options={NONVEG_OFF_DAYS}
-                value={p.foodRules.filter((r) => NONVEG_OFF_DAYS.some(([k]) => k === r))}
-                none={true}
-                onChange={(days) => patch({ foodRules: [...p.foodRules.filter((r) => !NONVEG_OFF_DAYS.some(([k]) => k === r)), ...days] })}
-              />
-              <Multi
-                label="Seasons you skip non-veg"
-                options={NONVEG_OFF_SEASONS}
-                value={p.foodRules.filter((r) => NONVEG_OFF_SEASONS.some(([k]) => k === r))}
-                none={true}
-                onChange={(seasons) => patch({ foodRules: [...p.foodRules.filter((r) => !NONVEG_OFF_SEASONS.some(([k]) => k === r)), ...seasons] })}
-              />
-            </>
+            <Multi
+              label="Days you skip non-veg"
+              options={NONVEG_OFF_DAYS}
+              value={p.foodRules.filter((r) => NONVEG_OFF_DAYS.some(([k]) => k === r))}
+              none={true}
+              onChange={(days) => patch({ foodRules: [...p.foodRules.filter((r) => !NONVEG_OFF_DAYS.some(([k]) => k === r)), ...days] })}
+            />
           )}
           <Multi
             label="Do you fast?"

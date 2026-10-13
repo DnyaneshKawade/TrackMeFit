@@ -1,6 +1,6 @@
 # T-058: Suggested day of meals (opt-in)
 
-Status: agreed (DK, 13 Oct 2026: "start with the appropriate tasks"); engine built (T-058a), screens built (T-058b), non-veg-free days next (T-058c)
+Status: agreed (DK, 13 Oct 2026: "start with the appropriate tasks"); engine built (T-058a), screens built (T-058b), non-veg-free days built (T-058c, [spec](T-058c-nonveg-free-days.md))
 Tasks: [T-058a, T-058b, T-058c](../tasks/TASKS.md)
 
 ## Problem

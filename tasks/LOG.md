@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Veg days in the plan and log (T-058c)
+
+- A veg day is one of the person's non-veg-free weekdays, or any day they mark with "Make today a veg day". On a usual veg day they can tap "I’m eating non-veg today". The choice is per date and kept on the device. DK asked not to over-customise ("people will choose as per their wish"), so there is no festival calendar, and the onboarding season question is gone.
+- The Food tab now shows the saved meal plan ("Your meal plan"). On a veg day, chicken, fish and eggs are swapped for the person's veg protein picks, then paneer, dal, soya or tofu, within limits and with the reason; cereals are trimmed a little to keep calories about the same.
+- Opening chicken, fish or egg to log it on a veg day shows a gentle note with veg ideas. Logging still works.
+- Fixed: the plan could put more oil in one meal than its per-meal limit; extra now spills to other meals.
+- Onboarding and the plan card load only when needed; main bundle about 133 of 140 KB (was 138.7).
+- Tests: `src/profile/nonvegDays.test.ts` (3), 2 more in `src/engine/mealPlan.test.ts`, 6 in `src/log/FoodLog.test.tsx`.
+
 ## 2026-10-13: Meal plan screens (T-058b)
 
 - "Your plan" now asks "Want us to suggest a day of meals?" under the targets. Yes shows the protein foods the diet allows in plain words (no eggs or chicken for a vegetarian); picking them builds the plan live with the T-058a engine. If the picks can't reach the protein target, the app says how close they get and offers diet-appropriate additions or "Use N g protein instead".

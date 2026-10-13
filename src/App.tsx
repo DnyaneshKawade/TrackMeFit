@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import { SignIn } from './auth/SignIn'
 import { createSupabaseAuth, supabaseFromEnv } from './auth/supabaseAuth'
 import type { Account, AuthService } from './auth/types'
@@ -15,11 +15,13 @@ import type { WorkoutStore } from './training/types'
 import type { SearchIndex } from './food/search'
 import { memoryCustomFoodStore, supabaseCustomFoodStore, type CustomFoodStore } from './food/custom'
 import { localDate } from './log/types'
-import { Onboarding } from './profile/Onboarding'
 import { memoryProfileStore, supabaseProfileStore } from './profile/stores'
 import { memoryMealPlanStore, supabaseMealPlanStore, type MealPlanStore } from './profile/mealPlanStore'
 import { isOnboarded, type ProfileInfo, type ProfileStore } from './profile/types'
 import { Progress } from './progress/Progress'
+
+// First-run questions are seen once, so they load only when needed.
+const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ default: m.Onboarding })))
 import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
 import type { ProgressStore } from './progress/types'
 
@@ -109,25 +111,27 @@ export function AppShell({
     return (
       <>
         {topbar}
-        <Onboarding
-          initial={{ ...profile, fullName: profile.fullName || account.name }}
-          onFinish={async ({ profile: p, weightKg, waistCm, targets: suggested, mealPlan }) => {
-            const today = localDate()
-            await profiles!.save(p)
-            await progress!.saveWeighIn(today, weightKg)
-            if (waistCm !== null) await progress!.saveMeasurement({ date: today, waistCm })
-            if (suggested && targets) await targets.save(suggested, today, 'suggested')
-            // The plan is optional: if it can't be saved, setup still finishes.
-            if (mealPlan && mealPlans) await mealPlans.save(mealPlan.plan, mealPlan.picks).catch(() => null)
-            setProfile(p)
-          }}
-          loadIndex={loadIndex}
-          onSkip={async () => {
-            const p = { ...profile, fullName: profile.fullName || account.name, onboardedAt: new Date().toISOString() }
-            await profiles!.save(p)
-            setProfile(p)
-          }}
-        />
+        <Suspense fallback={<main className="auth">Loading…</main>}>
+          <Onboarding
+            initial={{ ...profile, fullName: profile.fullName || account.name }}
+            onFinish={async ({ profile: p, weightKg, waistCm, targets: suggested, mealPlan }) => {
+              const today = localDate()
+              await profiles!.save(p)
+              await progress!.saveWeighIn(today, weightKg)
+              if (waistCm !== null) await progress!.saveMeasurement({ date: today, waistCm })
+              if (suggested && targets) await targets.save(suggested, today, 'suggested')
+              // The plan is optional: if it can't be saved, setup still finishes.
+              if (mealPlan && mealPlans) await mealPlans.save(mealPlan.plan, mealPlan.picks).catch(() => null)
+              setProfile(p)
+            }}
+            loadIndex={loadIndex}
+            onSkip={async () => {
+              const p = { ...profile, fullName: profile.fullName || account.name, onboardedAt: new Date().toISOString() }
+              await profiles!.save(p)
+              setProfile(p)
+            }}
+          />
+        </Suspense>
       </>
     )
   }
@@ -140,7 +144,17 @@ export function AppShell({
         <button role="tab" aria-selected={tab === 'training'} onClick={() => setTab('training')}>Training</button>
         <button role="tab" aria-selected={tab === 'progress'} onClick={() => setTab('progress')}>Progress</button>
       </nav>
-      {tab === 'food' && <FoodLog store={store!} loadIndex={loadIndex} foods={foods} targets={targets} userId={account.id} />}
+      {tab === 'food' && (
+        <FoodLog
+          store={store!}
+          loadIndex={loadIndex}
+          foods={foods}
+          targets={targets}
+          userId={account.id}
+          diet={profile ?? undefined}
+          mealPlans={mealPlans}
+        />
+      )}
       {tab === 'training' && <Workouts store={workouts!} />}
       {tab === 'progress' && <Progress store={progress!} goal={profile?.goal ?? null} />}
     </>

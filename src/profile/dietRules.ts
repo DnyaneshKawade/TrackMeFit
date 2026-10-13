@@ -28,15 +28,7 @@ export const NONVEG_OFF_DAYS: [string, string][] = [
   ['nonveg_off:sun', 'Sun'],
 ]
 
-export const NONVEG_OFF_SEASONS: [string, string][] = [
-  ['nonveg_off:shravan', 'Shravan'],
-  ['nonveg_off:navratri', 'Navratri'],
-  ['nonveg_off:chaturmas', 'Chaturmas'],
-  ['nonveg_off:ramadan', 'Ramadan fasting days'],
-  ['nonveg_off:lent', 'Lent'],
-]
-
-/** Non-veg-free days and seasons only apply to people who eat non-veg or eggs. */
+/** Non-veg-free days only apply to people who eat non-veg or eggs. */
 export const hasNonvegOff = (diet: DietPref | null) => diet === 'nonveg' || diet === 'eggetarian'
 
 export const isNonvegOff = (rule: string) => rule.startsWith(NONVEG_OFF)

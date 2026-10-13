@@ -316,12 +316,20 @@ export function splitMeals(day: Day, byId: Map<string, PlanFood>, why: Map<strin
   for (const { f, g } of foods) {
     if (isProtein(f)) continue
     const meals = mealsFor(f)
+    const inMeal = (m: MealName) => parts.get(m)!.get(f.id) ?? 0
     let leftG = g
     meals.forEach((m, i) => {
-      const share = i === meals.length - 1 ? leftG : Math.min(leftG, roundTo(f, g / meals.length))
+      const share = Math.min(i === meals.length - 1 ? leftG : Math.min(leftG, roundTo(f, g / meals.length)), f.maxPerMealG)
       put(m, f, share)
       leftG -= share
     })
+    // Anything over the per-meal limit goes to the usual meals with room, then any meal.
+    for (const m of [...meals, ...MEALS.filter((x) => !meals.includes(x))]) {
+      if (leftG <= 0) break
+      const share = Math.min(leftG, f.maxPerMealG - inMeal(m))
+      put(m, f, share)
+      leftG -= share
+    }
   }
   // Protein in portions: pulses first, then the biggest sources.
   const protein = foods
@@ -436,3 +444,73 @@ export { MAIN_MEALS }
 /** Cooked weight for a raw amount, to the nearest 10 g, when known. */
 export const cookedGrams = (f: PlanFood, grams: number): number | null =>
   f.cookedFactor ? Math.round((grams * f.cookedFactor) / 10) * 10 : null
+
+/** Veg protein foods to fall back on when the person picked none, best first. */
+export const VEG_FALLBACKS = ['tmf:ing:paneer', 'tmf:ing:toor-dal', 'tmf:ing:soya-chunks', 'usda:172475']
+
+/** The plan for a non-veg-free day: each item the day leaves out is swapped
+ * for an allowed protein food of about the same protein (the person's picks
+ * first, then VEG_FALLBACKS), with the day's reason (`why`, e.g. "Tuesday is
+ * your non-veg-free day"). Items with no allowed
+ * swap are dropped with a note. Spec: specs/T-058c-nonveg-free-days.md. */
+export function vegDayPlan(plan: MealPlan, foods: PlanFood[], allowed: Set<string>, picks: string[], why: string): MealPlan {
+  const byId = new Map(foods.map((f) => [f.id, f]))
+  const choices = [...picks, ...VEG_FALLBACKS]
+    .filter((id, i, all) => all.indexOf(id) === i && allowed.has(id))
+    .map((id) => byId.get(id))
+    .filter((f): f is PlanFood => !!f && PROTEIN_GROUPS.includes(f.group))
+  let out = plan
+  const notes: string[] = []
+  const used = (id: string) => out.meals.flatMap((m) => m.items).filter((i) => i.foodId === id).reduce((sum, i) => sum + i.grams, 0)
+  const inMeal = (meal: MealName, id: string) => out.meals.find((m) => m.name === meal)?.items.find((i) => i.foodId === id)?.grams ?? 0
+  const setMeal = (meal: MealName, items: PlanItem[]) => {
+    out = { ...out, meals: out.meals.map((m) => (m.name === meal ? { ...m, items, macros: items.reduce((t, i) => add(t, i.macros), ZERO) } : m)) }
+  }
+  for (const meal of plan.meals)
+    for (const item of meal.items) {
+      if (allowed.has(item.foodId)) continue
+      const from = item.name.toLowerCase()
+      const swappedFor = (to: PlanFood) => `${why}, so ${from} is swapped for ${to.name.toLowerCase()}.`
+      // Fill the item's protein from the choices in order, each within its limits.
+      let need = item.macros.proteinG
+      const added: PlanItem[] = []
+      for (const to of choices) {
+        if (need < 2) break
+        const room = Math.min(to.maxPerMealG - inMeal(meal.name, to.id), to.maxPerDayG - used(to.id))
+        const grams = Math.min(roundTo(to, (need / to.per100g.proteinG) * 100), floorTo(to, room))
+        if (grams < Math.max(step(to), 20)) continue
+        const merged = inMeal(meal.name, to.id) + grams
+        const current = out.meals.find((m) => m.name === meal.name)!.items
+        const swapped: PlanItem = { foodId: to.id, name: to.name, grams: merged, weighed: to.weighed, hint: amountHint(to, merged), macros: macrosFor(to, merged), reason: swappedFor(to) }
+        setMeal(meal.name, [...current.filter((i) => i.foodId !== to.id), swapped])
+        added.push(swapped)
+        need -= macrosFor(to, grams).proteinG
+      }
+      const current = out.meals.find((m) => m.name === meal.name)!.items
+      const at = current.findIndex((i) => i.foodId === item.foodId)
+      const rest = current.filter((i) => i.foodId !== item.foodId)
+      // Keep the swapped foods where the old item was.
+      const moved = rest.filter((i) => added.some((a) => a.foodId === i.foodId))
+      const others = rest.filter((i) => !moved.includes(i))
+      others.splice(Math.max(0, Math.min(at, others.length)), 0, ...moved)
+      setMeal(meal.name, others)
+      if (!added.length) notes.push(`${why}, so ${from} is left out. Add dal or another protein food you eat.`)
+    }
+  if (out === plan) return plan
+  // Veg protein foods bring more calories than chicken or fish, so take the
+  // extra back from cereals, a step at a time, largest first.
+  const kcalOf = () => out.meals.reduce((t, m) => t + m.macros.kcal, 0)
+  let trimmed = false
+  while (kcalOf() > plan.totals.kcal * 1.02) {
+    const cereals = out.meals.flatMap((m) => m.items.map((i) => ({ meal: m.name, i, f: byId.get(i.foodId)! }))).filter(({ f, i }) => f?.group === 'cereal' && i.grams > 2 * step(f))
+    if (!cereals.length) break
+    const { meal, i, f } = cereals.reduce((a, b) => (b.i.grams > a.i.grams ? b : a))
+    const grams = i.grams - step(f)
+    setMeal(meal, out.meals.find((m) => m.name === meal)!.items.map((x) => (x === i ? { ...x, grams, hint: amountHint(f, grams), macros: macrosFor(f, grams) } : x)))
+    trimmed = true
+  }
+  if (trimmed) notes.push('Cereals are a little less today, to keep calories about the same.')
+  const meals = out.meals.filter((m) => m.items.length)
+  const totals = meals.reduce((t, m) => add(t, m.macros), ZERO)
+  return { ...out, meals, totals, onTarget: isOnTarget(totals, plan.targets), notes: [...plan.notes, ...notes] }
+}

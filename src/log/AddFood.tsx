@@ -35,6 +35,7 @@ export function AddFood({
   onCreate,
   onRemoveFood,
   onClose,
+  nonvegOff = null,
 }: {
   meal: Meal
   date: string
@@ -47,6 +48,8 @@ export function AddFood({
   onCreate: (food: NewCustomFood) => Promise<Food>
   onRemoveFood: (id: string) => Promise<void>
   onClose: () => void
+  /** On a non-veg-free day: a gentle note for meat, fish and egg foods. */
+  nonvegOff?: string | null
 }) {
   const [view, setView] = useState<View>('search')
   const [query, setQuery] = useState('')
@@ -71,7 +74,16 @@ export function AddFood({
 
   let body
   if (picked) {
-    body = <Amount food={picked} meal={meal} date={date} onAdd={onAdd} onBack={() => setPicked(null)} />
+    body = (
+      <Amount
+        food={picked}
+        meal={meal}
+        date={date}
+        onAdd={onAdd}
+        onBack={() => setPicked(null)}
+        note={nonvegOff && picked.tags?.some((t) => t === 'meat' || t === 'fish' || t === 'egg') ? nonvegOff : null}
+      />
+    )
   } else if (view === 'quick') {
     body = <QuickAdd meal={meal} date={date} onAdd={onAdd} onBack={() => setView('search')} />
   } else if (view === 'create') {
@@ -301,12 +313,14 @@ function Amount({
   date,
   onAdd,
   onBack,
+  note = null,
 }: {
   food: Food
   meal: Meal
   date: string
   onAdd: (entry: NewLogEntry) => Promise<void>
   onBack: () => void
+  note?: string | null
 }) {
   // Portion index, or -1 for grams. Dishes open on their first portion.
   const [unit, setUnit] = useState(food.portions.length ? 0 : -1)
@@ -340,6 +354,7 @@ function Amount({
     <div className="amount">
       <button className="link" onClick={onBack}>← Back to search</button>
       <h3>{food.name}{food.brand ? `, ${food.brand}` : ''}</h3>
+      {note && <p className="info" role="note" aria-label="Non-veg-free day">{note}</p>}
       <div className="amount-row">
         <input
           aria-label="Amount"
