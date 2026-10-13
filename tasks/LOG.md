@@ -2,6 +2,10 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Plan for ticking off the meal plan (T-060)
+
+- DK asked whether a meal plan can be set for weeks ahead and filled in each day. Today the saved plan is one day of meals shown every day as a guide; nothing is logged from it. A plan laid out by date would go stale when targets change and would fill the log with food not eaten, so DK chose tick boxes instead: tick an item, a meal or the whole day to log it with the planned amount; untick to remove it.
+- Draft spec `specs/T-060-tick-plan.md`, task T-060 added. A weekly plan with different days stays a separate, later idea.
 ## 2026-10-13: Workouts without a connection (T-027b)
 
 - Second part of offline logging, so a gym with no signal works like the Food tab. Starting a workout, logging and removing sets, and the how-did-it-feel answers all work offline. Waiting sets show "Not synced yet", and the Training tab and the workout say how many entries are waiting.

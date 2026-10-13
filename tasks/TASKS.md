@@ -49,6 +49,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-055 | Automated accessibility checks (lint rules and axe in component tests) | Lint in CI; axe assertions |
 | T-056 | Versions and a changelog built from `tasks/LOG.md` | Release script test |
 | T-059c | Progress tab: when someone on Catch up reaches a healthy BMI, suggest switching to Steady, applied only on their OK | `src/progress/progress.test.ts` |
+| T-060 | Tick off the meal plan ([spec](../specs/T-060-tick-plan.md)): a tick box on each plan item, meal and the whole day on the Food tab; ticking logs the planned amount, unticking removes only what the tick made; veg-day items on veg days; works offline and for other dates | Tick and untick tests; plan item kept on entries; RLS test |
 
 ## Done
 
