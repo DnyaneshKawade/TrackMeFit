@@ -29,9 +29,8 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | ID | Task | Tests planned |
 |---|---|---|
 | T-015 | USDA bulk importer (Foundation + SR Legacy) into our foods table | Mapper tests (started in T-007), import count check |
-| T-018b | Food logging extras: quick add (calories only), barcode scan, batch-cooked weighing, recent and frequent foods | Component tests for each |
+| T-018c | Food logging extras: barcode scan, batch-cooked weighing | Component tests for each |
 | T-038 | Serve food search from the database instead of a 535 KB (gzip) download | Search tests against the server |
-| T-019 | Add your own food, product, recipe | Recipe per-100 g maths tests |
 | T-041 | Use onboarding answers: filter food search by diet type, food rules and allergies; fasting days as flexible days; event date for goals; starter workouts by equipment | Search filter tests; plan tests |
 | T-022b | Progress extras: progress photos (private storage) and strength trends per exercise | Photo upload privacy tests; strength trend tests |
 | T-027 | Offline logging: save food and sets without a connection and sync later | Offline queue tests |
@@ -68,3 +67,5 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-037 | Go live on Supabase: project in Mumbai, migration run, keys in `.env.local`, email and Google sign-in on | Live check: 13 tables respond, test sign-up created a profile |
 | T-018 | Food log: day view by meal, search 7,567 foods, log by grams or portions, remove, move between days | `src/log/log.test.ts` (7), `src/log/FoodLog.test.tsx` (7), `src/food/search.test.ts` (7) |
 | T-029 | Recipe calculator, raw-to-cooked converter, USDA extract script | `src/food/recipe.test.ts`, `src/food/indian/resolve.test.ts` |
+| T-019 | Add your own food (per 100 g or per serving, with a check that the numbers add up) and home recipes (ingredients by raw weight, cooked weight, servings); your foods come first in search; delete them under My foods | `src/food/custom.test.ts` (10), `src/food/search.test.ts` (+1), `src/log/FoodLog.test.tsx` (+4), `src/db/rls.test.ts` (+1) |
+| T-018b | Quick add (calories with optional macros, no weight) and recent and often-eaten foods with one-tap add again | `src/log/log.test.ts` (+7), `src/log/FoodLog.test.tsx` (+3), `src/db/rls.test.ts` (+1) |

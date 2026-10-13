@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import usdaCsv from '../../data/usda/sr_legacy_macros.csv?raw'
 import offCsv from '../../data/off/india_products.csv?raw'
 import { buildCatalogue } from './catalogue'
-import { createSearchIndex, normalize, searchFoods } from './search'
+import { createSearchIndex, findFood, normalize, searchFoods, withFoods } from './search'
 import type { Food } from './types'
 
 const food = (id: string, name: string, extra: Partial<Food> = {}): Food => ({
@@ -67,5 +67,17 @@ describe('the bundled catalogue', () => {
       expect(searchFoods(index, q).length, q).toBeGreaterThan(0)
     }
     expect(searchFoods(index, 'atta')[0].state).toBe('raw')
+  })
+})
+
+describe('your own foods in search', () => {
+  it('come first, replace a food with the same id, and can be found by id', () => {
+    const base = createSearchIndex([food('tmf:dish:poha', 'Poha', { source: 'trackMeFit' }), food('usda:1', 'Rice', { source: 'usda' })])
+    const mine = food('custom:1', 'Poha', { source: 'user', brand: 'Mom' })
+    const index = withFoods(base, [mine])
+    expect(searchFoods(index, 'poha').map((f) => f.id)).toEqual(['custom:1', 'tmf:dish:poha'])
+    expect(findFood(index, 'usda:1')?.name).toBe('Rice')
+    expect(withFoods(index, [{ ...mine, name: 'Poha v2' }]).entries.filter((e) => e.food.id === 'custom:1')).toHaveLength(1)
+    expect(withFoods(base, [])).toBe(base)
   })
 })

@@ -19,6 +19,7 @@ Each change to the database is a new file in `supabase/migrations/`, named by da
 | `20261012000000_init.sql` | All tables and privacy rules |
 | `20261013000000_progression.sql` | Training block start date on plans, and how-did-it-feel answers after workouts |
 | `20261013100000_onboarding.sql` | Onboarding answers: goal pace and target weight, food habits and fasting, allergies, a typical day of eating, where you train, other health notes, and when onboarding was done |
+| `20261014000000_quick_add.sql` | Quick add: a food log entry with calories typed in and no weight |
 
 ## What the privacy rules guarantee
 

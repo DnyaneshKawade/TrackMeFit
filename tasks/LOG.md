@@ -2,6 +2,17 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-14: Faster food logging (T-018b, T-019)
+
+- Add food now opens on your often-eaten and recent foods, each with a one-tap + that logs the same amount again; tapping the name opens it to change the amount.
+- Quick add: calories with optional protein, carbs and fat, and an optional name, for restaurant meals and anything without a weight.
+- New food: from a label per 100 g or per serving (stored per 100 g with the serving as a portion). Impossible numbers are blocked (over 950 kcal or more macros than weight per 100 g), and calories that don't match the macros get a warning before saving. When search finds nothing, one tap creates the food with the search text as its name.
+- New recipe: ingredients by raw weight from the whole database, optional cooked weight and servings, with a live per-100 g preview. Saved with the ingredient list.
+- Your foods and recipes come first in search, are labelled "My food", and can be deleted under My foods (days already logged keep them). They use the existing `custom_foods` table, private to you and your coach.
+- Database: `supabase/migrations/20261014000000_quick_add.sql` lets a log entry have no weight, only when it is a quick add. DK runs it in the SQL Editor before merging.
+- Tests: `src/food/custom.test.ts` (10), `src/log/log.test.ts` (14), `src/food/search.test.ts` (8), `src/log/FoodLog.test.tsx` (14), `src/db/rls.test.ts` (23); whole suite 271 passing.
+- Open: barcode scan and batch-cooked weighing (T-018c).
+
 ## 2026-10-13: Typical day: any food or your own entry (T-017)
 
 - The typical-day step in onboarding was limited to 14 everyday foods. Now "+ Add another food" searches the whole food database (one usual portion, or 100 g), and "Can't find it? Enter it yourself" takes a name, calories a day and optional protein. Added foods get the same + and − counters, and the daily estimate updates as you go.

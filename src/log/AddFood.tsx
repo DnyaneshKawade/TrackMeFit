@@ -1,28 +1,135 @@
 import { useMemo, useState } from 'react'
 import { amountFor, type Food } from '../food/types'
-import { searchFoods, type SearchIndex } from '../food/search'
+import { findFood, searchFoods, type SearchIndex } from '../food/search'
 import { OFF_ATTRIBUTION } from '../food/off'
-import { entryFor, MAX_GRAMS, MEAL_NAMES, type Meal, type NewLogEntry } from './types'
+import type { CustomFood, NewCustomFood } from '../food/custom'
+import { CreateFood, CreateRecipe } from './CreateFood'
+import {
+  amountLabel,
+  EMPTY_QUICK_FORM,
+  entryFor,
+  MAX_GRAMS,
+  MEAL_NAMES,
+  quickEntry,
+  recentFoods,
+  repeatEntry,
+  type LogEntry,
+  type Meal,
+  type NewLogEntry,
+  type QuickForm,
+  type RecentFood,
+} from './types'
 
 const STATE_HINT = { raw: 'Weigh it raw', cooked: 'Cooked weight', asSold: 'As sold' } as const
 const SOURCE_NAME = { trackMeFit: 'Indian dish', usda: 'USDA', openFoodFacts: 'Open Food Facts', user: 'My food' } as Record<string, string>
+
+type View = 'search' | 'quick' | 'create' | 'recipe' | 'mine'
 
 export function AddFood({
   meal,
   date,
   index,
+  recent,
+  myFoods,
   onAdd,
+  onCreate,
+  onRemoveFood,
   onClose,
 }: {
   meal: Meal
   date: string
+  /** Every food, the person's own first; null while loading. */
   index: SearchIndex | null
+  /** Recent log entries, newest first; null while loading. */
+  recent: LogEntry[] | null
+  myFoods: CustomFood[]
   onAdd: (entry: NewLogEntry) => Promise<void>
+  onCreate: (food: NewCustomFood) => Promise<Food>
+  onRemoveFood: (id: string) => Promise<void>
   onClose: () => void
 }) {
+  const [view, setView] = useState<View>('search')
   const [query, setQuery] = useState('')
   const [picked, setPicked] = useState<Food | null>(null)
+  const [repeatError, setRepeatError] = useState<string | null>(null)
   const results = useMemo(() => (index ? searchFoods(index, query) : []), [index, query])
+  const offered = useMemo(() => recentFoods(recent ?? []), [recent])
+
+  const repeat = async (e: LogEntry) => {
+    setRepeatError(null)
+    try {
+      await onAdd(repeatEntry(e, meal, date))
+    } catch {
+      setRepeatError('Couldn’t save. Check your connection and try again.')
+    }
+  }
+
+  const created = (food: Food) => {
+    setPicked(food)
+    setView('search')
+  }
+
+  let body
+  if (picked) {
+    body = <Amount food={picked} meal={meal} date={date} onAdd={onAdd} onBack={() => setPicked(null)} />
+  } else if (view === 'quick') {
+    body = <QuickAdd meal={meal} date={date} onAdd={onAdd} onBack={() => setView('search')} />
+  } else if (view === 'create') {
+    body = <CreateFood initialName={query} onCreate={onCreate} onCreated={created} onBack={() => setView('search')} />
+  } else if (view === 'recipe') {
+    body = <CreateRecipe index={index} onCreate={onCreate} onCreated={created} onBack={() => setView('search')} />
+  } else if (view === 'mine') {
+    body = <MyFoods foods={myFoods} onPick={setPicked} onRemove={onRemoveFood} onBack={() => setView('search')} />
+  } else {
+    const searching = query.trim() !== ''
+    body = (
+      <>
+        <input
+          className="search"
+          aria-label="Search foods"
+          placeholder="Search: dal, roti, paneer, Amul…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          autoFocus
+        />
+        <div className="shortcuts">
+          <button className="chip" onClick={() => setView('quick')}>Quick add</button>
+          <button className="chip" onClick={() => setView('create')}>New food</button>
+          <button className="chip" onClick={() => setView('recipe')}>New recipe</button>
+          {myFoods.length > 0 && <button className="chip" onClick={() => setView('mine')}>My foods</button>}
+        </div>
+        {searching ? (
+          <>
+            {!index && <p className="muted">Loading foods…</p>}
+            {index && results.length === 0 && (
+              <div className="not-found">
+                <p className="muted">No match for “{query}”.</p>
+                <button className="link" onClick={() => setView('create')}>Add “{query.trim()}” as a new food</button>
+              </div>
+            )}
+            <ul className="results">
+              {results.map((f) => (
+                <li key={f.id}>
+                  <button onClick={() => setPicked(f)}>
+                    <span className="result-name">{f.name}{f.brand ? `, ${f.brand}` : ''}</span>
+                    <span className="muted">
+                      {f.per100g.kcal} kcal per 100 g · {SOURCE_NAME[f.source] ?? f.source}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <>
+            {repeatError && <p className="error" role="alert">{repeatError}</p>}
+            <RecentList title="Often" items={offered.often} index={index} onPick={setPicked} onRepeat={repeat} />
+            <RecentList title="Recent" items={offered.recent} index={index} onPick={setPicked} onRepeat={repeat} />
+          </>
+        )}
+      </>
+    )
+  }
 
   return (
     <section className="sheet" aria-label={`Add food to ${MEAL_NAMES[meal]}`}>
@@ -30,35 +137,161 @@ export function AddFood({
         <h2>Add to {MEAL_NAMES[meal]}</h2>
         <button className="link" onClick={onClose}>Close</button>
       </header>
-      {picked ? (
-        <Amount food={picked} meal={meal} date={date} onAdd={onAdd} onBack={() => setPicked(null)} />
-      ) : (
-        <>
-          <input
-            className="search"
-            aria-label="Search foods"
-            placeholder="Search: dal, roti, paneer, Amul…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            autoFocus
-          />
-          {!index && <p className="muted">Loading foods…</p>}
-          {index && query.trim() && results.length === 0 && <p className="muted">No match for “{query}”.</p>}
-          <ul className="results">
-            {results.map((f) => (
-              <li key={f.id}>
-                <button onClick={() => setPicked(f)}>
-                  <span className="result-name">{f.name}{f.brand ? `, ${f.brand}` : ''}</span>
-                  <span className="muted">
-                    {f.per100g.kcal} kcal per 100 g · {SOURCE_NAME[f.source] ?? f.source}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+      {body}
     </section>
+  )
+}
+
+/** Foods logged before, each with a one-tap "+" that logs the same amount
+ * again. Tapping the name opens the amount screen when we know the food. */
+function RecentList({
+  title,
+  items,
+  index,
+  onPick,
+  onRepeat,
+}: {
+  title: string
+  items: RecentFood[]
+  index: SearchIndex | null
+  onPick: (f: Food) => void
+  onRepeat: (e: LogEntry) => Promise<void>
+}) {
+  if (!items.length) return null
+  return (
+    <section className="recent" aria-label={title}>
+      <h3>{title}</h3>
+      <ul>
+        {items.map(({ entry: e, times }) => {
+          const food = index ? findFood(index, e.foodId) : undefined
+          const detail = `${amountLabel(e)} · ${e.kcal} kcal${times > 1 ? ` · ${times} times` : ''}`
+          return (
+            <li key={e.id}>
+              {food ? (
+                <button className="recent-name" onClick={() => onPick(food)}>
+                  <span className="result-name">{e.foodName}</span>
+                  <span className="muted">{detail}</span>
+                </button>
+              ) : (
+                <div className="recent-name">
+                  <span className="result-name">{e.foodName}</span>
+                  <span className="muted">{detail}</span>
+                </div>
+              )}
+              <button className="again" aria-label={`Add ${e.foodName} again`} onClick={() => void onRepeat(e)}>
+                +
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
+function QuickAdd({
+  meal,
+  date,
+  onAdd,
+  onBack,
+}: {
+  meal: Meal
+  date: string
+  onAdd: (entry: NewLogEntry) => Promise<void>
+  onBack: () => void
+}) {
+  const [form, setForm] = useState<QuickForm>(EMPTY_QUICK_FORM)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const field = (key: keyof QuickForm, label: string, mode: 'text' | 'decimal' = 'decimal') => (
+    <label className="field">
+      <span>{label}</span>
+      <input aria-label={label} inputMode={mode} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
+    </label>
+  )
+
+  const add = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const entry = quickEntry(form, meal, date)
+    if (typeof entry === 'string') return setError(entry)
+    setError(null)
+    setBusy(true)
+    try {
+      await onAdd(entry)
+    } catch {
+      setError('Couldn’t save. Check your connection and try again.')
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form className="form" onSubmit={add} aria-label="Quick add">
+      <button type="button" className="link" onClick={onBack}>← Back to search</button>
+      <h3>Quick add</h3>
+      <p className="muted">For when you know the calories but not the food, like a restaurant meal.</p>
+      {field('name', 'What was it? (optional)', 'text')}
+      {field('kcal', 'Calories')}
+      <div className="three">
+        {field('protein', 'Protein (g)')}
+        {field('carbs', 'Carbs (g)')}
+        {field('fat', 'Fat (g)')}
+      </div>
+      {error && <p className="error" role="alert">{error}</p>}
+      <button className="primary" disabled={busy}>Add to {MEAL_NAMES[meal]}</button>
+    </form>
+  )
+}
+
+function MyFoods({
+  foods,
+  onPick,
+  onRemove,
+  onBack,
+}: {
+  foods: CustomFood[]
+  onPick: (f: Food) => void
+  onRemove: (id: string) => Promise<void>
+  onBack: () => void
+}) {
+  const [error, setError] = useState<string | null>(null)
+  const [confirming, setConfirming] = useState<string | null>(null)
+  const remove = async (id: string) => {
+    setError(null)
+    try {
+      await onRemove(id)
+      setConfirming(null)
+    } catch {
+      setError('Couldn’t delete that. Try again.')
+    }
+  }
+  return (
+    <div>
+      <button className="link" onClick={onBack}>← Back to search</button>
+      <h3>My foods</h3>
+      {error && <p className="error" role="alert">{error}</p>}
+      {!foods.length && <p className="muted">Foods and recipes you create show up here.</p>}
+      {confirming && <p className="muted">Deleting removes it from search. Days you already logged keep it.</p>}
+      <ul className="recent">
+        {foods.map((f) => (
+          <li key={f.id}>
+            <button className="recent-name" onClick={() => onPick(f)}>
+              <span className="result-name">{f.name}{f.brand ? `, ${f.brand}` : ''}</span>
+              <span className="muted">
+                {f.per100g.kcal} kcal per 100 g{f.recipe ? ' · recipe' : ''}
+              </span>
+            </button>
+            {confirming === f.id ? (
+              <span className="confirm">
+                <button className="link danger" onClick={() => void remove(f.id)}>Delete</button>
+                <button className="link" onClick={() => setConfirming(null)}>Keep</button>
+              </span>
+            ) : (
+              <button className="link" aria-label={`Delete ${f.name}`} onClick={() => setConfirming(f.id)}>✕</button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
 
@@ -142,6 +375,7 @@ function Amount({
       {food.state === 'cooked' && food.source === 'trackMeFit' && (
         <p className="credit">Calculated from a standard home recipe; your cooking may differ.</p>
       )}
+      {food.source === 'user' && <p className="credit">Your own food. Values are what you entered.</p>}
     </div>
   )
 }

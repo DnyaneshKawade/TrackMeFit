@@ -6,6 +6,7 @@ import { memoryLogStore } from './memoryStore'
 import { createSearchIndex } from '../food/search'
 import type { Food } from '../food/types'
 import type { LogStore } from './types'
+import { memoryCustomFoodStore } from '../food/custom'
 
 afterEach(cleanup)
 
@@ -114,5 +115,131 @@ describe('food log', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add to Lunch' }))
     expect((await screen.findByRole('alert')).textContent).toMatch(/Couldn’t save/)
     expect(screen.getByRole('button', { name: 'Add to Lunch' })).toBeTruthy()
+  })
+})
+
+describe('faster logging', () => {
+  const openAdd = async (meal: string) => {
+    const section = await screen.findByRole('region', { name: meal })
+    fireEvent.click(within(section).getByRole('button', { name: '+ Add food' }))
+  }
+  const type = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } })
+
+  it('quick adds calories without a food or weight', async () => {
+    const store = setup()
+    await openAdd('Dinner')
+    fireEvent.click(screen.getByRole('button', { name: 'Quick add' }))
+    type('What was it? (optional)', 'Wedding buffet')
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Dinner' }))
+    expect((await screen.findByRole('alert')).textContent).toMatch(/Calories should be/)
+    type('Calories', '900')
+    type('Protein (g)', '30')
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Dinner' }))
+    const dinner = await screen.findByRole('region', { name: 'Dinner' })
+    expect(within(dinner).getByText('Wedding buffet')).toBeTruthy()
+    expect(within(dinner).getByText(/Quick add · 900 kcal · P 30/)).toBeTruthy()
+    expect((await store.listDay(TODAY))[0]).toMatchObject({ foodId: 'quick', grams: null })
+  })
+
+  it('offers foods logged before, and adds one again with one tap', async () => {
+    const store = memoryLogStore([
+      { id: 'a', loggedOn: '2026-10-10', meal: 'breakfast', foodId: 'tmf:dish:dal-tadka', foodName: 'Dal tadka', grams: 150, kcal: 180, proteinG: 9, carbG: 22.5, fatG: 6 },
+      { id: 'b', loggedOn: '2026-10-11', meal: 'snacks', foodId: 'quick', foodName: 'Vada pav', grams: null, kcal: 300, proteinG: 0, carbG: 0, fatG: 0 },
+    ])
+    setup(store)
+    await openAdd('Lunch')
+    const recent = await screen.findByRole('region', { name: 'Recent' })
+    expect(within(recent).getByText('Vada pav')).toBeTruthy()
+    fireEvent.click(within(recent).getByRole('button', { name: 'Add Dal tadka again' }))
+    const lunch = await screen.findByRole('region', { name: 'Lunch' })
+    expect(within(lunch).getByText(/150 g · 180 kcal/)).toBeTruthy()
+    expect((await store.listDay(TODAY))[0]).toMatchObject({ meal: 'lunch', foodId: 'tmf:dish:dal-tadka' })
+  })
+
+  it('opens a recent food to change the amount', async () => {
+    setup(memoryLogStore([
+      { id: 'a', loggedOn: '2026-10-10', meal: 'breakfast', foodId: 'tmf:dish:dal-tadka', foodName: 'Dal tadka', grams: 150, kcal: 180, proteinG: 9, carbG: 22.5, fatG: 6 },
+    ]))
+    await openAdd('Lunch')
+    const recent = await screen.findByRole('region', { name: 'Recent' })
+    fireEvent.click(await within(recent).findByRole('button', { name: /^Dal tadka/ }))
+    expect(screen.getByLabelText('Amount')).toBeTruthy()
+  })
+
+  it('creates a food from a per-serving label, logs it, and finds it in search next time', async () => {
+    const foods = memoryCustomFoodStore()
+    render(<FoodLog store={memoryLogStore()} loadIndex={loadIndex} foods={foods} today={TODAY} />)
+    await openAdd('Snacks')
+    type('Search foods', 'chikki')
+    fireEvent.click(await screen.findByRole('button', { name: 'Add “chikki” as a new food' }))
+    expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('chikki')
+    fireEvent.click(screen.getByLabelText('One serving'))
+    type('Serving size (g)', '25')
+    type('Serving name (optional)', '1 piece')
+    type('Calories per serving', '120')
+    type('Protein (g)', '3')
+    type('Carbs (g)', '15')
+    type('Fat (g)', '5.5')
+    fireEvent.click(screen.getByRole('button', { name: 'Save and log it' }))
+
+    // Opens on the new food's own serving.
+    expect(await screen.findByRole('heading', { name: 'chikki' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: '1 piece' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Snacks' }))
+    const snacks = await screen.findByRole('region', { name: 'Snacks' })
+    expect(within(snacks).getByText(/25 g · 120 kcal/)).toBeTruthy()
+    expect((await foods.list())[0]).toMatchObject({ name: 'chikki', per100g: { kcal: 480, proteinG: 12, carbG: 60, fatG: 22 } })
+
+    fireEvent.click(within(snacks).getByRole('button', { name: '+ Add food' }))
+    type('Search foods', 'chik')
+    expect(await screen.findByText(/480 kcal per 100 g · My food/)).toBeTruthy()
+  })
+
+  it('asks before saving a label whose numbers don’t add up', async () => {
+    const foods = memoryCustomFoodStore()
+    render(<FoodLog store={memoryLogStore()} loadIndex={loadIndex} foods={foods} today={TODAY} />)
+    await openAdd('Snacks')
+    fireEvent.click(screen.getByRole('button', { name: 'New food' }))
+    type('Name', 'Odd bar')
+    type('Calories per 100 g', '100')
+    type('Protein (g)', '20')
+    type('Carbs (g)', '20')
+    type('Fat (g)', '10')
+    fireEvent.click(screen.getByRole('button', { name: 'Save and log it' }))
+    expect((await screen.findByRole('status')).textContent).toMatch(/don’t match/)
+    expect(await foods.list()).toHaveLength(0)
+    fireEvent.click(screen.getByRole('button', { name: 'Save and log it' }))
+    expect(await screen.findByRole('heading', { name: 'Odd bar' })).toBeTruthy()
+  })
+
+  it('builds a recipe from ingredients and the cooked weight', async () => {
+    const foods = memoryCustomFoodStore()
+    render(<FoodLog store={memoryLogStore()} loadIndex={loadIndex} foods={foods} today={TODAY} />)
+    await openAdd('Breakfast')
+    fireEvent.click(screen.getByRole('button', { name: 'New recipe' }))
+    type('Recipe name', 'Atta dosa')
+    type('Add an ingredient', 'atta')
+    fireEvent.click(await screen.findByRole('button', { name: /^Atta/ }))
+    type('Atta (whole wheat flour) grams', '200')
+    type('Cooked weight (g, optional)', '500')
+    type('Servings (optional)', '4')
+    expect(screen.getByLabelText('Recipe values').textContent).toMatch(/136 kcal and 5.2 g protein per 100 g; one serving is 125 g/)
+    fireEvent.click(screen.getByRole('button', { name: 'Save and log it' }))
+    expect(await screen.findByRole('heading', { name: 'Atta dosa' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Breakfast' }))
+    const breakfast = await screen.findByRole('region', { name: 'Breakfast' })
+    expect(within(breakfast).getByText(/125 g · 170 kcal/)).toBeTruthy()
+    expect((await foods.list())[0].recipe).toEqual({ ingredients: [{ foodId: 'usda:168893', name: 'Atta (whole wheat flour)', grams: 200 }], cookedWeightG: 500, servings: 4 })
+  })
+
+  it('deletes one of your foods after asking', async () => {
+    const foods = memoryCustomFoodStore([{ name: 'Chikki', state: 'asSold', per100g: { kcal: 480, proteinG: 12, carbG: 60, fatG: 22 }, portions: [] }])
+    render(<FoodLog store={memoryLogStore()} loadIndex={loadIndex} foods={foods} today={TODAY} />)
+    await openAdd('Snacks')
+    fireEvent.click(await screen.findByRole('button', { name: 'My foods' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Chikki' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    await waitFor(() => expect(screen.queryByText('Chikki')).toBeNull())
+    expect(await foods.list()).toHaveLength(0)
   })
 })

@@ -14,6 +14,9 @@ export function memoryLogStore(initial: LogEntry[] = []): LogStore {
       rows.push(row)
       return row
     },
+    async recent() {
+      return [...rows].reverse().slice(0, 200)
+    },
     async remove(id) {
       const i = rows.findIndex((r) => r.id === id)
       if (i >= 0) rows.splice(i, 1)

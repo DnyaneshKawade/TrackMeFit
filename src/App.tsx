@@ -13,6 +13,7 @@ import { memoryWorkoutStore } from './training/memoryStore'
 import { supabaseWorkoutStore } from './training/supabaseStore'
 import type { WorkoutStore } from './training/types'
 import type { SearchIndex } from './food/search'
+import { memoryCustomFoodStore, supabaseCustomFoodStore, type CustomFoodStore } from './food/custom'
 import { localDate } from './log/types'
 import { Onboarding } from './profile/Onboarding'
 import { memoryProfileStore, supabaseProfileStore } from './profile/stores'
@@ -30,6 +31,7 @@ export function AppShell({
   workoutStoreFor = () => memoryWorkoutStore(),
   profileStoreFor = () => memoryProfileStore(),
   progressStoreFor = () => memoryProgressStore(),
+  foodStoreFor = () => memoryCustomFoodStore(),
 }: {
   auth: AuthService | null
   logStoreFor?: (account: Account) => LogStore
@@ -37,6 +39,7 @@ export function AppShell({
   workoutStoreFor?: (account: Account) => WorkoutStore
   profileStoreFor?: (account: Account) => ProfileStore
   progressStoreFor?: (account: Account) => ProgressStore
+  foodStoreFor?: (account: Account) => CustomFoodStore
 }) {
   const [account, setAccount] = useState<Account | null | undefined>(undefined)
   const store = useMemo(() => (account ? logStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -45,6 +48,7 @@ export function AppShell({
   const targets = useMemo(() => (account ? targetStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const profiles = useMemo(() => (account ? profileStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const progress = useMemo(() => (account ? progressStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const foods = useMemo(() => (account ? foodStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   // undefined while loading; null when it couldn't be loaded (the app still works).
   const [profile, setProfile] = useState<ProfileInfo | null | undefined>(undefined)
 
@@ -130,7 +134,7 @@ export function AppShell({
         <button role="tab" aria-selected={tab === 'training'} onClick={() => setTab('training')}>Training</button>
         <button role="tab" aria-selected={tab === 'progress'} onClick={() => setTab('progress')}>Progress</button>
       </nav>
-      {tab === 'food' && <FoodLog store={store!} loadIndex={loadIndex} targets={targets} userId={account.id} />}
+      {tab === 'food' && <FoodLog store={store!} loadIndex={loadIndex} foods={foods} targets={targets} userId={account.id} />}
       {tab === 'training' && <Workouts store={workouts!} />}
       {tab === 'progress' && <Progress store={progress!} goal={profile?.goal ?? null} />}
     </>
@@ -148,6 +152,7 @@ export default function App() {
       workoutStoreFor={(a) => supabaseWorkoutStore(sb!, a.id)}
       profileStoreFor={(a) => supabaseProfileStore(sb!, a.id)}
       progressStoreFor={(a) => supabaseProgressStore(sb!, a.id)}
+      foodStoreFor={(a) => supabaseCustomFoodStore(sb!, a.id)}
     />
   )
 }
