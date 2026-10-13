@@ -117,19 +117,35 @@ export function defaultRate(goal: Goal, experience: Experience, slowerLoss = fal
       return slowerLoss ? -0.0035 : -0.005
     case 'buildMuscle':
     case 'gainWeight':
-      return { beginner: 0.005, intermediate: 0.003, advanced: 0.00125 }[experience]
+      return { beginner: 0.005, intermediate: 0.0025, advanced: 0.00125 }[experience]
     default:
       return 0
   }
 }
 
 export const MAX_LOSS_RATE = -0.01
+/** Fastest gain we set targets for (spec T-059). */
+export const MAX_GAIN_RATE = 0.01
+/** Catch up (underweight only) never asks for more than this a week. */
+export const MAX_GAIN_KG_PER_WEEK = 0.5
+
+/** Gain paces as weekly fractions of body weight: Lean, Steady, Faster.
+ * 0.25 to 0.5 % a week suits novice and intermediate lifters; advanced
+ * lifters gain muscle more slowly, so their ladder is halved (Iraki 2019). */
+export function gainLadder(experience: Experience): [number, number, number] {
+  return experience === 'advanced' ? [0.00125, 0.0025, 0.005] : [0.0025, 0.005, 0.0075]
+}
+
+/** Extra calories a day for a weekly gain rate, rounded to 10 kcal. */
+export function surplusKcal(rate: number, weightKg: number): number {
+  return Math.round((rate * weightKg * KCAL_PER_KG) / 7 / 10) * 10
+}
 export const MAX_WEEKLY_CHANGE_KCAL = 150
 
 export interface TargetInput {
   tdee: number
   weightKg: number
-  /** Fraction of body weight per week; negative to lose. Clamped to -1%. */
+  /** Fraction of body weight per week; negative to lose. Clamped to -1 % and +1 %. */
   rate: number
   sex: Sex
   /** Last week's calorie target, to limit how fast targets move. */
@@ -142,7 +158,7 @@ export function calorieFloor(sex: Sex): number {
 }
 
 export function calorieTarget(i: TargetInput): number {
-  const rate = Math.max(MAX_LOSS_RATE, i.rate)
+  const rate = Math.min(MAX_GAIN_RATE, Math.max(MAX_LOSS_RATE, i.rate))
   const dailyChange = (rate * i.weightKg * KCAL_PER_KG) / 7
   let target = i.tdee + dailyChange
   if (i.previousTarget !== undefined) {

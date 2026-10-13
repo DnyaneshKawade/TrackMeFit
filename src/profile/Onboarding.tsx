@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import type { Macros } from '../engine/diet'
 import { localDate } from '../log/types'
 import type { FoodFinder } from '../food/finder'
@@ -6,7 +6,7 @@ import { allowedExtras, dietItemsFor, estimateDiet, type DietExtra } from './cur
 import { NONVEG_OFF_DAYS, NO_ONION_GARLIC, cleanRules, excludedTags, hasNonvegOff, isNonvegOff } from './dietRules'
 import { TypicalDay } from './TypicalDay'
 import type { AcceptedMealPlan } from './MealPlanStep'
-import { bmiResult, buildPlan, checkTargetWeight, goalTimeline, paceOptions, waistNote } from './goal'
+import { bmiResult, buildPlan, checkTargetWeight, goalTimeline, paceOptions, recommendedPace, waistNote, type PaceBody } from './goal'
 import {
   ALLERGIES,
   FASTING,
@@ -17,6 +17,7 @@ import {
   noAutoMealPlan,
   noDeficit,
   SUGGESTION_NOTE,
+  ageOn,
   questionsFor,
   type AboutYou,
   type Activity,
@@ -179,12 +180,21 @@ export function Onboarding({
   const weightKg = Number(about.weightKg)
   const questions = questionsFor(about.sex)
   const ticked = questions.filter((q) => p.medical[q.key])
-  const paces = p.goal && p.experience ? paceOptions(p.goal, p.experience, p.medical) : []
+  const paceBody: PaceBody | undefined =
+    size && /^\d{4}-\d{2}-\d{2}$/.test(about.birthDate) ? { ...size, ageYears: ageOn(about.birthDate, today) } : undefined
+  const paces = p.goal && p.experience ? paceOptions(p.goal, p.experience, p.medical, paceBody) : []
+  // A pace no longer offered (weight or health answers changed) gives way to
+  // the recommended one (spec T-059, criterion 11).
+  const paceKey = paces.map((x) => `${x.rate}${x.recommended ? '*' : ''}`).join(',')
+  useEffect(() => {
+    if (paces.length && !paces.some((x) => x.rate === p.goalRate)) patch({ goalRate: recommendedPace(paces).rate })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paceKey])
   const targetError = size ? checkTargetWeight(targetText, weightKg, p.goal) : null
 
   const chooseGoal = (goal: GoalChoice) => {
-    const options = p.experience ? paceOptions(goal, p.experience, p.medical) : []
-    patch({ goal, goalRate: options[0]?.rate ?? 0 })
+    const options = p.experience ? paceOptions(goal, p.experience, p.medical, paceBody) : []
+    patch({ goal, goalRate: options.length ? recommendedPace(options).rate : 0 })
   }
 
   /** The profile as it would be saved, with the first step's answers. */
@@ -375,14 +385,17 @@ export function Onboarding({
           {p.goal === 'lose' && noDeficit(p.medical) && (
             <p className="info">We won’t set a weight-loss pace during pregnancy or breastfeeding. You can still track food and training.</p>
           )}
+          {p.goal === 'gain' && noDeficit(p.medical) && (
+            <p className="info">We won’t set a weight-gain pace during pregnancy or breastfeeding. Plan any weight gain with your doctor; you can still track food and training.</p>
+          )}
           {paces.length > 0 && (
             <>
               <div className="choice" role="group" aria-label="Pace">
                 <span>Pace</span>
-                {paces.map((pace, i) => (
+                {paces.map((pace) => (
                   <button key={pace.rate} type="button" aria-pressed={p.goalRate === pace.rate} onClick={() => patch({ goalRate: pace.rate })}>
                     {pace.label}
-                    {i === 0 && paces.length > 1 ? ' (recommended)' : ''}
+                    {pace.recommended && paces.length > 1 ? ' (recommended)' : ''}
                   </button>
                 ))}
               </div>

@@ -1,6 +1,6 @@
 # T-059: More pace choices for building muscle
 
-Status: draft (DK, 13 Oct 2026: "lets add 3 more options may be, study well and plan for it and then create required tasks")
+Status: built, T-059a and T-059b (DK, 13 Oct 2026: "lets add 3 more options may be, study well and plan for it and then create required tasks"; plan merged and "whats next")
 Task: [T-059](../tasks/TASKS.md)
 
 ## Problem
