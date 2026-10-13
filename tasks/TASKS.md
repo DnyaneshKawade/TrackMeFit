@@ -16,7 +16,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Waiting on |
 |---|---|---|
-| T-028 | Live on Vercel: settings, install-on-phone files and steps ready | DK connects the repository in Vercel and sets the Supabase address there (docs/deploy.md) |
 | T-010 | Import IFCT 2017 Indian foods | Permission from ICMR-NIN |
 | T-011 | Import Indian Nutrient Databank recipes | Licence answer from the INDB authors |
 | T-012 | USDA search through our server | USDA API key from data.gov (DK) |
@@ -58,6 +57,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-014 | Data model and privacy rules (users, coaches, food, progress, training) | `src/db/rls.test.ts` (17), run in PGlite |
 | T-030 | Load USDA values for our ingredients: 26 of 28 matched, 22 of 25 dishes computed | `src/food/indian/database.test.ts` (6) |
 | T-039 | Progression migration run on the live Supabase project | DK ran it in the SQL Editor |
+| T-028 | Live on Vercel at track-me-fit-dpvu.vercel.app with Google sign-in | DK checked sign-in on the live site |
 | T-040 | Installable app: icon, manifest, service worker (opens offline), Vercel settings | `src/pwa.test.ts` (6) |
 | T-024 | Weekly progression: how-did-it-feel questions after workouts, week review with per-muscle set changes (applied only when accepted), effort targets per week, deloads and new blocks | `src/training/progression.test.ts` (10), `src/training/Review.test.tsx` (3), `src/db/rls.test.ts` (+2) |
 | T-023 | Workout plans (days, exercises, sets, rep ranges) and FitNotes-style logger with last time and next-load suggestion | `src/training/training.test.ts` (12), `src/training/Workouts.test.tsx` (5) |

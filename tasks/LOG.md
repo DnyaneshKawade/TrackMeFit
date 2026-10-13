@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Live on Vercel (T-028)
+
+- The app is live at https://track-me-fit-dpvu.vercel.app with the Supabase address and anon key set in Vercel. DK signed in with Google on the live site.
+- Fix on the way: the Supabase address was first typed with a digit 1 instead of a lowercase l, so Google sign-in went to an address that does not exist.
+- Tests: no code change; whole suite 188 passing.
+
 ## 2026-10-13: Ready to go online (T-028, T-040)
 
 - The app can be installed on phones: icon, `manifest.webmanifest`, and a service worker (`public/sw.js`) that caches the page and built files so it opens without a connection. Supabase requests always go to the network. Registered in production builds only.
