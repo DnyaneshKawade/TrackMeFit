@@ -3,7 +3,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Feedback } from './progression'
-import type { PastSession, Plan, Session, SetLog, SetTag, WorkoutStore } from './types'
+import { MAX_RECORD_SESSIONS, MAX_SUMMARIES, type PastSession, type Plan, type Session, type SessionSummary, type SetLog, type SetTag, type WorkoutStore } from './types'
 
 interface SetRow { id: string; exercise_id: string; set_index: number; weight_kg: number | string; reps: number; rir: number | null; tag?: SetTag | null; note?: string | null }
 
@@ -43,6 +43,20 @@ export const planFromRow = (r: PlanRow): Plan => ({
     })),
 })
 
+export interface SummaryRow {
+  id: string
+  performed_on: string
+  plan_days: { name: string } | null
+  set_logs: { exercise_id: string }[]
+}
+
+export const summaryFromRow = (r: SummaryRow): SessionSummary => ({
+  id: r.id,
+  performedOn: r.performed_on,
+  name: r.plan_days?.name ?? 'Workout',
+  exerciseIds: [...new Set(r.set_logs.map((x) => x.exercise_id))],
+})
+
 const SET_COLUMNS = 'id, exercise_id, set_index, weight_kg, reps, rir, tag, note'
 
 export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): WorkoutStore {
@@ -50,7 +64,7 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): Workou
     if (error) throw error
     return data
   }
-  return {
+  const store: WorkoutStore = {
     async plans() {
       const rows = check(
         await sb
@@ -155,7 +169,22 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): Workou
       ) as unknown as { performed_on: string; set_logs: SetRow[] }[]
       return rows.map((r): PastSession => ({ performedOn: r.performed_on, sets: r.set_logs.map(setFromRow) }))
     },
-  
+    async exerciseHistory(exerciseId, limit = MAX_RECORD_SESSIONS) {
+      return store.history(exerciseId, '9999-12-31', limit)
+    },
+    async summaries(from, to) {
+      const rows = check(
+        await sb
+          .from('workout_sessions')
+          .select('id, performed_on, plan_days(name), set_logs(exercise_id)')
+          .eq('user_id', userId)
+          .gte('performed_on', from)
+          .lte('performed_on', to)
+          .order('performed_on', { ascending: false })
+          .limit(MAX_SUMMARIES),
+      ) as unknown as SummaryRow[]
+      return rows.map(summaryFromRow)
+    },
     async saveNote(sessionId, note) {
       check(await sb.from('workout_sessions').update({ note: note.trim() || null }).eq('id', sessionId))
     },
@@ -186,4 +215,5 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): Workou
       check(await sb.from('workout_plans').update({ block_started_on: date }).eq('id', planId))
     },
   }
+  return store
 }

@@ -2,6 +2,19 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Records and strength graphs (T-044)
+
+- DK said to go ahead with the suggested next task. Spec `specs/T-044-records.md`.
+- "Records and progress" on the Training tab has a calendar by month. Days trained are marked, and tapping one lists its workouts.
+- "Your exercises" lists every exercise done in the last year. Each one shows the heaviest weight, best estimated one-rep max, most reps, and heaviest for 1, 2, 3, 5, 8, 10 and 12 reps, with dates.
+- A graph shows the best estimated one-rep max of each workout. For no-weight exercises it shows the most reps.
+- The one-rep max uses the Epley formula from sets of 12 reps or fewer. Warm-ups and drop sets are left out.
+- Plate calculator with Indian gym plates (25 to 1.25 kg) and a 20, 15 or 10 kg bar. Weights that can't be loaded round down. Barbell exercises in a workout show the plates for each side.
+- Engine: `src/engine/strength.ts` and `src/engine/plates.ts`, pure, with reasons. Data: `summaries` (one range query) and `exerciseHistory` (up to 200 workouts) on the workout stores. Offline, the calendar uses the days kept on the phone; records need a connection.
+- Migration `supabase/migrations/20261021000000_workout_indexes.sql` adds the missing indexes on `workout_sessions (user_id, performed_on)` and `set_logs`. It must be run in Supabase.
+- Left for T-044b: a "New record" note during a workout.
+- Tests: 7 in `src/engine/strength.test.ts`, 4 in `src/engine/plates.test.ts`, 2 in `src/training/calendar.test.ts`, 9 in `src/training/Records.test.tsx`, 2 in `src/training/training.test.ts`, 1 in `src/training/offlineStore.test.ts`, 1 in `src/db/rls.test.ts`.
+
 ## 2026-10-13: Workout logger, part 2 (T-043b)
 
 - DK said yes to T-043b. Spec `specs/T-043-workout-logger.md`, criteria 9 to 13.

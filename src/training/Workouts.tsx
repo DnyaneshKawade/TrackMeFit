@@ -5,6 +5,7 @@ import type { ExerciseStore } from './exerciseStore'
 import { allExercises, customExercise, setCustomExercises } from './exercises'
 import { PlanEditor } from './PlanEditor'
 import { blockWeek, weekLabel } from './progression'
+import { RecordsView } from './RecordsView'
 import { ReviewView } from './ReviewView'
 import { SessionView } from './SessionView'
 import { SyncNote } from '../sync/SyncNote'
@@ -18,6 +19,7 @@ type View =
   | { kind: 'review'; plan: Plan }
   | { kind: 'session'; session: Session }
   | { kind: 'start' }
+  | { kind: 'records' }
 
 export function Workouts({ store, exercises, today = localDate() }: { store: WorkoutStore; exercises?: ExerciseStore; today?: string }) {
   const [plans, setPlans] = useState<Plan[] | null>(null)
@@ -127,6 +129,14 @@ export function Workouts({ store, exercises, today = localDate() }: { store: Wor
     )
   }
 
+  if (view.kind === 'records') {
+    return (
+      <main className="log">
+        <RecordsView store={store} today={today} onClose={() => setView({ kind: 'home' })} />
+      </main>
+    )
+  }
+
   if (view.kind === 'session') {
     return (
       <main className="log">
@@ -184,6 +194,7 @@ export function Workouts({ store, exercises, today = localDate() }: { store: Wor
         ))}
       </ul>
       <button className="primary" onClick={() => setView({ kind: 'start' })}>Start a workout</button>
+      <button className="add" onClick={() => setView({ kind: 'records' })}>Records and progress</button>
 
       <h2 className="plans-head">My plans</h2>
       {plans === null && <p className="muted">Loading…</p>}

@@ -75,6 +75,19 @@ export interface PastSession {
   sets: SetLog[]
 }
 
+/** A workout in a date range, for the calendar and exercise list (T-044). */
+export interface SessionSummary {
+  id: string
+  performedOn: string
+  name: string
+  /** Exercises done, without repeats. */
+  exerciseIds: string[]
+}
+
+/** Workouts read for records: a year of summaries, 200 workouts of history. */
+export const MAX_SUMMARIES = 500
+export const MAX_RECORD_SESSIONS = 200
+
 export interface WorkoutStore {
   plans(): Promise<Plan[]>
   savePlan(plan: Plan): Promise<Plan>
@@ -86,6 +99,10 @@ export interface WorkoutStore {
   removeSet(id: string): Promise<void>
   /** Earlier sessions with this exercise, newest first. */
   history(exerciseId: string, beforeDate: string, limit?: number): Promise<PastSession[]>
+  /** Every earlier workout with this exercise, newest first, up to a limit. Needs a connection. */
+  exerciseHistory(exerciseId: string, limit?: number): Promise<PastSession[]>
+  /** Workouts from one date to another, both included, newest first. */
+  summaries(from: string, to: string): Promise<SessionSummary[]>
   saveFeedback(sessionId: string, feedback: Feedback[]): Promise<void>
   /** Saves the workout notes; empty clears them. */
   saveNote(sessionId: string, note: string): Promise<void>

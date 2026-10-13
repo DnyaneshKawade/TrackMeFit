@@ -3,7 +3,7 @@ import { LANDMARKS } from '../engine/training'
 import { EXERCISES, checkNewExercise, customExercise, exerciseById, searchExercises, setCustomExercises } from './exercises'
 import { customFromRow } from './exerciseStore'
 import { memoryWorkoutStore } from './memoryStore'
-import { planFromRow } from './supabaseStore'
+import { planFromRow, summaryFromRow } from './supabaseStore'
 import { checkPlan, checkSet, describeSets, nextDayIndex, suggestNext, workingSets, type Plan, type SetLog } from './types'
 
 const set = (setIndex: number, weightKg: number, reps: number): SetLog => ({ id: String(setIndex), exerciseId: 'bench-press', setIndex, weightKg, reps, rir: null })
@@ -186,5 +186,28 @@ describe('own exercises and supersets (T-043b)', () => {
       ],
     })
     expect(p.days[0].exercises.map((e) => e.supersetNext)).toEqual([true, undefined])
+  })
+})
+
+describe('records data (T-044)', () => {
+  it('the memory store lists workouts in a range, newest first, and an exercise’s whole history', async () => {
+    const store = memoryWorkoutStore()
+    for (const [date, ex] of [['2026-09-30', 'bench-press'], ['2026-10-02', 'bench-press'], ['2026-10-09', 'back-squat']] as const) {
+      const s = await store.startSession(date, null)
+      await store.addSet(s.id, { exerciseId: ex, setIndex: 0, weightKg: 60, reps: 8, rir: null })
+      await store.addSet(s.id, { exerciseId: ex, setIndex: 1, weightKg: 60, reps: 8, rir: null })
+    }
+    const list = await store.summaries('2026-10-01', '2026-10-31')
+    expect(list.map((x) => [x.performedOn, x.exerciseIds])).toEqual([
+      ['2026-10-09', ['back-squat']],
+      ['2026-10-02', ['bench-press']],
+    ])
+    expect((await store.exerciseHistory('bench-press')).map((x) => x.performedOn)).toEqual(['2026-10-02', '2026-09-30'])
+  })
+
+  it('maps a workout row to a summary without repeated exercises', () => {
+    expect(
+      summaryFromRow({ id: 's', performed_on: '2026-10-10', plan_days: null, set_logs: [{ exercise_id: 'a' }, { exercise_id: 'b' }, { exercise_id: 'a' }] }),
+    ).toEqual({ id: 's', performedOn: '2026-10-10', name: 'Workout', exerciseIds: ['a', 'b'] })
   })
 })

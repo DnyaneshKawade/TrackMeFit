@@ -72,3 +72,39 @@
 }
 .form .check { display: flex; gap: 8px; align-items: center; margin: 10px 0; }
 .exercise.current { outline: 2px solid #0f7a5c; outline-offset: 4px; border-radius: 8px; }
+
+/* Records and progress (T-044) */
+.records-view h3 { font-size: 16px; margin: 16px 0 8px; }
+.calendar .sheet-head h3 { margin: 0; }
+.month { width: 100%; border-collapse: collapse; table-layout: fixed; text-align: center; }
+.month th { font-size: 12px; color: #5d6f69; font-weight: 600; padding: 4px 0; }
+.month td { padding: 2px; }
+.month .day { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; font: inherit; font-size: 14px; border: none; background: none; color: inherit; }
+.month .day.today { outline: 1.5px solid #9fb3ab; }
+.month .day.trained { background: #0f7a5c; color: #fff; font-weight: 700; cursor: pointer; }
+.month .day.trained.on { outline: 3px solid #f0b429; }
+.records { display: grid; gap: 8px; margin: 8px 0 12px; }
+.records dt { font-size: 13px; color: #5d6f69; }
+.records dd { margin: 0; font-weight: 600; }
+.rep-maxes { width: 100%; border-collapse: collapse; margin: 8px 0; }
+.rep-maxes th, .rep-maxes td { text-align: left; padding: 6px 4px; border-bottom: 1px solid #eef2f0; }
+.strength-chart { margin: 12px 0; }
+.strength-chart svg { width: 100%; height: auto; display: block; }
+.strength-chart .axis { stroke: #cdd6d2; stroke-width: 1; }
+.strength-chart .trend-line { fill: none; stroke: #0f7a5c; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.strength-chart .dot { fill: #0f7a5c; }
+.strength-chart figcaption { margin-top: 4px; font-size: 12px; }
+.plate-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.plate-row input { font: inherit; padding: 10px; border: 1.5px solid #cdd6d2; border-radius: 10px; width: 100px; }
+.plate-row .range { display: flex; gap: 6px; flex-wrap: wrap; }
+.plate-row .chip[aria-pressed='true'] { background: #0f7a5c; color: #fff; border-color: #0f7a5c; }
+.plate-hint { font-size: 13px; margin: 4px 0 0; }
+@media (prefers-color-scheme: dark) {
+  .month th, .records dt { color: #9fb3ab; }
+  .month .day.trained { background: #3fbf94; color: #0b1210; }
+  .rep-maxes th, .rep-maxes td { border-color: #26302d; }
+  .strength-chart .axis { stroke: #3a4643; }
+  .strength-chart .trend-line { stroke: #3fbf94; }
+  .strength-chart .dot { fill: #3fbf94; }
+  .plate-row input { background: #161d1b; color: inherit; border-color: #3a4643; }
+}

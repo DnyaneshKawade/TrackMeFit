@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { describePlates, platesFor } from '../engine/plates'
 import { targetRir } from '../engine/training'
 import { exerciseById, type Exercise } from './exercises'
 import { ExercisePicker, type ExerciseLibrary } from './ExercisePicker'
@@ -348,6 +349,7 @@ function ExerciseLog({
         <input aria-label={`${exercise.name} reps left`} placeholder="Left" inputMode="numeric" value={rir} onChange={(e) => setRir(e.target.value)} />
         <button className="primary" disabled={busy} onClick={log}>Log set</button>
       </div>
+      {exercise.equipment === 'barbell' && <PlateHint weight={weight} />}
       <div className="set-extras">
         {SET_TAGS.map((t) => (
           <button key={t.tag} className="chip" aria-pressed={tag === t.tag} onClick={() => setTag(tag === t.tag ? null : t.tag)}>
@@ -362,5 +364,17 @@ function ExerciseLog({
       </div>
       {error && <p className="error" role="alert">{error}</p>}
     </section>
+  )
+}
+
+/** Plates for each side of a 20 kg bar, under a barbell exercise (T-044). */
+function PlateHint({ weight }: { weight: string }) {
+  const w = Number(weight.replace(',', '.'))
+  if (!weight.trim() || !(w > 0)) return null
+  const load = platesFor(w)
+  return (
+    <p className="muted plate-hint">
+      {load.perSide.length > 0 ? `Each side of a 20 kg bar: ${describePlates(load.perSide)}.` : ''} {load.reason}
+    </p>
   )
 }
