@@ -24,6 +24,7 @@ export default function MealPlanStep({
   blocked,
   accepted,
   onAccept,
+  start = 'ask',
 }: {
   targets: Macros
   weightKg: number
@@ -33,8 +34,10 @@ export default function MealPlanStep({
   blocked: boolean
   accepted: AcceptedMealPlan | null
   onAccept: (a: AcceptedMealPlan | null) => void
+  /** Go straight to the protein picks (from the Food tab, T-061). */
+  start?: 'ask' | 'pick'
 }) {
-  const [phase, setPhase] = useState<'ask' | 'pick' | 'no'>(accepted ? 'pick' : 'ask')
+  const [phase, setPhase] = useState<'ask' | 'pick' | 'no'>(accepted ? 'pick' : start)
   const [keys, setKeys] = useState<string[]>([])
   const [lowerProtein, setLowerProtein] = useState<number | null>(null)
   const [edits, setEdits] = useState<{ meal: MealName; from: string; to: string }[]>([])

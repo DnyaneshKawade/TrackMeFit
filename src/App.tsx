@@ -76,6 +76,14 @@ export function AppShell({
   const targets = useMemo(() => (account ? targetStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const profiles = useMemo(() => (account ? profileStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const progress = useMemo(() => (account ? progressStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  // The latest weight, for a new meal plan from the Food tab (T-061).
+  const latestWeight = useMemo(
+    () => async () => {
+      const list = (await progress?.weighIns()) ?? []
+      return list.length ? list[list.length - 1].kg : null
+    },
+    [progress],
+  )
   const foods = useMemo(() => (account ? foodStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const mealPlans = useMemo(() => (account ? mealPlanStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   // undefined while loading; null when it couldn't be loaded (the app still works).
@@ -184,6 +192,7 @@ export function AppShell({
           userId={account.id}
           diet={profile ?? undefined}
           mealPlans={mealPlans}
+          latestWeight={latestWeight}
         />
       )}
       <Suspense fallback={<main className="log">Loading…</main>}>

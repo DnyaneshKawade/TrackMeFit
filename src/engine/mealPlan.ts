@@ -514,3 +514,67 @@ export function vegDayPlan(plan: MealPlan, foods: PlanFood[], allowed: Set<strin
   const totals = meals.reduce((t, m) => add(t, m.macros), ZERO)
   return { ...out, meals, totals, onTarget: isOnTarget(totals, plan.targets), notes: [...plan.notes, ...notes] }
 }
+
+// Changing a saved plan by hand (T-061). The person's changes are kept as
+// they make them; the check says how far the day is from their targets.
+
+/** Most grams one item can have when changed by hand. */
+export const MAX_PLAN_GRAMS = 2000
+
+function withItems(plan: MealPlan, meal: MealName, edit: (items: PlanItem[]) => PlanItem[]): MealPlan {
+  const has = plan.meals.some((m) => m.name === meal)
+  const all = has ? plan.meals : [...plan.meals, { name: meal, items: [], macros: ZERO }].sort((a, b) => MEALS.indexOf(a.name) - MEALS.indexOf(b.name))
+  const meals = all.map((m) => {
+    if (m.name !== meal) return m
+    const items = edit(m.items)
+    return { ...m, items, macros: items.reduce((t, i) => add(t, i.macros), ZERO) }
+  })
+  const totals = meals.reduce((t, m) => add(t, m.macros), ZERO)
+  return { ...plan, meals, totals, onTarget: isOnTarget(totals, plan.targets) }
+}
+
+function changedItem(f: PlanFood, grams: number): PlanItem {
+  const over = grams > f.maxPerDayG ? ` More than the usual ${f.maxPerDayG} g ${f.weighed} a day.` : ''
+  return { foodId: f.id, name: f.name, grams, weighed: f.weighed, hint: amountHint(f, grams), macros: macrosFor(f, grams), reason: `You changed this.${over}` }
+}
+
+/** The item at this place with a new amount, from 1 to MAX_PLAN_GRAMS g. */
+export function setItemGrams(plan: MealPlan, meal: MealName, index: number, grams: number, foods: PlanFood[]): MealPlan {
+  const item = plan.meals.find((m) => m.name === meal)?.items[index]
+  const f = item && foods.find((x) => x.id === item.foodId)
+  if (!f) return plan
+  const g = Math.round(Math.min(MAX_PLAN_GRAMS, Math.max(1, grams)))
+  return withItems(plan, meal, (items) => items.map((x, i) => (i === index ? changedItem(f, g) : x)))
+}
+
+export function removeItem(plan: MealPlan, meal: MealName, index: number): MealPlan {
+  return withItems(plan, meal, (items) => items.filter((_, i) => i !== index))
+}
+
+/** Adds a food to a meal: 100 g (or its usual meal limit, if less) unless
+ * an amount is given; a food already in the meal gets the amount added. */
+export function addItem(plan: MealPlan, meal: MealName, f: PlanFood, grams?: number): MealPlan {
+  const amount = grams ?? Math.max(step(f), roundTo(f, Math.min(100, f.maxPerMealG)))
+  return withItems(plan, meal, (items) => {
+    const at = items.findIndex((i) => i.foodId === f.id)
+    if (at < 0) return [...items, changedItem(f, Math.min(MAX_PLAN_GRAMS, amount))]
+    return items.map((x, i) => (i === at ? changedItem(f, Math.min(MAX_PLAN_GRAMS, x.grams + amount)) : x))
+  })
+}
+
+/** The plan as saved: meals left empty are dropped. */
+export const tidyPlan = (plan: MealPlan): MealPlan => ({ ...plan, meals: plan.meals.filter((m) => m.items.length) })
+
+/** How the day compares with the targets, in plain words. */
+export function planCheck(totals: Macros, targets: Macros): string {
+  const kcal = Math.round(totals.kcal - targets.kcal)
+  const protein = Math.round(totals.proteinG - targets.proteinG)
+  const kcalOk = Math.abs(kcal) <= targets.kcal * 0.05
+  const proteinOk = Math.abs(protein) <= 5
+  if (kcalOk && proteinOk) return 'This plan is close to your targets.'
+  const parts: string[] = []
+  if (!kcalOk) parts.push(`This plan has ${Math.abs(kcal).toLocaleString('en-IN')} kcal ${kcal > 0 ? 'more' : 'less'} than your target.`)
+  if (!proteinOk) parts.push(`It has ${Math.abs(protein)} g ${protein > 0 ? 'more' : 'less'} protein than your target.`)
+  if (kcalOk) parts[0] = parts[0].replace(/^It has/, 'This plan has')
+  return parts.join(' ')
+}
