@@ -52,8 +52,21 @@ describe('hosting', () => {
     expect(rewrite.test('/sw.js')).toBe(false)
     expect(rewrite.test('/icon-192.png')).toBe(false)
   })
-  it('never caches the service worker itself', () => {
-    const sw = vercel.headers.find((h: { source: string }) => h.source === '/sw.js')
-    expect(sw.headers[0]).toEqual({ key: 'Cache-Control', value: 'no-cache' })
+  const headersFor = (source: string): { key: string; value: string }[] =>
+    vercel.headers.find((h: { source: string }) => h.source === source).headers
+
+  it('never caches the service worker or manifest, so updates reach phones', () => {
+    expect(headersFor('/sw.js')).toEqual([{ key: 'Cache-Control', value: 'no-cache' }])
+    expect(headersFor('/manifest.webmanifest')).toEqual([{ key: 'Cache-Control', value: 'no-cache' }])
+  })
+  it('caches built files for a year, since their names change with their content', () => {
+    expect(headersFor('/assets/(.*)')).toEqual([{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }])
+  })
+  it('sends security headers on every response', () => {
+    const keys = Object.fromEntries(headersFor('/(.*)').map((h) => [h.key, h.value]))
+    expect(keys['X-Content-Type-Options']).toBe('nosniff')
+    expect(keys['X-Frame-Options']).toBe('DENY')
+    expect(keys['Referrer-Policy']).toBe('strict-origin-when-cross-origin')
+    expect(keys['Permissions-Policy']).toContain('microphone=()')
   })
 })

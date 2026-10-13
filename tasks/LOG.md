@@ -2,6 +2,18 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-14: Engineering standards (T-051)
+
+- DK asked for SDLC principles, specification-driven development, caching, data structures, architecture and other best practices, and for them to be followed from now on. Checked the project against them and wrote [docs/engineering.md](../docs/engineering.md), which `CLAUDE.md` now requires for every change.
+- Spec first: `specs/` with a template; each acceptance criterion gets a test.
+- CI now also runs lint, a size budget (`npm run size`, budgets in `build/checkSize.ts`) and `npm audit` for high and critical issues in app dependencies. Node is pinned to 22 (`.nvmrc`, `engines`). Added a PR template and weekly Dependabot updates.
+- Caching: the service worker's cache is now named after each build, so a deploy clears the previous build's files (before, they were kept forever). `manifest.webmanifest` is no longer cached.
+- Security headers on every response: no MIME sniffing, no framing, strict referrer, camera only for this site.
+- Food lookups by id use a map instead of scanning 7,500 foods.
+- Security update: `@supabase/supabase-js` moved from 2.45 to 2.117 in the lock file to clear an `auth-js` advisory (GHSA-8r88-6cj9-9fh5); all tests pass.
+- Tests: `build/swStamp.test.ts` (3), `build/checkSize.test.ts` (4), `src/pwa.test.ts` (8), `src/food/search.test.ts` (9).
+- Follow-ups: T-052 content security policy, T-053 separate preview database and CLI migrations, T-054 end-to-end tests, T-055 accessibility checks, T-056 versions and changelog.
+
 ## 2026-10-14: Competitor study and planning details (T-050)
 
 - DK asked whether top Indian and international competitors were researched well, then for FITTR, the RP Strength engine, FitNotes and similar apps in depth, and all details needed for planning. Wrote the [Competitor Study](https://claude.ai/code/artifact/4637175c-d094-4c40-80be-e4826de7c0b3): Indian apps (FITTR, HealthifyMe, Cult.fit, Fitelo, Sugar.fit and others), nutrition apps (MyFitnessPal, MacroFactor, Cronometer, Lose It!, Noom, Carbon), workout loggers (FitNotes in depth, Strong, Hevy, JEFIT, Liftosaur and others), coaching software (Trainerize, TrueCoach, Everfit, Kahunas, Indian tools), the RP engine compared with ours, a side-by-side table, a gaps 2x2, and planning details (priorities, data, free model and costs, risks).
