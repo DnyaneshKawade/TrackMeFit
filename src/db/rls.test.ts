@@ -269,6 +269,22 @@ describe('meal plans (T-058b)', () => {
   })
 })
 
+describe('ticking the meal plan (T-060)', () => {
+  it('an entry keeps its plan item; entries logged by hand have none', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('me@x.in')
+    const rows = await t.as(me, async (db) => {
+      await db.query(`insert into food_logs (meal, food_id, food_name, grams, kcal, protein_g, carb_g, fat_g, plan_item) values ('lunch', 'tmf:dish:dal', 'Dal', 150, 160, 9, 20, 5, 'p1:Lunch:0:tmf:dish:dal')`)
+      await db.query(`insert into food_logs (meal, food_id, food_name, grams, kcal, protein_g, carb_g, fat_g) values ('lunch', 'tmf:dish:dal', 'Dal', 100, 107, 6, 13, 3)`)
+      return (await db.query<{ plan_item: string | null }>('select plan_item from food_logs order by grams desc')).rows
+    })
+    expect(rows.map((r) => r.plan_item)).toEqual(['p1:Lunch:0:tmf:dish:dal', null])
+    await expect(
+      t.as(me, (db) => db.query(`insert into food_logs (meal, food_id, food_name, grams, kcal, protein_g, carb_g, fat_g, plan_item) values ('lunch', 'x', 'X', 1, 1, 0, 0, 0, '${'a'.repeat(201)}')`)),
+    ).rejects.toThrow(/check/)
+  })
+})
+
 describe('offline logging (T-027)', () => {
   it('3. an entry sent twice with the id made on the phone is saved once; nobody can take another person’s id', async () => {
     const t = await createTestDb()

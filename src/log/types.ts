@@ -16,6 +16,8 @@ export interface NewLogEntry extends Per100g {
   foodName: string
   /** Null for a quick add (calories typed in, no food or weight). */
   grams: number | null
+  /** The meal plan item a tick logged it from (T-060); absent otherwise. */
+  planItem?: string
 }
 
 export interface LogEntry extends NewLogEntry {
@@ -33,7 +35,6 @@ export interface LogStore {
   sync?: LogSync
 }
 
-/** Entries saved on the phone while offline, and their sending. */
 /** Waiting work on the phone (T-027); shared with workouts. */
 export type LogSync = Sync
 

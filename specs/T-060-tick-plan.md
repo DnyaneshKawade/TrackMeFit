@@ -1,6 +1,6 @@
 # T-060: Tick off the meal plan
 
-Status: draft (DK, 13 Oct 2026: "adding a checkbox in front of each item and meal, and day, if ate tick not no tick")
+Status: built (agreed by DK merging the plan, 13 Oct 2026; asked for as "adding a checkbox in front of each item and meal, and day, if ate tick not no tick")
 Task: [T-060](../tasks/TASKS.md)
 
 ## Problem
@@ -52,8 +52,10 @@ only what was eaten, so nothing is filled in ahead.
 ## Data and privacy
 - Log entries made by a tick record where they came from (plan id, meal and
   item), so the tick state can be shown after reload and on another phone.
-  Expected migration: a nullable `plan_item` text column on `food_logs`;
-  row-level security unchanged (the person writes only their own rows).
+  Migration `20261018000000_food_log_plan_item.sql`: a nullable `plan_item`
+  text column on `food_logs` (at most 200 characters); row-level security
+  unchanged (the person writes only their own rows). The key is plan id,
+  meal, position and food, so a veg-day swap is its own item.
 - Nothing new is shared with coaches beyond the log they can already read.
 
 ## Edge cases
@@ -62,7 +64,8 @@ only what was eaten, so nothing is filled in ahead.
 - The same food appears twice in a meal: each item has its own tick.
 - Ticking the meal or day while some items are already ticked logs only the
   unticked ones (no doubles).
-- A refused entry (T-027) unticks itself and says so.
+- A refused entry (T-027) is reported by the sync note ("1 entry couldn't
+  be saved"); its tick clears when the day reloads.
 
 ## Out of scope
 - A weekly plan with different days (separate task).
@@ -76,3 +79,5 @@ only what was eaten, so nothing is filled in ahead.
 | 3 | `src/log/log.test.ts` (entries keep the plan item they came from) |
 | 8 | `src/log/offlineStore.test.ts` |
 | Data | `src/db/rls.test.ts` (`plan_item` saved and read back) |
+
+Criterion 8 is in `src/log/offlineStore.test.ts` as "8 (T-060)".

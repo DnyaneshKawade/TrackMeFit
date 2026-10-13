@@ -119,3 +119,20 @@ describe('recent and frequent foods', () => {
     expect(fromRow(row).grams).toBeNull()
   })
 })
+
+describe('entries from the meal plan (T-060)', () => {
+  const key = 'plan1:Lunch:0:tmf:dish:dal-tadka'
+  it('3. an entry keeps the plan item it came from, to and from the database', () => {
+    const e = { ...entryFor(dal, 150, 'lunch', '2026-10-13'), planItem: key }
+    expect(toRow(e).plan_item).toBe(key)
+    expect(fromRow({ ...toRow(e), id: 'a' }).planItem).toBe(key)
+    // Entries logged by hand carry none.
+    expect('plan_item' in toRow(entryFor(dal, 150, 'lunch', '2026-10-13'))).toBe(false)
+    expect('planItem' in fromRow({ ...toRow(entryFor(dal, 150, 'lunch', '2026-10-13')), id: 'b', plan_item: null })).toBe(false)
+  })
+
+  it('3. adding a ticked food again by hand does not copy its tick', () => {
+    const e: LogEntry = { ...entryFor(dal, 150, 'lunch', '2026-10-13'), id: 'a', planItem: key }
+    expect(repeatEntry(e, 'dinner', '2026-10-14').planItem).toBeUndefined()
+  })
+})
