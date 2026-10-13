@@ -35,6 +35,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-022b | Progress extras: progress photos (private storage) and strength trends per exercise | Photo upload privacy tests; strength trend tests |
 | T-027 | Offline logging: save food and sets without a connection and sync later | Offline queue tests |
 | T-026 | Coach dashboard: client list, flags, plan editing, check-ins, chat | Permission tests; flag rule tests |
+| T-042 | Admin dashboard (DK's request): an admin role, separate from users and coaches, that can manage everything. Edit the shared food and exercise data, review user-added foods before they become public, manage users and coaches (roles, blocking), and see app health (sign-ups, active users, errors) | Admin-only access tests (RLS); food review flow tests; role change tests |
 
 ## Done
 

@@ -2,6 +2,11 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-14: Admin dashboard noted (T-042)
+
+- DK asked for an admin dashboard to manage the whole app: update all data, manage the application and other admin features. Added to the to-do list as T-042; details to settle when it is picked up.
+- Tests: none (task list only).
+
 ## 2026-10-14: Faster food logging (T-018b, T-019)
 
 - Add food now opens on your often-eaten and recent foods, each with a one-tap + that logs the same amount again; tapping the name opens it to change the amount.
