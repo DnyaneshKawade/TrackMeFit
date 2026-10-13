@@ -6,6 +6,8 @@ import { FoodLog } from './log/FoodLog'
 import { memoryLogStore } from './log/memoryStore'
 import { supabaseLogStore } from './log/supabaseStore'
 import type { LogStore } from './log/types'
+import { memoryTargetStore, supabaseTargetStore } from './targets/stores'
+import type { TargetStore } from './targets/types'
 import type { SearchIndex } from './food/search'
 
 const loadIndex = (): Promise<SearchIndex> => import('./food/catalogueData').then((m) => m.searchIndex)
@@ -13,12 +15,15 @@ const loadIndex = (): Promise<SearchIndex> => import('./food/catalogueData').the
 export function AppShell({
   auth,
   logStoreFor = () => memoryLogStore(),
+  targetStoreFor = (a) => memoryTargetStore(a.id),
 }: {
   auth: AuthService | null
   logStoreFor?: (account: Account) => LogStore
+  targetStoreFor?: (account: Account) => TargetStore
 }) {
   const [account, setAccount] = useState<Account | null | undefined>(undefined)
   const store = useMemo(() => (account ? logStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const targets = useMemo(() => (account ? targetStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!auth) return
@@ -52,7 +57,7 @@ export function AppShell({
         </span>
         <button onClick={() => void auth.signOut()}>Sign out</button>
       </header>
-      <FoodLog store={store!} loadIndex={loadIndex} />
+      <FoodLog store={store!} loadIndex={loadIndex} targets={targets} userId={account.id} />
     </>
   )
 }
@@ -60,5 +65,11 @@ export function AppShell({
 export default function App() {
   const sb = useMemo(() => supabaseFromEnv(), [])
   const auth = useMemo(() => (sb ? createSupabaseAuth(sb) : null), [sb])
-  return <AppShell auth={auth} logStoreFor={(a) => supabaseLogStore(sb!, a.id)} />
+  return (
+    <AppShell
+      auth={auth}
+      logStoreFor={(a) => supabaseLogStore(sb!, a.id)}
+      targetStoreFor={(a) => supabaseTargetStore(sb!, a.id)}
+    />
+  )
 }

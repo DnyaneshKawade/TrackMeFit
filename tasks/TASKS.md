@@ -33,7 +33,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-018b | Food logging extras: quick add (calories only), barcode scan, batch-cooked weighing, recent and frequent foods | Component tests for each |
 | T-038 | Serve food search from the database instead of a 535 KB (gzip) download | Search tests against the server |
 | T-019 | Add your own food, product, recipe | Recipe per-100 g maths tests |
-| T-020 | Manual diet targets (calories and macros), set by user or coach | Validation tests |
 | T-021 | Optional "suggest my targets" using the diet engine | Engine tests (done); UI test for accept / ignore |
 | T-022 | Progress tracking: weight trend, measurements, photos, strength | Trend tests (done); chart data tests |
 | T-023 | Workout plan builder (manual), FitNotes-style logger | Component tests; set logging tests |
@@ -61,6 +60,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-013 | Sign-in screens: email, Google, password reset, user or coach | `src/auth/SignIn.test.tsx` (13) |
 | T-014 | Data model and privacy rules (users, coaches, food, progress, training) | `src/db/rls.test.ts` (17), run in PGlite |
 | T-030 | Load USDA values for our ingredients: 26 of 28 matched, 22 of 25 dishes computed | `src/food/indian/database.test.ts` (6) |
+| T-020 | Manual daily targets (calories, protein, carbs, fat) set by the person or coach; food log shows what is left | `src/targets/targets.test.ts` (8), `src/targets/TargetsFood.test.tsx` (4) |
 | T-037 | Go live on Supabase: project in Mumbai, migration run, keys in `.env.local`, email and Google sign-in on | Live check: 13 tables respond, test sign-up created a profile |
 | T-018 | Food log: day view by meal, search 7,567 foods, log by grams or portions, remove, move between days | `src/log/log.test.ts` (7), `src/log/FoodLog.test.tsx` (7), `src/food/search.test.ts` (7) |
 | T-029 | Recipe calculator, raw-to-cooked converter, USDA extract script | `src/food/recipe.test.ts`, `src/food/indian/resolve.test.ts` |
