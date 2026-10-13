@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Ready to go online (T-028, T-040)
+
+- The app can be installed on phones: icon, `manifest.webmanifest`, and a service worker (`public/sw.js`) that caches the page and built files so it opens without a connection. Supabase requests always go to the network. Registered in production builds only.
+- `vercel.json`: Vite build, app paths go to the app, built files cached for a year, the service worker never cached.
+- `docs/deploy.md`: DK's one-time Vercel and Supabase steps, and how to install on Android and iPhone.
+- DK ran the progression migration on the live project (T-039).
+- Tests: `src/pwa.test.ts` (6); whole suite 188 passing.
+
 ## 2026-10-13: Weekly progression and deloads (T-024)
 
 - After a workout, "How did it feel?" asks per muscle trained: sore going in, how hard, anything hurt. Skippable.
