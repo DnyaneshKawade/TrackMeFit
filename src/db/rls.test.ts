@@ -268,3 +268,18 @@ describe('meal plans (T-058b)', () => {
     ).rejects.toThrow(/row-level security/)
   })
 })
+
+describe('offline logging (T-027)', () => {
+  it('3. an entry sent twice with the id made on the phone is saved once; nobody can take another person’s id', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('me@x.in')
+    const other = await t.signUp('other@x.in')
+    const id = '11111111-2222-4333-8444-555555555555'
+    const insert = `insert into food_logs (id, meal, food_id, food_name, grams, kcal, protein_g, carb_g, fat_g) values ('${id}', 'lunch', 'tmf:dish:dal', 'Dal', 150, 160, 9, 20, 5)`
+    await t.as(me, (db) => db.query(insert))
+    await expect(t.as(me, (db) => db.query(insert))).rejects.toThrow(/duplicate key/)
+    await expect(t.as(other, (db) => db.query(insert))).rejects.toThrow(/duplicate key/)
+    expect(await t.as(me, (db) => count(db, 'food_logs'))).toBe(1)
+    expect(await t.as(other, (db) => count(db, 'food_logs'))).toBe(0)
+  })
+})

@@ -68,7 +68,7 @@ Current state:
 | Service worker | Built files | Cache first. The cache is named after each build, so a new deploy clears the old files |
 | Service worker | Supabase requests (sign-in, personal data) | Never cached; they always go to the network |
 | In the app | Food search index | Loaded on first use, built once per session |
-| In the app | Personal data | Kept in screen state only. Offline saving (T-027) will queue changes in IndexedDB and clear it on sign-out, because phones are often shared |
+| In the app | Personal data | Kept in screen state, except the offline food log (T-027a): waiting entries and the last 14 viewed days in browser storage, per account. Viewed days are cleared on sign-out because phones are often shared; waiting entries stay until they sync for that account, so nothing logged is lost |
 | Database | Indexes | On every filtered or privacy-rule column; summaries for admin use views |
 
 Invalidation is by name: hashed file names for built files, a build-stamped cache name for the service worker, and no caching where freshness matters.

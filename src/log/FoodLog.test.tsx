@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { FoodLog } from './FoodLog'
 import { memoryLogStore } from './memoryStore'
+import { offlineLogStore } from './offlineStore'
 import { createSearchIndex } from '../food/search'
 import { localFinder } from '../food/finder'
 import type { Food } from '../food/types'
@@ -325,5 +326,53 @@ describe('veg days (T-058c)', () => {
   it('shows no veg-day line for vegetarians', () => {
     render(<FoodLog store={memoryLogStore()} loadFoods={loadFoods} today={TUESDAY} diet={{ dietPref: 'veg', foodRules: [], allergies: [] }} />)
     expect(screen.queryByRole('status', { name: 'Veg day' })).toBeNull()
+  })
+})
+
+describe('offline logging (T-027)', () => {
+  function offlineSetup() {
+    const inner = memoryLogStore()
+    const net = { online: true }
+    const offline = () => Promise.reject(new TypeError('Failed to fetch'))
+    const server: LogStore = {
+      listDay: (d) => (net.online ? inner.listDay(d) : offline()),
+      recent: () => (net.online ? inner.recent() : offline()),
+      add: (e, id) => (net.online ? inner.add(e, id) : offline()),
+      remove: (id) => (net.online ? inner.remove(id) : offline()),
+    }
+    const data = new Map<string, string>()
+    const storage = { get: (k: string) => data.get(k) ?? null, set: (k: string, v: string) => void data.set(k, v), remove: (k: string) => void data.delete(k) }
+    const store = offlineLogStore(server, { storage, accountId: 'me' })
+    setup(store)
+    return { inner, net, store }
+  }
+
+  it('1, 2. an entry added offline shows at once as not synced, and syncs when back online', async () => {
+    const { inner, net, store } = offlineSetup()
+    await screen.findByRole('region', { name: 'Lunch' })
+    net.online = false
+    await addFood('Lunch', 'yellow', 'Dal tadka')
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Lunch' }))
+    const lunch = await screen.findByRole('region', { name: 'Lunch' })
+    expect(within(lunch).getByText('Dal tadka')).toBeTruthy()
+    expect(within(lunch).getByText('Not synced yet')).toBeTruthy()
+    expect(screen.getByRole('status', { name: 'Sync' }).textContent).toMatch(/1 entry saved on this phone/)
+    net.online = true
+    await store.sync!.run()
+    await waitFor(() => expect(screen.queryByText('Not synced yet')).toBeNull())
+    expect(screen.queryByRole('status', { name: 'Sync' })).toBeNull()
+    expect(await inner.listDay(TODAY)).toHaveLength(1)
+  })
+
+  it('4. removing an entry offline takes it off the day at once', async () => {
+    const { net, inner } = offlineSetup()
+    await addFood('Lunch', 'yellow', 'Dal tadka')
+    fireEvent.click(screen.getByRole('button', { name: 'Add to Lunch' }))
+    await screen.findByText('Dal tadka')
+    net.online = false
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Dal tadka' }))
+    await waitFor(() => expect(screen.queryByText('Dal tadka')).toBeNull())
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(await inner.listDay(TODAY)).toHaveLength(1)
   })
 })
