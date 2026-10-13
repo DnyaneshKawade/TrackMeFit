@@ -25,14 +25,20 @@ export function memoryWorkoutStore(
     async sessionsOn(date) {
       return structuredClone(sessions.filter((s) => s.performedOn === date))
     },
-    async startSession(date, day: PlanDay | null) {
-      const s: Session = { id: id(), performedOn: date, planDayId: day?.id ?? null, name: day?.name ?? 'Workout', sets: [] }
+    async startSession(date, day: PlanDay | null, given?: string) {
+      const old = given && sessions.find((s) => s.id === given)
+      if (old) return structuredClone(old)
+      const s: Session = { id: given ?? id(), performedOn: date, planDayId: day?.id ?? null, name: day?.name ?? 'Workout', sets: [] }
       sessions.push(s)
       return structuredClone(s)
     },
-    async addSet(sessionId, set: NewSet) {
-      const row: SetLog = { ...set, id: id() }
-      sessions.find((s) => s.id === sessionId)!.sets.push(row)
+    async addSet(sessionId, set: NewSet, given?: string) {
+      const session = sessions.find((s) => s.id === sessionId)
+      if (!session) throw Object.assign(new Error('no such session'), { code: '23503' })
+      const old = given && session.sets.find((x) => x.id === given)
+      if (old) return { ...old }
+      const row: SetLog = { ...set, id: given ?? id() }
+      session.sets.push(row)
       return row
     },
     async removeSet(setId) {

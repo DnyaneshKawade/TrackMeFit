@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { targetRir } from '../engine/training'
 import { exerciseById, type Exercise } from './exercises'
 import { ExercisePicker } from './ExercisePicker'
+import { SyncNote } from '../sync/SyncNote'
+import { useSync } from '../sync/useSync'
 import { FeedbackSheet } from './FeedbackSheet'
 import { deloadAdvice, isDeloadWeek, weekLabel } from './progression'
 import { checkSet, describeSets, suggestNext, type PastSession, type PlanExercise, type Session, type WorkoutStore } from './types'
@@ -61,6 +63,7 @@ export function SessionView({
         <button className="link" onClick={() => (trained.length ? setAskFeedback(true) : onClose())}>Done</button>
       </header>
       {block && <p className="muted">{weekLabel(block.week, block.hardWeeks)}</p>}
+      <SyncNote sync={store.sync} noun={['workout entry', 'workout entries']} />
       {ids.map((id) => {
         const exercise = exerciseById.get(id)
         if (!exercise) return null
@@ -128,6 +131,7 @@ function ExerciseLog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, exercise.id, session.performedOn])
 
+  const { pending } = useSync(store.sync)
   const done = session.sets.filter((s) => s.exerciseId === exercise.id).sort((a, b) => a.setIndex - b.setIndex)
 
   const log = async () => {
@@ -182,7 +186,10 @@ function ExerciseLog({
       <ol className="sets">
         {done.map((s, i) => (
           <li key={s.id}>
-            <span>Set {i + 1}: {s.weightKg} kg × {s.reps}{s.rir !== null ? ` · ${s.rir} in reserve` : ''}</span>
+            <span>
+              Set {i + 1}: {s.weightKg} kg × {s.reps}{s.rir !== null ? ` · ${s.rir} in reserve` : ''}
+              {pending.has(s.id) && <span className="muted"> · Not synced yet</span>}
+            </span>
             <button className="link" aria-label={`Remove set ${i + 1} of ${exercise.name}`} onClick={() => void remove(s.id)}>✕</button>
           </li>
         ))}

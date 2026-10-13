@@ -7,6 +7,8 @@ import { remaining, type DietTarget, type TargetStore, type TargetValues } from 
 import { amountLabel, localDate, MEAL_NAMES, MEALS, shiftDate, totals, type LogEntry, type LogStore, type Meal, type NewLogEntry } from './types'
 import type { DietPref } from '../profile/types'
 import type { MealPlanStore, SavedMealPlan } from '../profile/mealPlanStore'
+import { SyncNote } from '../sync/SyncNote'
+import { useSync } from '../sync/useSync'
 import { excludedTags, hasNonvegOff } from '../profile/dietRules'
 import { dayExcluded, nonvegWeekday, vegDayReason, type DayChoice } from '../profile/nonvegDays'
 import './log.css'
@@ -84,10 +86,7 @@ export function FoodLog({
   const [choice, setChoice] = useState<DayChoice>(() => readChoice(date))
   // Entries waiting on the phone to sync (T-027).
   const sync = store.sync
-  const [, setSyncTick] = useState(0)
-  useEffect(() => sync?.subscribe(() => setSyncTick((n) => n + 1)), [sync])
-  const pending = sync?.pendingIds() ?? new Set<string>()
-  const refused = sync?.refused() ?? 0
+  const { pending } = useSync(sync)
   useEffect(() => setChoice(readChoice(date)), [date])
   const eatsNonveg = !!diet && hasNonvegOff(diet.dietPref)
   const weekday = eatsNonveg ? nonvegWeekday(date, diet!.foodRules) : null
@@ -257,17 +256,7 @@ export function FoodLog({
       )}
 
       {error && <p className="error" role="alert">{error}</p>}
-      {pending.size > 0 && (
-        <p className="info" role="status" aria-label="Sync">
-          {pending.size === 1 ? '1 entry' : `${pending.size} entries`} saved on this phone. They’ll sync when you’re online.
-        </p>
-      )}
-      {refused > 0 && (
-        <p className="error" role="alert">
-          {refused === 1 ? '1 entry' : `${refused} entries`} couldn’t be saved.{' '}
-          <button className="link" onClick={() => sync?.clearRefused()}>OK</button>
-        </p>
-      )}
+      <SyncNote sync={sync} noun={['entry', 'entries']} />
       {entries === null && <p className="muted">Loading…</p>}
 
       {entries &&
