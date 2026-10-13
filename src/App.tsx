@@ -16,7 +16,7 @@ import type { SearchIndex } from './food/search'
 import { localDate } from './log/types'
 import { Onboarding } from './profile/Onboarding'
 import { memoryProfileStore, supabaseProfileStore } from './profile/stores'
-import { isComplete, type ProfileInfo, type ProfileStore } from './profile/types'
+import { isOnboarded, type ProfileInfo, type ProfileStore } from './profile/types'
 import { Progress } from './progress/Progress'
 import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
 import type { ProgressStore } from './progress/types'
@@ -95,16 +95,25 @@ export function AppShell({
     </header>
   )
 
-  // Coaches go straight to the app; everyone else answers the first-run questions once.
-  if (profile && account.role === 'user' && !isComplete(profile)) {
+  // Coaches go straight to the app; everyone else sees the first-run questions
+  // until they finish or skip them once.
+  if (profile && account.role === 'user' && !isOnboarded(profile)) {
     return (
       <>
         {topbar}
         <Onboarding
           initial={{ ...profile, fullName: profile.fullName || account.name }}
-          onFinish={async (p, kg) => {
+          onFinish={async ({ profile: p, weightKg, waistCm, targets: suggested }) => {
+            const today = localDate()
             await profiles!.save(p)
-            await progress!.saveWeighIn(localDate(), kg)
+            await progress!.saveWeighIn(today, weightKg)
+            if (waistCm !== null) await progress!.saveMeasurement({ date: today, waistCm })
+            if (suggested && targets) await targets.save(suggested, today, 'suggested')
+            setProfile(p)
+          }}
+          onSkip={async () => {
+            const p = { ...profile, fullName: profile.fullName || account.name, onboardedAt: new Date().toISOString() }
+            await profiles!.save(p)
             setProfile(p)
           }}
         />

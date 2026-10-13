@@ -2,103 +2,182 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { Onboarding } from './Onboarding'
-import { EMPTY_PROFILE, HEALTH_QUESTIONS } from './types'
+import { EMPTY_PROFILE } from './types'
 
 afterEach(cleanup)
 
+const TODAY = '2026-10-13'
 const type = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } })
-const click = (name: string) => fireEvent.click(screen.getByRole('button', { name }))
-const pick = (group: string, option: string) =>
+const click = (name: string | RegExp) => fireEvent.click(screen.getByRole('button', { name }))
+const pick = (group: string, option: string | RegExp) =>
   fireEvent.click(within(screen.getByRole('group', { name: group })).getByRole('button', { name: option }))
+const heading = () => screen.getByRole('heading', { level: 1 }).textContent
 
-function fillAboutYou(sex: 'Male' | 'Female' = 'Female') {
+function aboutYou(sex: 'Male' | 'Female' = 'Female', waist = '') {
   type('Your name', 'Asha')
   pick('Sex', sex)
   type('Date of birth', '1995-06-15')
   type('Height (cm)', '160')
-  type('Weight today (kg)', '64.5')
+  type('Weight today (kg)', '64')
+  if (waist) type('Waist at the belly button (cm, optional)', waist)
   click('Next')
 }
-
-function fillDayAndGoal() {
+function training() {
   pick('On a normal day you are', 'Mostly sitting')
   pick('Workouts a week', '3')
-  pick('Lifting experience', 'New to lifting')
+  pick('Lifting experience', 'New, or under a year')
+  pick('Where you train', 'A gym')
   click('Next')
-  pick('Your main goal', 'Lose fat')
+}
+function food() {
   pick('What you eat', 'Vegetarian')
   click('Next')
 }
 
+const setup = (over: Partial<Parameters<typeof Onboarding>[0]> = {}) => {
+  const onFinish = vi.fn().mockResolvedValue(undefined)
+  const onSkip = vi.fn().mockResolvedValue(undefined)
+  render(<Onboarding initial={EMPTY_PROFILE} onFinish={onFinish} onSkip={onSkip} today={TODAY} {...over} />)
+  return { onFinish, onSkip }
+}
+
 describe('onboarding', () => {
-  it('checks the first step before moving on', () => {
-    render(<Onboarding initial={EMPTY_PROFILE} onFinish={vi.fn()} today="2026-10-13" />)
+  it('checks the first step and shows BMI as soon as height and weight are in', () => {
+    setup()
     click('Next')
     expect(screen.getByText('Tell us what to call you.')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'About you' })).toBeTruthy()
-    fillAboutYou()
-    expect(screen.getByRole('heading', { name: 'Your day' })).toBeTruthy()
+    type('Height (cm)', '160')
+    type('Weight today (kg)', '64')
+    expect(screen.getByRole('status', { name: 'BMI' }).textContent).toMatch(/BMI 25: in the obese range for Indian adults/)
+    aboutYou()
+    expect(heading()).toBe('Health check')
   })
 
-  it('needs every answer on the day and goal steps, and can go back', () => {
-    render(<Onboarding initial={EMPTY_PROFILE} onFinish={vi.fn()} today="2026-10-13" />)
-    fillAboutYou()
+  it('can be skipped straight to logging', async () => {
+    const { onSkip } = setup()
+    click('Skip setup and start logging')
+    await waitFor(() => expect(onSkip).toHaveBeenCalled())
+  })
+
+  it('needs a health answer, shows doctor notes, and keeps the pace gentle when health calls for it', () => {
+    setup()
+    aboutYou()
     click('Next')
-    expect(screen.getByText('Answer all three to continue.')).toBeTruthy()
-    click('Back')
-    expect((screen.getByLabelText('Your name') as HTMLInputElement).value).toBe('Asha')
+    expect(screen.getByText(/choose “None of these”/)).toBeTruthy()
+    pick('Health conditions', 'An eating disorder, now or in the past')
+    expect(screen.getByRole('note', { name: 'Please talk to your doctor' }).textContent).toMatch(/counsellor/)
+    click('Next')
+    training()
+    pick('Your main goal', 'Lose fat')
+    const paces = within(screen.getByRole('group', { name: 'Pace' })).getAllByRole('button')
+    expect(paces.map((b) => b.textContent)).toEqual(['Gentle'])
   })
 
-  it('shows a doctor note for a yes and saves everything at the end', async () => {
-    const onFinish = vi.fn().mockResolvedValue(undefined)
-    render(<Onboarding initial={EMPTY_PROFILE} onFinish={onFinish} today="2026-10-13" />)
-    fillAboutYou()
-    fillDayAndGoal()
-    expect(screen.getByRole('heading', { name: 'Health check' })).toBeTruthy()
-    click('Start tracking')
-    expect(screen.getByText('Answer each question with yes or no.')).toBeTruthy()
+  it('shows the goal date for a target weight and rejects a target on the wrong side', () => {
+    setup()
+    aboutYou()
+    pick('Health conditions', 'None of these')
+    click('Next')
+    training()
+    pick('Your main goal', 'Lose fat')
+    expect(screen.getByRole('button', { name: 'Steady (recommended)' }).getAttribute('aria-pressed')).toBe('true')
+    type('Target weight (kg, optional)', '66')
+    expect(screen.getByText(/should be below your weight today/)).toBeTruthy()
+    type('Target weight (kg, optional)', '58')
+    expect(screen.getByRole('status', { name: 'Goal date' }).textContent).toMatch(/0\.32 kg a week you’d reach 58 kg in around 19 weeks/)
+  })
 
-    for (const q of HEALTH_QUESTIONS) pick(q.label, q.key === 'diabetes' ? 'Yes' : 'No')
-    const note = screen.getByRole('note', { name: 'Please talk to your doctor' })
-    expect(note.textContent).toMatch(/blood sugar/)
+  it('estimates a typical day, then offers targets the person can accept', async () => {
+    const { onFinish } = setup()
+    aboutYou('Female', '84')
+    pick('Health conditions', 'None of these')
+    click('Next')
+    training()
+    pick('Your main goal', 'Lose fat')
+    type('Target weight (kg, optional)', '58')
+    click('Next')
+    pick('What you eat', 'Jain')
+    pick('Do you fast?', 'Ekadashi')
+    pick('Food allergies', 'Peanuts')
+    click('Next')
+    expect(screen.getByRole('button', { name: 'Skip this step' })).toBeTruthy()
+    for (let i = 0; i < 4; i++) click('More Roti or chapati')
+    click('More Dal')
+    expect(screen.getByRole('status', { name: 'Typical day' }).textContent).toMatch(/about 520 kcal and 22 g protein/)
+    click('Next')
 
-    click('Start tracking')
-    await waitFor(() => expect(onFinish).toHaveBeenCalledTimes(1))
-    const [profile, kg] = onFinish.mock.calls[0]
-    expect(kg).toBe(64.5)
-    expect(profile).toMatchObject({
+    expect(heading()).toBe('Your plan')
+    const targets = screen.getByRole('region', { name: 'Suggested daily targets' })
+    expect(targets.textContent).toMatch(/lose 0\.5 % of your weight a week/)
+    click('Use these targets')
+    await waitFor(() => expect(onFinish).toHaveBeenCalled())
+    const r = onFinish.mock.calls[0][0]
+    expect(r.weightKg).toBe(64)
+    expect(r.waistCm).toBe(84)
+    expect(r.targets.proteinG).toBe(102)
+    expect(r.profile).toMatchObject({
       fullName: 'Asha',
       sex: 'female',
-      birthDate: '1995-06-15',
       heightCm: 160,
       activity: 'desk',
       trainingDays: 3,
       experience: 'beginner',
+      equipment: 'gym',
       goal: 'lose',
-      dietPref: 'veg',
+      goalRate: -0.005,
+      targetWeightKg: 58,
+      dietPref: 'jain',
+      fasting: ['ekadashi'],
+      allergies: ['peanuts'],
+      currentDiet: { counts: { 'tmf:dish:roti': 4, 'tmf:dish:dal-tadka': 1 }, kcal: 520, proteinG: 22 },
     })
-    expect(profile.medical).toMatchObject({ diabetes: true, kidney: false, pregnant: false })
+    expect(r.profile.onboardedAt).toBeTruthy()
+    expect(r.profile.medical).toMatchObject({ diabetes: false, pregnant: false })
   })
 
-  it('skips the pregnancy question for men and drops its answer', async () => {
-    const onFinish = vi.fn().mockResolvedValue(undefined)
-    render(<Onboarding initial={{ ...EMPTY_PROFILE, medical: { pregnant: true } }} onFinish={onFinish} today="2026-10-13" />)
-    fillAboutYou('Male')
-    fillDayAndGoal()
-    expect(screen.queryByRole('group', { name: 'Pregnant or breastfeeding' })).toBeNull()
-    for (const q of HEALTH_QUESTIONS.filter((q) => !q.onlyFor)) pick(q.label, 'No')
-    expect(screen.queryByRole('note')).toBeNull()
-    click('Start tracking')
+  it('lets the person decline the suggestion and set their own', async () => {
+    const { onFinish } = setup()
+    aboutYou('Male')
+    pick('Health conditions', 'None of these')
+    click('Next')
+    training()
+    pick('Your main goal', 'Stay as I am')
+    click('Next')
+    food()
+    click('Skip this step')
+    click('I’ll set my own')
     await waitFor(() => expect(onFinish).toHaveBeenCalled())
-    expect(onFinish.mock.calls[0][0].medical).not.toHaveProperty('pregnant')
+    expect(onFinish.mock.calls[0][0]).toMatchObject({ targets: null, waistCm: null, profile: { currentDiet: null, targetWeightKg: null } })
+    expect(onFinish.mock.calls[0][0].profile.medical).not.toHaveProperty('pregnant')
+  })
+
+  it('offers no weight-loss targets in pregnancy', async () => {
+    const { onFinish } = setup()
+    aboutYou()
+    pick('Health conditions', 'Pregnant or breastfeeding')
+    click('Next')
+    training()
+    pick('Your main goal', 'Lose fat')
+    expect(screen.getByText(/won’t set a weight-loss pace/)).toBeTruthy()
+    click('Next')
+    food()
+    click('Skip this step')
+    expect(screen.queryByRole('region', { name: 'Suggested daily targets' })).toBeNull()
+    click('Start tracking')
+    await waitFor(() => expect(onFinish.mock.calls[0][0].targets).toBeNull())
   })
 
   it('says so when saving fails', async () => {
-    render(<Onboarding initial={EMPTY_PROFILE} onFinish={vi.fn().mockRejectedValue(new Error('offline'))} today="2026-10-13" />)
-    fillAboutYou()
-    fillDayAndGoal()
-    for (const q of HEALTH_QUESTIONS) pick(q.label, 'No')
-    click('Start tracking')
+    setup({ onFinish: vi.fn().mockRejectedValue(new Error('offline')) })
+    aboutYou()
+    pick('Health conditions', 'None of these')
+    click('Next')
+    training()
+    pick('Your main goal', 'Stay as I am')
+    click('Next')
+    food()
+    click('Skip this step')
+    click('Use these targets')
     expect(await screen.findByText(/Couldn’t save/)).toBeTruthy()
   })
 })

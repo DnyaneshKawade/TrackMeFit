@@ -7,8 +7,8 @@ export function memoryTargetStore(userId = 'me', initial: DietTarget[] = []): Ta
     async forDate(date) {
       return targetOn(rows, date)
     },
-    async save(v, startsOn) {
-      const row: DietTarget = { ...v, id: String(rows.length + 1), startsOn, source: 'manual', setBy: userId }
+    async save(v, startsOn, source = 'manual') {
+      const row: DietTarget = { ...v, id: String(rows.length + 1), startsOn, source, setBy: userId }
       rows.push(row)
       return row
     },
@@ -55,10 +55,10 @@ export function supabaseTargetStore(sb: SupabaseClient, userId: string): TargetS
       if (error) throw error
       return data.length ? fromRow(data[0] as DietTargetRow) : null
     },
-    async save(v, startsOn) {
+    async save(v, startsOn, source = 'manual') {
       const { data, error } = await sb
         .from('diet_targets')
-        .insert({ user_id: userId, starts_on: startsOn, kcal: v.kcal, protein_g: v.proteinG, carb_g: v.carbG, fat_g: v.fatG, source: 'manual' })
+        .insert({ user_id: userId, starts_on: startsOn, kcal: v.kcal, protein_g: v.proteinG, carb_g: v.carbG, fat_g: v.fatG, source })
         .select(COLUMNS)
         .single()
       if (error) throw error

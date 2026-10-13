@@ -2,13 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
-## 2026-10-13: Onboarding and progress (T-017, T-022)
+## 2026-10-13: Onboarding, suggested targets and progress (T-017, T-021, T-022)
 
-- New users answer four short steps once, before the app opens: about you (name, sex, date of birth, height, today's weight), your day (activity, workouts a week, lifting experience), your goal and what you eat, and a health check. Any "yes" in the health check shows a plain note to talk to a doctor first. Coaches skip it. Answers go to the existing `profiles` row and today's weight becomes the first weigh-in. If the profile can't load, the app opens anyway.
-- New Progress tab: save or update today's weight, the trend weight (the diet engine's smoothing) with its change over the last week, advice against the goal (for example, losing faster than 1 % a week), a 90-day chart of daily weights and the trend line, recent weigh-ins with remove, and body measurements with the change since the first.
-- No database change: the profile, weigh-in and measurement tables were already in the first migration.
-- Tests: `src/profile/profile.test.ts` (7), `src/profile/Onboarding.test.tsx` (5), `src/progress/progress.test.ts` (16), `src/progress/Progress.test.tsx` (4), `src/App.test.tsx` (4), `src/db/rls.test.ts` (+2); whole suite 226 passing.
-- Open: progress photos and strength trends (T-022b).
+- Researched onboarding in MacroFactor, MyFitnessPal, Noom, Cronometer, Lose It!, HealthifyMe, Fitbod, Carbon, RP and FitNotes; findings and our choices in `docs/onboarding-research.md`.
+- New users see 7 short steps with a progress bar, or can skip to logging (remembered): about you with a live BMI using Indian cut-offs and an optional waist size; a health checklist whose answers change the plan (no weight-loss targets in pregnancy, gentle pace only with an eating disorder, diabetes or kidney disease, protein capped for kidney disease) with doctor notes; training (activity, days, experience, equipment); goal with a pace in % of body weight and a live goal date for an optional target weight; food habits (diet type, no onion or garlic, fasting, allergies); a typical day of eating from tap counts of everyday Indian foods, priced from our food database; and a plan with BMI, maintenance as a range, the goal date and suggested targets with every reason. Targets are saved only if the person taps "Use these targets" (stored as `suggested`); "I'll set my own" leaves them to the person or coach.
+- First weigh-in and waist are saved to progress. Coaches skip onboarding. If the profile can't load, the app opens anyway.
+- New Progress tab: save or update today's weight, the trend weight with its weekly change, advice against the goal (for example, losing faster than 1 % a week), a 90-day chart, recent weigh-ins with remove, and body measurements with the change since the first.
+- Database: `supabase/migrations/20261013100000_onboarding.sql` adds the new profile columns; DK runs it in the SQL Editor before merging.
+- Tests: `src/profile/profile.test.ts` (17), `src/profile/Onboarding.test.tsx` (8), `src/progress/progress.test.ts` (16), `src/progress/Progress.test.tsx` (4), `src/App.test.tsx` (5), `src/db/rls.test.ts` (+2); whole suite 240 passing.
+- Open: progress photos and strength trends (T-022b); using the food habits in search and the food log (T-041).
 
 ## 2026-10-13: Live on Vercel (T-028)
 

@@ -21,32 +21,46 @@ export interface ProfileRow {
   activity: ProfileInfo['activity']
   training_days: number | null
   experience: ProfileInfo['experience']
+  equipment: ProfileInfo['equipment']
   goal: ProfileInfo['goal']
-  diet_pref: ProfileInfo['dietPref']
-  medical: Record<string, boolean> | null
+  goal_rate: number | string | null
   target_weight_kg: number | string | null
-  current_diet: ProfileInfo['currentDiet']
+  diet_pref: ProfileInfo['dietPref']
+  food_rules: string[] | null
+  fasting: string[] | null
   allergies: string[] | null
+  current_diet: ProfileInfo['currentDiet']
+  medical: Record<string, boolean> | null
   other_health: string | null
+  onboarded_at: string | null
 }
 
-const COLUMNS = 'full_name, sex, birth_date, height_cm, activity, training_days, experience, goal, diet_pref, medical, target_weight_kg, current_diet, allergies, other_health'
+const COLUMNS =
+  'full_name, sex, birth_date, height_cm, activity, training_days, experience, equipment, goal, goal_rate, target_weight_kg, ' +
+  'diet_pref, food_rules, fasting, allergies, current_diet, medical, other_health, onboarded_at'
+
+const numOrNull = (v: number | string | null | undefined) => (v === null || v === undefined ? null : Number(v))
 
 export const fromRow = (r: ProfileRow): ProfileInfo => ({
   fullName: r.full_name ?? '',
   sex: r.sex,
   birthDate: r.birth_date,
-  heightCm: r.height_cm === null ? null : Number(r.height_cm),
+  heightCm: numOrNull(r.height_cm),
   activity: r.activity,
   trainingDays: r.training_days,
   experience: r.experience,
+  equipment: r.equipment,
   goal: r.goal,
+  goalRate: numOrNull(r.goal_rate),
+  targetWeightKg: numOrNull(r.target_weight_kg),
   dietPref: r.diet_pref,
-  medical: r.medical ?? {},
-  targetWeightKg: r.target_weight_kg === null || r.target_weight_kg === undefined ? null : Number(r.target_weight_kg),
-  currentDiet: r.current_diet ?? null,
+  foodRules: r.food_rules ?? [],
+  fasting: r.fasting ?? [],
   allergies: r.allergies ?? [],
+  currentDiet: r.current_diet ?? null,
+  medical: r.medical ?? {},
   otherHealth: r.other_health ?? '',
+  onboardedAt: r.onboarded_at,
 })
 
 export const toRow = (p: ProfileInfo): ProfileRow => ({
@@ -57,13 +71,18 @@ export const toRow = (p: ProfileInfo): ProfileRow => ({
   activity: p.activity,
   training_days: p.trainingDays,
   experience: p.experience,
+  equipment: p.equipment,
   goal: p.goal,
-  diet_pref: p.dietPref,
-  medical: p.medical,
+  goal_rate: p.goalRate,
   target_weight_kg: p.targetWeightKg,
-  current_diet: p.currentDiet,
+  diet_pref: p.dietPref,
+  food_rules: p.foodRules,
+  fasting: p.fasting,
   allergies: p.allergies,
+  current_diet: p.currentDiet,
+  medical: p.medical,
   other_health: p.otherHealth.trim(),
+  onboarded_at: p.onboardedAt,
 })
 
 /** The signed-in person's own profile. Every sign-up already has a row,
@@ -73,7 +92,7 @@ export function supabaseProfileStore(sb: SupabaseClient, userId: string): Profil
     async get() {
       const { data, error } = await sb.from('profiles').select(COLUMNS).eq('id', userId).single()
       if (error) throw error
-      return fromRow(data as ProfileRow)
+      return fromRow(data as unknown as ProfileRow)
     },
     async save(p) {
       const { error } = await sb.from('profiles').update(toRow(p)).eq('id', userId)

@@ -12,3 +12,27 @@
 @media (prefers-color-scheme: dark) {
   .doctor-note { background: #2a2214; border-color: #8a6420; }
 }
+.progress-bar { height: 6px; border-radius: 3px; background: #eef2f0; overflow: hidden; margin-top: 8px; }
+.progress-bar span { display: block; height: 100%; background: #0f7a5c; transition: width 0.2s; }
+.onboarding .link.inline { padding: 0; font-size: inherit; text-decoration: underline; }
+.onboarding .info { background: #f1faf6; border-radius: 12px; padding: 10px 12px; margin: 10px 0; }
+.onboarding textarea { font: inherit; padding: 10px; border: 1.5px solid #cdd6d2; border-radius: 10px; resize: vertical; }
+.checklist button { text-align: left; }
+.counters { list-style: none; padding: 0; margin: 8px 0; }
+.counters li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #eef2f0; }
+.counters li > span:first-child { display: grid; }
+.stepper { display: grid; grid-template-columns: 40px 32px 40px; align-items: center; text-align: center; }
+.stepper button { height: 40px; border-radius: 10px; border: 1.5px solid #cdd6d2; background: none; color: inherit; font-size: 20px; cursor: pointer; }
+.stepper button:disabled { opacity: 0.35; }
+.stepper output { font-weight: 700; }
+.plan p { margin: 8px 0; }
+.plan-targets h2 { font-size: 18px; margin: 16px 0 0; }
+.reasons { padding-left: 18px; margin: 4px 0; font-size: 14px; }
+.reasons li { margin: 4px 0; }
+.step-buttons .finish { display: grid; gap: 4px; }
+@media (prefers-color-scheme: dark) {
+  .progress-bar { background: #1f2826; }
+  .onboarding .info { background: #12302a; }
+  .onboarding textarea, .stepper button { background: #161d1b; color: inherit; border-color: #3a4643; }
+  .counters li { border-color: #2c3734; }
+}

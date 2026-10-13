@@ -1,5 +1,5 @@
 // A person's profile from onboarding: what the engines need to know about
-// them, plus the health check.
+// them, their food habits, and the health check.
 
 import type { CurrentDiet } from './currentDiet'
 
@@ -8,6 +8,7 @@ export type Activity = 'desk' | 'on_feet' | 'physical'
 export type Experience = 'beginner' | 'intermediate' | 'advanced'
 export type GoalChoice = 'lose' | 'maintain' | 'gain' | 'recomp'
 export type DietPref = 'veg' | 'eggetarian' | 'nonveg' | 'vegan' | 'jain'
+export type Equipment = 'gym' | 'home' | 'none'
 
 export interface ProfileInfo {
   fullName: string
@@ -17,16 +18,25 @@ export interface ProfileInfo {
   activity: Activity | null
   trainingDays: number | null
   experience: Experience | null
+  equipment: Equipment | null
   goal: GoalChoice | null
-  dietPref: DietPref | null
-  /** Health check answers, e.g. { diabetes: true, kidney: false }. */
-  medical: Record<string, boolean>
+  /** Fraction of body weight per week; negative to lose. */
+  goalRate: number | null
   targetWeightKg: number | null
+  dietPref: DietPref | null
+  /** e.g. ['no_onion_garlic'] */
+  foodRules: string[]
+  /** e.g. ['ekadashi', 'navratri'] */
+  fasting: string[]
+  allergies: string[]
   /** Rough estimate of what they eat now; null if skipped. */
   currentDiet: CurrentDiet | null
-  allergies: string[]
+  /** Health check answers, e.g. { diabetes: true, kidney: false }. */
+  medical: Record<string, boolean>
   /** Other conditions or medicines, in their own words. */
   otherHealth: string
+  /** When onboarding was finished or skipped; null until then. */
+  onboardedAt: string | null
 }
 
 export interface ProfileStore {
@@ -42,28 +52,22 @@ export const EMPTY_PROFILE: ProfileInfo = {
   activity: null,
   trainingDays: null,
   experience: null,
+  equipment: null,
   goal: null,
-  dietPref: null,
-  medical: {},
+  goalRate: null,
   targetWeightKg: null,
-  currentDiet: null,
+  dietPref: null,
+  foodRules: [],
+  fasting: [],
   allergies: [],
+  currentDiet: null,
+  medical: {},
   otherHealth: '',
+  onboardedAt: null,
 }
 
-/** Onboarding is finished once every answer the engines use is filled in. */
-export function isComplete(p: ProfileInfo): boolean {
-  return (
-    p.sex !== null &&
-    p.birthDate !== null &&
-    p.heightCm !== null &&
-    p.activity !== null &&
-    p.trainingDays !== null &&
-    p.experience !== null &&
-    p.goal !== null &&
-    p.dietPref !== null
-  )
-}
+/** Onboarding shows until the person finishes or skips it once. */
+export const isOnboarded = (p: ProfileInfo) => p.onboardedAt !== null
 
 /** Whole years between a yyyy-mm-dd birth date and `today`. */
 export function ageOn(birthDate: string, today: string): number {
@@ -81,6 +85,17 @@ export interface AboutYou {
   birthDate: string
   heightCm: string
   weightKg: string
+  /** Optional. */
+  waistCm: string
+}
+
+const num = (s: string) => (s.trim() ? Number(s) : NaN)
+
+/** Height and weight when both are valid, for the live BMI. */
+export function bodySize(a: AboutYou): { heightCm: number; weightKg: number } | null {
+  const h = num(a.heightCm)
+  const w = num(a.weightKg)
+  return h >= 90 && h <= 250 && w >= 20 && w <= 350 ? { heightCm: h, weightKg: w } : null
 }
 
 /** Checks the first onboarding step. Returns a plain-language message per
@@ -95,17 +110,21 @@ export function checkAboutYou(a: AboutYou, today: string): Partial<Record<keyof 
     if (age < MIN_AGE) errors.birthDate = `Track Me Fit is for people ${MIN_AGE} and older.`
     else if (age > MAX_AGE) errors.birthDate = 'Check the year of birth.'
   }
-  const h = Number(a.heightCm)
-  if (!a.heightCm.trim() || !Number.isFinite(h) || h < 90 || h > 250) errors.heightCm = 'Height should be between 90 and 250 cm.'
-  const w = Number(a.weightKg)
-  if (!a.weightKg.trim() || !Number.isFinite(w) || w < 20 || w > 350) errors.weightKg = 'Weight should be between 20 and 350 kg.'
+  const h = num(a.heightCm)
+  if (!(h >= 90 && h <= 250)) errors.heightCm = 'Height should be between 90 and 250 cm.'
+  const w = num(a.weightKg)
+  if (!(w >= 20 && w <= 350)) errors.weightKg = 'Weight should be between 20 and 350 kg.'
+  if (a.waistCm.trim()) {
+    const waist = num(a.waistCm)
+    if (!(waist >= 30 && waist <= 250)) errors.waistCm = 'Waist should be between 30 and 250 cm, or leave it empty.'
+  }
   return errors
 }
 
 export interface HealthQuestion {
   key: string
   label: string
-  /** What we tell the person when they answer yes. */
+  /** What we tell the person when they tick it. */
   note: string
   onlyFor?: Sex
 }
@@ -122,25 +141,36 @@ export const HEALTH_QUESTIONS: HealthQuestion[] = [
     note: 'Ask your doctor which kinds of training are safe for you before lifting hard.',
   },
   {
-    key: 'kidney',
-    label: 'Kidney disease',
-    note: 'Protein suggestions are kept to 0.8 g per kg of body weight. Ask your doctor for your own limit.',
-  },
-  {
     key: 'thyroid',
     label: 'A thyroid condition',
     note: 'Your weight can shift when your medicine dose changes. Keep your doctor informed.',
   },
   {
+    key: 'pcos',
+    label: 'PCOS',
+    note: 'Steady, moderate fat loss and strength training both help with PCOS. Check your plan with your doctor.',
+    onlyFor: 'female',
+  },
+  {
+    key: 'kidney',
+    label: 'Kidney disease',
+    note: 'Protein suggestions are kept to 0.8 g per kg of body weight. Ask your doctor for your own limit.',
+  },
+  {
     key: 'pregnant',
     label: 'Pregnant or breastfeeding',
-    note: 'Don’t diet to lose weight right now. Follow your doctor’s advice on food and exercise.',
+    note: 'Don’t diet to lose weight right now. We won’t suggest a calorie deficit; follow your doctor’s advice on food and exercise.',
     onlyFor: 'female',
+  },
+  {
+    key: 'glp1',
+    label: 'Weight-loss medicine (like Ozempic or Mounjaro)',
+    note: 'Eat enough protein and keep lifting to protect muscle while on this medicine, and tell your doctor about big diet changes.',
   },
   {
     key: 'eatingDisorder',
     label: 'An eating disorder, now or in the past',
-    note: 'Counting food can make this harder. Please talk to a doctor or counsellor before you start tracking.',
+    note: 'Counting food can make this harder. Please talk to a doctor or counsellor before you start tracking. We’ll keep any weight change gentle.',
   },
   {
     key: 'injury',
@@ -148,6 +178,20 @@ export const HEALTH_QUESTIONS: HealthQuestion[] = [
     note: 'Skip any exercise that hurts and see a doctor or physiotherapist.',
   },
 ]
+
+export const questionsFor = (sex: Sex | null) => HEALTH_QUESTIONS.filter((q) => !q.onlyFor || q.onlyFor === sex)
+
+/** The notes for every ticked condition, in question order. */
+export function healthNotes(medical: Record<string, boolean>, sex: Sex | null): string[] {
+  return questionsFor(sex)
+    .filter((q) => medical[q.key])
+    .map((q) => q.note)
+}
+
+/** Conditions where we never suggest losing weight. */
+export const noDeficit = (medical: Record<string, boolean>) => !!medical.pregnant
+/** Conditions where only the gentlest pace is offered. */
+export const gentleOnly = (medical: Record<string, boolean>) => !!(medical.eatingDisorder || medical.diabetes || medical.kidney)
 
 export const ALLERGIES: [string, string][] = [
   ['milk', 'Milk or lactose'],
@@ -159,13 +203,12 @@ export const ALLERGIES: [string, string][] = [
   ['soy', 'Soy'],
 ]
 
+export const FASTING: [string, string][] = [
+  ['weekly', 'A weekly fast'],
+  ['ekadashi', 'Ekadashi'],
+  ['navratri', 'Navratri'],
+  ['ramadan', 'Ramadan'],
+  ['other', 'Other fasts'],
+]
+
 export const MAX_OTHER_HEALTH = 500
-
-export const questionsFor = (sex: Sex | null) => HEALTH_QUESTIONS.filter((q) => !q.onlyFor || q.onlyFor === sex)
-
-/** The notes for every "yes" answer, in question order. */
-export function healthNotes(medical: Record<string, boolean>, sex: Sex | null): string[] {
-  return questionsFor(sex)
-    .filter((q) => medical[q.key])
-    .map((q) => q.note)
-}
