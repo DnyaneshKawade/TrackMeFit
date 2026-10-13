@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Fix white screen when opening some foods (T-038 follow-up)
+
+- DK: opening some foods from Add food search (packaged products named by barcode, and raw foods) showed a white screen. Cause: the CSV export wrote an empty portions list as `{}` instead of `[]`, so those foods arrived in the database with an object where the app expects a list, and the amount screen crashed.
+- Fixed the export (portions always JSON), re-exported both CSVs, made the app treat a non-list as no portions, and added migration `20261017000000_food_portions_fix.sql` to correct rows already imported.
+- Tests: 2 more in `src/food/exportFoods.test.ts`.
+
 ## 2026-10-13: Plan for more muscle-gain paces (T-059)
 
 - DK: the build-muscle goal shows a beginner only "Lean", so an underweight person sees a target far away. Studied the code and the evidence (Iraki 2019, Garthe 2013, Helms 2023, NHS) and wrote the draft spec `specs/T-059-gain-pace.md`: Lean, Steady, Faster, and Catch up for underweight adults (at most 0.5 kg a week), recommended by experience and BMI, with health and age limits, the extra calories in each note, and a first milestone in the goal date.
