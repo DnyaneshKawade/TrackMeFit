@@ -31,6 +31,7 @@ export default function TodayPlan({
   onTick,
   onRemove,
   onAdd,
+  onChangePlan,
 }: {
   saved: SavedMealPlan
   excluded: Set<DietTag>
@@ -44,6 +45,8 @@ export default function TodayPlan({
   onTick: (add: NewLogEntry[], remove: string[]) => Promise<void>
   onRemove: (id: string) => void
   onAdd: (meal: Meal) => void
+  /** Opens the plan editor (T-061). */
+  onChangePlan?: () => void
 }) {
   const plan = useMemo(() => {
     if (!vegWhy) return saved.plan
@@ -130,6 +133,11 @@ export default function TodayPlan({
             </span>
           </span>
         </label>
+        {onChangePlan && (
+          <button className="link change-plan" onClick={onChangePlan}>
+            Change plan
+          </button>
+        )}
         {plan.notes
           .filter((n) => (vegWhy && n.startsWith(vegWhy)) || n.startsWith('Cereals are'))
           .map((n) => (

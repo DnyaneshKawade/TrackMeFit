@@ -37,7 +37,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-042b | Admin phase 2, food and content (after T-038): food editor, review queue for user-submitted foods, wrong-food reports, exercise library | Approved foods public with reviewer recorded; rejected stay private |
 | T-042c | Admin phase 3, running the app: health numbers from the database, Sentry with personal data scrubbed, feature switches, banners, grievance queue with a 90-day clock | Numbers match a seeded database; no health field reaches Sentry |
 | T-043b | Workout logger, part 2 ([spec](../specs/T-043-workout-logger.md)): supersets, favourite exercises, custom exercises | Logger component tests; custom exercise RLS tests |
-| T-061 | Meal plan from the Food tab: make a new plan or edit the current one with the onboarding screen (swap foods, change amounts, add or remove items, protein check again); useful when targets change | Component tests; saved plan replaces the old one |
 | T-062 | Diet stats: calories and macros per day for the last week and month against targets, days on target, protein streak, most-logged foods, charts | Stats function tests; component tests |
 | T-044 | Records and strength graphs: personal records, rep maxes, estimated 1RM with a rep cap, graphs per exercise, calendar, plate calculator with Indian gym plates | Record and 1RM tests; plate calculator tests |
 | T-045 | Export and import: CSV and JSON for food, workouts and body data; import from Strong, Hevy and FitNotes | Round-trip export/import tests; sample files from each app |
@@ -55,6 +54,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-061 | Change the meal plan from the Food tab ([spec](../specs/T-061-change-plan.md)): "Change plan" on the plan line opens an editor (amount in grams, swap, remove, add a food per meal) with a live check against the targets; "Save plan" saves a new version, "Cancel" keeps the old; "Make a new plan" (and "Make a meal plan" when there is none) builds one from protein picks, current targets, latest weight and usual day; health answers still stop automatic plans | `src/engine/mealPlan.test.ts` (4), `src/log/PlanEditor.test.tsx` (8) |
 | T-063 | Meal plan inside the meals ([spec](../specs/T-063-plan-in-meals.md)): planned items show faded under Breakfast, Lunch, Snacks and Dinner with a tick box; a tick logs them in place as normal entries; each meal header has "Ate all of …"; one plan line above the meals with the size, "N of M eaten" and "Ate the whole plan"; totals count only ticked food | `src/log/TodayPlan.test.tsx` (6 new, 8 updated), `src/log/FoodLog.test.tsx` (3 updated) |
 | T-064 | Simple words across the app ([spec](../specs/T-064-simple-words.md), [rules](../docs/words.md)): everyday words instead of gym and diet terms (average weight, light week, reps left, extra calories, waiting for internet), no idioms, sentences of 20 words or fewer, checked by a test on every change | `src/words.test.ts` (3) |
 | T-001 | Research: market, competitors, RP Strength, FitNotes | n/a (docs) |

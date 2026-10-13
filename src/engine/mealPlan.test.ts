@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_PROTEIN_PER_MEAL_KG, SUGAR_MAX_G, VEG_G, amountHint, buildMealPlan, checkFeasibility, cookedGrams, swapItem, swapOptions, vegDayPlan, type MealPlan, type MealPlanInput } from './mealPlan'
+import { MAX_PROTEIN_PER_MEAL_KG, SUGAR_MAX_G, VEG_G, amountHint, buildMealPlan, checkFeasibility, cookedGrams, swapItem, swapOptions, vegDayPlan, addItem, planCheck, removeItem, setItemGrams, tidyPlan, MAX_PLAN_GRAMS, type MealPlan, type MealPlanInput } from './mealPlan'
 import { PLAN_FOODS_BY_ID, PROTEIN_PICKS, planFoodsFor, typicalDayToBase } from '../profile/planFoods'
 import { excludedTags } from '../profile/dietRules'
 
@@ -177,5 +177,54 @@ describe('non-veg-free day plan (T-058c)', () => {
     const day = vegDayPlan(usual, nonveg, none, [], 'You made today a veg day')
     expect(items(day).some((i) => i.foodId === 'tmf:ing:chicken')).toBe(false)
     expect(day.notes.some((n) => /^You made today a veg day, so .* is left out/.test(n))).toBe(true)
+  })
+})
+
+describe('changing a plan by hand (T-061)', () => {
+  const plan = buildMealPlan(asha)
+  const food = (id: string) => PLAN_FOODS_BY_ID.get(id)!
+  const sum = (p: MealPlan) => Math.round(p.meals.reduce((t, m) => t + m.items.reduce((s, i) => s + i.macros.kcal, 0), 0))
+
+  it('1. changes an amount, keeps totals in step, and marks the item as changed', () => {
+    const lunch = plan.meals.find((m) => m.name === 'Lunch')!
+    const changed = setItemGrams(plan, 'Lunch', 0, lunch.items[0].grams * 2, asha.foods)
+    const item = changed.meals.find((m) => m.name === 'Lunch')!.items[0]
+    expect(item.grams).toBe(lunch.items[0].grams * 2)
+    expect(item.macros.kcal).toBeCloseTo(lunch.items[0].macros.kcal * 2, 0)
+    expect(item.reason).toMatch(/^You changed this\./)
+    expect(Math.round(changed.totals.kcal)).toBe(sum(changed))
+    expect(setItemGrams(plan, 'Lunch', 0, 99999, asha.foods).meals.find((m) => m.name === 'Lunch')!.items[0].grams).toBe(MAX_PLAN_GRAMS)
+    // Above the usual daily amount: allowed, with a note.
+    const rice = setItemGrams(plan, 'Lunch', lunch.items.findIndex((i) => i.foodId === 'tmf:ing:rice'), 400, asha.foods)
+    expect(rice.meals.find((m) => m.name === 'Lunch')!.items.find((i) => i.foodId === 'tmf:ing:rice')!.reason).toMatch(/More than the usual \d+ g raw a day\./)
+  })
+
+  it('1. removes an item and adds a food, merging with the same food in that meal', () => {
+    const snack = plan.meals.find((m) => m.name === 'Snack')!
+    const fewer = removeItem(plan, 'Snack', 0)
+    expect(fewer.meals.find((m) => m.name === 'Snack')!.items).toHaveLength(snack.items.length - 1)
+    expect(Math.round(fewer.totals.kcal)).toBe(sum(fewer))
+    const banana = food('usda:173944')
+    const more = addItem(fewer, 'Snack', banana)
+    const added = more.meals.find((m) => m.name === 'Snack')!.items.find((i) => i.foodId === banana.id)!
+    expect(added.grams).toBeGreaterThan(0)
+    const twice = addItem(more, 'Snack', banana, 50)
+    expect(twice.meals.find((m) => m.name === 'Snack')!.items.filter((i) => i.foodId === banana.id)).toHaveLength(1)
+    expect(twice.meals.find((m) => m.name === 'Snack')!.items.find((i) => i.foodId === banana.id)!.grams).toBe(added.grams + 50)
+  })
+
+  it('1. an emptied meal is dropped on save; adding to a missing meal puts it back in order', () => {
+    let p = plan
+    while (p.meals.find((m) => m.name === 'Snack')!.items.length) p = removeItem(p, 'Snack', 0)
+    expect(tidyPlan(p).meals.map((m) => m.name)).toEqual(['Breakfast', 'Lunch', 'Dinner'])
+    const back = addItem(tidyPlan(p), 'Snack', food('tmf:ing:curd'))
+    expect(back.meals.map((m) => m.name)).toEqual(['Breakfast', 'Lunch', 'Snack', 'Dinner'])
+  })
+
+  it('2. the check says in plain words how far the day is from the targets', () => {
+    const t = { kcal: 2000, proteinG: 100, fatG: 60, carbG: 250 }
+    expect(planCheck({ ...t, kcal: 2050, proteinG: 103 }, t)).toBe('This plan is close to your targets.')
+    expect(planCheck({ ...t, kcal: 1700, proteinG: 80 }, t)).toBe('This plan has 300 kcal less than your target. It has 20 g less protein than your target.')
+    expect(planCheck({ ...t, proteinG: 130 }, t)).toBe('This plan has 30 g more protein than your target.')
   })
 })

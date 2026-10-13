@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Change the meal plan from the Food tab (T-061)
+
+- DK asked for a way to make a new plan or change the current one after signup. Spec `specs/T-061-change-plan.md`.
+- "Change plan" on the plan line opens an editor, meal by meal: change an amount in grams, swap a food, remove it, or add a food. The day's kcal and protein update at once, with a check like "This plan has 300 kcal less than your target." Changed items say "You changed this."
+- "Save plan" saves a new version (the Food tab uses it from today; ticks already made stay as entries). "Cancel" keeps the old plan. A failed save keeps the editor open.
+- "Make a new plan", and "Make a meal plan" when there is no plan and targets are set, use the signup protein picks with today's targets, the latest weight (asked for if none) and the usual day. Health answers that stop automatic plans still do; changing by hand is allowed.
+- Engine: `setItemGrams`, `removeItem`, `addItem`, `tidyPlan` and `planCheck` in `src/engine/mealPlan.ts`, pure, with plain reasons. Editor loads on its own (1.9 KB); main bundle 127.8 KB.
+- Tests: 4 in `src/engine/mealPlan.test.ts`, 8 in `src/log/PlanEditor.test.tsx`.
+
 ## 2026-10-13: Meal plan inside the meals (T-063)
 
 - DK asked why the plan sat in its own box above the meals. Spec `specs/T-063-plan-in-meals.md`.

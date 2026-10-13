@@ -5,7 +5,8 @@ import { AddFood } from './AddFood'
 import { TargetsForm } from '../targets/TargetsForm'
 import { remaining, type DietTarget, type TargetStore, type TargetValues } from '../targets/types'
 import { localDate, MEALS, shiftDate, totals, type LogEntry, type LogStore, type Meal, type NewLogEntry } from './types'
-import type { DietPref } from '../profile/types'
+import { noAutoMealPlan, type DietPref } from '../profile/types'
+import type { DietTag } from '../food/types'
 import type { MealPlanStore, SavedMealPlan } from '../profile/mealPlanStore'
 import { SyncNote } from '../sync/SyncNote'
 import { useSync } from '../sync/useSync'
@@ -15,12 +16,18 @@ import { EntryRow, MealSection } from './MealSection'
 import './log.css'
 
 const TodayPlan = lazy(() => import('./TodayPlan'))
+const PlanEditor = lazy(() => import('./PlanEditor'))
+const noWeight = () => Promise.resolve(null)
 
 /** The person's diet answers, for non-veg-free days and the meal plan. */
 export interface DietAnswers {
   dietPref: DietPref | null
   foodRules: string[]
   allergies: string[]
+  /** The usual day from signup, for a new meal plan (T-061). */
+  currentDiet?: { counts: Record<string, number> } | null
+  /** Health answers: some mean a doctor or coach should plan meals. */
+  medical?: Record<string, boolean>
 }
 
 // "Make today a veg day" and "I’m eating non-veg today" are a per-device
@@ -58,6 +65,7 @@ export function FoodLog({
   userId,
   diet,
   mealPlans,
+  latestWeight = noWeight,
   today = localDate(),
 }: {
   store: LogStore
@@ -69,6 +77,8 @@ export function FoodLog({
   userId?: string
   diet?: DietAnswers
   mealPlans?: MealPlanStore | null
+  /** The latest weight, for a new meal plan; null when none is logged. */
+  latestWeight?: () => Promise<number | null>
   today?: string
 }) {
   const [date, setDate] = useState(today)
@@ -84,6 +94,7 @@ export function FoodLog({
   const custom = foodStore ?? fallbackFoods
   const allFoods = useMemo(() => (index ? withMine(index, myFoods ?? []) : null), [index, myFoods])
   const [saved, setSaved] = useState<SavedMealPlan | null>(null)
+  const [planning, setPlanning] = useState(false)
   const [choice, setChoice] = useState<DayChoice>(() => readChoice(date))
   // Entries waiting on the phone to sync (T-027).
   const sync = store.sync
@@ -97,6 +108,7 @@ export function FoodLog({
     () => dayExcluded(diet ? excludedTags(diet.dietPref, diet.foodRules, diet.allergies) : new Set(), vegReason !== null),
     [diet, vegReason],
   )
+  const dietExcluded = useMemo(() => (diet ? excludedTags(diet.dietPref, diet.foodRules, diet.allergies) : new Set<DietTag>()), [diet])
   const nonvegNote = vegWhy ? `${vegWhy}. ${excluded.has('dairy') ? 'Dal or soya' : 'Paneer, dal or soya'} would fit instead. It’s your choice.` : null
 
   useEffect(() => {
@@ -211,6 +223,28 @@ export function FoodLog({
     )
   }
 
+  if (planning && mealPlans) {
+    return (
+      <main className="log">
+        <Suspense fallback={<p className="muted">Loading…</p>}>
+          <PlanEditor
+            saved={saved}
+            targets={target ? { kcal: target.kcal, proteinG: target.proteinG, carbG: target.carbG, fatG: target.fatG } : null}
+            excluded={dietExcluded}
+            blocked={!!diet?.medical && noAutoMealPlan(diet.medical)}
+            counts={diet?.currentDiet?.counts ?? {}}
+            loadWeight={latestWeight}
+            onSave={async (plan, picks) => {
+              setSaved(await mealPlans.save(plan, picks))
+              setPlanning(false)
+            }}
+            onClose={() => setPlanning(false)}
+          />
+        </Suspense>
+      </main>
+    )
+  }
+
   if (adding) {
     return (
       <main className="log">
@@ -277,6 +311,11 @@ export function FoodLog({
           )}
         </p>
       )}
+      {!saved && mealPlans && target && (
+        <button className="set-targets" onClick={() => setPlanning(true)}>
+          Make a meal plan
+        </button>
+      )}
       {error && <p className="error" role="alert">{error}</p>}
       <SyncNote sync={sync} noun={['entry', 'entries']} />
       {entries === null && <p className="muted">Loading…</p>}
@@ -294,6 +333,7 @@ export function FoodLog({
               onTick={tick}
               onRemove={(id) => void remove(id)}
               onAdd={openAdd}
+              onChangePlan={mealPlans ? () => setPlanning(true) : undefined}
             />
           </Suspense>
         ) : (
