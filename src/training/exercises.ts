@@ -104,7 +104,60 @@ export const EXERCISES: Exercise[] = [
   ex('plank', 'Plank (seconds as reps)', 'abs', [], 'bodyweight', true),
 ]
 
+/** Built-in and the person's own exercises by id (T-043b). */
 export const exerciseById = new Map(EXERCISES.map((e) => [e.id, e]))
+
+let custom: Exercise[] = []
+
+/** Makes the person's own exercises known everywhere (search, plans, logs). */
+export function setCustomExercises(list: Exercise[]) {
+  for (const e of custom) exerciseById.delete(e.id)
+  custom = list
+  for (const e of list) exerciseById.set(e.id, e)
+}
+
+/** The person's own exercises first, then the built-in library. */
+export const allExercises = () => (custom.length ? [...custom, ...EXERCISES] : EXERCISES)
+
+export const EQUIPMENT_NAMES: Record<Equipment, string> = {
+  barbell: 'Barbell',
+  dumbbell: 'Dumbbell',
+  machine: 'Machine',
+  cable: 'Cable',
+  bodyweight: 'Body weight',
+  smith: 'Smith machine',
+  kettlebell: 'Kettlebell',
+}
+
+export interface NewExercise {
+  name: string
+  primary: Muscle
+  equipment: Equipment
+  isolation: boolean
+}
+
+export const MAX_EXERCISE_NAME = 80
+
+/** An own exercise with the usual weight jump for its equipment. */
+export const customExercise = (id: string, e: NewExercise): Exercise => ({
+  id,
+  name: e.name,
+  aliases: [],
+  primary: e.primary,
+  secondary: [],
+  equipment: e.equipment,
+  isolation: e.isolation,
+  increment: INC[e.equipment],
+})
+
+/** Why a new exercise can't be saved, or null when it can. */
+export function checkNewExercise(name: string, list: Exercise[] = allExercises()): string | null {
+  const n = name.trim()
+  if (!n) return 'Give the exercise a name.'
+  if (n.length > MAX_EXERCISE_NAME) return `Use up to ${MAX_EXERCISE_NAME} letters.`
+  const same = list.find((e) => norm(e.name) === norm(n))
+  return same ? `${same.name} is already in the list.` : null
+}
 
 export const MUSCLE_NAMES: Record<Muscle, string> = {
   chest: 'Chest', back: 'Back', quads: 'Quads', hamstrings: 'Hamstrings', glutes: 'Glutes', sideDelts: 'Side delts',
@@ -114,7 +167,7 @@ export const MUSCLE_NAMES: Record<Muscle, string> = {
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 
 /** Name, alias or muscle search; every word must match the start of a word. */
-export function searchExercises(query: string, list = EXERCISES): Exercise[] {
+export function searchExercises(query: string, list = allExercises()): Exercise[] {
   const tokens = norm(query).split(' ').filter(Boolean)
   if (!tokens.length) return list
   return list.filter((e) => {

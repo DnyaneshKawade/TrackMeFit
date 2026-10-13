@@ -1,5 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { localDate } from '../log/types'
+import type { ExerciseLibrary } from './ExercisePicker'
+import type { ExerciseStore } from './exerciseStore'
+import { allExercises, customExercise, setCustomExercises } from './exercises'
 import { PlanEditor } from './PlanEditor'
 import { blockWeek, weekLabel } from './progression'
 import { ReviewView } from './ReviewView'
@@ -16,15 +19,24 @@ type View =
   | { kind: 'session'; session: Session }
   | { kind: 'start' }
 
-export function Workouts({ store, today = localDate() }: { store: WorkoutStore; today?: string }) {
+export function Workouts({ store, exercises, today = localDate() }: { store: WorkoutStore; exercises?: ExerciseStore; today?: string }) {
   const [plans, setPlans] = useState<Plan[] | null>(null)
+  const [favourites, setFavourites] = useState<Set<string>>(new Set())
   const [sessions, setSessions] = useState<Session[]>([])
   const [view, setView] = useState<View>({ kind: 'home' })
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
-      const [p, s] = await Promise.all([store.plans(), store.sessionsOn(today)])
+      // Own exercises and favourites are extras: without them the log still works.
+      const [p, s, own, favs] = await Promise.all([
+        store.plans(),
+        store.sessionsOn(today),
+        exercises ? exercises.custom().catch(() => null) : null,
+        exercises ? exercises.favourites().catch(() => null) : null,
+      ])
+      if (own) setCustomExercises(own.map((x) => customExercise(x.id, x)))
+      if (favs) setFavourites(new Set(favs))
       setPlans(p)
       setSessions(s)
       setError(null)
@@ -32,7 +44,33 @@ export function Workouts({ store, today = localDate() }: { store: WorkoutStore; 
       setPlans([])
       setError('Couldn’t load your workouts. Check your connection.')
     }
-  }, [store, today])
+  }, [store, exercises, today])
+
+  const library = useMemo<ExerciseLibrary | undefined>(
+    () =>
+      exercises && {
+        favourites,
+        async setFavourite(id, on) {
+          const next = new Set(favourites)
+          if (on) next.add(id)
+          else next.delete(id)
+          setFavourites(next)
+          try {
+            await exercises.setFavourite(id, on)
+          } catch (err) {
+            setFavourites(favourites)
+            throw err
+          }
+        },
+        async addCustom(e) {
+          const row = await exercises.addCustom(e)
+          const saved = customExercise(row.id, row)
+          setCustomExercises([saved, ...allExercises().filter((x) => x.id.startsWith('custom:'))])
+          return saved
+        },
+      },
+    [exercises, favourites],
+  )
 
   useEffect(() => {
     void load()
@@ -61,6 +99,7 @@ export function Workouts({ store, today = localDate() }: { store: WorkoutStore; 
     return (
       <main className="log">
         <PlanEditor
+          library={library}
           initial={view.plan}
           onClose={() => setView({ kind: 'home' })}
           onSave={async (p) => {
@@ -96,6 +135,7 @@ export function Workouts({ store, today = localDate() }: { store: WorkoutStore; 
           session={view.session}
           planned={dayOf(view.session.planDayId)?.exercises ?? []}
           block={blockOf(planOf(view.session.planDayId))}
+          library={library}
           onClose={back}
         />
       </main>

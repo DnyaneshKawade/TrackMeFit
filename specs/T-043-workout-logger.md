@@ -1,6 +1,6 @@
 # T-043: Workout logger to FitNotes standard
 
-Status: agreed for T-043a (DK, 13 Oct 2026: "go by best possible approach, proceed")
+Status: T-043a built (DK, 13 Oct 2026: "go by best possible approach, proceed"); T-043b agreed (DK, 13 Oct 2026: "yes")
 Task: [T-043](../tasks/TASKS.md)
 
 ## Problem
@@ -36,6 +36,25 @@ supersets, favourites and custom exercises.
 8. Given no connection, then tags, set notes and workout notes wait and sync
    like sets do (T-027).
 
+## Acceptance criteria (T-043b)
+9. Given two exercises next to each other, when the person taps "Superset
+   with next" on the first, then they show together as a superset. In a
+   plan the link is saved with the plan, and a workout from that plan starts
+   with it.
+10. Given a superset, when a set of the first exercise is logged, then no
+    rest timer starts and the screen says "Now do Lat pulldown". When the
+    last exercise of the superset is logged, the rest timer starts with the
+    longest rest of the group.
+11. Given the exercise list, when the person taps the star next to an
+    exercise, then it is a favourite: favourites show first, under
+    "Favourites", and stay after the app is closed. Tapping again removes it.
+12. Given no exercise matches, or "+ New exercise", when the person enters a
+    name, the main muscle, the equipment and whether it works one joint,
+    then the exercise is saved and added. It can be searched, put in plans,
+    logged and counted for its muscle like the built-in ones.
+13. Given a new exercise with no name, or a name already in the list, then
+    it is not saved and the person sees why.
+
 ## Rules and reasons
 - One tag per set: warm-up, drop set or failure. Reps in reserve stays the
   effort measure (RPE is 10 minus RIR, so we don't ask twice).
@@ -45,6 +64,11 @@ supersets, favourites and custom exercises.
 - The timer runs from the clock time the set was logged, so it stays right
   if the phone sleeps or the screen changes.
 - Notes are short: 200 characters for a set, 500 for a workout.
+- A superset is done one set of each in turn, so the rest comes after the
+  last exercise. The longest rest of the group is used, so a big lift
+  still gets its full rest.
+- A new exercise gets the usual weight jump and rest time of its equipment
+  and type, like the built-in ones.
 
 ## Data and privacy
 - Migration `20261019000000_set_tags_notes.sql`: `set_logs.tag` (warmup,
@@ -54,14 +78,28 @@ supersets, favourites and custom exercises.
 - Notes are private like the rest of the log; a coach with access can read
   them as they can read sets.
 
+- (T-043b) Migration `20261020000000_exercise_library.sql`:
+  `custom_exercises` gains `equipment`, `isolation` and `created_at`, with a
+  check on the muscle; new table `favourite_exercises (user_id,
+  exercise_id)`; `plan_exercises.superset_next`. Own exercises and
+  favourites: the person writes, their active coach can read. Indexed by
+  owner. Custom exercise ids are `custom:<uuid>`.
+
 ## Edge cases
 - Timer running when the workout is closed: it stops.
 - Weight at 0 (bodyweight): − does nothing.
 - A note with only spaces is not saved.
 
-## Out of scope (T-043b)
-- Supersets, favourites, custom exercises.
+- Saving a favourite or a new exercise offline fails with a message; logging
+  sets still works offline.
+- A superset link on the last exercise does nothing; removing an exercise
+  from a plan ends its link.
+
+## Out of scope
 - Editing a set after it is logged (remove and log again).
+- Editing or deleting your own exercises (later).
+- Giant sets of more than two are allowed by linking, but have no special
+  screen.
 
 ## Tests
 | Criterion | Test file |
@@ -71,3 +109,8 @@ supersets, favourites and custom exercises.
 | 5 | `src/training/training.test.ts` |
 | 8 | `src/training/offlineStore.test.ts` |
 | Data | `src/db/rls.test.ts` |
+| 9, 10, 11, 12, 13 | `src/training/Workouts.test.tsx` ("logger (T-043b)") |
+| 10 | `src/training/restTimer.test.ts` |
+| 12, 13 | `src/training/training.test.ts` |
+| 9 (saved) | `src/training/training.test.ts` (planFromRow) |
+| Data (T-043b) | `src/db/rls.test.ts` ("exercise library (T-043b)") |

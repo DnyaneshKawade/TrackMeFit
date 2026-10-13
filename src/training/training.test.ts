@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { LANDMARKS } from '../engine/training'
-import { EXERCISES, exerciseById, searchExercises } from './exercises'
+import { EXERCISES, checkNewExercise, customExercise, exerciseById, searchExercises, setCustomExercises } from './exercises'
+import { customFromRow } from './exerciseStore'
 import { memoryWorkoutStore } from './memoryStore'
 import { planFromRow } from './supabaseStore'
 import { checkPlan, checkSet, describeSets, nextDayIndex, suggestNext, workingSets, type Plan, type SetLog } from './types'
@@ -133,5 +134,57 @@ describe('set tags (T-043a)', () => {
     expect(workingSets(last.sets).map((s) => s.setIndex)).toEqual([1, 2, 3])
     // A session of only warm-ups gives no suggestion.
     expect(suggestNext([{ performedOn: 'a', sets: [warm] }], bench, [6, 10])).toBeNull()
+  })
+})
+
+describe('own exercises and supersets (T-043b)', () => {
+  it('12. an own exercise gets the usual jump, is searched and found by id, and can be replaced', () => {
+    const own = customExercise('custom:1', { name: 'Landmine press', primary: 'sideDelts', equipment: 'barbell', isolation: false })
+    expect(own).toMatchObject({ increment: 2.5, aliases: [], secondary: [] })
+    expect(customExercise('custom:2', { name: 'Neck', primary: 'traps', equipment: 'machine', isolation: true }).increment).toBe(5)
+    setCustomExercises([own])
+    expect(searchExercises('landmine').map((e) => e.id)).toEqual(['custom:1'])
+    expect(exerciseById.get('custom:1')?.name).toBe('Landmine press')
+    setCustomExercises([])
+    expect(exerciseById.has('custom:1')).toBe(false)
+    expect(searchExercises('landmine')).toEqual([])
+  })
+
+  it('13. a new exercise needs a new name of up to 80 letters', () => {
+    expect(checkNewExercise('  ')).toBe('Give the exercise a name.')
+    expect(checkNewExercise('x'.repeat(81))).toBe('Use up to 80 letters.')
+    expect(checkNewExercise('bench PRESS (barbell)')).toBe('Bench press (barbell) is already in the list.')
+    expect(checkNewExercise('Landmine press')).toBeNull()
+  })
+
+  it('12. reads own exercises from database rows', () => {
+    expect(customFromRow({ id: 'u1', name: 'Neck curl', primary_muscle: 'traps', equipment: 'machine', isolation: true })).toEqual({
+      id: 'custom:u1',
+      name: 'Neck curl',
+      primary: 'traps',
+      equipment: 'machine',
+      isolation: true,
+    })
+  })
+
+  it('9. reads the superset link from plan rows', () => {
+    const p = planFromRow({
+      id: 'p',
+      name: 'Upper',
+      hard_weeks: 4,
+      block_started_on: '2026-10-01',
+      plan_days: [
+        {
+          id: 'd1',
+          day_index: 0,
+          name: 'Upper',
+          plan_exercises: [
+            { position: 0, exercise_id: 'bench-press', sets: 3, rep_min: 6, rep_max: 10, superset_next: true },
+            { position: 1, exercise_id: 'db-row', sets: 3, rep_min: 8, rep_max: 12, superset_next: false },
+          ],
+        },
+      ],
+    })
+    expect(p.days[0].exercises.map((e) => e.supersetNext)).toEqual([true, undefined])
   })
 })

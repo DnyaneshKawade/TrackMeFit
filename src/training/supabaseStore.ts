@@ -23,7 +23,7 @@ interface PlanRow {
   name: string
   hard_weeks: number
   block_started_on: string
-  plan_days: { id: string; day_index: number; name: string; plan_exercises: { position: number; exercise_id: string; sets: number; rep_min: number; rep_max: number }[] }[]
+  plan_days: { id: string; day_index: number; name: string; plan_exercises: { position: number; exercise_id: string; sets: number; rep_min: number; rep_max: number; superset_next?: boolean }[] }[]
 }
 
 export const planFromRow = (r: PlanRow): Plan => ({
@@ -39,7 +39,7 @@ export const planFromRow = (r: PlanRow): Plan => ({
       name: d.name,
       exercises: [...d.plan_exercises]
         .sort((a, b) => a.position - b.position)
-        .map((e) => ({ exerciseId: e.exercise_id, sets: e.sets, repMin: e.rep_min, repMax: e.rep_max })),
+        .map((e) => ({ exerciseId: e.exercise_id, sets: e.sets, repMin: e.rep_min, repMax: e.rep_max, ...(e.superset_next ? { supersetNext: true } : {}) })),
     })),
 })
 
@@ -55,7 +55,7 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): Workou
       const rows = check(
         await sb
           .from('workout_plans')
-          .select('id, name, hard_weeks, block_started_on, plan_days(id, day_index, name, plan_exercises(position, exercise_id, sets, rep_min, rep_max))')
+          .select('id, name, hard_weeks, block_started_on, plan_days(id, day_index, name, plan_exercises(position, exercise_id, sets, rep_min, rep_max, superset_next))')
           .eq('user_id', userId)
           .eq('is_active', true)
           .order('created_at'),
@@ -79,7 +79,16 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): Workou
         check(await sb.from('plan_exercises').delete().eq('day_id', dayId))
         check(
           await sb.from('plan_exercises').insert(
-            d.exercises.map((e, position) => ({ day_id: dayId, position, exercise_id: e.exerciseId, sets: e.sets, rep_min: e.repMin, rep_max: e.repMax })),
+            d.exercises.map((e, position) => ({
+              day_id: dayId,
+              position,
+              exercise_id: e.exerciseId,
+              sets: e.sets,
+              rep_min: e.repMin,
+              rep_max: e.repMax,
+              // The last exercise has nothing to link to.
+              superset_next: !!e.supersetNext && position < d.exercises.length - 1,
+            })),
           ),
         )
       }
