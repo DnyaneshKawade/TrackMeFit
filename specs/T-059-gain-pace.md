@@ -87,9 +87,26 @@ Recommended:
 - Target at or below today's weight: existing message.
 - Missing experience: no paces, as today.
 
+## Catch up to Steady (T-059c)
+Catch up is for reaching a healthy weight; after that, a slower pace keeps
+more of the gain as muscle.
+
+1. Given someone on Catch up whose trend weight has reached a healthy BMI for
+   their height, when they open Progress, then a card suggests Steady with
+   the reason, the kg a week, and how many kcal a day less (and the calorie
+   target before and after, when one is set).
+2. Given they are still underweight, then nothing is suggested.
+3. Given any other pace or goal, or no trend yet, then nothing is suggested.
+4. Given "Switch to Steady", then the pace changes to Steady and, when a
+   calorie target is set, a new target starts today with that many fewer
+   calories (protein and fat kept, carbs give way), marked as suggested.
+   Without a target only the pace changes. Nothing changes without the tap.
+5. Given "Not now", then the card stays hidden on this phone for two weeks.
+
+The trend weight (not one day's scale weight) decides, so a salty dinner
+doesn't trigger it.
+
 ## Out of scope
-- Suggesting a switch to Steady from the Progress tab when someone on Catch up
-  reaches a healthy BMI (T-059c).
 - Fat-loss paces.
 
 ## Tests
@@ -98,6 +115,8 @@ Recommended:
 | 1 to 9, 11, 12 | `src/profile/profile.test.ts`, `src/engine/diet.test.ts` |
 | 10 | `src/profile/profile.test.ts` |
 | 1, 3, 6, 10, 11 | `src/profile/Onboarding.test.tsx` |
+| T-059c 1 to 4 | `src/profile/profile.test.ts` ("Catch up to Steady") |
+| T-059c 4, 5 | `src/progress/Progress.test.tsx` ("Catch up to Steady") |
 
 ## Sources
 - Iraki et al. 2019, Sports 7(7):154, bodybuilding off-season nutrition.

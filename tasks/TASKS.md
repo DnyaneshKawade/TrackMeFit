@@ -48,13 +48,13 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-054 | End-to-end tests in a real browser (Playwright) against the preview link: sign in, log food, log a set | E2E suite in CI |
 | T-055 | Automated accessibility checks (lint rules and axe in component tests) | Lint in CI; axe assertions |
 | T-056 | Versions and a changelog built from `tasks/LOG.md` | Release script test |
-| T-059c | Progress tab: when someone on Catch up reaches a healthy BMI, suggest switching to Steady, applied only on their OK | `src/progress/progress.test.ts` |
 
 ## Done
 
 | ID | Task | Tests |
 |---|---|---|
 | T-001 | Research: market, competitors, RP Strength, FitNotes | n/a (docs) |
+| T-059c | Catch up to Steady ([spec](../specs/T-059-gain-pace.md)): when someone on Catch up reaches a healthy trend weight, Progress suggests Steady with the reason and the calories it lowers; "Switch to Steady" changes the pace and, if a target is set, starts a lower one today (carbs give way); "Not now" hides it for two weeks | `src/profile/profile.test.ts` (4), `src/progress/Progress.test.tsx` (2) |
 | T-060 | Tick off the meal plan ([spec](../specs/T-060-tick-plan.md)): a tick box on each plan item, meal and the whole plan on the Food tab; a tick logs the planned amount, an untick removes only what the tick made (entries keep their plan item, migration `20261018000000_food_log_plan_item.sql`); part-ticked meals; change the amount of a ticked item; veg-day items on veg days; works offline and on any date; "N of M eaten" in the plan heading | `src/log/TodayPlan.test.tsx` (8), `src/log/log.test.ts` (2), `src/log/offlineStore.test.ts` (1), `src/db/rls.test.ts` (1) |
 | T-027b | Offline workouts ([spec](../specs/T-027-offline-logging.md)): workouts, sets, removals and how-did-it-feel answers work without a connection, sets marked "Not synced yet" with a count; the workout goes before its sets; saved once; a refused workout drops its sets; last plans, viewed days, exercise history and review answers kept per account for the gym. Food and workouts now share one outbox (`src/sync/outbox.ts`), which also fixed a sync call being missed just as another ended | `src/training/offlineStore.test.ts` (10), `src/training/Workouts.test.tsx` (1), `src/sync/outbox.test.ts` (1), `src/db/rls.test.ts` (1) |
 | T-027a | Offline food logging ([spec](../specs/T-027-offline-logging.md)): adds and removals work without a connection, shown as "Not synced yet" with a count; sent in order when the phone is back online, the app opens or returns to the front; saved once even if sent twice (id made on the phone); refused entries dropped and reported; last 14 viewed days and recent foods kept per account; viewed days cleared on sign-out | `src/log/offlineStore.test.ts` (12), `src/log/FoodLog.test.tsx` (2), `src/db/rls.test.ts` (1) |

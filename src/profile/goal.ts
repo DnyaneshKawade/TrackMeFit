@@ -18,10 +18,11 @@ import {
   type Macros,
 } from '../engine/diet'
 import { shiftDate } from '../log/types'
+import { NORMAL_BMI } from './steady'
 import { ageOn, gentleOnly, noDeficit, type Activity, type Experience, type GoalChoice, type ProfileInfo } from './types'
 
-/** Indian adult cut-offs: normal is 18.5 to 22.9. */
-export const NORMAL_BMI = { min: 18.5, max: 22.9 }
+/** Indian adult cut-offs: normal is 18.5 to 22.9 (kept in ./steady). */
+export { NORMAL_BMI }
 
 const BAND_WORDS: Record<BmiBand, string> = {
   under: 'underweight',
@@ -259,3 +260,4 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
   reasons.push('Fat is about a quarter of calories; carbs fill the rest.')
   return { maintenance, intakeNote, timeline, suggested, reasons }
 }
+

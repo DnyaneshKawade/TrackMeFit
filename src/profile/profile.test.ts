@@ -3,6 +3,7 @@ import { catalogue } from '../food/catalogueData'
 import { amountFor } from '../food/types'
 import { ALL_DIET_ITEMS, PORTION_GRAMS, checkCustom, describeDiet, estimateDiet, extraFromFood } from './currentDiet'
 import { bmiResult, buildPlan, checkTargetWeight, goalTimeline, paceOptions, recommendedPace, waistNote, type PaceBody } from './goal'
+import { steadySwitch } from './steady'
 import { fromRow, memoryProfileStore, toRow } from './stores'
 import { EMPTY_PROFILE, ageOn, bodySize, checkAboutYou, healthNotes, isOnboarded, questionsFor, type ProfileInfo } from './types'
 
@@ -271,5 +272,37 @@ describe('gain paces (T-059)', () => {
   it('12. gain is capped at 1 % a week, and the plan says how many extra calories it adds', () => {
     const plan = buildPlan({ ...asha, goal: 'gain', goalRate: 0.005, experience: 'beginner' }, 50, TODAY)
     expect(plan.reasons[0]).toBe('Calories are set to gain 0.5 % of your weight a week, about 280 kcal a day above what you burn.')
+  })
+})
+
+describe('Catch up to Steady (T-059c)', () => {
+  const onCatchUp: ProfileInfo = { ...EMPTY_PROFILE, goal: 'gain', experience: 'beginner', heightCm: 170, goalRate: 0.01 }
+  const target = { kcal: 2600, proteinG: 120, carbG: 330, fatG: 70 }
+
+  it('1. suggests Steady once the trend reaches a healthy weight, with the lower calories', () => {
+    // 170 cm: healthy from 54 kg.
+    const s = steadySwitch(onCatchUp, 54.5, target)!
+    expect(s.rate).toBe(0.005)
+    expect(s.healthyMinKg).toBe(54)
+    expect(s.kcalLess).toBe(300)
+    expect(s.target).toEqual({ kcal: 2300, proteinG: 120, fatG: 70, carbG: 298 })
+    expect(s.message).toMatch(/trend weight is 54.5 kg.*from 54 kg.*Catch up has done its job.*about 300 kcal a day less: 2,600 to 2,300 kcal/)
+  })
+
+  it('2. says nothing while still underweight', () => {
+    expect(steadySwitch(onCatchUp, 53.9, target)).toBeNull()
+  })
+
+  it('3. says nothing on other paces or goals, or without a trend', () => {
+    expect(steadySwitch({ ...onCatchUp, goalRate: 0.0075 }, 60, target)).toBeNull()
+    expect(steadySwitch({ ...onCatchUp, goalRate: 0.005 }, 60, target)).toBeNull()
+    expect(steadySwitch({ ...onCatchUp, goal: 'lose', goalRate: -0.005 }, 60, target)).toBeNull()
+    expect(steadySwitch(onCatchUp, null, target)).toBeNull()
+  })
+
+  it('4. without a calorie target, only the pace changes', () => {
+    const s = steadySwitch(onCatchUp, 55, null)!
+    expect(s.target).toBeNull()
+    expect(s.message).toMatch(/about 310 kcal a day less\.$/)
   })
 })

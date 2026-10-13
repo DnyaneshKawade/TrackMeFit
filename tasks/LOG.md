@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Catch up to Steady (T-059c)
+
+- Someone gaining on Catch up now gets a card on the Progress tab once their trend weight reaches a healthy BMI: Catch up has done its job, Steady keeps more of the gain as muscle, and it says how many calories a day less (2,600 to 2,300 kcal, for example).
+- "Switch to Steady" saves the new pace and, when a calorie target is set, starts a lower target today with protein and fat kept. "Not now" hides the card on that phone for two weeks. Nothing changes without the tap.
+- The check lives in `src/profile/steady.ts`, apart from the onboarding code, so the main bundle stays at 137.6 of 140 KB.
+- Tests: 4 in `src/profile/profile.test.ts`, 2 in `src/progress/Progress.test.tsx`.
+
 ## 2026-10-13: Tick off the meal plan (T-060)
 
 - The meal plan on the Food tab now has a tick box on each item, each meal and "Ate the whole plan". A tick logs the planned amount under the matching meal; an untick removes only the entry the tick made, never food added by hand. A meal shows part-ticked when some of it is eaten, and the plan heading says "5 of 12 eaten".

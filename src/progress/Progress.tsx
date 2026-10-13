@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { localDate } from '../log/types'
-import type { GoalChoice } from '../profile/types'
+import { localDate, shiftDate } from '../log/types'
+import { steadySwitch, type PaceSwitch } from '../profile/steady'
+import type { GoalChoice, ProfileInfo } from '../profile/types'
+import type { DietTarget, TargetStore, TargetValues } from '../targets/types'
 import {
   MEASURE_FIELDS,
   checkMeasurement,
@@ -97,7 +99,65 @@ function MeasurementForm({
 }
 
 /** Weigh-ins, the trend and body measurements. */
-export function Progress({ store, goal, today = localDate() }: { store: ProgressStore; goal: GoalChoice | null; today?: string }) {
+/** "Not now" on the Steady suggestion hides it on this phone for two weeks. */
+const LATER_KEY = 'tmf:steady-later'
+const readLater = () => {
+  try {
+    return localStorage.getItem(LATER_KEY)
+  } catch {
+    return null
+  }
+}
+
+function SteadyCard({ suggestion, onSwitch, onLater }: { suggestion: PaceSwitch; onSwitch: () => Promise<void>; onLater: () => void }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const yes = async () => {
+    setBusy(true)
+    try {
+      await onSwitch()
+    } catch {
+      setError('Couldn’t switch. Check your connection and try again.')
+      setBusy(false)
+    }
+  }
+  return (
+    <section className="suggest-card" aria-label="Switch to Steady">
+      <h3>Time to switch to Steady?</h3>
+      <p>{suggestion.message}</p>
+      <p className="muted">Nothing changes unless you switch. You can change your pace or targets again any time.</p>
+      <div className="actions">
+        <button className="primary" disabled={busy} onClick={() => void yes()}>Switch to Steady</button>
+        <button className="link" disabled={busy} onClick={onLater}>Not now</button>
+      </div>
+      {error && <p className="error" role="alert">{error}</p>}
+    </section>
+  )
+}
+
+export function Progress({
+  store,
+  goal,
+  profile,
+  targets,
+  onSwitchPace,
+  today = localDate(),
+}: {
+  store: ProgressStore
+  goal: GoalChoice | null
+  /** For the Catch up to Steady suggestion (T-059c). */
+  profile?: ProfileInfo | null
+  targets?: TargetStore
+  /** Saves the new pace, and the lower calorie target when there is one. */
+  onSwitchPace?: (rate: number, target: TargetValues | null) => Promise<void>
+  today?: string
+}) {
+  const [target, setTarget] = useState<DietTarget | null>(null)
+  const [later, setLater] = useState(() => readLater())
+  useEffect(() => {
+    if (!targets) return
+    targets.forDate(today).then(setTarget, () => setTarget(null))
+  }, [targets, today])
   const [weighIns, setWeighIns] = useState<WeighIn[] | null>(null)
   const [measurements, setMeasurements] = useState<Measurement[]>([])
   const [weight, setWeight] = useState('')
@@ -163,6 +223,8 @@ export function Progress({ store, goal, today = localDate() }: { store: Progress
   const hasToday = weighIns.some((w) => w.date === today)
   const changes = measurementChanges(measurements)
   const recent = [...weighIns].reverse().slice(0, 7)
+  const hidden = later !== null && later > shiftDate(today, -14)
+  const steady = profile && onSwitchPace && !hidden ? steadySwitch(profile, summary?.trendKg ?? null, target) : null
 
   return (
     <main className="log progress">
@@ -190,6 +252,21 @@ export function Progress({ store, goal, today = localDate() }: { store: Progress
           {note && <p>{note}</p>}
           <p className="muted">Daily weight jumps with water and salt. The trend smooths that out, so go by the trend.</p>
         </section>
+      )}
+
+      {steady && (
+        <SteadyCard
+          suggestion={steady}
+          onSwitch={() => onSwitchPace!(steady.rate, steady.target)}
+          onLater={() => {
+            try {
+              localStorage.setItem(LATER_KEY, today)
+            } catch {
+              // Hidden for this visit only.
+            }
+            setLater(today)
+          }}
+        />
       )}
 
       <WeightChartView weighIns={weighIns} />

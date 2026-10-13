@@ -186,7 +186,20 @@ export function AppShell({
         />
       )}
       {tab === 'training' && <Workouts store={workouts!} />}
-      {tab === 'progress' && <Progress store={progress!} goal={profile?.goal ?? null} />}
+      {tab === 'progress' && (
+        <Progress
+          store={progress!}
+          goal={profile?.goal ?? null}
+          profile={profile}
+          targets={targets}
+          onSwitchPace={async (rate, target) => {
+            const p = { ...profile!, goalRate: rate }
+            await profiles!.save(p)
+            if (target && targets) await targets.save(target, localDate(), 'suggested')
+            setProfile(p)
+          }}
+        />
+      )}
     </>
   )
 }
