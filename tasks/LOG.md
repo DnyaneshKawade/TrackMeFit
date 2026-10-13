@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-14: Competitor study and planning details (T-050)
+
+- DK asked whether top Indian and international competitors were researched well, then for FITTR, the RP Strength engine, FitNotes and similar apps in depth, and all details needed for planning. Wrote the [Competitor Study](https://claude.ai/code/artifact/4637175c-d094-4c40-80be-e4826de7c0b3): Indian apps (FITTR, HealthifyMe, Cult.fit, Fitelo, Sugar.fit and others), nutrition apps (MyFitnessPal, MacroFactor, Cronometer, Lose It!, Noom, Carbon), workout loggers (FitNotes in depth, Strong, Hevy, JEFIT, Liftosaur and others), coaching software (Trainerize, TrueCoach, Everfit, Kahunas, Indian tools), the RP engine compared with ours, a side-by-side table, a gaps 2x2, and planning details (priorities, data, free model and costs, risks).
+- Added T-043 to T-049 and updated T-018c, T-022b, T-026 and T-038 from the findings. Suggested order: T-038, T-043/T-044, T-027, T-026 with T-042a.
+- Limits: Reddit was blocked from the research environment, some prices come from competitors' blogs, and India App Store prices are not labelled by plan.
+- Tests: none (task list only).
+
 ## 2026-10-14: Admin dashboard plan (T-042)
 
 - DK asked for an admin dashboard to manage the whole app: update all data, manage the application and other admin features. Researched comparable apps, Supabase admin patterns and India's DPDP Act, and wrote the [Admin Dashboard Plan](https://claude.ai/code/artifact/8810062d-8117-486a-8550-1d59ff91c52a): an `/admin` area in the app, built in three phases (T-042a safe access, T-042b food and content after T-038, T-042c running the app), with open questions for DK.
