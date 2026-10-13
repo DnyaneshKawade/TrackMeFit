@@ -45,3 +45,15 @@
 @media (prefers-color-scheme: dark) {
   .add-panel { border-color: #3a4643; }
 }
+
+.meal-plan { margin-top: 18px; }
+.meal-plan h2 { font-size: 18px; margin: 0 0 4px; }
+.plan-meal h3 { font-size: 16px; margin: 14px 0 4px; }
+.plan-items { list-style: none; padding: 0; margin: 0; }
+.plan-items li { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 8px 0; border-bottom: 1px solid #dfe5e2; font-size: 14px; }
+.plan-items .reason { display: block; margin-top: 2px; }
+.item-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.item-actions select { font: inherit; font-size: 13px; padding: 4px; border-radius: 8px; }
+@media (prefers-color-scheme: dark) {
+  .plan-items li { border-color: #2c3734; }
+}

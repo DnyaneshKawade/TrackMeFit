@@ -311,3 +311,72 @@ describe('diet rules (T-057)', () => {
     expect(onFinish.mock.calls[0][0].profile.currentDiet.counts).toEqual({ 'tmf:dish:roti': 1 })
   })
 })
+
+describe('suggested day of meals (T-058b)', () => {
+  const toPlan = (health = 'None of these') => {
+    const r = setup()
+    aboutYou()
+    pick('Health conditions', health)
+    click('Next')
+    training()
+    pick('Your main goal', 'Stay as I am')
+    click('Next')
+    food()
+    for (let i = 0; i < 4; i++) click('More Roti or chapati')
+    click('More Dal')
+    click('More Rice (cooked)')
+    click('Next')
+    return r
+  }
+  const plan = () => screen.getByRole('region', { name: 'Meal plan' })
+
+  it('1. asks first, and “Not now” keeps nothing', async () => {
+    const { onFinish } = toPlan()
+    expect(await screen.findByRole('heading', { name: 'Want us to suggest a day of meals?' })).toBeTruthy()
+    click('Not now')
+    expect(plan().textContent).toMatch(/No problem/)
+    click('Use these targets')
+    await waitFor(() => expect(onFinish).toHaveBeenCalled())
+    expect(onFinish.mock.calls[0][0].mealPlan).toBeNull()
+  })
+
+  it('2, 4, 10, 14. picks protein foods by diet, shows raw grams with a cooked view and swaps, and saves only on “Use this plan”', async () => {
+    const { onFinish } = toPlan()
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes, suggest a plan' }))
+    const picks = screen.getByRole('group', { name: 'Protein foods you like' })
+    expect(within(picks).queryByRole('button', { name: 'Eggs' })).toBeNull()
+    expect(within(picks).queryByRole('button', { name: 'Chicken' })).toBeNull()
+    pick('Protein foods you like', 'Paneer')
+    pick('Protein foods you like', 'Curd and milk')
+    pick('Protein foods you like', 'Dal, chana and rajma')
+    expect(screen.getByRole('status', { name: 'Protein check' })).toBeTruthy()
+
+    const lunch = screen.getByRole('region', { name: 'Lunch' })
+    expect(lunch.textContent).toMatch(/Rice\D*\d+ g raw, about \d+ g cooked/)
+    const cookedRice = within(lunch).getByRole('button', { name: /^Cooked weight for Rice/ })
+    fireEvent.click(cookedRice)
+    expect(cookedRice.getAttribute('aria-pressed')).toBe('true')
+    expect(lunch.textContent).toMatch(/Rice\D*about \d+ g cooked/)
+
+    const swap = within(lunch).getByRole('combobox', { name: /^Swap Toor dal/ })
+    fireEvent.change(swap, { target: { value: 'tmf:ing:paneer' } })
+    expect(within(screen.getByRole('region', { name: 'Lunch' })).getByText(/Swapped in for toor dal/)).toBeTruthy()
+    expect(screen.getByRole('status', { name: 'Plan total' }).textContent).toMatch(/kcal and \d+ g protein/)
+    expect(plan().textContent).toMatch(/only suggestions, based on nutrition research/)
+    expect(onFinish).not.toHaveBeenCalled()
+
+    click('Use this plan')
+    expect(plan().textContent).toMatch(/will be saved when you finish/)
+    click('Use these targets')
+    await waitFor(() => expect(onFinish).toHaveBeenCalled())
+    const saved = onFinish.mock.calls[0][0].mealPlan
+    expect(saved.picks).toContain('tmf:ing:paneer')
+    expect(saved.plan.meals.find((m: { name: string }) => m.name === 'Lunch').items.some((i: { foodId: string }) => i.foodId === 'tmf:ing:paneer')).toBe(true)
+  })
+
+  it('13. offers no automatic plan when the health check says to see a doctor', async () => {
+    toPlan('Diabetes or pre-diabetes')
+    await waitFor(() => expect(plan().textContent).toMatch(/we don’t make an automatic meal plan/))
+    expect(screen.queryByRole('button', { name: 'Yes, suggest a plan' })).toBeNull()
+  })
+})

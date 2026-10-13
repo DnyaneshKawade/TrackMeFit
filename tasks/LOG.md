@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Meal plan screens (T-058b)
+
+- "Your plan" now asks "Want us to suggest a day of meals?" under the targets. Yes shows the protein foods the diet allows in plain words (no eggs or chicken for a vegetarian); picking them builds the plan live with the T-058a engine. If the picks can't reach the protein target, the app says how close they get and offers diet-appropriate additions or "Use N g protein instead".
+- Each meal lists its foods in raw or dry grams with the cooked hint; a Cooked button per item switches to cooked weight, and Swap changes an item for another food (same protein for protein foods, same calories otherwise, within limits). The plan total, notes and DK's suggestion note are shown. Nothing is kept until "Use this plan", and it is saved when setup finishes.
+- New table `meal_plans` (migration `20261015000000_meal_plans.sql`): readable and writable by the person or their active coach, recording who saved each plan. Picks are stored on the plan row. If saving the plan fails, setup still finishes.
+- No automatic plan for kidney disease, pregnancy, diabetes, an eating disorder or GLP-1 medicine; the screen suggests a coach or doctor instead.
+- The plan screen is a separate 6.7 KB chunk loaded only when shown; the main bundle is 138.7 of 140 KB.
+- Tests: 3 in `src/profile/Onboarding.test.tsx`, 4 swap and cooked-weight tests in `src/engine/mealPlan.test.ts`, 1 in `src/db/rls.test.ts`, 1 in `src/profile/mealPlanStore.test.ts`.
+- Left open: the migration needs to run on the live database; the saved plan is not yet shown after setup (it appears with the food log work); T-058c next.
+
 ## 2026-10-13: Meal plan engine (T-058a)
 
 - DK agreed the meal-plan spec and limits ("start with the appropriate tasks"). Built `src/engine/mealPlan.ts`, a pure engine: it turns the typical day into raw foods, keeps them within each food's per-meal and per-day limit, fills the protein gap with the foods the person picked (more of what they already eat first), fits fat and then calories with their own cereals, adds ICMR basics (400 g vegetables, 100 g fruit, oil near 27 g per 2,000 kcal, sugar at most 25 g), and splits the day into breakfast, lunch, snack and dinner with no meal above 0.55 g protein per kg. Vegetarian lunch and dinner pair a cereal with dal, dairy or soya. Every item has a reason; amounts are raw or dry grams with a cooked or piece hint ("about 230 g cooked", "about 3 roti").

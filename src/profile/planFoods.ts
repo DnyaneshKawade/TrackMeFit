@@ -13,7 +13,7 @@ const f = (x: PlanFood) => x
 export const PLAN_FOODS: PlanFood[] = [
   // Cereals
   f({ id: 'tmf:ing:atta', name: 'Atta (for roti)', group: 'cereal', weighed: 'dry', per100g: { kcal: 340, proteinG: 13.21, carbG: 71.97, fatG: 2.5 },
-    piece: { grams: 30, one: 'roti', many: 'roti' }, maxPerMealG: 90, maxPerDayG: 180, tags: [] }),
+    cookedFactor: 1.33, piece: { grams: 30, one: 'roti', many: 'roti' }, maxPerMealG: 90, maxPerDayG: 180, tags: [] }),
   f({ id: 'tmf:ing:rice', name: 'Rice', group: 'cereal', weighed: 'raw', per100g: { kcal: 365, proteinG: 7.13, carbG: 79.95, fatG: 0.66 },
     cookedFactor: 3, maxPerMealG: 100, maxPerDayG: 150, meals: ['Lunch', 'Dinner'], tags: [] }),
   f({ id: 'usda:173904', name: 'Oats', group: 'cereal', weighed: 'dry', per100g: { kcal: 379, proteinG: 13.15, carbG: 67.7, fatG: 6.52 },
@@ -22,9 +22,9 @@ export const PLAN_FOODS: PlanFood[] = [
     maxPerMealG: 60, maxPerDayG: 80, meals: ['Breakfast'], tags: [] }),
   // Pulses
   f({ id: 'tmf:ing:toor-dal', name: 'Toor dal', group: 'pulse', weighed: 'dry', per100g: { kcal: 343, proteinG: 21.7, carbG: 62.78, fatG: 1.49 },
-    piece: { grams: 25, one: 'katori cooked dal', many: 'katori cooked dal' }, maxPerMealG: 50, maxPerDayG: 100, tags: [] }),
+    cookedFactor: 6, piece: { grams: 25, one: 'katori cooked dal', many: 'katori cooked dal' }, maxPerMealG: 50, maxPerDayG: 100, tags: [] }),
   f({ id: 'tmf:ing:moong-dal', name: 'Moong dal', group: 'pulse', weighed: 'dry', per100g: { kcal: 347, proteinG: 23.86, carbG: 62.62, fatG: 1.15 },
-    piece: { grams: 25, one: 'katori cooked dal', many: 'katori cooked dal' }, maxPerMealG: 50, maxPerDayG: 100, tags: [] }),
+    cookedFactor: 6, piece: { grams: 25, one: 'katori cooked dal', many: 'katori cooked dal' }, maxPerMealG: 50, maxPerDayG: 100, tags: [] }),
   f({ id: 'tmf:ing:chana', name: 'Chana (chickpeas)', group: 'pulse', weighed: 'dry', per100g: { kcal: 378, proteinG: 20.47, carbG: 62.95, fatG: 6.04 },
     cookedFactor: 2.5, maxPerMealG: 50, maxPerDayG: 100, tags: [] }),
   f({ id: 'tmf:ing:rajma', name: 'Rajma', group: 'pulse', weighed: 'dry', per100g: { kcal: 337, proteinG: 22.53, carbG: 61.29, fatG: 1.06 },

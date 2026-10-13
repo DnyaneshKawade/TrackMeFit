@@ -75,6 +75,7 @@ export interface Feasibility {
 }
 
 export interface MealPlan {
+  targets: Macros
   meals: Meal[]
   totals: Macros
   feasibility: Feasibility
@@ -286,10 +287,10 @@ export function buildMealPlan(input: MealPlanInput): MealPlan {
 
   const totals = totalsOf(day, byId)
   const feasibility = feasibilityOf(input, totals.proteinG)
-  const onTarget = Math.abs(totals.kcal - targets.kcal) <= targets.kcal * 0.05 && Math.abs(totals.proteinG - targets.proteinG) <= 5
+  const onTarget = isOnTarget(totals, targets)
   if (totals.kcal > targets.kcal * 1.05) notes.push('Even at small amounts these foods go over your calories; try leaner protein picks.')
 
-  return { meals: splitMeals(day, byId, why, weightKg), totals, feasibility, onTarget, notes: [...new Set(notes)] }
+  return { targets, meals: splitMeals(day, byId, why, weightKg), totals, feasibility, onTarget, notes: [...new Set(notes)] }
 }
 
 /** Spreads the day over four meals: cereals and vegetables with the main
@@ -383,7 +384,55 @@ export function splitMeals(day: Day, byId: Map<string, PlanFood>, why: Map<strin
   }).filter((m) => m.items.length)
 }
 
+const isOnTarget = (totals: Macros, targets: Macros) =>
+  Math.abs(totals.kcal - targets.kcal) <= targets.kcal * 0.05 && Math.abs(totals.proteinG - targets.proteinG) <= 5
+
+/** Foods an item can be swapped for: any protein food for a protein food,
+ * otherwise the same group (one cereal for another). */
+export function swapOptions(from: PlanFood, foods: PlanFood[]): PlanFood[] {
+  const protein = PROTEIN_GROUPS.includes(from.group)
+  return foods.filter((f) => f.id !== from.id && (protein ? PROTEIN_GROUPS.includes(f.group) : f.group === from.group))
+}
+
+/** Swaps one item for another food: the same protein for protein foods, the
+ * same calories otherwise, within the new food's limits. Totals update; the
+ * person sees the change before accepting anything. */
+export function swapItem(plan: MealPlan, meal: MealName, fromId: string, to: PlanFood, foods: PlanFood[]): MealPlan {
+  const byId = new Map(foods.map((f) => [f.id, f]))
+  const from = byId.get(fromId)
+  const target = plan.meals.find((m) => m.name === meal)
+  const item = target?.items.find((i) => i.foodId === fromId)
+  if (!from || !target || !item) return plan
+  const usedElsewhere = plan.meals.flatMap((m) => m.items).filter((i) => i.foodId === to.id && !(i === item)).reduce((sum, i) => sum + i.grams, 0)
+  const inThisMeal = target.items.find((i) => i.foodId === to.id)?.grams ?? 0
+  const protein = PROTEIN_GROUPS.includes(from.group)
+  const want = protein ? (item.macros.proteinG / to.per100g.proteinG) * 100 : (item.macros.kcal / to.per100g.kcal) * 100
+  const grams = Math.max(step(to), Math.min(roundTo(to, want), floorTo(to, to.maxPerMealG - inThisMeal), floorTo(to, to.maxPerDayG - usedElsewhere)))
+  const merged = inThisMeal + grams
+  const swapped: PlanItem = {
+    foodId: to.id,
+    name: to.name,
+    grams: merged,
+    weighed: to.weighed,
+    hint: amountHint(to, merged),
+    macros: macrosFor(to, merged),
+    reason: `Swapped in for ${from.name.toLowerCase()}.` + (to.standIn ? ` Values from ${to.standIn} until we have an Indian label.` : ''),
+  }
+  const meals = plan.meals.map((m) => {
+    if (m !== target) return m
+    const items = m.items.filter((i) => i.foodId !== fromId && i.foodId !== to.id)
+    items.splice(Math.max(0, m.items.indexOf(item)), 0, swapped)
+    return { ...m, items, macros: items.reduce((t, i) => add(t, i.macros), ZERO) }
+  })
+  const totals = meals.reduce((t, m) => add(t, m.macros), ZERO)
+  return { ...plan, meals, totals, onTarget: isOnTarget(totals, plan.targets) }
+}
+
 /** Grams of protein per meal the evidence suggests for this weight. */
 export const proteinPerMeal = (weightKg: number) => ({ aim: round1(PROTEIN_PER_MEAL_KG * weightKg), max: round1(MAX_PROTEIN_PER_MEAL_KG * weightKg) })
 
 export { MAIN_MEALS }
+
+/** Cooked weight for a raw amount, to the nearest 10 g, when known. */
+export const cookedGrams = (f: PlanFood, grams: number): number | null =>
+  f.cookedFactor ? Math.round((grams * f.cookedFactor) / 10) * 10 : null

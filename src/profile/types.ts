@@ -190,6 +190,10 @@ export function healthNotes(medical: Record<string, boolean>, sex: Sex | null): 
 
 /** Conditions where we never suggest losing weight. */
 export const noDeficit = (medical: Record<string, boolean>) => !!medical.pregnant
+/** Conditions where we don't build an automatic meal plan: a doctor or coach
+ * should plan meals (spec T-058, criterion 13). */
+export const noAutoMealPlan = (medical: Record<string, boolean>) =>
+  !!(medical.kidney || medical.pregnant || medical.diabetes || medical.eatingDisorder || medical.glp1)
 /** Conditions where only the gentlest pace is offered. */
 export const gentleOnly = (medical: Record<string, boolean>) => !!(medical.eatingDisorder || medical.diabetes || medical.kidney)
 
@@ -212,3 +216,7 @@ export const FASTING: [string, string][] = [
 ]
 
 export const MAX_OTHER_HEALTH = 500
+
+/** Shown with every suggested number. */
+export const SUGGESTION_NOTE =
+  'Please note: these numbers are only suggestions, based on nutrition research. They are not medical advice. You decide whether to follow them. If you have a health problem, are pregnant, or take regular medicine, talk to your doctor first.'

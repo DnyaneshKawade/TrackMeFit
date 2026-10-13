@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
+import { Suspense, lazy, useMemo, useState } from 'react'
 import type { Macros } from '../engine/diet'
 import { localDate } from '../log/types'
 import type { SearchIndex } from '../food/search'
 import { allowedExtras, dietItemsFor, estimateDiet, type DietExtra } from './currentDiet'
 import { NONVEG_OFF_DAYS, NONVEG_OFF_SEASONS, NO_ONION_GARLIC, cleanRules, excludedTags, hasNonvegOff, isNonvegOff } from './dietRules'
 import { TypicalDay } from './TypicalDay'
+import type { AcceptedMealPlan } from './MealPlanStep'
 import { bmiResult, buildPlan, checkTargetWeight, goalTimeline, paceOptions, waistNote } from './goal'
 import {
   ALLERGIES,
@@ -13,7 +14,9 @@ import {
   bodySize,
   checkAboutYou,
   healthNotes,
+  noAutoMealPlan,
   noDeficit,
+  SUGGESTION_NOTE,
   questionsFor,
   type AboutYou,
   type Activity,
@@ -33,7 +36,14 @@ export interface OnboardingResult {
   waistCm: number | null
   /** Suggested targets the person accepted; null if they'll set their own. */
   targets: Macros | null
+  /** A suggested meal plan the person chose to use, saved with the targets. */
+  mealPlan: AcceptedMealPlan | null
 }
+
+export { SUGGESTION_NOTE }
+
+// The meal plan screen and engine download only when the plan step shows.
+const MealPlanStep = lazy(() => import('./MealPlanStep'))
 
 const ACTIVITY: [Activity, string][] = [
   ['desk', 'Mostly sitting'],
@@ -118,10 +128,6 @@ function Multi({
   )
 }
 
-/** Shown with every suggested number. */
-export const SUGGESTION_NOTE =
-  'Please note: these numbers are only suggestions, based on nutrition research. They are not medical advice. You decide whether to follow them. If you have a health problem, are pregnant, or take regular medicine, talk to your doctor first.'
-
 const fmt = (n: number) => n.toLocaleString('en-IN')
 
 /** First-run questions in short steps, ending with a plan the person can
@@ -161,6 +167,7 @@ export function Onboarding({
   const [missing, setMissing] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [mealPlan, setMealPlan] = useState<AcceptedMealPlan | null>(null)
 
   const patch = (x: Partial<ProfileInfo>) => setP((old) => ({ ...old, ...x }))
   // The typical day only shows and counts foods the diet allows.
@@ -220,6 +227,8 @@ export function Onboarding({
         weightKg,
         waistCm: about.waistCm.trim() ? Number(about.waistCm) : null,
         targets,
+        // A plan is built on the suggested targets, so it is kept only with them.
+        mealPlan: targets ? mealPlan : null,
       })
     } catch {
       setSaveError('Couldn’t save. Check your connection and try again.')
@@ -501,6 +510,19 @@ export function Onboarding({
               <p className="muted">Have a coach or your own numbers? Choose “I’ll set my own” and enter them on the Food tab.</p>
               <p className="muted disclaimer">{SUGGESTION_NOTE}</p>
             </section>
+          ) : null}
+          {plan.suggested ? (
+            <Suspense fallback={<p className="muted">Loading…</p>}>
+              <MealPlanStep
+                targets={plan.suggested}
+                weightKg={weightKg}
+                counts={diet.counts}
+                excluded={excluded}
+                blocked={noAutoMealPlan(p.medical)}
+                accepted={mealPlan}
+                onAccept={setMealPlan}
+              />
+            </Suspense>
           ) : (
             <p className="info">{plan.reasons[0]}</p>
           )}
