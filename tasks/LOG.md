@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-13: Live on Supabase (T-037)
+
+- DK created the Supabase project (Mumbai) and ran the migration. All 13 tables respond, and a test sign-up (`+test` address) created its profile through the signup trigger.
+- Email and Google sign-in are switched on; the Site URL is `http://localhost:5173` until the Vercel deploy (T-028).
+- The Project URL and anon key go in `.env.local` (never committed). Still to try: DK signs in with Google once in the app.
+
 ## 2026-10-12: Food log (T-018)
 
 - After sign-in the app opens on today's food log: Breakfast, Lunch, Snacks and Dinner with calories per meal and day totals for calories, protein, carbs and fat. Arrows move to earlier days (never the future).

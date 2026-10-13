@@ -16,7 +16,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Waiting on |
 |---|---|---|
-| T-037 | Go live on Supabase: project created, keys in `.env.local`; check the migration ran and try a real sign-up | Network access to `*.supabase.co` from Claude's workspace (DK) |
 | T-010 | Import IFCT 2017 Indian foods | Permission from ICMR-NIN |
 | T-011 | Import Indian Nutrient Databank recipes | Licence answer from the INDB authors |
 | T-012 | USDA search through our server | USDA API key from data.gov (DK) |
@@ -62,5 +61,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-013 | Sign-in screens: email, Google, password reset, user or coach | `src/auth/SignIn.test.tsx` (13) |
 | T-014 | Data model and privacy rules (users, coaches, food, progress, training) | `src/db/rls.test.ts` (17), run in PGlite |
 | T-030 | Load USDA values for our ingredients: 26 of 28 matched, 22 of 25 dishes computed | `src/food/indian/database.test.ts` (6) |
+| T-037 | Go live on Supabase: project in Mumbai, migration run, keys in `.env.local`, email and Google sign-in on | Live check: 13 tables respond, test sign-up created a profile |
 | T-018 | Food log: day view by meal, search 7,567 foods, log by grams or portions, remove, move between days | `src/log/log.test.ts` (7), `src/log/FoodLog.test.tsx` (7), `src/food/search.test.ts` (7) |
 | T-029 | Recipe calculator, raw-to-cooked converter, USDA extract script | `src/food/recipe.test.ts`, `src/food/indian/resolve.test.ts` |
