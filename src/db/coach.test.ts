@@ -269,3 +269,13 @@ describe('program templates (T-026g)', () => {
     ])
   })
 })
+
+describe('live chat (T-026h)', () => {
+  it('1. chat messages are sent to open chats by Supabase Realtime', async () => {
+    const t7 = await createTestDb()
+    const rows = await t7.db
+      .query<{ tablename: string }>(`select tablename from pg_publication_tables where pubname = 'supabase_realtime'`)
+      .then((r) => r.rows.map((x) => x.tablename))
+    expect(rows).toContain('chat_messages')
+  })
+})
