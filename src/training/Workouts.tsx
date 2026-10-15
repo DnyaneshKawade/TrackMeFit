@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { localDate } from '../log/types'
 import type { ExerciseLibrary } from './ExercisePicker'
 import type { ExerciseStore } from './exerciseStore'
-import { allExercises, customExercise, setCustomExercises } from './exercises'
+import { customExercise, customExercises, setCustomExercises, type Exercise } from './exercises'
 import { PlanEditor } from './PlanEditor'
 import { blockWeek, weekLabel } from './progression'
 import { RecordsView } from './RecordsView'
@@ -20,6 +20,11 @@ type View =
   | { kind: 'session'; session: Session }
   | { kind: 'start' }
   | { kind: 'records' }
+
+/** Swaps one own exercise in the list known to search, plans and logs. */
+function replaceCustom(id: string, change: (e: Exercise) => Exercise) {
+  setCustomExercises(customExercises().map((x) => (x.id === id ? change(x) : x)))
+}
 
 export function Workouts({ store, exercises, today = localDate() }: { store: WorkoutStore; exercises?: ExerciseStore; today?: string }) {
   const [plans, setPlans] = useState<Plan[] | null>(null)
@@ -67,8 +72,23 @@ export function Workouts({ store, exercises, today = localDate() }: { store: Wor
         async addCustom(e) {
           const row = await exercises.addCustom(e)
           const saved = customExercise(row.id, row)
-          setCustomExercises([saved, ...allExercises().filter((x) => x.id.startsWith('custom:'))])
+          setCustomExercises([saved, ...customExercises()])
           return saved
+        },
+        async updateCustom(id, e) {
+          const row = await exercises.updateCustom(id, e)
+          const saved = customExercise(row.id, row)
+          replaceCustom(id, () => saved)
+          return saved
+        },
+        async setHidden(id, hidden) {
+          await exercises.setHidden(id, hidden)
+          replaceCustom(id, (x) => {
+            const copy = { ...x }
+            if (hidden) copy.hidden = true
+            else delete copy.hidden
+            return copy
+          })
         },
       },
     [exercises, favourites],

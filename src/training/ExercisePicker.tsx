@@ -7,12 +7,27 @@ export interface ExerciseLibrary {
   favourites: Set<string>
   setFavourite: (id: string, on: boolean) => Promise<void>
   addCustom: (e: NewExercise) => Promise<Exercise>
+  /** Edit or remove an own exercise (T-043c). */
+  updateCustom: (id: string, e: NewExercise) => Promise<Exercise>
+  setHidden: (id: string, hidden: boolean) => Promise<void>
 }
 
 const MUSCLES = Object.keys(LANDMARKS) as Muscle[]
 const EQUIPMENT = Object.keys(EQUIPMENT_NAMES) as Equipment[]
 
-function ExerciseRow({ e, library, onPick, onError }: { e: Exercise; library?: ExerciseLibrary; onPick: (e: Exercise) => void; onError: (m: string | null) => void }) {
+function ExerciseRow({
+  e,
+  library,
+  onPick,
+  onEdit,
+  onError,
+}: {
+  e: Exercise
+  library?: ExerciseLibrary
+  onPick: (e: Exercise) => void
+  onEdit: (e: Exercise) => void
+  onError: (m: string | null) => void
+}) {
   const fav = library?.favourites.has(e.id) ?? false
   return (
     <li className="exercise-row">
@@ -24,6 +39,11 @@ function ExerciseRow({ e, library, onPick, onError }: { e: Exercise; library?: E
           {e.id.startsWith('custom:') ? ' · your exercise' : ''}
         </span>
       </button>
+      {library && e.id.startsWith('custom:') && (
+        <button className="link edit" aria-label={`Edit ${e.name}`} onClick={() => onEdit(e)}>
+          Edit
+        </button>
+      )}
       {library && (
         <button className={fav ? 'star on' : 'star'} aria-label={`Favourite ${e.name}`} aria-pressed={fav} onClick={() => {
             onError(null)
@@ -36,27 +56,58 @@ function ExerciseRow({ e, library, onPick, onError }: { e: Exercise; library?: E
   )
 }
 
-function NewExerciseForm({ initialName, library, onAdded, onBack }: { initialName: string; library: ExerciseLibrary; onAdded: (e: Exercise) => void; onBack: () => void }) {
-  const [form, setForm] = useState<NewExercise>({ name: initialName, primary: 'chest', equipment: 'machine', isolation: false })
+function ExerciseForm({
+  initialName,
+  editing,
+  library,
+  onSaved,
+  onRemoved,
+  onBack,
+}: {
+  initialName: string
+  /** The own exercise being changed; none when adding a new one. */
+  editing?: Exercise
+  library: ExerciseLibrary
+  onSaved: (e: Exercise) => void
+  onRemoved: (e: Exercise) => void
+  onBack: () => void
+}) {
+  const [form, setForm] = useState<NewExercise>(
+    editing
+      ? { name: editing.name, primary: editing.primary, equipment: editing.equipment, isolation: editing.isolation }
+      : { name: initialName, primary: 'chest', equipment: 'machine', isolation: false },
+  )
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const save = async (ev: React.FormEvent) => {
     ev.preventDefault()
-    const problem = checkNewExercise(form.name)
+    const problem = checkNewExercise(form.name, undefined, editing?.id)
     setError(problem)
     if (problem) return
     setBusy(true)
     try {
-      onAdded(await library.addCustom({ ...form, name: form.name.trim() }))
+      const e = { ...form, name: form.name.trim() }
+      onSaved(editing ? await library.updateCustom(editing.id, e) : await library.addCustom(e))
     } catch {
       setError('Couldn’t save the exercise. Check your connection and try again.')
       setBusy(false)
     }
   }
+  const remove = async () => {
+    if (!editing) return
+    setBusy(true)
+    try {
+      await library.setHidden(editing.id, true)
+      onRemoved(editing)
+    } catch {
+      setError('Couldn’t remove the exercise. Check your connection and try again.')
+      setBusy(false)
+    }
+  }
   return (
-    <form className="form" aria-label="New exercise" onSubmit={save}>
+    <form className="form" aria-label={editing ? 'Edit exercise' : 'New exercise'} onSubmit={save}>
       <button type="button" className="link" onClick={onBack}>← Back to the list</button>
-      <h3>New exercise</h3>
+      <h3>{editing ? 'Edit exercise' : 'New exercise'}</h3>
       <label className="field">
         <span>Name</span>
         <input aria-label="Exercise name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoFocus />
@@ -82,14 +133,24 @@ function NewExerciseForm({ initialName, library, onAdded, onBack }: { initialNam
         <span>Works one joint, like a curl or a leg extension</span>
       </label>
       {error && <p className="error" role="alert">{error}</p>}
-      <button className="primary" disabled={busy}>Save exercise</button>
+      <button className="primary" disabled={busy}>{editing ? 'Save changes' : 'Save exercise'}</button>
+      {editing && (
+        <>
+          <button type="button" className="link danger" disabled={busy} onClick={() => void remove()}>
+            Remove from my list
+          </button>
+          <p className="muted">Past sets, records and plans keep this exercise.</p>
+        </>
+      )}
     </form>
   )
 }
 
 export function ExercisePicker({ onPick, onClose, library }: { onPick: (e: Exercise) => void; onClose: () => void; library?: ExerciseLibrary }) {
   const [q, setQ] = useState('')
-  const [creating, setCreating] = useState(false)
+  // 'new' adds an exercise; an Exercise is one of the person's own being edited.
+  const [form, setForm] = useState<'new' | Exercise | null>(null)
+  const [removed, setRemoved] = useState<Exercise | null>(null)
   const [error, setError] = useState<string | null>(null)
   const list = searchExercises(q)
   const favs = library ? list.filter((e) => library.favourites.has(e.id)) : []
@@ -101,22 +162,49 @@ export function ExercisePicker({ onPick, onClose, library }: { onPick: (e: Exerc
         <h2>Choose an exercise</h2>
         <button className="link" onClick={onClose}>Close</button>
       </header>
-      {creating && library ? (
-        <NewExerciseForm initialName={q.trim()} library={library} onAdded={onPick} onBack={() => setCreating(false)} />
+      {form && library ? (
+        <ExerciseForm
+          initialName={q.trim()}
+          editing={form === 'new' ? undefined : form}
+          library={library}
+          onSaved={(e) => (form === 'new' ? onPick(e) : setForm(null))}
+          onRemoved={(e) => {
+            setRemoved(e)
+            setForm(null)
+          }}
+          onBack={() => setForm(null)}
+        />
       ) : (
         <>
           <input className="search" aria-label="Search exercises" placeholder="Search: bench, squat, biceps…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
           {library && (
             <div className="shortcuts">
-              <button className="chip" onClick={() => setCreating(true)}>+ New exercise</button>
+              <button className="chip" onClick={() => setForm('new')}>+ New exercise</button>
             </div>
           )}
           {error && <p className="error" role="alert">{error}</p>}
+          {removed && library && (
+            <p role="status">
+              Removed {removed.name} from your list. Past sets stay.{' '}
+              <button
+                className="link"
+                onClick={() => {
+                  setError(null)
+                  library.setHidden(removed.id, false).then(
+                    () => setRemoved(null),
+                    () => setError('Couldn’t bring the exercise back. Check your connection.'),
+                  )
+                }}
+              >
+                Undo
+              </button>
+            </p>
+          )}
           {list.length === 0 && (
             <div className="not-found">
               <p className="muted">No exercise matches “{q}”.</p>
               {library && (
-                <button className="link" onClick={() => setCreating(true)}>
+                <button className="link" onClick={() => setForm('new')}>
                   Add “{q.trim()}” as a new exercise
                 </button>
               )}
@@ -127,7 +215,7 @@ export function ExercisePicker({ onPick, onClose, library }: { onPick: (e: Exerc
               <h3>Favourites</h3>
               <ul className="results">
                 {favs.map((e) => (
-                  <ExerciseRow key={e.id} e={e} library={library} onPick={onPick} onError={setError} />
+                  <ExerciseRow key={e.id} e={e} library={library} onPick={onPick} onEdit={setForm} onError={setError} />
                 ))}
               </ul>
             </section>
@@ -135,7 +223,7 @@ export function ExercisePicker({ onPick, onClose, library }: { onPick: (e: Exerc
           {favs.length > 0 && rest.length > 0 && <h3>All exercises</h3>}
           <ul className="results">
             {rest.map((e) => (
-              <ExerciseRow key={e.id} e={e} library={library} onPick={onPick} onError={setError} />
+              <ExerciseRow key={e.id} e={e} library={library} onPick={onPick} onEdit={setForm} onError={setError} />
             ))}
           </ul>
         </>

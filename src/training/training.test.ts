@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { LANDMARKS } from '../engine/training'
-import { EXERCISES, checkNewExercise, customExercise, exerciseById, searchExercises, setCustomExercises } from './exercises'
-import { customFromRow } from './exerciseStore'
+import { EXERCISES, allExercises, checkNewExercise, customExercise, exerciseById, searchExercises, setCustomExercises } from './exercises'
+import { customFromRow, memoryExerciseStore } from './exerciseStore'
 import { memoryWorkoutStore } from './memoryStore'
 import { planFromRow, summaryFromRow } from './supabaseStore'
 import { checkPlan, checkSet, describeSets, nextDayIndex, suggestNext, workingSets, type Plan, type SetLog } from './types'
@@ -209,5 +209,41 @@ describe('records data (T-044)', () => {
     expect(
       summaryFromRow({ id: 's', performed_on: '2026-10-10', plan_days: null, set_logs: [{ exercise_id: 'a' }, { exercise_id: 'b' }, { exercise_id: 'a' }] }),
     ).toEqual({ id: 's', performedOn: '2026-10-10', name: 'Workout', exerciseIds: ['a', 'b'] })
+  })
+})
+
+describe('own exercises (T-043c)', () => {
+  it('15. an edited exercise may keep its own name but not take another one', () => {
+    const mine = customExercise('custom:1', { name: 'Neck curl', primary: 'traps', equipment: 'machine', isolation: true })
+    const list = [mine, ...EXERCISES]
+    expect(checkNewExercise('neck curl', list, 'custom:1')).toBeNull()
+    expect(checkNewExercise('Neck curl', list)).toBe('Neck curl is already in the list.')
+    expect(checkNewExercise('Leg press', list, 'custom:1')).toBe('Leg press is already in the list.')
+  })
+
+  it('16. a hidden exercise leaves the list and search but is still found by id', () => {
+    const hidden = customExercise('custom:2', { name: 'Neck curl', primary: 'traps', equipment: 'machine', isolation: true, hidden: true })
+    setCustomExercises([hidden])
+    try {
+      expect(allExercises().some((e) => e.id === 'custom:2')).toBe(false)
+      expect(searchExercises('neck')).toEqual([])
+      expect(exerciseById.get('custom:2')?.name).toBe('Neck curl')
+      // A hidden name can be used again for a new exercise.
+      expect(checkNewExercise('Neck curl')).toBeNull()
+    } finally {
+      setCustomExercises([])
+    }
+  })
+
+  it('maps the hidden flag from a row, and the memory store edits and hides', async () => {
+    expect(customFromRow({ id: 'u', name: 'X', primary_muscle: 'abs', equipment: 'cable', isolation: true, hidden: true })).toMatchObject({ id: 'custom:u', hidden: true })
+    expect(customFromRow({ id: 'u', name: 'X', primary_muscle: 'abs', equipment: 'cable', isolation: true, hidden: false })).not.toHaveProperty('hidden')
+    const store = memoryExerciseStore()
+    const x = await store.addCustom({ name: 'Neck curl', primary: 'traps', equipment: 'machine', isolation: true })
+    expect(await store.updateCustom(x.id, { name: ' Neck flexion ', primary: 'traps', equipment: 'cable', isolation: true })).toMatchObject({ id: x.id, name: 'Neck flexion', equipment: 'cable' })
+    await store.setHidden(x.id, true)
+    expect((await store.custom())[0].hidden).toBe(true)
+    await store.setHidden(x.id, false)
+    expect((await store.custom())[0]).not.toHaveProperty('hidden')
   })
 })

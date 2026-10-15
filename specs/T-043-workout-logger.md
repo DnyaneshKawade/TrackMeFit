@@ -1,6 +1,6 @@
 # T-043: Workout logger to FitNotes standard
 
-Status: T-043a built (DK, 13 Oct 2026: "go by best possible approach, proceed"); T-043b agreed (DK, 13 Oct 2026: "yes")
+Status: T-043a built (DK, 13 Oct 2026: "go by best possible approach, proceed"); T-043b built (DK, 13 Oct 2026: "yes"); T-043c built (DK, 15 Oct 2026: "lets proceed" on editing and removing own exercises)
 Task: [T-043](../tasks/TASKS.md)
 
 ## Problem
@@ -55,6 +55,19 @@ supersets, favourites and custom exercises.
 13. Given a new exercise with no name, or a name already in the list, then
     it is not saved and the person sees why.
 
+## Acceptance criteria (T-043c)
+14. Given one of the person's own exercises in the list, when they tap
+    "Edit", then the form opens filled in. They can change the name, main
+    muscle, equipment and one-joint flag. "Save changes" saves them, and the
+    new name shows in the list, plans and past workouts.
+15. Given the edit form, when the new name is empty, too long or the same as
+    another exercise, then the same problems as for a new exercise show.
+    Keeping the exercise's own name is fine.
+16. Given the edit form, when the person taps "Remove from my list", then the
+    exercise leaves the list and search. Its past sets, records and plans
+    keep it. "Removed X from your list. Past sets stay." shows with "Undo",
+    which brings it back.
+
 ## Rules and reasons
 - One tag per set: warm-up, drop set or failure. Reps in reserve stays the
   effort measure (RPE is 10 minus RIR, so we don't ask twice).
@@ -84,6 +97,10 @@ supersets, favourites and custom exercises.
   exercise_id)`; `plan_exercises.superset_next`. Own exercises and
   favourites: the person writes, their active coach can read. Indexed by
   owner. Custom exercise ids are `custom:<uuid>`.
+- (T-043c) Migration `20261022000000_hide_own_exercises.sql`:
+  `custom_exercises.hidden` (default false). Editing and removing are
+  updates by the person; the "write own" policy already allows them and
+  still refuses a coach or anyone else.
 
 ## Edge cases
 - Timer running when the workout is closed: it stops.
@@ -97,7 +114,11 @@ supersets, favourites and custom exercises.
 
 ## Out of scope
 - Editing a set after it is logged (remove and log again).
-- Editing or deleting your own exercises (later).
+- Deleting an own exercise together with its past sets. Removing only hides
+  it, so a mistake never loses training history (FitNotes deletes it).
+- Rest time, weight step and notes for each exercise, and exercises timed or
+  measured by distance (FitNotes has these; later).
+- Editing built-in exercises.
 - Giant sets of more than two are allowed by linking, but have no special
   screen.
 
@@ -114,3 +135,6 @@ supersets, favourites and custom exercises.
 | 12, 13 | `src/training/training.test.ts` |
 | 9 (saved) | `src/training/training.test.ts` (planFromRow) |
 | Data (T-043b) | `src/db/rls.test.ts` ("exercise library (T-043b)") |
+| 14, 15, 16 | `src/training/Workouts.test.tsx` ("own exercises (T-043c)") |
+| 15, 16 | `src/training/training.test.ts` ("own exercises (T-043c)") |
+| Data (T-043c) | `src/db/rls.test.ts` ("own exercises (T-043c)") |
