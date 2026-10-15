@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: Event date for the goal (T-041b)
+
+- Next part of T-041, by the order of tasks. Spec `specs/T-041b-event-date.md`.
+- The goal step has an optional "Event date", like a wedding or trip. It says if the target weight comes before the date. If not, it says the weight on the day and the weekly pace the target would need.
+- It never changes the pace or targets, since diet targets are set by the person or coach. "Your plan" shows the same note.
+- Migration `supabase/migrations/20261023000000_event_date.sql` adds `profiles.event_date`. It must be run in Supabase.
+- Left: fasting days as flexible days (rest of T-041), and changing the date after signup (no profile edit screen yet).
+- Tests: 5 in `src/profile/profile.test.ts`, 1 new and 1 changed in `src/profile/Onboarding.test.tsx`, 1 in `src/db/rls.test.ts`.
+
 ## 2026-10-15: Suggested workout plan (T-041a)
 
 - DK asked if we will give RP-style plans made from the person's details, then said to go by the order of tasks. Spec `specs/T-041a-suggested-plan.md`.

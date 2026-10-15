@@ -99,6 +99,26 @@ describe('onboarding', () => {
     expect(screen.getByRole('status', { name: 'Goal date' }).textContent).toMatch(/^First 2 kg by 1 December\. At about 0\.32 kg a week you’d reach 58 kg in about 4 months/)
   })
 
+  it('an event date says where the pace gets you by then, and a past date is refused (T-041b)', () => {
+    setup()
+    aboutYou()
+    pick('Health conditions', 'None of these')
+    click('Next')
+    training()
+    pick('Your main goal', 'Lose fat')
+    type('Target weight (kg, optional)', '58')
+    type('Event date (optional)', '2027-01-26')
+    expect(screen.getByRole('status', { name: 'At your event' }).textContent).toMatch(/^By your event on 26 January 2027 you’d be about 59\.2 kg, not 58 kg\./)
+    // The pace stays as chosen.
+    expect(screen.getByRole('button', { name: 'Steady (recommended)' }).getAttribute('aria-pressed')).toBe('true')
+    type('Event date (optional)', '2026-10-01')
+    expect(screen.getByText('Pick a date after today.')).toBeTruthy()
+    click('Next')
+    // Still on the goal step, with the problem said again under the buttons.
+    expect(screen.getAllByText('Pick a date after today.')).toHaveLength(2)
+    expect(screen.getByRole('group', { name: 'Your main goal' })).toBeTruthy()
+  })
+
   it('estimates a typical day, then offers targets the person can accept', async () => {
     const { onFinish } = setup()
     aboutYou('Female', '84')
@@ -107,6 +127,7 @@ describe('onboarding', () => {
     training()
     pick('Your main goal', 'Lose fat')
     type('Target weight (kg, optional)', '58')
+    type('Event date (optional)', '2027-03-01')
     click('Next')
     pick('What you eat', 'Jain')
     pick('Do you fast?', 'Ekadashi')
@@ -119,6 +140,7 @@ describe('onboarding', () => {
     click('Next')
 
     expect(heading()).toBe('Your plan')
+    expect(screen.getByText('You’d reach 58 kg before your event on 1 March 2027.')).toBeTruthy()
     const targets = screen.getByRole('region', { name: 'Suggested daily targets' })
     expect(targets.textContent).toMatch(/lose 0\.5 % of your weight a week/)
     expect(targets.textContent).toMatch(/only suggestions, based on nutrition research\. They are not medical advice\. You decide whether to follow them\./)
@@ -139,6 +161,7 @@ describe('onboarding', () => {
       goal: 'lose',
       goalRate: -0.005,
       targetWeightKg: 58,
+      eventDate: '2027-03-01',
       dietPref: 'jain',
       fasting: ['ekadashi'],
       allergies: ['peanuts'],
