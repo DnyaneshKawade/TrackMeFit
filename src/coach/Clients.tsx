@@ -1,24 +1,30 @@
 import { useEffect, useState } from 'react'
-import { inviteMessage, showCode, type CoachLink, type CoachStore, type Invite } from './store'
+import { sortByAttention, type ClientAttention } from '../engine/attention'
+import { localDate } from '../log/types'
+import { inviteMessage, showCode, type ClientRow, type CoachStore, type Invite } from './store'
 import '../log/log.css'
 import '../progress/progress.css'
 
 const day = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 
-/** The coach's Clients tab: invite with a code, see clients, end a link (T-026a). */
-export function Clients({ store }: { store: CoachStore }) {
-  const [clients, setClients] = useState<CoachLink[] | null>(null)
+/** The coach's Clients tab: invite with a code (T-026a), see clients sorted by
+ * who needs attention with the reasons (T-026b), end a link. */
+export function Clients({ store, today = localDate() }: { store: CoachStore; today?: string }) {
+  const [clients, setClients] = useState<ClientAttention<ClientRow>[] | null>(null)
   const [invite, setInvite] = useState<Invite | null>(null)
   const [copied, setCopied] = useState(false)
   const [ending, setEnding] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    store.clients().then(setClients, () => {
-      setClients([])
-      setError('Couldn’t load your clients. Check your connection.')
-    })
-  }, [store])
+    store.clients(today).then(
+      (rows) => setClients(sortByAttention(rows, today)),
+      () => {
+        setClients([])
+        setError('Couldn’t load your clients. Check your connection.')
+      },
+    )
+  }, [store, today])
 
   const makeInvite = async () => {
     setError(null)
@@ -40,10 +46,10 @@ export function Clients({ store }: { store: CoachStore }) {
     }
   }
 
-  const end = async (c: CoachLink) => {
+  const end = async (c: ClientRow) => {
     try {
-      await store.end(c.id)
-      setClients((list) => list?.filter((x) => x.id !== c.id) ?? null)
+      await store.end(c.linkId)
+      setClients((list) => list?.filter((x) => x.client.linkId !== c.linkId) ?? null)
       setEnding(null)
     } catch {
       setError('Couldn’t end the link. Check your connection.')
@@ -78,24 +84,35 @@ export function Clients({ store }: { store: CoachStore }) {
         ) : !clients.length ? (
           <p className="muted">No clients yet. Send a code to someone you coach.</p>
         ) : (
-          <ul className="weigh-list">
-            {clients.map((c) => (
-              <li key={c.id}>
-                <span>{c.name}</span>
-                {ending === c.id ? (
-                  <>
-                    <button className="link" onClick={() => void end(c)}>Yes, end</button>
-                    <button className="link" onClick={() => setEnding(null)}>Cancel</button>
-                  </>
-                ) : (
-                  <>
-                    <span />
-                    <button className="link" aria-label={`End link with ${c.name}`} onClick={() => setEnding(c.id)}>End</button>
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
+          <>
+            <p className="muted">Clients who need you most come first.</p>
+            <ul className="client-list">
+              {clients.map(({ client: c, flags }) => (
+                <li key={c.linkId} aria-label={c.name}>
+                  <div className="client-head">
+                    <strong>{c.name}</strong>
+                    {ending === c.linkId ? (
+                      <span className="actions">
+                        <button className="link" onClick={() => void end(c)}>Yes, end</button>
+                        <button className="link" onClick={() => setEnding(null)}>Cancel</button>
+                      </span>
+                    ) : (
+                      <button className="link" aria-label={`End link with ${c.name}`} onClick={() => setEnding(c.linkId)}>End</button>
+                    )}
+                  </div>
+                  {flags.length ? (
+                    <ul className="flags">
+                      {flags.map((f) => (
+                        <li key={f.reason}>{f.reason}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="muted on-track">On track this week.</p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </section>
     </main>

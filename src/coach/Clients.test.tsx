@@ -2,9 +2,11 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { Clients } from './Clients'
-import { inviteMessage, memoryCoachStore } from './store'
+import { emptyClient, inviteMessage, memoryCoachStore } from './store'
 
 afterEach(cleanup)
+
+const TODAY = '2026-10-15'
 
 describe('clients tab (T-026a)', () => {
   it('1. makes a one-time code with WhatsApp sharing', async () => {
@@ -18,20 +20,32 @@ describe('clients tab (T-026a)', () => {
     expect(screen.getByRole('button', { name: 'Copy code' })).toBeTruthy()
   })
 
-  it('6. lists clients by name and ends a link after a confirm', async () => {
-    const store = memoryCoachStore({
-      clients: [
-        { id: 'l2', personId: 'p2', name: 'Ravi' },
-        { id: 'l1', personId: 'p1', name: 'Asha' },
-      ],
-    })
-    render(<Clients store={store} />)
+  it('6. ends a link after a confirm', async () => {
+    const store = memoryCoachStore({ clients: [emptyClient('l2', 'Ravi'), emptyClient('l1', 'Asha')] })
+    render(<Clients store={store} today={TODAY} />)
     const list = await screen.findByRole('region', { name: 'Your clients' })
     expect(await within(list).findByText('Your clients (2)')).toBeTruthy()
-    expect(within(list).getAllByRole('listitem').map((li) => li.firstChild?.textContent)).toEqual(['Asha', 'Ravi'])
     fireEvent.click(screen.getByRole('button', { name: 'End link with Ravi' }))
     fireEvent.click(screen.getByRole('button', { name: 'Yes, end' }))
     await within(list).findByText('Your clients (1)')
-    expect((await store.clients()).map((c) => c.name)).toEqual(['Asha'])
+    expect((await store.clients(TODAY)).map((c) => c.name)).toEqual(['Asha'])
+  })
+
+  it('6 (T-026b). lists the clients who need attention first, each with its reasons', async () => {
+    const onTrack = {
+      ...emptyClient('l1', 'Asha'),
+      lastFoodOn: TODAY,
+      weighIns: [{ date: TODAY, kg: 60 }],
+    }
+    const behind = { ...emptyClient('l2', 'Ravi'), trainingDays: 3 }
+    render(<Clients store={memoryCoachStore({ clients: [onTrack, behind] })} today={TODAY} />)
+    const items = await screen.findAllByRole('listitem', { name: /Asha|Ravi/ })
+    expect(items.map((li) => li.getAttribute('aria-label'))).toEqual(['Ravi', 'Asha'])
+    expect(within(items[0]).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      'No food logged yet.',
+      'No workouts logged yet.',
+      'No weigh-in yet.',
+    ])
+    expect(within(items[1]).getByText('On track this week.')).toBeTruthy()
   })
 })

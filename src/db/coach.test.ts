@@ -84,3 +84,39 @@ describe('coach invite codes (T-026a)', () => {
     ])
   })
 })
+
+describe('client summaries (T-026b)', () => {
+  it('6. sums last week per active client for the coach only, from one request', async () => {
+    const t2 = await createTestDb()
+    const meena = await t2.signUp('meena@example.com', { full_name: 'Meena' })
+    const other = await t2.signUp('other@example.com', { full_name: 'Other' })
+    const k = await t2.signUp('k@example.com', { role: 'coach', full_name: 'Coach K' })
+    const code = await t2.as(k, newCode)
+    await t2.as(meena, (db) => join(db, code))
+    await t2.as(meena, async (db) => {
+      await db.query(`update profiles set goal = 'lose', training_days = 3 where id = $1`, [meena])
+      for (const [day, kcal] of [['2026-10-13', 1500], ['2026-10-13', 500], ['2026-10-14', 1600], ['2026-10-15', 900], ['2026-10-01', 3000]] as const)
+        await db.query(
+          `insert into food_logs (logged_on, meal, food_id, food_name, grams, kcal, protein_g, carb_g, fat_g) values ($1, 'lunch', 'x', 'x', 100, $2, 50, 0, 0)`,
+          [day, kcal],
+        )
+      await db.query(`insert into diet_targets (user_id, starts_on, kcal, protein_g, carb_g, fat_g) values ($1, '2026-10-01', 1800, 120, 200, 60)`, [meena])
+      await db.query(`insert into workout_sessions (performed_on) values ('2026-10-12'), ('2026-10-02')`)
+    })
+    await t2.as(other, (db) => db.query(`insert into food_logs (meal, food_id, food_name, grams, kcal, protein_g, carb_g, fat_g) values ('lunch', 'x', 'x', 100, 100, 1, 0, 0)`))
+
+    const rows = await t2.as(k, (db) => db.query<Record<string, unknown>>(`select * from client_summaries('2026-10-15')`).then((r) => r.rows))
+    expect(rows).toHaveLength(1)
+    const r = rows[0]
+    expect([r.full_name, r.goal, r.training_days, r.last_food_on instanceof Date ? (r.last_food_on as Date).toISOString().slice(0, 10) : r.last_food_on]).toEqual([
+      'Meena', 'lose', 3, '2026-10-15',
+    ])
+    // Today is left out: 2000 on the 13th and 1600 on the 14th.
+    expect([r.food_days, Number(r.avg_kcal), Number(r.avg_protein_g), r.target_kcal, r.target_protein_g, r.workouts]).toEqual([2, 1800, 75, 1800, 120, 1])
+
+    // Others see nothing; an ended link drops out.
+    expect(await t2.as(other, (db) => db.query(`select * from client_summaries('2026-10-15')`).then((x) => x.rows.length))).toBe(0)
+    await t2.as(meena, (db) => db.query(`update coach_clients set status = 'ended'`))
+    expect(await t2.as(k, (db) => db.query(`select * from client_summaries('2026-10-15')`).then((x) => x.rows.length))).toBe(0)
+  })
+})
