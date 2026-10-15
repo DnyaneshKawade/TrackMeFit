@@ -446,3 +446,48 @@ describe('own exercises (T-043c)', () => {
     expect(screen.getByRole('form', { name: 'Edit exercise' })).toBeTruthy()
   })
 })
+
+describe('suggested plan (T-041a)', () => {
+  it('1, 5. "Suggest a plan" starts from the onboarding answers and shows the plan with reasons', async () => {
+    render(<Workouts store={memoryWorkoutStore()} today={TODAY} answers={{ trainingDays: 4, experience: 'beginner', equipment: 'home' }} />)
+    expect(await screen.findByText(/Not sure where to start\? Get a suggested plan\./)).toBeTruthy()
+    click('Suggest a plan')
+    const sheet = screen.getByRole('region', { name: 'Suggested plan' })
+    const pressed = (group: string) => within(within(sheet).getByRole('group', { name: group })).getByRole('button', { pressed: true }).textContent
+    expect(pressed('Workouts a week')).toBe('4')
+    expect(pressed('Lifting experience')).toBe('New, or under a year')
+    expect(pressed('Where you train')).toBe('Home, with dumbbells')
+    expect(within(sheet).getByRole('heading', { name: 'Upper and lower, 4 days a week' })).toBeTruthy()
+    expect(within(sheet).getByText('It uses dumbbells and body weight, for training at home.')).toBeTruthy()
+    const upper = within(sheet).getByRole('region', { name: 'Upper A' })
+    expect(within(upper).getByText(/Incline dumbbell press/).textContent).toBe('Incline dumbbell press · 3 × 8–12')
+    // Changing an answer changes the plan.
+    fireEvent.click(within(sheet).getByRole('button', { name: '6' }))
+    expect(within(sheet).getByRole('heading', { name: 'Push, pull, legs, 6 days a week' })).toBeTruthy()
+  })
+
+  it('1. an answer of 7 workouts shows 6 and says why; no answers start at 3 days in a gym', async () => {
+    const { unmount } = render(<Workouts store={memoryWorkoutStore()} today={TODAY} answers={{ trainingDays: 7, experience: 'advanced', equipment: 'gym' }} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Suggest a plan' }))
+    expect(screen.getByText('This plan has 6 workouts a week. One rest day helps you recover.')).toBeTruthy()
+    unmount()
+    render(<Workouts store={memoryWorkoutStore()} today={TODAY} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Suggest a plan' }))
+    expect(screen.getByRole('heading', { name: 'Full body, 3 days a week' })).toBeTruthy()
+    expect(screen.getAllByText(/Back squat/)).toHaveLength(2)
+  })
+
+  it('6. "Use this plan" opens the editor and nothing is saved until "Save plan"', async () => {
+    const store = memoryWorkoutStore()
+    render(<Workouts store={store} today={TODAY} answers={{ trainingDays: 2, experience: 'intermediate', equipment: 'gym' }} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Suggest a plan' }))
+    click('Use this plan')
+    expect((screen.getByLabelText('Plan name') as HTMLInputElement).value).toBe('Full body, 2 days a week')
+    expect(await store.plans()).toEqual([])
+    click('Save plan')
+    await waitFor(async () => expect((await store.plans()).map((p) => p.name)).toEqual(['Full body, 2 days a week']))
+    const saved = (await store.plans())[0]
+    expect(saved.days.map((d) => d.name)).toEqual(['Full body A', 'Full body B'])
+    expect(saved.days[0].exercises[0]).toMatchObject({ exerciseId: 'back-squat', sets: 4, repMin: 6, repMax: 10 })
+  })
+})

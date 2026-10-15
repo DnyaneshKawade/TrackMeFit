@@ -110,3 +110,5 @@
 }
 .record { font-size: 14px; font-weight: 600; color: #0f7a5c; }
 @media (prefers-color-scheme: dark) { .record { color: #4cc49b; } }
+.suggest-plan .reasons { padding-left: 18px; margin: 6px 0 12px; font-size: 14px; }
+.suggest-day h4 { margin: 12px 0 4px; }

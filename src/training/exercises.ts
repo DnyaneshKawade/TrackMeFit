@@ -104,6 +104,15 @@ export const EXERCISES: Exercise[] = [
   ex('hanging-leg-raise', 'Hanging leg raise', 'abs', [], 'bodyweight', true, ['leg raise']),
   ex('ab-wheel', 'Ab wheel rollout', 'abs', [], 'bodyweight', true, ['ab roller']),
   ex('plank', 'Plank (seconds as reps)', 'abs', [], 'bodyweight', true),
+  // For home and no-equipment plans (T-041a)
+  ex('bodyweight-squat', 'Body-weight squat', 'quads', ['glutes'], 'bodyweight', false, ['air squat', 'baithak']),
+  ex('reverse-lunge', 'Reverse lunge', 'quads', ['glutes'], 'bodyweight', false),
+  ex('inverted-row', 'Inverted row', 'back', ['biceps', 'rearDelts'], 'bodyweight', false, ['table row', 'australian pull-up']),
+  ex('glute-bridge', 'Glute bridge', 'glutes', ['hamstrings'], 'bodyweight', false, ['single-leg glute bridge']),
+  ex('pike-push-up', 'Pike push-up', 'sideDelts', ['triceps'], 'bodyweight', false),
+  ex('db-overhead-extension', 'Dumbbell overhead triceps extension', 'triceps', [], 'dumbbell', true, ['db overhead extension']),
+  ex('bench-dip', 'Bench dip', 'triceps', [], 'bodyweight', true, ['chair dip']),
+  ex('single-leg-calf-raise', 'Single-leg calf raise', 'calves', [], 'bodyweight', true),
 ]
 
 /** Built-in and the person's own exercises by id (T-043b). */

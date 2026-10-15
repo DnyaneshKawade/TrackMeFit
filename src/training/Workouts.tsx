@@ -8,6 +8,7 @@ import { blockWeek, weekLabel } from './progression'
 import { RecordsView } from './RecordsView'
 import { ReviewView } from './ReviewView'
 import { SessionView } from './SessionView'
+import { SuggestPlan, type TrainingAnswers } from './SuggestPlan'
 import { SyncNote } from '../sync/SyncNote'
 import type { Plan, PlanDay, Session, WorkoutStore } from './types'
 import '../log/log.css'
@@ -20,13 +21,25 @@ type View =
   | { kind: 'session'; session: Session }
   | { kind: 'start' }
   | { kind: 'records' }
+  | { kind: 'suggest' }
 
 /** Swaps one own exercise in the list known to search, plans and logs. */
 function replaceCustom(id: string, change: (e: Exercise) => Exercise) {
   setCustomExercises(customExercises().map((x) => (x.id === id ? change(x) : x)))
 }
 
-export function Workouts({ store, exercises, today = localDate() }: { store: WorkoutStore; exercises?: ExerciseStore; today?: string }) {
+export function Workouts({
+  store,
+  exercises,
+  today = localDate(),
+  answers,
+}: {
+  store: WorkoutStore
+  exercises?: ExerciseStore
+  today?: string
+  /** Onboarding answers for "Suggest a plan" (T-041a). */
+  answers?: TrainingAnswers
+}) {
   const [plans, setPlans] = useState<Plan[] | null>(null)
   const [favourites, setFavourites] = useState<Set<string>>(new Set())
   const [sessions, setSessions] = useState<Session[]>([])
@@ -149,6 +162,14 @@ export function Workouts({ store, exercises, today = localDate() }: { store: Wor
     )
   }
 
+  if (view.kind === 'suggest') {
+    return (
+      <main className="log">
+        <SuggestPlan answers={answers} onUse={(plan) => setView({ kind: 'plan', plan })} onClose={() => setView({ kind: 'home' })} />
+      </main>
+    )
+  }
+
   if (view.kind === 'records') {
     return (
       <main className="log">
@@ -218,7 +239,9 @@ export function Workouts({ store, exercises, today = localDate() }: { store: Wor
 
       <h2 className="plans-head">My plans</h2>
       {plans === null && <p className="muted">Loading…</p>}
-      {plans?.length === 0 && <p className="muted">No plan yet. A plan is a few training days, each with its exercises, sets and rep ranges.</p>}
+      {plans?.length === 0 && (
+        <p className="muted">No plan yet. A plan is a few training days, each with its exercises, sets and rep ranges. Not sure where to start? Get a suggested plan.</p>
+      )}
       <ul className="session-list">
         {plans?.map((p) => {
           const b = blockOf(p)!
@@ -239,6 +262,7 @@ export function Workouts({ store, exercises, today = localDate() }: { store: Wor
       <button className="add" onClick={() => setView({ kind: 'plan', plan: { name: '', days: [{ dayIndex: 0, name: '', exercises: [] }] } })}>
         + New plan
       </button>
+      <button className="add" onClick={() => setView({ kind: 'suggest' })}>Suggest a plan</button>
     </main>
   )
 }

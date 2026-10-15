@@ -2,6 +2,17 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: Suggested workout plan (T-041a)
+
+- DK asked if we will give RP-style plans made from the person's details, then said to go by the order of tasks. Spec `specs/T-041a-suggested-plan.md`.
+- "Suggest a plan" on the Training tab starts from the onboarding answers: workouts a week, lifting experience and where you train. Each can be changed.
+- The split follows workouts a week: full body for 2 or 3, upper and lower for 4, upper, lower, push, pull, legs for 5, push, pull, legs twice for 6. Each muscle is trained about twice a week.
+- Exercises fit the equipment: home uses dumbbells, body weight and kettlebells; no equipment uses body weight only. Sets per muscle start from the engine's `startingSets`, 2 to 4 per exercise.
+- "Use this plan" opens the plan editor, so the person can change anything. Nothing is saved until "Save plan".
+- Added 8 exercises for home and no-equipment plans, such as body-weight squat, inverted row and glute bridge.
+- Not done: a step at the end of signup. People with no plan see a pointer to "Suggest a plan" instead.
+- Tests: 6 in `src/training/starterPlan.test.ts`, 3 in `src/training/Workouts.test.tsx`.
+
 ## 2026-10-15: "New record" during a workout (T-044b)
 
 - DK said to go by the logical order of tasks. T-044b follows Records and progress (T-044). Spec `specs/T-044b-new-record.md`.
