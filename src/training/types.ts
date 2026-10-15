@@ -31,6 +31,9 @@ export interface Plan {
   hardWeeks?: number
   /** Local date the current training block started. */
   blockStartedOn?: string
+  /** Who last saved the plan and the local date, the person or their coach (T-026d). */
+  changedBy?: string
+  changedOn?: string
 }
 
 export interface SetLog {

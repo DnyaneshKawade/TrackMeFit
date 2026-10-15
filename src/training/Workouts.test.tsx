@@ -69,6 +69,21 @@ describe('workout plans', () => {
   })
 })
 
+describe('plans changed by a coach (T-026d)', () => {
+  it('5. the client sees that the coach changed a plan', async () => {
+    const store = memoryWorkoutStore({
+      plans: [
+        { ...ppl, changedBy: 'coach-1', changedOn: '2026-10-15' },
+        { ...ppl, id: 'p2', name: 'Home', changedBy: 'me', changedOn: '2026-10-14' },
+      ],
+    })
+    render(<Workouts store={store} today={TODAY} userId="me" />)
+    const changed = await screen.findByRole('button', { name: /^Push Pull Legs/ })
+    expect(within(changed).getByText('Changed by your coach on 15 Oct.')).toBeTruthy()
+    expect(within(screen.getByRole('button', { name: /^Home/ })).queryByText(/Changed by/)).toBeNull()
+  })
+})
+
 describe('logging a workout', () => {
   it('starts a plan day, suggests the next load from last time and logs sets', async () => {
     const store = memoryWorkoutStore({

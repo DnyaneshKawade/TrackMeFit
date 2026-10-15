@@ -8,7 +8,10 @@ import type { PhotoStore } from '../progress/photoStore'
 import { weightSummary, type ProgressStore, type WeighIn } from '../progress/types'
 import { TargetsForm } from '../targets/TargetsForm'
 import { describeTarget, type DietTarget, type TargetStore, type TargetValues } from '../targets/types'
-import type { SessionSummary, WorkoutStore } from '../training/types'
+import type { ExerciseStore } from '../training/exerciseStore'
+import { customExercise, customExercises, setCustomExercises } from '../training/exercises'
+import { PlanEditor } from '../training/PlanEditor'
+import type { Plan, SessionSummary, WorkoutStore } from '../training/types'
 import type { ClientRow } from './store'
 
 /** A client's data as their coach sees it; row-level security allows the reads and target changes. */
@@ -18,12 +21,15 @@ export interface ClientStores {
   progress: ProgressStore
   photos: PhotoStore
   workouts: WorkoutStore
+  /** The client's own exercises, read only (T-026d). */
+  exercises: ExerciseStore
 }
 
 const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 
 /** One client's week for their coach (T-026c): what needs attention, targets
- * the coach can change, weight, food stats, workouts and photos. */
+ * the coach can change, weight, food stats, workouts, plans the coach can
+ * change (T-026d) and photos. */
 export function ClientView({
   client,
   flags,
@@ -43,6 +49,8 @@ export function ClientView({
   const [editing, setEditing] = useState(false)
   const [weighIns, setWeighIns] = useState<WeighIn[] | null>(null)
   const [workouts, setWorkouts] = useState<SessionSummary[] | null>(null)
+  const [plans, setPlans] = useState<Plan[] | null>(null)
+  const [plan, setPlan] = useState<Plan | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -50,7 +58,29 @@ export function ClientView({
     stores.targets.forDate(today).then(setTarget, () => (setTarget(null), failed()))
     stores.progress.weighIns().then(setWeighIns, () => (setWeighIns([]), failed()))
     stores.workouts.summaries(shiftDate(today, -27), today).then(setWorkouts, () => (setWorkouts([]), failed()))
+    stores.workouts.plans().then(setPlans, () => (setPlans([]), failed()))
   }, [stores, today])
+
+  // The client's own exercises are known while this page is open, so plans
+  // show their names and the coach can pick them. The coach's own come back after.
+  useEffect(() => {
+    const own = customExercises()
+    let live = true
+    stores.exercises.custom().then(
+      (list) => live && setCustomExercises(list.map((x) => customExercise(x.id, x))),
+      () => undefined,
+    )
+    return () => {
+      live = false
+      setCustomExercises(own)
+    }
+  }, [stores])
+
+  const savePlan = async (p: Plan) => {
+    await stores.workouts.savePlan(p)
+    setPlans(await stores.workouts.plans())
+    setPlan(null)
+  }
 
   const saveTargets = async (v: TargetValues) => {
     setTarget(await stores.targets.save(v, today, 'manual'))
@@ -59,6 +89,14 @@ export function ClientView({
 
   const summary = weighIns ? weightSummary(weighIns) : null
   const first = client.name.split(' ')[0]
+
+  if (plan) {
+    return (
+      <main className="log client-view">
+        <PlanEditor initial={plan} onSave={savePlan} onClose={() => setPlan(null)} />
+      </main>
+    )
+  }
 
   return (
     <main className="log progress clients client-view">
@@ -135,6 +173,38 @@ export function ClientView({
         ) : (
           <p className="muted">No workouts logged in the last 4 weeks.</p>
         )}
+      </section>
+
+      <section aria-label="Workout plans">
+        <h3>Workout plans</h3>
+        {plans === null ? (
+          <p className="muted">Loading…</p>
+        ) : plans.length ? (
+          <ul className="session-list">
+            {plans.map((p) => (
+              <li key={p.id} className="plan-card">
+                <div>
+                  <strong>{p.name}</strong>
+                  <br />
+                  <span className="muted">{p.days.map((d) => d.name).join(' · ')}</span>
+                  {p.changedBy && (
+                    <>
+                      <br />
+                      <span className="muted">
+                        {p.changedBy === coachId ? 'Changed by you' : `Changed by ${first}`}
+                        {p.changedOn ? ` on ${shortDate(p.changedOn)}` : ''}.
+                      </span>
+                    </>
+                  )}
+                </div>
+                <button className="link" aria-label={`Edit ${p.name}`} onClick={() => setPlan(p)}>Edit</button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted">No plan yet.</p>
+        )}
+        <button className="add" onClick={() => setPlan({ name: '', days: [{ dayIndex: 0, name: '', exercises: [] }] })}>+ New plan</button>
       </section>
 
       <Photos store={stores.photos} today={today} readOnly />
