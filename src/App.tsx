@@ -201,7 +201,7 @@ export function AppShell({
         />
       )}
       <Suspense fallback={<main className="log">Loading…</main>}>
-        {tab === 'training' && <Workouts store={workouts!} exercises={exerciseStore} />}
+        {tab === 'training' && <Workouts store={workouts!} exercises={exerciseStore} answers={profile ?? undefined} />}
         {tab === 'progress' && (
           <Progress
             store={progress!}
