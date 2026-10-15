@@ -120,3 +120,45 @@ describe('client summaries (T-026b)', () => {
     expect(await t2.as(k, (db) => db.query(`select * from client_summaries('2026-10-15')`).then((x) => x.rows.length))).toBe(0)
   })
 })
+
+describe('coach edits a plan (T-026d)', () => {
+  it('6. only the person and their active coach change a plan, and the plan records who changed it last', async () => {
+    const t3 = await createTestDb()
+    const neha = await t3.signUp('neha@example.com', { full_name: 'Neha' })
+    const k = await t3.signUp('k@example.com', { role: 'coach', full_name: 'Coach K' })
+    const other = await t3.signUp('other@example.com', { role: 'coach', full_name: 'Coach M' })
+    const stamp = () =>
+      t3.as(neha, (db) => db.query<{ created_by: string; updated_by: string }>('select created_by, updated_by from workout_plans').then((r) => r.rows[0]))
+
+    // Nobody can record someone else as the maker.
+    const id = await t3.as(neha, (db) =>
+      db.query<{ id: string }>(`insert into workout_plans (user_id, name, created_by, updated_by) values ($1, 'PPL', $2, $2) returning id`, [neha, k]),
+    ).then((r) => r.rows[0].id)
+    expect(await stamp()).toEqual({ created_by: neha, updated_by: neha })
+
+    // Before the link, the coach can't change it.
+    await t3.as(k, (db) => db.query(`update workout_plans set name = 'Upper Lower' where id = $1`, [id]))
+    expect(await t3.as(neha, (db) => db.query<{ name: string }>('select name from workout_plans').then((r) => r.rows[0].name))).toBe('PPL')
+
+    const code = await t3.as(k, newCode)
+    await t3.as(neha, (db) => join(db, code))
+
+    // The coach saves it; the record shows the coach, and the maker stays.
+    await t3.as(k, (db) => db.query(`update workout_plans set name = 'Upper Lower', created_by = $2 where id = $1`, [id, k]))
+    expect(await stamp()).toEqual({ created_by: neha, updated_by: k })
+
+    // Starting a new block is not a change to the plan.
+    await t3.as(neha, (db) => db.query(`update workout_plans set block_started_on = current_date where id = $1`, [id]))
+    expect(await stamp()).toEqual({ created_by: neha, updated_by: k })
+
+    // A coach makes a new plan for the client.
+    await t3.as(k, (db) => db.query(`insert into workout_plans (user_id, name) values ($1, 'Full body')`, [neha]))
+    const made = await t3.as(neha, (db) => db.query<{ created_by: string; updated_by: string }>(`select created_by, updated_by from workout_plans where name = 'Full body'`).then((r) => r.rows[0]))
+    expect(made).toEqual({ created_by: k, updated_by: k })
+
+    // Another coach can't touch it.
+    await t3.as(other, (db) => db.query(`update workout_plans set name = 'Mine' where id = $1`, [id]))
+    await expect(t3.as(other, (db) => db.query(`insert into workout_plans (user_id, name) values ($1, 'Mine')`, [neha]))).rejects.toThrow(/row-level security/)
+    expect(await t3.as(neha, (db) => db.query<{ n: number }>(`select count(*)::int as n from workout_plans where name = 'Mine'`).then((r) => r.rows[0].n))).toBe(0)
+  })
+})

@@ -54,6 +54,7 @@ export function AppShell({
     progress: memoryProgressStore(),
     photos: memoryPhotoStore(),
     workouts: memoryWorkoutStore(),
+    exercises: memoryExerciseStore(),
   }),
   foodStoreFor = () => memoryCustomFoodStore(),
   mealPlanStoreFor = () => memoryMealPlanStore(),
@@ -237,7 +238,7 @@ export function AppShell({
         />
       )}
       <Suspense fallback={<main className="log">Loading…</main>}>
-        {tab === 'training' && <Workouts store={workouts!} exercises={exerciseStore} answers={profile ?? undefined} />}
+        {tab === 'training' && <Workouts store={workouts!} exercises={exerciseStore} answers={profile ?? undefined} userId={account.id} />}
         {tab === 'clients' && coaching && <Clients store={coaching} storesFor={clientStoresFor} coachId={account.id} />}
         {tab === 'progress' && (
           <Progress
@@ -286,6 +287,7 @@ export default function App() {
         progress: supabaseProgressStore(sb!, id),
         photos: supabasePhotoStore(sb!, id),
         workouts: supabaseWorkoutStore(sb!, id),
+        exercises: supabaseExerciseStore(sb!, id),
       })}
       foodStoreFor={(a) => supabaseCustomFoodStore(sb!, a.id)}
       mealPlanStoreFor={(a) => supabaseMealPlanStore(sb!, a.id)}

@@ -64,6 +64,8 @@ describe('plans', () => {
       name: 'Upper Lower',
       hard_weeks: 4,
       block_started_on: '2026-10-01',
+      updated_by: 'coach-1',
+      updated_at: '2026-10-15T10:00:00+05:30',
       plan_days: [
         { id: 'd2', day_index: 1, name: 'Lower', plan_exercises: [] },
         {
@@ -79,6 +81,7 @@ describe('plans', () => {
     })
     expect(p.days.map((d) => d.name)).toEqual(['Upper', 'Lower'])
     expect(p.days[0].exercises.map((e) => e.exerciseId)).toEqual(['bench-press', 'db-row'])
+    expect([p.changedBy, p.changedOn]).toEqual(['coach-1', '2026-10-15'])
   })
 })
 
