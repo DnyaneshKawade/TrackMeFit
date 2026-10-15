@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { localDate, shiftDate, type LogStore } from '../log/types'
 import { DietStats } from './DietStats'
+import { Photos } from './Photos'
+import type { PhotoStore } from './photos'
 import { steadySwitch, type PaceSwitch } from '../profile/steady'
 import type { GoalChoice, ProfileInfo } from '../profile/types'
 import type { DietTarget, TargetStore, TargetValues } from '../targets/types'
@@ -143,6 +145,7 @@ export function Progress({
   targets,
   onSwitchPace,
   log,
+  photos,
   today = localDate(),
 }: {
   store: ProgressStore
@@ -154,6 +157,8 @@ export function Progress({
   onSwitchPace?: (rate: number, target: TargetValues | null) => Promise<void>
   /** The food log, for food stats (T-062). */
   log?: LogStore
+  /** Progress photos (T-022b). */
+  photos?: PhotoStore
   today?: string
 }) {
   const [target, setTarget] = useState<DietTarget | null>(null)
@@ -325,6 +330,8 @@ export function Progress({
           <p className="muted">Waist size shows fat loss even when the scale is slow. Measure every two weeks.</p>
         )}
       </section>
+
+      {photos && <Photos store={photos} today={today} />}
     </main>
   )
 }

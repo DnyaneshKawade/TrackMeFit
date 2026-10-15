@@ -2,6 +2,17 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: Progress photos (T-022b)
+
+- Next task in order; DK said "go ahead". Spec `specs/T-022b-progress-photos.md`.
+- The Progress tab has a "Progress photos" section. Pick Front, Side or Back, then add today's photo.
+- Photos are made smaller on the phone before upload: 1280 px on the longest side, JPEG. Redrawing drops hidden details like location.
+- Photos show by date, newest first, 30 at a time with "Show older". Each can be removed. One photo per pose per day.
+- Migration `supabase/migrations/20261026000000_progress_photos.sql` adds the `progress_photos` table and a private storage bucket with its rules. It must be run in Supabase.
+- Only the person adds or removes photos. The person and their active coach can see them. Others can't read a file without its record.
+- Left: side-by-side compare of two dates, coach view (T-026), and deleting the photo folder when account delete is built.
+- Tests: 4 in `src/progress/photos.test.ts`, 5 in `src/progress/Photos.test.tsx`, 1 in `src/db/photos.test.ts`.
+
 ## 2026-10-15: Fasting days rolled back (T-041c)
 
 - DK said most people eat a good amount when fasting and only avoid some foods. Marking the day is too much for now.

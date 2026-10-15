@@ -69,6 +69,7 @@ Current state:
 | Service worker | Supabase requests (sign-in, personal data) | Never cached; they always go to the network |
 | In the app | Food search index | Loaded on first use, built once per session |
 | In the app | Personal data | Kept in screen state, except offline logging (T-027): waiting entries and workouts, the last 14 viewed days, and for workouts the last plans, 60 exercise histories and review answers, in browser storage per account. Viewed days are cleared on sign-out because phones are often shared; waiting entries stay until they sync for that account, so nothing logged is lost |
+| Storage | Progress photos (T-022b) | Private bucket. Shown with signed links that last one hour, made in one request per page. Never kept in browser storage |
 | Database | Indexes | On every filtered or privacy-rule column; summaries for admin use views |
 
 Invalidation is by name: hashed file names for built files, a build-stamped cache name for the service worker, and no caching where freshness matters.
