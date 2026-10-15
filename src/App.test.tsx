@@ -108,3 +108,63 @@ describe('first run', () => {
     expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
   })
 })
+
+describe('your details (T-070)', () => {
+  const start = () => {
+    const profiles = memoryProfileStore({ ...done, equipment: 'gym' })
+    const progress = memoryProgressStore([{ date: '2026-10-12', kg: 70 }])
+    const targets = memoryTargetStore('u1')
+    render(<AppShell auth={auth(user)} profileStoreFor={() => profiles} progressStoreFor={() => progress} targetStoreFor={() => targets} />)
+    return { profiles, progress, targets }
+  }
+
+  it('1. opens the sign-up answers filled in, and saves a change without new targets or a new weigh-in', async () => {
+    const { profiles, progress, targets } = start()
+    fireEvent.click(await screen.findByRole('button', { name: 'Your details' }))
+    expect(await screen.findByRole('heading', { name: 'About you' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Skip setup and start logging' })).toBeNull()
+    expect((screen.getByLabelText('Weight today (kg)') as HTMLInputElement).value).toBe('70')
+    expect((screen.getByLabelText('Height (cm)') as HTMLInputElement).value).toBe('160')
+    type('Height (cm)', '165')
+    click('Next')
+    // Earlier health answers count, so the step goes straight on.
+    click('Next')
+    click('Save and close')
+
+    expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
+    const p = await profiles.get()
+    expect(p.heightCm).toBe(165)
+    expect(p.onboardedAt).toBe('2026-10-12T10:00:00Z')
+    expect((await progress.weighIns()).map((w) => w.kg)).toEqual([70])
+    expect(await targets.forDate('2999-01-01')).toBeNull()
+  })
+
+  it('2. a new goal offers new targets that only count when accepted, and a new weight is a weigh-in', async () => {
+    const { profiles, progress, targets } = start()
+    fireEvent.click(await screen.findByRole('button', { name: 'Your details' }))
+    await screen.findByRole('heading', { name: 'About you' })
+    type('Weight today (kg)', '68')
+    for (let i = 0; i < 3; i++) click('Next')
+    pick('Your main goal', 'Stay as I am')
+    click('Next')
+    click('Next')
+    click('Skip this step')
+    expect(screen.getByRole('button', { name: 'Keep my current targets' })).toBeTruthy()
+    click('Use these targets')
+
+    expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
+    expect((await profiles.get()).goal).toBe('maintain')
+    expect((await progress.weighIns()).map((w) => w.kg)).toEqual([70, 68])
+    expect(await targets.forDate('2999-01-01')).toMatchObject({ source: 'suggested' })
+  })
+
+  it('3. cancel changes nothing', async () => {
+    const { profiles } = start()
+    fireEvent.click(await screen.findByRole('button', { name: 'Your details' }))
+    await screen.findByRole('heading', { name: 'About you' })
+    type('Height (cm)', '180')
+    click('Cancel')
+    expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
+    expect((await profiles.get()).heightCm).toBe(160)
+  })
+})

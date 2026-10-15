@@ -133,20 +133,24 @@ const fmt = (n: number) => n.toLocaleString('en-IN')
 
 /** First-run questions in short steps, ending with a plan the person can
  * accept or ignore. Everything after the first step has a sensible default
- * or a skip. */
+ * or a skip. With `edit`, the same steps change the answers later (T-070). */
 export function Onboarding({
   initial,
   onFinish,
   onSkip,
   loadFoods,
   today = localDate(),
+  edit,
 }: {
   initial: ProfileInfo
   onFinish: (r: OnboardingResult) => Promise<void>
+  /** Skips setup; in edit mode, closes without saving. */
   onSkip: () => Promise<void>
   /** Loads the food database for "Add another food". */
   loadFoods?: () => Promise<FoodFinder>
   today?: string
+  /** Changing earlier answers: the latest weight fills the weight box. */
+  edit?: { weightKg: number | null }
 }) {
   const [step, setStep] = useState(0)
   const [about, setAbout] = useState<AboutYou>({
@@ -154,14 +158,15 @@ export function Onboarding({
     sex: initial.sex,
     birthDate: initial.birthDate ?? '',
     heightCm: initial.heightCm === null ? '' : String(initial.heightCm),
-    weightKg: '',
+    weightKg: edit?.weightKg ? String(edit.weightKg) : '',
     waistCm: '',
   })
   const [p, setP] = useState<ProfileInfo>(initial)
   const [errors, setErrors] = useState<Partial<Record<keyof AboutYou, string>>>({})
-  const [healthDone, setHealthDone] = useState(false)
-  const [allergyNone, setAllergyNone] = useState(false)
-  const [fastNone, setFastNone] = useState(false)
+  // Earlier answers count as given, including "None of these".
+  const [healthDone, setHealthDone] = useState(!!edit)
+  const [allergyNone, setAllergyNone] = useState(!!edit && !initial.allergies.length)
+  const [fastNone, setFastNone] = useState(!!edit && !initial.fasting.length)
   const [targetText, setTargetText] = useState(initial.targetWeightKg === null ? '' : String(initial.targetWeightKg))
   const [eventText, setEventText] = useState(initial.eventDate ?? '')
   const [counts, setCounts] = useState<Record<string, number>>(initial.currentDiet?.counts ?? {})
@@ -213,23 +218,46 @@ export function Onboarding({
     currentDiet: estimate().kcal ? estimate() : null,
   })
 
-  const next = () => {
+  /** True when this step's answers are complete; shows what is missing if not. */
+  const stepDone = () => {
     setMissing(null)
     if (step === 0) {
       const found = checkAboutYou(about, today)
       setErrors(found)
-      if (Object.keys(found).length) return
+      if (Object.keys(found).length) return false
     }
-    if (step === 1 && !healthDone) return setMissing('Tick anything that applies, or choose “None of these”.')
-    if (step === 2 && (!p.activity || p.trainingDays === null || !p.experience || !p.equipment))
-      return setMissing('Answer all four to continue.')
-    if (step === 3) {
-      if (!p.goal) return setMissing('Pick a goal to continue.')
-      if (targetError) return setMissing(targetError)
-      if ((p.goal === 'lose' || p.goal === 'gain') && eventError) return setMissing(eventError)
+    const problem =
+      step === 1 && !healthDone
+        ? 'Tick anything that applies, or choose “None of these”.'
+        : step === 2 && (!p.activity || p.trainingDays === null || !p.experience || !p.equipment)
+          ? 'Answer all four to continue.'
+          : step === 3 && !p.goal
+            ? 'Pick a goal to continue.'
+            : step === 3 && targetError
+              ? targetError
+              : step === 3 && (p.goal === 'lose' || p.goal === 'gain') && eventError
+                ? eventError
+                : step === 4 && !p.dietPref
+                  ? 'Pick what you eat to continue.'
+                  : null
+    if (problem) setMissing(problem)
+    return !problem
+  }
+
+  const next = () => {
+    if (stepDone()) setStep(step + 1)
+  }
+
+  /** Edit mode: saves the answers so far and keeps the current targets. */
+  const saveNow = () => {
+    if (!stepDone()) return
+    // The first step needs a weight and the basics, wherever the person is.
+    const found = checkAboutYou(about, today)
+    if (Object.keys(found).length) {
+      setErrors(found)
+      return setStep(0)
     }
-    if (step === 4 && !p.dietPref) return setMissing('Pick what you eat to continue.')
-    setStep(step + 1)
+    void finish(null)
   }
 
   const finish = async (targets: Macros | null) => {
@@ -237,7 +265,7 @@ export function Onboarding({
     setSaveError(null)
     try {
       await onFinish({
-        profile: { ...merged(), onboardedAt: new Date().toISOString() },
+        profile: { ...merged(), onboardedAt: edit ? initial.onboardedAt ?? new Date().toISOString() : new Date().toISOString() },
         weightKg,
         waistCm: about.waistCm.trim() ? Number(about.waistCm) : null,
         targets,
@@ -279,18 +307,22 @@ export function Onboarding({
         <span style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
       </div>
       <p className="muted step-count">
-        Step {step + 1} of {STEPS.length}
+        {edit ? 'Your details · ' : ''}Step {step + 1} of {STEPS.length}
       </p>
       <h1>{STEPS[step]}</h1>
 
       {step === 0 && (
         <>
-          <p className="muted">
-            This sets your starting point. You can change it later.{' '}
-            <button type="button" className="link inline" onClick={() => void skip()} disabled={busy}>
-              Skip setup and start logging
-            </button>
-          </p>
+          {edit ? (
+            <p className="muted">Change any answer. Your food, workouts and weigh-ins stay as they are.</p>
+          ) : (
+            <p className="muted">
+              This sets your starting point. You can change it later.{' '}
+              <button type="button" className="link inline" onClick={() => void skip()} disabled={busy}>
+                Skip setup and start logging
+              </button>
+            </p>
+          )}
           {text('fullName', 'Your name', {})}
           <Choice
             label="Sex"
@@ -525,7 +557,11 @@ export function Onboarding({
                   <li key={r}>{r}</li>
                 ))}
               </ul>
-              <p className="muted">Have a coach or your own numbers? Choose “I’ll set my own” and enter them on the Food tab.</p>
+              <p className="muted">
+                {edit
+                  ? 'Happy with your targets now? Choose “Keep my current targets”.'
+                  : 'Have a coach or your own numbers? Choose “I’ll set my own” and enter them on the Food tab.'}
+              </p>
               <p className="muted disclaimer">{SUGGESTION_NOTE}</p>
             </section>
           ) : null}
@@ -556,6 +592,16 @@ export function Onboarding({
             Back
           </button>
         )}
+        {edit && (
+          <button type="button" className="link" onClick={() => void skip()} disabled={busy}>
+            Cancel
+          </button>
+        )}
+        {edit && step < STEPS.length - 1 && (
+          <button type="button" className="link" onClick={saveNow} disabled={busy}>
+            Save and close
+          </button>
+        )}
         {step < STEPS.length - 1 ? (
           <button type="button" className="primary" onClick={next}>
             {step === 5 && !diet.kcal ? 'Skip this step' : 'Next'}
@@ -566,12 +612,12 @@ export function Onboarding({
               Use these targets
             </button>
             <button type="button" className="link" onClick={() => void finish(null)} disabled={busy}>
-              I’ll set my own
+              {edit ? 'Keep my current targets' : 'I’ll set my own'}
             </button>
           </span>
         ) : (
           <button type="button" className="primary" onClick={() => void finish(null)} disabled={busy}>
-            Start tracking
+            {edit ? 'Save' : 'Start tracking'}
           </button>
         )}
       </div>

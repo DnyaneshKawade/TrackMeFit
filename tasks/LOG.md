@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: Change your details (T-070)
+
+- DK asked that sign-up answers can be changed at any time. Spec `specs/T-070-your-details.md`.
+- "Your details" at the top opens the setup steps with the person's answers and latest weight filled in.
+- "Save and close" saves on any step and keeps the targets. The last step offers new targets, used only on "Use these targets".
+- A changed weight is saved as today's weigh-in; an unchanged one adds nothing. "Cancel" changes nothing.
+- Next: the stronger diet engine, with plans that change week by week.
+- Tests: 3 in `src/App.test.tsx`.
+
 ## 2026-10-15: Client limit per coach (T-026i)
 
 - Last part of the coach dashboard (T-026), which is now done. Spec `specs/T-026i-client-limit.md`.
