@@ -29,6 +29,7 @@ const Progress = lazy(() => import('./progress/Progress').then((m) => ({ default
 const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ default: m.Onboarding })))
 import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
 import type { ProgressStore } from './progress/types'
+import { memoryPhotoStore, supabasePhotoStore, type PhotoStore } from './progress/photoStore'
 
 // The bundled food list, downloaded only when the database can't answer.
 const loadBundledFoods = (): Promise<FoodFinder> => import('./food/catalogueData').then((m) => localFinder(m.searchIndex))
@@ -41,6 +42,7 @@ export function AppShell({
   exerciseStoreFor = () => memoryExerciseStore(),
   profileStoreFor = () => memoryProfileStore(),
   progressStoreFor = () => memoryProgressStore(),
+  photoStoreFor = () => memoryPhotoStore(),
   foodStoreFor = () => memoryCustomFoodStore(),
   mealPlanStoreFor = () => memoryMealPlanStore(),
   loadFoods = loadBundledFoods,
@@ -53,6 +55,8 @@ export function AppShell({
   exerciseStoreFor?: (account: Account) => ExerciseStore
   profileStoreFor?: (account: Account) => ProfileStore
   progressStoreFor?: (account: Account) => ProgressStore
+  /** Progress photos (T-022b). */
+  photoStoreFor?: (account: Account) => PhotoStore
   foodStoreFor?: (account: Account) => CustomFoodStore
   mealPlanStoreFor?: (account: Account) => MealPlanStore
   /** Food search; the bundled list unless the database is set up. */
@@ -81,6 +85,7 @@ export function AppShell({
   const targets = useMemo(() => (account ? targetStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const profiles = useMemo(() => (account ? profileStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const progress = useMemo(() => (account ? progressStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const photos = useMemo(() => (account ? photoStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   // The latest weight, for a new meal plan from the Food tab (T-061).
   const latestWeight = useMemo(
     () => async () => {
@@ -209,6 +214,7 @@ export function AppShell({
             profile={profile}
             targets={targets}
             log={store!}
+            photos={photos}
             onSwitchPace={async (rate, target) => {
               const p = { ...profile!, goalRate: rate }
               await profiles!.save(p)
@@ -239,6 +245,7 @@ export default function App() {
       exerciseStoreFor={(a) => supabaseExerciseStore(sb!, a.id)}
       profileStoreFor={(a) => supabaseProfileStore(sb!, a.id)}
       progressStoreFor={(a) => supabaseProgressStore(sb!, a.id)}
+      photoStoreFor={(a) => supabasePhotoStore(sb!, a.id)}
       foodStoreFor={(a) => supabaseCustomFoodStore(sb!, a.id)}
       mealPlanStoreFor={(a) => supabaseMealPlanStore(sb!, a.id)}
       loadFoods={loadFoods}
