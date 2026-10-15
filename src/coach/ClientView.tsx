@@ -12,6 +12,8 @@ import type { ExerciseStore } from '../training/exerciseStore'
 import { customExercise, customExercises, setCustomExercises } from '../training/exercises'
 import { PlanEditor } from '../training/PlanEditor'
 import type { Plan, SessionSummary, WorkoutStore } from '../training/types'
+import { Chat } from './Chat'
+import type { ChatStore } from './chat'
 import { ClientCheckIns } from './CheckIn'
 import type { CheckInStore } from './checkIns'
 import type { ClientRow } from './store'
@@ -40,6 +42,7 @@ export function ClientView({
   stores,
   coachId,
   today,
+  chat,
   onBack,
 }: {
   client: ClientRow
@@ -47,6 +50,8 @@ export function ClientView({
   stores: ClientStores
   coachId: string
   today: string
+  /** Messages with the client (T-026f). */
+  chat?: ChatStore
   onBack: () => void
 }) {
   const [target, setTarget] = useState<DietTarget | null | undefined>(undefined)
@@ -116,6 +121,8 @@ export function ClientView({
       ) : (
         <p className="muted">On track this week.</p>
       )}
+
+      {chat && <Chat store={chat} linkId={client.linkId} name={first} />}
 
       <ClientCheckIns store={stores.checkIns} weighIns={weighIns} first={first} />
 

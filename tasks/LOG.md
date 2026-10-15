@@ -12,6 +12,17 @@ Newest first. One entry per finished piece of work: what changed, which tests co
 - Also removed four task rows that the #55 merge had doubled.
 - Left for T-026: chat, templates and a client limit.
 - Tests: 3 in `src/coach/YourCoach.test.tsx`, 1 in `src/coach/ClientView.test.tsx`, 3 in `src/coach/checkIns.test.ts`, 1 in `src/progress/Photos.test.tsx`, 1 in `src/db/coach.test.ts`.
+## 2026-10-15: Chat with the coach (T-026f)
+
+- Next part of the coach dashboard (T-026). Spec `specs/T-026f-chat.md`.
+- The person chats under "Your coach" on Progress. The coach chats on the client page.
+- The Clients list shows "1 new message" for clients who wrote. "Seen" shows once the other side opens the chat.
+- The latest 30 messages load first; "Show earlier messages" loads 30 more.
+- The app has no alerts yet, so after sending it offers "Tell … on WhatsApp" with the message.
+- Migration `20261101000000_chat.sql`: table `chat_messages`, functions `in_link` and `mark_chat_read`. A chat belongs to one coach link and closes when the link ends.
+- Left for T-026: program templates and a client limit.
+- Tests: 1 in `src/db/coach.test.ts`, 3 in `src/coach/Chat.test.tsx`, 1 in `src/coach/ClientView.test.tsx`.
+
 ## 2026-10-15: Email limit message (T-066b)
 
 - DK then saw "Too many tries. Please wait a minute". Supabase's built-in email sender allows about 2 emails an hour.
