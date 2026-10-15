@@ -34,6 +34,13 @@ export function friendlyAuthError(e: unknown): string {
   if (/already registered|already been registered|user already exists/i.test(msg)) return 'This email already has an account. Sign in instead.'
   if (/email not confirmed/i.test(msg)) return 'Please confirm your email first. Check your inbox for our link.'
   if (/rate limit|too many/i.test(msg)) return 'Too many tries. Please wait a minute and try again.'
+  if (/sending confirmation|sending .*email|email address .*not authorized/i.test(msg)) return 'We couldn’t send the email to this address. Please try Google, or try again later.'
+  if (/database error saving new user/i.test(msg)) return 'We couldn’t set up your account on our side. Please try again later.'
+  if (/signups? not allowed|signups? .*disabled/i.test(msg)) return 'Sign-up with email is off right now. Please use Google.'
+  if (/password should|weak password/i.test(msg)) return 'Please pick a stronger password.'
+  if (/invalid format|unable to validate email/i.test(msg)) return 'Check your email address.'
   if (/network|fetch/i.test(msg)) return 'No internet connection. Check it and try again.'
-  return 'Something went wrong. Please try again.'
+  // Show the service's code so the cause can be found from a screenshot.
+  const code = (e as { code?: unknown } | null)?.code
+  return typeof code === 'string' && /^[a-z_]+$/.test(code) ? `Something went wrong (${code}). Please try again.` : 'Something went wrong. Please try again.'
 }

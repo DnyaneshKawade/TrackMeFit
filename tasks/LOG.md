@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: Clear sign-up errors (T-066b)
+
+- DK saw "Something went wrong" when creating an account, for both roles. Spec `specs/T-066b-sign-up-errors.md`.
+- The likely cause is Supabase's built-in email sender, which only sends to team members. The fix there is an email sender (SMTP) in the dashboard.
+- The sign-up screen now says when the email couldn't be sent or the account couldn't be set up. Unknown errors show their code.
+- Tests: 2 in `src/auth/SignIn.test.tsx`.
+
 ## 2026-10-15: Coaches sign up with Google (T-066), admin tasks split up
 
 - DK asked for Google sign-in for coaches. Spec `specs/T-066-google-coach.md`.
