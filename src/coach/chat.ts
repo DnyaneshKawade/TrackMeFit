@@ -26,6 +26,16 @@ export interface ChatStore {
   markRead(linkId: string): Promise<void>
   /** Unread messages from the other side, by link id, in one request. */
   unread(): Promise<Map<string, number>>
+  /** Calls back with each new or changed message in a chat while it is open
+   * (T-026h); returns a function that stops listening. */
+  watch?(linkId: string, onChange: (m: Message) => void): () => void
+}
+
+/** Puts a new or changed message in a newest-first list, once. */
+export function upsertMessage(list: Message[], m: Message): Message[] {
+  const at = list.findIndex((x) => x.id === m.id)
+  if (at >= 0) return list.map((x, i) => (i === at ? m : x))
+  return [m, ...list].sort((a, b) => b.sentAt.localeCompare(a.sentAt))
 }
 
 /** "15 Oct, 2:30 pm" */
@@ -57,10 +67,16 @@ interface Stored {
   readAt: string | null
 }
 
-/** For tests: `rows` are shared so two stores (person and coach) can talk. */
-export function memoryChatStore(me: string, rows: Stored[] = [], now = () => new Date().toISOString()): ChatStore {
-  let n = rows.length
+type Listener = (linkId: string, row: Stored) => void
+
+// One counter for all memory stores, so two stores sharing rows never repeat an id.
+let seq = 0
+
+/** For tests: `rows` and `listeners` are shared so two stores (person and
+ * coach) can talk and see each other's changes live. */
+export function memoryChatStore(me: string, rows: Stored[] = [], now = () => new Date().toISOString(), listeners: Set<Listener> = new Set()): ChatStore {
   const view = (r: Stored): Message => ({ id: r.id, body: r.body, mine: r.sender === me, sentAt: r.sentAt, read: r.readAt !== null })
+  const tell = (r: Stored) => listeners.forEach((l) => l(r.linkId, r))
   return {
     async list(linkId, before, limit = PAGE) {
       return rows
@@ -70,12 +86,22 @@ export function memoryChatStore(me: string, rows: Stored[] = [], now = () => new
         .map(view)
     },
     async send(linkId, body) {
-      const row: Stored = { id: `m${++n}`, linkId, sender: me, body: body.trim(), sentAt: now(), readAt: null }
+      const row: Stored = { id: `m${rows.length}-${++seq}`, linkId, sender: me, body: body.trim(), sentAt: now(), readAt: null }
       rows.push(row)
+      tell(row)
       return view(row)
     },
     async markRead(linkId) {
-      for (const r of rows) if (r.linkId === linkId && r.sender !== me && !r.readAt) r.readAt = now()
+      for (const r of rows)
+        if (r.linkId === linkId && r.sender !== me && !r.readAt) {
+          r.readAt = now()
+          tell(r)
+        }
+    },
+    watch(linkId, onChange) {
+      const l: Listener = (link, r) => link === linkId && onChange(view(r))
+      listeners.add(l)
+      return () => listeners.delete(l)
     },
     async unread() {
       const counts = new Map<string, number>()
@@ -121,6 +147,16 @@ export function supabaseChatStore(sb: SupabaseClient, me: string): ChatStore {
       const counts = new Map<string, number>()
       for (const r of rows) counts.set(r.link_id, (counts.get(r.link_id) ?? 0) + 1)
       return counts
+    },
+    watch(linkId, onChange) {
+      // Realtime checks the same row-level security as reads.
+      const channel = sb
+        .channel(`chat:${linkId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages', filter: `link_id=eq.${linkId}` }, (change) => {
+          if (change.new && 'id' in change.new) onChange(view(change.new as Row))
+        })
+        .subscribe()
+      return () => void sb.removeChannel(channel)
     },
   }
 }

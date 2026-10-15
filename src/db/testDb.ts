@@ -19,6 +19,8 @@ const AUTH_STUB = `
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
   $$;
   grant usage on schema auth to authenticated, anon;
+  -- Supabase Realtime sends changes of the tables in this publication.
+  create publication supabase_realtime;
 
   -- The parts of Supabase Storage our migrations use.
   create schema storage;

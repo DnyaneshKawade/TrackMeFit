@@ -12,6 +12,13 @@ Newest first. One entry per finished piece of work: what changed, which tests co
 - Also removed four task rows that the #55 merge had doubled.
 - Left for T-026: chat, templates and a client limit.
 - Tests: 3 in `src/coach/YourCoach.test.tsx`, 1 in `src/coach/ClientView.test.tsx`, 3 in `src/coach/checkIns.test.ts`, 1 in `src/progress/Photos.test.tsx`, 1 in `src/db/coach.test.ts`.
+## 2026-10-15: Live chat (T-026h)
+
+- DK asked whether chat is real time, like SignalR. Spec `specs/T-026h-live-chat.md`.
+- An open chat now gets new messages and "Seen" at once through Supabase Realtime. Realtime uses the same privacy rules.
+- Migration `20261103000000_live_chat.sql`: adds `chat_messages` to the `supabase_realtime` publication.
+- Tests: 1 in `src/db/coach.test.ts`, 2 in `src/coach/Chat.test.tsx`.
+
 ## 2026-10-15: Program templates (T-026g)
 
 - Next part of the coach dashboard (T-026). Spec `specs/T-026g-program-templates.md`.

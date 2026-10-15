@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { checkMessage, MAX_MESSAGE, nudgeLink, PAGE, sentLabel, type ChatStore, type Message } from './chat'
+import { checkMessage, MAX_MESSAGE, nudgeLink, PAGE, sentLabel, upsertMessage, type ChatStore, type Message } from './chat'
 
 /** Messages with the coach or a client (T-026f), oldest at the top. Opening it
  * marks the other side's messages as read. */
@@ -37,6 +37,15 @@ export function Chat({
     )
   }, [store, linkId])
 
+  // New messages and "Seen" arrive while the chat is open (T-026h).
+  useEffect(() => {
+    if (!store.watch) return
+    return store.watch(linkId, (m) => {
+      setMessages((list) => (list ? upsertMessage(list, m) : list))
+      if (!m.mine && !m.read) store.markRead(linkId).catch(() => undefined)
+    })
+  }, [store, linkId])
+
   const earlier = async () => {
     if (!messages?.length) return
     try {
@@ -56,7 +65,7 @@ export function Chat({
     setError(null)
     try {
       const m = await store.send(linkId, draft)
-      setMessages((list) => [m, ...(list ?? [])])
+      setMessages((list) => upsertMessage(list ?? [], m))
       setSent(m.body)
       setDraft('')
     } catch {
