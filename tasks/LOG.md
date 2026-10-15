@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: Open a client (T-026c)
+
+- Third part of the coach dashboard (T-026), next in order. Spec `specs/T-026c-open-client.md`.
+- On the Clients tab, tapping a name opens that client's page. It shows what needs attention, daily targets, weight and the weight chart.
+- It also shows food stats, workouts in the last 4 weeks and progress photos. The coach can only look at photos.
+- "Change targets" lets the coach set the client's targets from today. Targets say who set them.
+- No database change: the page uses the client's stores with the client's id, and the existing privacy rules allow it.
+- Left for T-026: editing a client's workout plan here, check-ins, chat, templates and a client limit.
+- Tests: 4 in `src/coach/ClientView.test.tsx`.
+
 ## 2026-10-15: Clients sorted by who needs attention (T-026b)
 
 - Second part of the coach dashboard (T-026), next in order. Spec `specs/T-026b-client-attention.md`.
