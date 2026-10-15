@@ -81,3 +81,6 @@ export function remaining(target: TargetValues, eaten: Per100g): TargetValues {
     fatG: r1(target.fatG - eaten.fatG),
   }
 }
+
+/** "1800 kcal, 120 g protein, 200 g carbs, 60 g fat" */
+export const describeTarget = (t: TargetValues) => `${t.kcal} kcal, ${t.proteinG} g protein, ${t.carbG} g carbs, ${t.fatG} g fat`

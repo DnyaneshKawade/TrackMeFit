@@ -31,6 +31,7 @@ const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ defa
 import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
 import type { ProgressStore } from './progress/types'
 import { memoryCoachStore, supabaseCoachStore, type CoachStore } from './coach/store'
+import type { ClientStores } from './coach/ClientView'
 import { memoryPhotoStore, supabasePhotoStore, type PhotoStore } from './progress/photoStore'
 
 // The bundled food list, downloaded only when the database can't answer.
@@ -46,6 +47,13 @@ export function AppShell({
   progressStoreFor = () => memoryProgressStore(),
   photoStoreFor = () => memoryPhotoStore(),
   coachStoreFor = () => memoryCoachStore(),
+  clientStoresFor = () => ({
+    log: memoryLogStore(),
+    targets: memoryTargetStore(),
+    progress: memoryProgressStore(),
+    photos: memoryPhotoStore(),
+    workouts: memoryWorkoutStore(),
+  }),
   foodStoreFor = () => memoryCustomFoodStore(),
   mealPlanStoreFor = () => memoryMealPlanStore(),
   loadFoods = loadBundledFoods,
@@ -62,6 +70,8 @@ export function AppShell({
   photoStoreFor?: (account: Account) => PhotoStore
   /** Coach links (T-026a). */
   coachStoreFor?: (account: Account) => CoachStore
+  /** A client's data for their coach (T-026c). */
+  clientStoresFor?: (clientId: string) => ClientStores
   foodStoreFor?: (account: Account) => CustomFoodStore
   mealPlanStoreFor?: (account: Account) => MealPlanStore
   /** Food search; the bundled list unless the database is set up. */
@@ -216,7 +226,7 @@ export function AppShell({
       )}
       <Suspense fallback={<main className="log">Loading…</main>}>
         {tab === 'training' && <Workouts store={workouts!} exercises={exerciseStore} answers={profile ?? undefined} />}
-        {tab === 'clients' && coaching && <Clients store={coaching} />}
+        {tab === 'clients' && coaching && <Clients store={coaching} storesFor={clientStoresFor} coachId={account.id} />}
         {tab === 'progress' && (
           <Progress
             store={progress!}
@@ -258,6 +268,13 @@ export default function App() {
       progressStoreFor={(a) => supabaseProgressStore(sb!, a.id)}
       photoStoreFor={(a) => supabasePhotoStore(sb!, a.id)}
       coachStoreFor={(a) => supabaseCoachStore(sb!, a.id)}
+      clientStoresFor={(id) => ({
+        log: supabaseLogStore(sb!, id),
+        targets: supabaseTargetStore(sb!, id),
+        progress: supabaseProgressStore(sb!, id),
+        photos: supabasePhotoStore(sb!, id),
+        workouts: supabaseWorkoutStore(sb!, id),
+      })}
       foodStoreFor={(a) => supabaseCustomFoodStore(sb!, a.id)}
       mealPlanStoreFor={(a) => supabaseMealPlanStore(sb!, a.id)}
       loadFoods={loadFoods}

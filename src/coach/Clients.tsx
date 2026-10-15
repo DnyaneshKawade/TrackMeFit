@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { sortByAttention, type ClientAttention } from '../engine/attention'
 import { localDate } from '../log/types'
+import { ClientView, type ClientStores } from './ClientView'
 import { inviteMessage, showCode, type ClientRow, type CoachStore, type Invite } from './store'
 import '../log/log.css'
 import '../progress/progress.css'
@@ -9,8 +10,20 @@ const day = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'n
 
 /** The coach's Clients tab: invite with a code (T-026a), see clients sorted by
  * who needs attention with the reasons (T-026b), end a link. */
-export function Clients({ store, today = localDate() }: { store: CoachStore; today?: string }) {
+export function Clients({
+  store,
+  storesFor,
+  coachId = '',
+  today = localDate(),
+}: {
+  store: CoachStore
+  /** A client's stores, to open them (T-026c). */
+  storesFor?: (clientId: string) => ClientStores
+  coachId?: string
+  today?: string
+}) {
   const [clients, setClients] = useState<ClientAttention<ClientRow>[] | null>(null)
+  const [open, setOpen] = useState<{ item: ClientAttention<ClientRow>; stores: ClientStores } | null>(null)
   const [invite, setInvite] = useState<Invite | null>(null)
   const [copied, setCopied] = useState(false)
   const [ending, setEnding] = useState<string | null>(null)
@@ -56,6 +69,9 @@ export function Clients({ store, today = localDate() }: { store: CoachStore; tod
     }
   }
 
+  if (open)
+    return <ClientView client={open.item.client} flags={open.item.flags} stores={open.stores} coachId={coachId} today={today} onBack={() => setOpen(null)} />
+
   return (
     <main className="log progress clients">
       <h2>Clients</h2>
@@ -87,30 +103,39 @@ export function Clients({ store, today = localDate() }: { store: CoachStore; tod
           <>
             <p className="muted">Clients who need you most come first.</p>
             <ul className="client-list">
-              {clients.map(({ client: c, flags }) => (
-                <li key={c.linkId} aria-label={c.name}>
-                  <div className="client-head">
-                    <strong>{c.name}</strong>
-                    {ending === c.linkId ? (
-                      <span className="actions">
-                        <button className="link" onClick={() => void end(c)}>Yes, end</button>
-                        <button className="link" onClick={() => setEnding(null)}>Cancel</button>
-                      </span>
+              {clients.map((item) => {
+                const { client: c, flags } = item
+                return (
+                  <li key={c.linkId} aria-label={c.name}>
+                    <div className="client-head">
+                      {storesFor ? (
+                        <button className="link client-name" onClick={() => setOpen({ item, stores: storesFor(c.clientId) })}>
+                          {c.name}
+                        </button>
+                      ) : (
+                        <strong>{c.name}</strong>
+                      )}
+                      {ending === c.linkId ? (
+                        <span className="actions">
+                          <button className="link" onClick={() => void end(c)}>Yes, end</button>
+                          <button className="link" onClick={() => setEnding(null)}>Cancel</button>
+                        </span>
+                      ) : (
+                        <button className="link" aria-label={`End link with ${c.name}`} onClick={() => setEnding(c.linkId)}>End</button>
+                      )}
+                    </div>
+                    {flags.length ? (
+                      <ul className="flags">
+                        {flags.map((f) => (
+                          <li key={f.reason}>{f.reason}</li>
+                        ))}
+                      </ul>
                     ) : (
-                      <button className="link" aria-label={`End link with ${c.name}`} onClick={() => setEnding(c.linkId)}>End</button>
+                      <p className="muted on-track">On track this week.</p>
                     )}
-                  </div>
-                  {flags.length ? (
-                    <ul className="flags">
-                      {flags.map((f) => (
-                        <li key={f.reason}>{f.reason}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="muted on-track">On track this week.</p>
-                  )}
-                </li>
-              ))}
+                  </li>
+                )
+              })}
             </ul>
           </>
         )}

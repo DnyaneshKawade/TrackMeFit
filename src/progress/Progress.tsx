@@ -31,7 +31,7 @@ const CHART_H = 140
 const shortDate = (iso: string) =>
   new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 
-function WeightChartView({ weighIns }: { weighIns: WeighIn[] }) {
+export function WeightChartView({ weighIns }: { weighIns: WeighIn[] }) {
   const chart = weightChart(weighIns, CHART_W, CHART_H)
   if (!chart || chart.scale.length < 2) return null
   return (

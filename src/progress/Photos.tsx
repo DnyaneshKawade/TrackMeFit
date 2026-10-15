@@ -4,8 +4,19 @@ import { POSES, checkPhotoFile, shrinkImage, type Photo, type PhotoStore, type P
 const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 const poseLabel = (pose: Pose) => POSES.find((p) => p.pose === pose)!.label
 
-/** Progress photos (T-022b): add today's front, side or back photo, see them by date, remove one. */
-export function Photos({ store, today, shrink = shrinkImage }: { store: PhotoStore; today: string; shrink?: (file: Blob) => Promise<Blob> }) {
+/** Progress photos (T-022b): add today's front, side or back photo, see them by date, remove one.
+ * A coach sees a client's photos read-only (T-026c). */
+export function Photos({
+  store,
+  today,
+  shrink = shrinkImage,
+  readOnly = false,
+}: {
+  store: PhotoStore
+  today: string
+  shrink?: (file: Blob) => Promise<Blob>
+  readOnly?: boolean
+}) {
   const [photos, setPhotos] = useState<Photo[] | null>(null)
   const [more, setMore] = useState(false)
   const [pose, setPose] = useState<Pose>('front')
@@ -72,25 +83,27 @@ export function Photos({ store, today, shrink = shrinkImage }: { store: PhotoSto
   return (
     <section aria-label="Progress photos" className="photos">
       <h3>Progress photos</h3>
-      <p className="muted">Only you and your coach, if you have one, can see these. Use the same place, light and pose each time.</p>
-      <div className="photo-add">
-        <div className="range" role="group" aria-label="Pose">
-          {POSES.map((p) => (
-            <button key={p.pose} type="button" className={`chip${pose === p.pose ? ' on' : ''}`} aria-pressed={pose === p.pose} onClick={() => setPose(p.pose)}>
-              {p.label}
-            </button>
-          ))}
+      {!readOnly && <p className="muted">Only you and your coach, if you have one, can see these. Use the same place, light and pose each time.</p>}
+      {!readOnly && (
+        <div className="photo-add">
+          <div className="range" role="group" aria-label="Pose">
+            {POSES.map((p) => (
+              <button key={p.pose} type="button" className={`chip${pose === p.pose ? ' on' : ''}`} aria-pressed={pose === p.pose} onClick={() => setPose(p.pose)}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <label className={`primary photo-pick${busy ? ' busy' : ''}`}>
+            {busy ? 'Saving…' : `Add today’s ${pose} photo`}
+            <input type="file" accept="image/*" disabled={busy} aria-label={`Add today’s ${pose} photo`} onChange={(e) => void add(e.currentTarget)} />
+          </label>
         </div>
-        <label className={`primary photo-pick${busy ? ' busy' : ''}`}>
-          {busy ? 'Saving…' : `Add today’s ${pose} photo`}
-          <input type="file" accept="image/*" disabled={busy} aria-label={`Add today’s ${pose} photo`} onChange={(e) => void add(e.currentTarget)} />
-        </label>
-      </div>
+      )}
       {error && <p className="error" role="alert">{error}</p>}
       {photos === null ? (
         <p className="muted">Loading photos…</p>
       ) : !photos.length ? (
-        <p className="muted">Take a photo every two to four weeks. Changes are easier to see in photos than in the mirror.</p>
+        <p className="muted">{readOnly ? 'No photos yet.' : 'Take a photo every two to four weeks. Changes are easier to see in photos than in the mirror.'}</p>
       ) : (
         dates.map((d) => (
           <figure key={d} className="photo-day">
@@ -99,9 +112,11 @@ export function Photos({ store, today, shrink = shrinkImage }: { store: PhotoSto
               {photos.filter((p) => p.date === d).map((p) => (
                 <li key={p.id}>
                   <img src={p.url} alt={`${poseLabel(p.pose)}, ${shortDate(d)}`} loading="lazy" />
-                  <button className="link" aria-label={`Remove ${p.pose} photo from ${shortDate(d)}`} onClick={() => void remove(p)}>
-                    Remove
-                  </button>
+                  {!readOnly && (
+                    <button className="link" aria-label={`Remove ${p.pose} photo from ${shortDate(d)}`} onClick={() => void remove(p)}>
+                      Remove
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
