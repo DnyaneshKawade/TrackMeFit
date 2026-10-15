@@ -74,9 +74,12 @@ export function offlineLogStore(
 
   const between = (from: string, to: string) => (e: { loggedOn: string }) => e.loggedOn >= from && e.loggedOn <= to
   const listRange = remote.listRange?.bind(remote)
+  // Fasting days need a connection; they are not kept on the phone.
+  const fasting = remote.fastingDays && remote.setFasting && { fastingDays: remote.fastingDays.bind(remote), setFasting: remote.setFasting.bind(remote) }
 
   return {
     sync,
+    ...fasting,
     ...(listRange && {
       /** From the server, or the days kept on the phone when offline. */
       async listRange(from: string, to: string) {

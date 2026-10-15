@@ -39,6 +39,7 @@
 .kcal-chart .bar { fill: #9fb3ab; }
 .kcal-chart .bar.on { fill: #0f7a5c; }
 .kcal-chart .bar.today { fill: #cfe3db; }
+.kcal-chart .bar.fast { fill: none; stroke: #8a9a94; stroke-width: 1.5; stroke-dasharray: 3 2; }
 .kcal-chart .target-line { fill: none; stroke: #c2410c; stroke-width: 2; stroke-dasharray: 4 3; }
 @media (prefers-color-scheme: dark) {
   .kcal-chart .bar { fill: #5d6f69; }
