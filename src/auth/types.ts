@@ -33,6 +33,7 @@ export function friendlyAuthError(e: unknown): string {
   if (/invalid login credentials/i.test(msg)) return 'Email or password is wrong.'
   if (/already registered|already been registered|user already exists/i.test(msg)) return 'This email already has an account. Sign in instead.'
   if (/email not confirmed/i.test(msg)) return 'Please confirm your email first. Check your inbox for our link.'
+  if (/email rate limit|over_email_send_rate_limit/i.test(msg)) return 'We’ve sent too many emails this hour. Please try again later, or use Google.'
   if (/rate limit|too many/i.test(msg)) return 'Too many tries. Please wait a minute and try again.'
   if (/sending confirmation|sending .*email|email address .*not authorized/i.test(msg)) return 'We couldn’t send the email to this address. Please try Google, or try again later.'
   if (/database error saving new user/i.test(msg)) return 'We couldn’t set up your account on our side. Please try again later.'
