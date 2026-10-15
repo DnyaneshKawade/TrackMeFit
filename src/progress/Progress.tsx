@@ -4,6 +4,7 @@ import { DietStats } from './DietStats'
 import { Photos } from './Photos'
 import { YourCoach } from '../coach/YourCoach'
 import type { CoachStore } from '../coach/store'
+import type { ChatStore } from '../coach/chat'
 import type { CheckInStore } from '../coach/checkIns'
 import type { PhotoStore } from './photoStore'
 import { steadySwitch, type PaceSwitch } from '../profile/steady'
@@ -151,6 +152,7 @@ export function Progress({
   photos,
   coach,
   checkIns,
+  chat,
   today = localDate(),
 }: {
   store: ProgressStore
@@ -168,6 +170,8 @@ export function Progress({
   coach?: CoachStore
   /** Weekly check-ins for the coach (T-026e). */
   checkIns?: CheckInStore
+  /** Messages with the coach (T-026f). */
+  chat?: ChatStore
   today?: string
 }) {
   const [target, setTarget] = useState<DietTarget | null>(null)
@@ -342,7 +346,7 @@ export function Progress({
 
       {photos && <Photos store={photos} today={today} />}
 
-      {coach && <YourCoach store={coach} checkIns={checkIns} today={today} />}
+      {coach && <YourCoach store={coach} checkIns={checkIns} chat={chat} today={today} />}
     </main>
   )
 }

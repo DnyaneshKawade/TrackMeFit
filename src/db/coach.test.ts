@@ -199,3 +199,48 @@ describe('weekly check-ins (T-026e)', () => {
     expect(await t4.as(other, (db) => db.query('select * from check_ins').then((r) => r.rows.length))).toBe(0)
   })
 })
+
+describe('chat (T-026f)', () => {
+  it('1. only the two sides of an active link read and send, nobody changes a message, and the chat closes when the link ends', async () => {
+    const t5 = await createTestDb()
+    const neha = await t5.signUp('neha@example.com', { full_name: 'Neha' })
+    const k = await t5.signUp('k@example.com', { role: 'coach', full_name: 'Coach K' })
+    const other = await t5.signUp('other@example.com', { role: 'coach', full_name: 'Coach M' })
+    const code = await t5.as(k, newCode)
+    await t5.as(neha, (db) => join(db, code))
+    const link = await t5.as(neha, (db) => db.query<{ id: string }>('select id from coach_clients').then((r) => r.rows[0].id))
+    const send = (as: string, body: string, sender?: string) =>
+      t5.as(as, (db) =>
+        sender
+          ? db.query('insert into chat_messages (link_id, sender_id, body) values ($1, $2, $3)', [link, sender, body])
+          : db.query('insert into chat_messages (link_id, body) values ($1, $2)', [link, body]),
+      )
+    const read = (as: string) => t5.as(as, (db) => db.query<{ body: string; read_at: string | null }>('select body, read_at from chat_messages order by created_at').then((r) => r.rows))
+
+    await send(neha, 'Can I swap rice for roti?')
+    await send(k, 'Yes, two roti.')
+    await expect(send(neha, '   ')).rejects.toThrow(/check/)
+    // Nobody sends as someone else, and other coaches can't write or read.
+    await expect(send(neha, 'Fake', k)).rejects.toThrow(/permission denied/)
+    await expect(send(other, 'Hello')).rejects.toThrow(/row-level security/)
+    expect(await read(other)).toEqual([])
+    expect((await read(neha)).map((m) => m.body)).toEqual(['Can I swap rice for roti?', 'Yes, two roti.'])
+
+    // Nobody changes or deletes a message, or marks it read directly.
+    await expect(t5.as(neha, (db) => db.query(`update chat_messages set body = 'Changed'`))).rejects.toThrow(/permission denied/)
+    await expect(t5.as(k, (db) => db.query(`delete from chat_messages`))).rejects.toThrow(/permission denied/)
+
+    // Opening the chat marks only the other side's messages as read.
+    await t5.as(k, (db) => db.query('select mark_chat_read($1)', [link]))
+    const rows = await read(neha)
+    expect(rows[0].read_at).not.toBeNull()
+    expect(rows[1].read_at).toBeNull()
+    await expect(t5.as(other, (db) => db.query('select mark_chat_read($1)', [link]))).rejects.toThrow(/not your chat/)
+
+    // After the link ends, neither side reads or sends.
+    await t5.as(neha, (db) => db.query(`update coach_clients set status = 'ended'`))
+    expect(await read(neha)).toEqual([])
+    expect(await read(k)).toEqual([])
+    await expect(send(k, 'Still there?')).rejects.toThrow(/row-level security/)
+  })
+})

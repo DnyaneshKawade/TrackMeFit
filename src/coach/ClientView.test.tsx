@@ -12,6 +12,7 @@ import { memoryWorkoutStore } from '../training/memoryStore'
 import { shiftDate } from '../log/types'
 import { memoryExerciseStore } from '../training/exerciseStore'
 import { memoryCheckInStore } from './checkIns'
+import { memoryChatStore, type ChatStore } from './chat'
 import { customExercises, exerciseById, setCustomExercises } from '../training/exercises'
 import type { Plan, WorkoutStore } from '../training/types'
 
@@ -23,7 +24,7 @@ afterEach(() => {
 const TODAY = '2026-10-15'
 const COACH = 'coach-1'
 
-function setup(stores: Partial<ClientStores> = {}) {
+function setup(stores: Partial<ClientStores> = {}, chat?: ChatStore) {
   const all: ClientStores = {
     log: memoryLogStore(),
     targets: memoryTargetStore('client-l1', [
@@ -39,9 +40,25 @@ function setup(stores: Partial<ClientStores> = {}) {
     ...stores,
   }
   const client = { ...emptyClient('l1', 'Asha Rao'), trainingDays: 3 }
-  render(<Clients store={memoryCoachStore({ clients: [client] })} storesFor={() => all} coachId={COACH} today={TODAY} />)
+  render(<Clients store={memoryCoachStore({ clients: [client] })} storesFor={() => all} coachId={COACH} today={TODAY} chat={chat} />)
   return all
 }
+
+describe('chat on the client page (T-026f)', () => {
+  it('5. the coach opens a client with a new message, reads it there, and the count clears', async () => {
+    const rows: Parameters<typeof memoryChatStore>[1] = [{ id: 'm1', linkId: 'l1', sender: 'client-l1', body: 'Is curd okay at night?', sentAt: '2026-10-15T03:00:00.000Z', readAt: null }]
+    setup({}, memoryChatStore(COACH, rows))
+    expect(await screen.findByText('1 new message')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Asha Rao' }))
+    const chat = screen.getByRole('region', { name: 'Messages' })
+    expect(await within(chat).findByText('Is curd okay at night?')).toBeTruthy()
+    expect(within(chat).getByLabelText('Message to Asha')).toBeTruthy()
+    await waitFor(() => expect(rows[0].readAt).not.toBeNull())
+    fireEvent.click(screen.getByRole('button', { name: '← All clients' }))
+    await screen.findByRole('button', { name: 'Invite a client' })
+    expect(screen.queryByText('1 new message')).toBeNull()
+  })
+})
 
 describe('opening a client (T-026c)', () => {
   it('1. shows what needs attention, targets, weight, food stats, workouts and photos', async () => {

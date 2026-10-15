@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import { RoleStep } from './auth/RoleStep'
+import { memoryChatStore, supabaseChatStore, type ChatStore } from './coach/chat'
 import { memoryCheckInStore, supabaseCheckInStore, type CheckInStore } from './coach/checkIns'
 import { SignIn } from './auth/SignIn'
 import { createSupabaseAuth, supabaseFromEnv } from './auth/supabaseAuth'
@@ -50,6 +51,7 @@ export function AppShell({
   photoStoreFor = () => memoryPhotoStore(),
   coachStoreFor = () => memoryCoachStore(),
   checkInStoreFor = () => memoryCheckInStore(),
+  chatStoreFor = (a) => memoryChatStore(a.id),
   clientStoresFor = () => ({
     log: memoryLogStore(),
     targets: memoryTargetStore(),
@@ -79,6 +81,8 @@ export function AppShell({
   clientStoresFor?: (clientId: string) => ClientStores
   /** Weekly check-ins of the signed-in person (T-026e). */
   checkInStoreFor?: (account: Account) => CheckInStore
+  /** Messages between a person and their coach (T-026f). */
+  chatStoreFor?: (account: Account) => ChatStore
   foodStoreFor?: (account: Account) => CustomFoodStore
   mealPlanStoreFor?: (account: Account) => MealPlanStore
   /** Food search; the bundled list unless the database is set up. */
@@ -110,6 +114,7 @@ export function AppShell({
   const coaching = useMemo(() => (account ? coachStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const photos = useMemo(() => (account ? photoStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const checkIns = useMemo(() => (account ? checkInStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const chat = useMemo(() => (account ? chatStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   // The latest weight, for a new meal plan from the Food tab (T-061).
   const latestWeight = useMemo(
     () => async () => {
@@ -245,7 +250,7 @@ export function AppShell({
       )}
       <Suspense fallback={<main className="log">Loading…</main>}>
         {tab === 'training' && <Workouts store={workouts!} exercises={exerciseStore} answers={profile ?? undefined} userId={account.id} />}
-        {tab === 'clients' && coaching && <Clients store={coaching} storesFor={clientStoresFor} coachId={account.id} />}
+        {tab === 'clients' && coaching && <Clients store={coaching} storesFor={clientStoresFor} coachId={account.id} chat={chat} />}
         {tab === 'progress' && (
           <Progress
             store={progress!}
@@ -256,6 +261,7 @@ export function AppShell({
             photos={photos}
             coach={account.role === 'user' ? coaching : undefined}
             checkIns={account.role === 'user' ? checkIns : undefined}
+            chat={account.role === 'user' ? chat : undefined}
             onSwitchPace={async (rate, target) => {
               const p = { ...profile!, goalRate: rate }
               await profiles!.save(p)
@@ -298,6 +304,7 @@ export default function App() {
         checkIns: supabaseCheckInStore(sb!, id),
       })}
       checkInStoreFor={(a) => supabaseCheckInStore(sb!, a.id)}
+      chatStoreFor={(a) => supabaseChatStore(sb!, a.id)}
       foodStoreFor={(a) => supabaseCustomFoodStore(sb!, a.id)}
       mealPlanStoreFor={(a) => supabaseMealPlanStore(sb!, a.id)}
       loadFoods={loadFoods}

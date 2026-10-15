@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { sortByAttention, type ClientAttention } from '../engine/attention'
 import { localDate } from '../log/types'
+import type { ChatStore } from './chat'
 import { ClientView, type ClientStores } from './ClientView'
 import { inviteMessage, showCode, type ClientRow, type CoachStore, type Invite } from './store'
 import '../log/log.css'
@@ -15,12 +16,15 @@ export function Clients({
   storesFor,
   coachId = '',
   today = localDate(),
+  chat,
 }: {
   store: CoachStore
   /** A client's stores, to open them (T-026c). */
   storesFor?: (clientId: string) => ClientStores
   coachId?: string
   today?: string
+  /** Messages with clients, and unread counts on the list (T-026f). */
+  chat?: ChatStore
 }) {
   const [clients, setClients] = useState<ClientAttention<ClientRow>[] | null>(null)
   const [open, setOpen] = useState<{ item: ClientAttention<ClientRow>; stores: ClientStores } | null>(null)
@@ -28,6 +32,7 @@ export function Clients({
   const [copied, setCopied] = useState(false)
   const [ending, setEnding] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [unread, setUnread] = useState<Map<string, number>>(new Map())
 
   useEffect(() => {
     store.clients(today).then(
@@ -38,6 +43,11 @@ export function Clients({
       },
     )
   }, [store, today])
+
+  // Counted again when the coach comes back from a client's page.
+  useEffect(() => {
+    if (chat && !open) chat.unread().then(setUnread, () => undefined)
+  }, [chat, open])
 
   const makeInvite = async () => {
     setError(null)
@@ -70,7 +80,7 @@ export function Clients({
   }
 
   if (open)
-    return <ClientView client={open.item.client} flags={open.item.flags} stores={open.stores} coachId={coachId} today={today} onBack={() => setOpen(null)} />
+    return <ClientView client={open.item.client} flags={open.item.flags} stores={open.stores} coachId={coachId} today={today} chat={chat} onBack={() => setOpen(null)} />
 
   return (
     <main className="log progress clients">
@@ -124,6 +134,9 @@ export function Clients({
                         <button className="link" aria-label={`End link with ${c.name}`} onClick={() => setEnding(c.linkId)}>End</button>
                       )}
                     </div>
+                    {(unread.get(c.linkId) ?? 0) > 0 && (
+                      <p className="unread">{unread.get(c.linkId) === 1 ? '1 new message' : `${unread.get(c.linkId)} new messages`}</p>
+                    )}
                     {flags.length ? (
                       <ul className="flags">
                         {flags.map((f) => (

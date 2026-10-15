@@ -86,3 +86,14 @@
 .check-in textarea { font: inherit; padding: 8px; border-radius: 8px; border: 1.5px solid #cdd6d2; min-height: 60px; }
 .check-in .check-in-reply { background: #f1faf6; border-radius: 8px; padding: 8px; }
 .check-in article { border-top: 1px solid #e3e8e6; padding-top: 8px; margin-top: 8px; }
+.chat .chat-list { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 6px; max-height: 360px; overflow-y: auto; }
+.chat .chat-list li { max-width: 85%; padding: 6px 10px; border-radius: 10px; background: #eef2f1; }
+.chat .chat-list li.mine { justify-self: end; background: #e1f4ec; }
+.chat .chat-list p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.chat textarea { font: inherit; padding: 8px; border-radius: 8px; border: 1.5px solid #cdd6d2; min-height: 60px; }
+.client-list .unread { margin: 4px 0 0; font-weight: 600; color: #0f766e; }
+@media (prefers-color-scheme: dark) {
+  .chat .chat-list li { background: #1f2a27; }
+  .chat .chat-list li.mine { background: #173a30; }
+  .client-list .unread { color: #5eead4; }
+}
