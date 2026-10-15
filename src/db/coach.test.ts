@@ -279,3 +279,30 @@ describe('live chat (T-026h)', () => {
     expect(rows).toContain('chat_messages')
   })
 })
+
+describe('client limit (T-026i)', () => {
+  it('1. a full coach can’t make a code, an old code says the coach is full, and nobody changes their limit', async () => {
+    const t8 = await createTestDb()
+    const neha = await t8.signUp('neha@example.com', { full_name: 'Neha' })
+    const ravi = await t8.signUp('ravi@example.com', { full_name: 'Ravi' })
+    const k = await t8.signUp('k@example.com', { role: 'coach', full_name: 'Coach K' })
+    expect(await t8.as(k, (db) => db.query<{ client_limit: number }>('select client_limit from profiles where id = $1', [k]).then((r) => r.rows[0].client_limit))).toBe(30)
+
+    await t8.db.query('update profiles set client_limit = 1 where id = $1', [k])
+    const first = await t8.as(k, newCode)
+    const second = await t8.as(k, newCode)
+    expect(await t8.as(neha, (db) => join(db, first))).toBe('Coach K')
+
+    await expect(t8.as(k, newCode)).rejects.toThrow(/client limit reached/)
+    await expect(t8.as(ravi, (db) => join(db, second))).rejects.toThrow(/coach is full/)
+    // The old code is kept, so it works once there is room again.
+    expect(await t8.db.query('select 1 from coach_invites where code = $1', [second]).then((r) => r.rows.length)).toBe(1)
+
+    await expect(t8.as(k, (db) => db.query('update profiles set client_limit = 100 where id = $1', [k]))).rejects.toThrow(/client limit cannot be changed/)
+    // Other profile edits still work.
+    await t8.as(k, (db) => db.query(`update profiles set full_name = 'Coach Kavita' where id = $1`, [k]))
+
+    await t8.as(neha, (db) => db.query(`update coach_clients set status = 'ended' where client_id = $1`, [neha]))
+    expect(await t8.as(ravi, (db) => join(db, second))).toBe('Coach Kavita')
+  })
+})

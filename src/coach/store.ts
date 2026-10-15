@@ -31,7 +31,12 @@ export interface CoachStore {
   createInvite(): Promise<Invite>
   /** Ends a link, from either side. */
   end(linkId: string): Promise<void>
+  /** Most active clients a coach may have (T-026i). */
+  clientLimit(): Promise<number>
 }
+
+/** Clients a coach may have unless an admin changes it. */
+export const CLIENT_LIMIT = 30
 
 /** "ABCDE12345" shown as "ABCDE-12345" so it is easy to read out. */
 export const showCode = (code: string) => (code.length === 10 ? `${code.slice(0, 5)}-${code.slice(5)}` : code)
@@ -59,7 +64,12 @@ export const emptyClient = (linkId: string, name: string): ClientRow => ({
 })
 
 /** For tests and offline previews: codes map to coach names. */
-export function memoryCoachStore(start: { coach?: CoachLink | null; clients?: ClientRow[]; codes?: Record<string, string> } = {}): CoachStore {
+export function memoryCoachStore(
+  start: { coach?: CoachLink | null; clients?: ClientRow[]; codes?: Record<string, string>; limit?: number; fullCodes?: string[] } = {},
+): CoachStore {
+  const limit = start.limit ?? CLIENT_LIMIT
+  // Codes from coaches who have no room left.
+  const full = new Set(start.fullCodes ?? [])
   let coach = start.coach ?? null
   let clients = [...(start.clients ?? [])]
   const codes = new Map(Object.entries(start.codes ?? {}))
@@ -72,6 +82,7 @@ export function memoryCoachStore(start: { coach?: CoachLink | null; clients?: Cl
       const clean = code.replace(/[^a-z0-9]/gi, '').toUpperCase()
       const name = codes.get(clean)
       if (name === undefined) throw new Error('invite not valid')
+      if (full.has(clean)) throw new Error('coach is full')
       codes.delete(clean)
       coach = { id: `link-${++n}`, personId: `coach-${n}`, name }
       return name
@@ -80,12 +91,16 @@ export function memoryCoachStore(start: { coach?: CoachLink | null; clients?: Cl
       return [...clients]
     },
     async createInvite() {
+      if (clients.length >= limit) throw new Error('client limit reached')
       const code = `ABCDE${String(++n).padStart(5, '0')}`
       return { code, expiresAt: '2026-10-22T00:00:00Z' }
     },
     async end(id) {
       if (coach?.id === id) coach = null
       clients = clients.filter((c) => c.linkId !== id)
+    },
+    async clientLimit() {
+      return limit
     },
   }
 }
@@ -168,6 +183,11 @@ export function supabaseCoachStore(sb: SupabaseClient, userId: string): CoachSto
     async end(id) {
       const { error } = await sb.from('coach_clients').update({ status: 'ended' }).eq('id', id)
       if (error) throw error
+    },
+    async clientLimit() {
+      const { data, error } = await sb.from('profiles').select('client_limit').eq('id', userId).single()
+      if (error) throw error
+      return (data as { client_limit: number }).client_limit
     },
   }
 }
