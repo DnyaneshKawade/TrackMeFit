@@ -2,6 +2,17 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: A coach edits a client's workout plan (T-026d)
+
+- Fourth part of the coach dashboard (T-026), next in order. Spec `specs/T-026d-coach-plans.md`.
+- The client page lists the client's plans with their days, and who changed each one last.
+- "Edit" and "+ New plan" open the plan editor for the client. The coach can't delete a client's plan.
+- While the page is open, the client's own exercises are known by name and can be picked. The coach's own come back after.
+- The client sees "Changed by your coach on 15 Oct." under a plan on the Training tab.
+- Migration `20261029000000_plan_changed_by.sql`: `workout_plans` gets `updated_by` and `updated_at`, filled by a trigger. It also fixes `created_by` to the signed-in person.
+- Left for T-026: check-ins, chat, templates and a client limit.
+- Tests: 4 in `src/coach/ClientView.test.tsx`, 1 in `src/training/Workouts.test.tsx`, 1 in `src/db/coach.test.ts`, 1 check in `src/training/training.test.ts`.
+
 ## 2026-10-15: Open a client (T-026c)
 
 - Third part of the coach dashboard (T-026), next in order. Spec `specs/T-026c-open-client.md`.

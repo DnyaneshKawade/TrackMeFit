@@ -23,6 +23,8 @@ type View =
   | { kind: 'records' }
   | { kind: 'suggest' }
 
+const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+
 /** Swaps one own exercise in the list known to search, plans and logs. */
 function replaceCustom(id: string, change: (e: Exercise) => Exercise) {
   setCustomExercises(customExercises().map((x) => (x.id === id ? change(x) : x)))
@@ -33,12 +35,15 @@ export function Workouts({
   exercises,
   today = localDate(),
   answers,
+  userId,
 }: {
   store: WorkoutStore
   exercises?: ExerciseStore
   today?: string
   /** Onboarding answers for "Suggest a plan" (T-041a). */
   answers?: TrainingAnswers
+  /** The signed-in person, to tell their own plan changes from their coach's (T-026d). */
+  userId?: string
 }) {
   const [plans, setPlans] = useState<Plan[] | null>(null)
   const [favourites, setFavourites] = useState<Set<string>>(new Set())
@@ -251,6 +256,9 @@ export function Workouts({
                 <strong>{p.name}</strong>
                 <span className="muted">{p.days.map((d) => d.name).join(' · ')}</span>
                 <span className="muted">{weekLabel(b.week, b.hardWeeks)}</span>
+                {userId && p.changedBy && p.changedBy !== userId && (
+                  <span className="muted">Changed by your coach{p.changedOn ? ` on ${shortDate(p.changedOn)}` : ''}.</span>
+                )}
               </button>
               <button className="link" aria-label={`Review week for ${p.name}`} onClick={() => setView({ kind: 'review', plan: p })}>
                 Review week

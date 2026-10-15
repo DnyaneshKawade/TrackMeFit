@@ -2,6 +2,7 @@
 // person and their active coach; only the person logs sessions and sets.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { localDate } from '../log/types'
 import type { Feedback } from './progression'
 import { MAX_RECORD_SESSIONS, MAX_SUMMARIES, type PastSession, type Plan, type Session, type SessionSummary, type SetLog, type SetTag, type WorkoutStore } from './types'
 
@@ -23,6 +24,8 @@ interface PlanRow {
   name: string
   hard_weeks: number
   block_started_on: string
+  updated_by?: string | null
+  updated_at?: string
   plan_days: { id: string; day_index: number; name: string; plan_exercises: { position: number; exercise_id: string; sets: number; rep_min: number; rep_max: number; superset_next?: boolean }[] }[]
 }
 
@@ -31,6 +34,8 @@ export const planFromRow = (r: PlanRow): Plan => ({
   name: r.name,
   hardWeeks: r.hard_weeks,
   blockStartedOn: r.block_started_on,
+  ...(r.updated_by ? { changedBy: r.updated_by } : {}),
+  ...(r.updated_at ? { changedOn: localDate(new Date(r.updated_at)) } : {}),
   days: [...r.plan_days]
     .sort((a, b) => a.day_index - b.day_index)
     .map((d) => ({
@@ -69,7 +74,7 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): Workou
       const rows = check(
         await sb
           .from('workout_plans')
-          .select('id, name, hard_weeks, block_started_on, plan_days(id, day_index, name, plan_exercises(position, exercise_id, sets, rep_min, rep_max, superset_next))')
+          .select('id, name, hard_weeks, block_started_on, updated_by, updated_at, plan_days(id, day_index, name, plan_exercises(position, exercise_id, sets, rep_min, rep_max, superset_next))')
           .eq('user_id', userId)
           .eq('is_active', true)
           .order('created_at'),
