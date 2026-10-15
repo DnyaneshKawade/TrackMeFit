@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
+import { localDate } from '../log/types'
+import { CheckInCard } from './CheckIn'
+import type { CheckInStore } from './checkIns'
 import type { CoachLink, CoachStore } from './store'
 
 export const SHARED_TEXT = 'Your coach can see your food, workouts, weight, measurements and photos. They can also set your targets and plans.'
 
 /** On the Progress tab: join a coach with their code, or stop sharing (T-026a). */
-export function YourCoach({ store }: { store: CoachStore }) {
+export function YourCoach({ store, checkIns, today }: { store: CoachStore; checkIns?: CheckInStore; today?: string }) {
   const [coach, setCoach] = useState<CoachLink | null | undefined>(undefined)
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
@@ -66,6 +69,7 @@ export function YourCoach({ store }: { store: CoachStore }) {
           ) : (
             <button className="link" onClick={() => setConfirming(true)}>Stop sharing with your coach</button>
           )}
+          {checkIns && <CheckInCard store={checkIns} today={today ?? localDate()} />}
         </>
       ) : (
         <form onSubmit={join} noValidate>

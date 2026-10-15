@@ -68,3 +68,23 @@ describe('progress photos (T-022b)', () => {
     expect(screen.queryByRole('button', { name: 'Show older' })).toBeNull()
   })
 })
+
+describe('side-by-side photos (T-026e)', () => {
+  it('5. compares the oldest and newest photo of a pose, and either date can change', async () => {
+    const store = memoryPhotoStore([
+      { id: 'a', date: shiftDate(TODAY, -28), pose: 'front' },
+      { id: 'b', date: shiftDate(TODAY, -14), pose: 'front' },
+      { id: 'c', date: TODAY, pose: 'front' },
+      { id: 'd', date: TODAY, pose: 'side' },
+    ])
+    render(<Photos store={store} today={TODAY} readOnly />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Compare two dates' }))
+    const pair = screen.getByRole('group', { name: 'Compare photos' })
+    expect(within(pair).getByRole('img', { name: 'Front, 17 Sept' })).toBeTruthy()
+    expect(within(pair).getByRole('img', { name: 'Front, 15 Oct' })).toBeTruthy()
+    fireEvent.change(within(pair).getByLabelText('Earlier date'), { target: { value: shiftDate(TODAY, -14) } })
+    expect(within(pair).getByRole('img', { name: 'Front, 1 Oct' })).toBeTruthy()
+    fireEvent.click(within(pair).getByRole('button', { name: 'Side' }))
+    expect(within(pair).getByText('Two side photos on different days are needed to compare.')).toBeTruthy()
+  })
+})

@@ -162,3 +162,40 @@ describe('coach edits a plan (T-026d)', () => {
     expect(await t3.as(neha, (db) => db.query<{ n: number }>(`select count(*)::int as n from workout_plans where name = 'Mine'`).then((r) => r.rows[0].n))).toBe(0)
   })
 })
+
+describe('weekly check-ins (T-026e)', () => {
+  it('8. the person writes answers once a week, only their active coach replies, and nobody else reads them', async () => {
+    const t4 = await createTestDb()
+    const neha = await t4.signUp('neha@example.com', { full_name: 'Neha' })
+    const k = await t4.signUp('k@example.com', { role: 'coach', full_name: 'Coach K' })
+    const other = await t4.signUp('other@example.com', { role: 'coach', full_name: 'Coach M' })
+    const code = await t4.as(k, newCode)
+    await t4.as(neha, (db) => join(db, code))
+    const add = (week: string) =>
+      t4.as(neha, (db) =>
+        db.query<{ id: string }>(`insert into check_ins (week_start, energy, sleep, mood, diet, training, note) values ($1, 4, 3, 4, 2, 5, 'Busy week') returning id`, [week]),
+      ).then((r) => r.rows[0].id)
+    const id = await add('2026-10-12')
+    // One per week, and only for a Monday.
+    await expect(add('2026-10-12')).rejects.toThrow(/duplicate|unique/)
+    await expect(add('2026-10-13')).rejects.toThrow(/check/)
+    // Nobody writes a check-in for someone else.
+    await expect(t4.as(k, (db) => db.query(`insert into check_ins (user_id, week_start, energy, sleep, mood, diet, training) values ($1, '2026-10-05', 1, 1, 1, 1, 1)`, [neha]))).rejects.toThrow()
+    // The person can't write the reply themselves.
+    await expect(t4.as(neha, (db) => db.query(`update check_ins set coach_reply = 'Great job' where id = $1`, [id]))).rejects.toThrow(/permission denied/)
+
+    const reply = (as: string, text: string) => t4.as(as, (db) => db.query('select reply_check_in($1, $2)', [id, text]))
+    await expect(reply(other, 'Hi')).rejects.toThrow(/not your client/)
+    await expect(reply(neha, 'Hi')).rejects.toThrow(/not your client/)
+    await expect(reply(k, '  ')).rejects.toThrow(/reply is empty/)
+    await reply(k, ' Eat more protein at breakfast. ')
+    const row = await t4.as(neha, (db) => db.query<{ coach_reply: string; replied_by: string }>('select coach_reply, replied_by from check_ins').then((r) => r.rows[0]))
+    expect(row).toEqual({ coach_reply: 'Eat more protein at breakfast.', replied_by: k })
+
+    // After the reply, the answers stay as they were.
+    await t4.as(neha, (db) => db.query(`update check_ins set note = 'Changed' where id = $1`, [id]))
+    expect(await t4.as(neha, (db) => db.query<{ note: string }>('select note from check_ins').then((r) => r.rows[0].note))).toBe('Busy week')
+    // Another coach sees nothing.
+    expect(await t4.as(other, (db) => db.query('select * from check_ins').then((r) => r.rows.length))).toBe(0)
+  })
+})

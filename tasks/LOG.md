@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: Weekly check-ins and side-by-side photos (T-026e)
+
+- Fifth part of the coach dashboard (T-026), next in order. Spec `specs/T-026e-check-ins.md`.
+- A person with a coach sends a weekly check-in from Progress: five scores from 1 to 5 and two notes. They can change it until the coach replies.
+- The client page shows check-ins newest first, with the week's average weight and the change from the week before. The coach replies once.
+- "Compare two dates" shows two photos of one pose side by side, for the person and the coach.
+- Migration `20261031000000_check_ins.sql`: table `check_ins` with column-level grants, and `reply_check_in` for the coach.
+- Also removed four task rows that the #55 merge had doubled.
+- Left for T-026: chat, templates and a client limit.
+- Tests: 3 in `src/coach/YourCoach.test.tsx`, 1 in `src/coach/ClientView.test.tsx`, 3 in `src/coach/checkIns.test.ts`, 1 in `src/progress/Photos.test.tsx`, 1 in `src/db/coach.test.ts`.
 ## 2026-10-15: Email limit message (T-066b)
 
 - DK then saw "Too many tries. Please wait a minute". Supabase's built-in email sender allows about 2 emails an hour.

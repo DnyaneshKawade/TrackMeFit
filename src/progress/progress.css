@@ -76,3 +76,13 @@
 .client-view .back { padding: 0; margin: 4px 0; }
 .client-view .flags { margin: 6px 0 0; padding-left: 18px; color: #9a3412; }
 @media (prefers-color-scheme: dark) { .client-view .flags { color: #fdba74; } }
+.photos .photo-compare { display: grid; gap: 8px; margin: 8px 0; }
+.photos .photo-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.photos .photo-pair figure { margin: 0; display: grid; gap: 4px; }
+.photos .photo-pair img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 8px; }
+.photos .photo-pair select { font: inherit; padding: 6px; border-radius: 8px; }
+.check-in .range { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0; }
+.check-in .check-in-q { flex: 1 0 100%; font-weight: 600; }
+.check-in textarea { font: inherit; padding: 8px; border-radius: 8px; border: 1.5px solid #cdd6d2; min-height: 60px; }
+.check-in .check-in-reply { background: #f1faf6; border-radius: 8px; padding: 8px; }
+.check-in article { border-top: 1px solid #e3e8e6; padding-top: 8px; margin-top: 8px; }
