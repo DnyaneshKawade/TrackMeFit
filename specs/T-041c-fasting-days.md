@@ -1,6 +1,6 @@
 # T-041c: Fasting days in the food log
 
-Status: built; agreed (DK, 15 Oct 2026: "go by the logical sequence of task"). Option "Mark the day" was recommended on the decision card and built while DK decides.
+Status: rolled back (DK, 15 Oct 2026: "its a bit too much of customisation i believe, so better not to include it for now"). Built in PR #48, removed in the next change. Kept here for later.
 Task: [T-041](../tasks/TASKS.md)
 
 ## Problem

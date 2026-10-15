@@ -76,26 +76,3 @@ describe('food stats (T-062)', () => {
     expect(noTargets.notes[0]).toBe('Set your daily targets to see days on target.')
   })
 })
-
-describe('fasting days in food stats (T-041c)', () => {
-  const days = [entry('2026-10-10', 2000, 100), entry('2026-10-11', 400, 10), entry('2026-10-12', 2000, 100)]
-  const fasts = new Set(['2026-10-11'])
-
-  it('4. a fasting day is left out of the averages and days on target', () => {
-    const s = dietStats(days, [TARGET], FROM, TODAY, 5, fasts)
-    expect(s.loggedDays).toBe(2)
-    expect(s.fastingDays).toBe(1)
-    expect(s.average).toMatchObject({ kcal: 2000, proteinG: 100 })
-    expect(s.daysOnTarget).toBe(2)
-    const fast = s.days.find((d) => d.date === '2026-10-11')!
-    expect(fast).toMatchObject({ fasting: true, onTarget: null })
-    expect(s.notes).toContain('Fasting days are left out of the averages, days on target and the protein streak.')
-    // Without the mark, the same day pulls the average down.
-    expect(dietStats(days, [TARGET], FROM, TODAY).average!.kcal).toBe(1467)
-  })
-
-  it('4. a fasting day doesn’t break the protein streak', () => {
-    expect(dietStats(days, [TARGET], FROM, TODAY).proteinStreak).toBe(1)
-    expect(dietStats(days, [TARGET], FROM, TODAY, 5, fasts).proteinStreak).toBe(2)
-  })
-})

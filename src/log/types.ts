@@ -33,10 +33,6 @@ export interface LogStore {
   recent(): Promise<LogEntry[]>
   /** Entries from one date to another, both included (T-062). */
   listRange?(from: string, to: string): Promise<LogEntry[]>
-  /** Days marked as fasting days, from one date to another (T-041c). */
-  fastingDays?(from: string, to: string): Promise<string[]>
-  /** Marks or unmarks a fasting day. Needs a connection. */
-  setFasting?(date: string, on: boolean): Promise<void>
   /** Present when entries can wait on the phone to sync (T-027). */
   sync?: LogSync
 }

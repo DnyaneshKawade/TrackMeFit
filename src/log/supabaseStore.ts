@@ -81,24 +81,6 @@ export function supabaseLogStore(sb: SupabaseClient, userId: string): LogStore {
       if (error) throw error
       return (data as FoodLogRow[]).map(fromRow)
     },
-    async fastingDays(from, to) {
-      const { data, error } = await sb
-        .from('fasting_days')
-        .select('fasted_on')
-        .eq('user_id', userId)
-        .gte('fasted_on', from)
-        .lte('fasted_on', to)
-        .order('fasted_on')
-        .limit(400)
-      if (error) throw error
-      return (data as { fasted_on: string }[]).map((r) => r.fasted_on)
-    },
-    async setFasting(date, on) {
-      const { error } = on
-        ? await sb.from('fasting_days').upsert({ user_id: userId, fasted_on: date }, { ignoreDuplicates: true })
-        : await sb.from('fasting_days').delete().eq('user_id', userId).eq('fasted_on', date)
-      if (error) throw error
-    },
     async recent() {
       const { data, error } = await sb
         .from('food_logs')

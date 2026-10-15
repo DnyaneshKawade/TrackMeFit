@@ -32,7 +32,7 @@ function CalorieChart({ days, today }: { days: StatsDay[]; today: string }) {
               width={slot * 0.7}
               y={y(d.eaten.kcal)}
               height={CHART_H - y(d.eaten.kcal)}
-              className={d.date === today ? 'bar today' : d.fasting ? 'bar fast' : d.onTarget ? 'bar on' : 'bar'}
+              className={d.date === today ? 'bar today' : d.onTarget ? 'bar on' : 'bar'}
             />
           ) : null,
         )}
@@ -40,7 +40,7 @@ function CalorieChart({ days, today }: { days: StatsDay[]; today: string }) {
       </svg>
       <figcaption className="muted">
         {shortDate(days[0].date)} to {shortDate(days[days.length - 1].date)}. Bars are calories eaten, and dark green bars are on target. The line is your calorie
-        target. The light bar is today.{days.some((d) => d.fasting) ? ' Bars with a dashed outline are fasting days.' : ''}
+        target. The light bar is today.
       </figcaption>
     </figure>
   )
@@ -126,20 +126,15 @@ function StatsView({ stats, range, today }: { stats: Stats; range: Range; today:
 export function DietStats({ log, targets, today }: { log: LogStore; targets?: TargetStore; today: string }) {
   const [range, setRange] = useState<Range>(7)
   // The longest range is read once; the shorter one is a slice of it.
-  const [data, setData] = useState<{ entries: LogEntry[]; targets: DietTarget[]; fasting: Set<string> } | null>(null)
+  const [data, setData] = useState<{ entries: LogEntry[]; targets: DietTarget[] } | null>(null)
   const [error, setError] = useState(false)
   const from30 = shiftDate(today, -29)
 
   useEffect(() => {
     if (!log.listRange) return
     let live = true
-    Promise.all([
-      log.listRange(from30, today),
-      targets ? targets.history() : Promise.resolve([]),
-      // Fasting days are extra: without them the stats still show (T-041c).
-      log.fastingDays ? log.fastingDays(from30, today).catch(() => []) : Promise.resolve([]),
-    ]).then(
-      ([entries, history, fasting]) => live && setData({ entries, targets: history, fasting: new Set(fasting) }),
+    Promise.all([log.listRange(from30, today), targets ? targets.history() : Promise.resolve([])]).then(
+      ([entries, history]) => live && setData({ entries, targets: history }),
       () => live && setError(true),
     )
     return () => {
@@ -147,7 +142,7 @@ export function DietStats({ log, targets, today }: { log: LogStore; targets?: Ta
     }
   }, [log, targets, from30, today])
 
-  const stats = useMemo(() => (data ? dietStats(data.entries, data.targets, shiftDate(today, 1 - range), today, 5, data.fasting) : null), [data, range, today])
+  const stats = useMemo(() => (data ? dietStats(data.entries, data.targets, shiftDate(today, 1 - range), today) : null), [data, range, today])
 
   if (!log.listRange) return null
   return (

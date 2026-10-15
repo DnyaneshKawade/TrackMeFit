@@ -28,8 +28,6 @@ export interface DietAnswers {
   currentDiet?: { counts: Record<string, number> } | null
   /** Health answers: some mean a doctor or coach should plan meals. */
   medical?: Record<string, boolean>
-  /** Fasts the person keeps, from signup; any means "Fasting day" shows (T-041c). */
-  fasting?: string[]
 }
 
 // "Make today a veg day" and "I’m eating non-veg today" are a per-device
@@ -98,8 +96,6 @@ export function FoodLog({
   const [saved, setSaved] = useState<SavedMealPlan | null>(null)
   const [planning, setPlanning] = useState(false)
   const [choice, setChoice] = useState<DayChoice>(() => readChoice(date))
-  // Whether this day is marked as a fasting day; null until known (T-041c).
-  const [fasting, setFasting] = useState<boolean | null>(null)
   // Entries waiting on the phone to sync (T-027).
   const sync = store.sync
   const { pending } = useSync(sync)
@@ -145,29 +141,6 @@ export function FoodLog({
       live = false
     }
   }, [targets, date])
-
-  useEffect(() => {
-    if (!store.fastingDays) return
-    let live = true
-    setFasting(null)
-    store.fastingDays(date, date).then(
-      (list) => live && setFasting(list.includes(date)),
-      () => live && setFasting(null),
-    )
-    return () => {
-      live = false
-    }
-  }, [store, date])
-
-  const markFasting = async (on: boolean) => {
-    try {
-      await store.setFasting!(date, on)
-      setFasting(on)
-    } catch {
-      setError('Couldn’t save the fasting day. Check your connection.')
-    }
-  }
-  const keepsFasts = !!diet?.fasting?.length
 
   const saveTargets = async (v: TargetValues) => {
     const saved = await targets!.save(v, today)
@@ -327,18 +300,6 @@ export function FoodLog({
         <button className="set-targets" onClick={() => setEditingTargets(true)}>Set your daily targets</button>
       )}
 
-      {store.setFasting && fasting !== null && (keepsFasts || fasting) && (
-        <p className="info" role="status" aria-label="Fasting day">
-          {fasting
-            ? 'Fasting day. Your targets stay the same. This day is left out of your food averages.'
-            : date === today
-              ? 'Fasting today?'
-              : 'Fasted on this day?'}{' '}
-          <button className="link" onClick={() => void markFasting(!fasting)}>
-            {fasting ? 'Not a fasting day' : 'Mark as a fasting day'}
-          </button>
-        </p>
-      )}
       {eatsNonveg && (
         <p className="info" role="status" aria-label="Veg day">
           {vegWhy ? `${vegWhy}.` : weekday ? `${weekday} is usually a veg day, but you’re eating non-veg today.` : null}{' '}
