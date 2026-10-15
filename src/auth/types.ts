@@ -8,6 +8,8 @@ export interface Account {
   email: string
   name: string
   role: Role
+  /** False only for a new Google account that hasn't picked "For myself" or "I'm a coach" yet (T-066). */
+  roleChosen?: boolean
 }
 
 export type Unsubscribe = () => void
@@ -15,8 +17,10 @@ export type Unsubscribe = () => void
 export interface AuthService {
   signUp(input: { email: string; password: string; name: string; role: Role }): Promise<{ needsEmailConfirm: boolean }>
   signIn(email: string, password: string): Promise<void>
-  /** Google sign-in creates regular accounts; coaches sign up with email. */
+  /** A new Google account then picks its role once with chooseRole (T-066). */
   signInWithGoogle(): Promise<void>
+  /** Picks the role of a new Google account; works once. */
+  chooseRole(role: Role): Promise<void>
   resetPassword(email: string): Promise<void>
   signOut(): Promise<void>
   current(): Promise<Account | null>

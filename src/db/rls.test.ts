@@ -43,6 +43,29 @@ describe('sign-up', () => {
   it('does not let anyone change their own role', async () => {
     await expect(t.as(asha, (db) => db.query(`update profiles set role = 'coach' where id = $1`, [asha]))).rejects.toThrow(/role cannot be changed/)
   })
+
+  it('4. a Google sign-up picks its role once; email sign-ups and everyone after can’t change it (T-066)', async () => {
+    const t2 = await createTestDb()
+    const g = await t2.signUp('meera@gmail.com', { full_name: 'Meera' }, 'google')
+    const e = await t2.signUp('ravi@example.com', { full_name: 'Ravi', role: 'user' })
+    const profile = (id: string) =>
+      t2.db.query<{ role: string; role_chosen: boolean }>('select role, role_chosen from profiles where id = $1', [id]).then((r) => r.rows[0])
+    const choose = (id: string | null, role: string) => t2.as(id, (db) => db.query('select choose_role($1)', [role]))
+
+    expect(await profile(g)).toEqual({ role: 'user', role_chosen: false })
+    expect(await profile(e)).toEqual({ role: 'user', role_chosen: true })
+    // Not by a direct change, not as admin, not signed out.
+    await expect(t2.as(g, (db) => db.query(`update profiles set role = 'coach', role_chosen = true where id = $1`, [g]))).rejects.toThrow(/role cannot be changed/)
+    await expect(choose(g, 'admin')).rejects.toThrow(/role not valid/)
+    await expect(choose(null, 'coach')).rejects.toThrow()
+
+    await choose(g, 'coach')
+    expect(await profile(g)).toEqual({ role: 'coach', role_chosen: true })
+    await expect(choose(g, 'user')).rejects.toThrow(/role already chosen/)
+    await expect(choose(e, 'coach')).rejects.toThrow(/role already chosen/)
+    // The new coach can make invite codes.
+    await t2.as(g, (db) => db.query('insert into coach_invites default values'))
+  })
 })
 
 describe('own data only', () => {

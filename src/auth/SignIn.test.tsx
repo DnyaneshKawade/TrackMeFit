@@ -14,6 +14,7 @@ function fakeAuth(overrides: Partial<AuthService> = {}): AuthService {
     signUp: vi.fn().mockResolvedValue({ needsEmailConfirm: true }),
     signIn: vi.fn().mockResolvedValue(undefined),
     signInWithGoogle: vi.fn().mockResolvedValue(undefined),
+    chooseRole: vi.fn().mockResolvedValue(undefined),
     resetPassword: vi.fn().mockResolvedValue(undefined),
     signOut: vi.fn().mockResolvedValue(undefined),
     current: vi.fn().mockResolvedValue(null),
@@ -90,13 +91,13 @@ describe('sign-in screen', () => {
     expect((await screen.findByRole('status')).textContent).toMatch(/confirm your account/)
   })
 
-  it('creates regular accounts by default and offers Google for them only', () => {
+  it('1. offers Google to coaches too, saying the role is picked next (T-066)', () => {
     render(<SignIn auth={fakeAuth()} />)
     fireEvent.click(screen.getByRole('tab', { name: 'Create account' }))
     expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeTruthy()
     fireEvent.click(screen.getByLabelText(/A coach/))
-    expect(screen.queryByRole('button', { name: 'Continue with Google' })).toBeNull()
-    expect(screen.getByText('Coach accounts are created with email.')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeTruthy()
+    expect(screen.getByText('With Google, you pick coach or not on the next screen.')).toBeTruthy()
   })
 
   it('asks for a stronger password when creating an account', async () => {
@@ -119,6 +120,42 @@ describe('sign-in screen', () => {
     click('Send reset link')
     await waitFor(() => expect(auth.resetPassword).toHaveBeenCalledWith('dk@gmail.com'))
     expect((await screen.findByRole('status')).textContent).toMatch(/reset link/)
+  })
+})
+
+describe('Google sign-up picks a role (T-066)', () => {
+  const google: Account = { id: 'g1', email: 'meera@gmail.com', name: 'Meera Shah', role: 'user', roleChosen: false }
+
+  it('2. a new Google account picks "A coach" once and gets the Clients tab', async () => {
+    const auth = fakeAuth({ current: vi.fn().mockResolvedValue(google) })
+    render(<AppShell auth={auth} />)
+    expect(await screen.findByText('Welcome, Meera. One question first.')).toBeTruthy()
+    fireEvent.click(screen.getByLabelText(/A coach/))
+    click('Continue')
+    await waitFor(() => expect(auth.chooseRole).toHaveBeenCalledWith('coach'))
+    expect(await screen.findByRole('tab', { name: 'Clients' })).toBeTruthy()
+    expect(screen.getByText('Meera Shah (coach)')).toBeTruthy()
+  })
+
+  it('3. "Tracking my own fitness" goes on to the first-run questions; a failed save says so', async () => {
+    const auth = fakeAuth({
+      current: vi.fn().mockResolvedValue(google),
+      chooseRole: vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValue(undefined),
+    })
+    render(<AppShell auth={auth} />)
+    await screen.findByText(/One question first/)
+    click('Continue')
+    expect((await screen.findByRole('alert')).textContent).toMatch(/Couldn’t save/)
+    click('Continue')
+    await waitFor(() => expect(auth.chooseRole).toHaveBeenLastCalledWith('user'))
+    await waitFor(() => expect(screen.queryByText(/One question first/)).toBeNull())
+    expect(screen.queryByRole('tab', { name: 'Clients' })).toBeNull()
+  })
+
+  it('4. accounts that already have a role never see the question', async () => {
+    render(<AppShell auth={fakeAuth({ current: vi.fn().mockResolvedValue({ ...google, roleChosen: undefined }) })} />)
+    await waitFor(() => expect(screen.getByText(/Meera Shah/)).toBeTruthy())
+    expect(screen.queryByText(/One question first/)).toBeNull()
   })
 })
 

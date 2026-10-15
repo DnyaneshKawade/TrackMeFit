@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: Coaches sign up with Google (T-066), admin tasks split up
+
+- DK asked for Google sign-in for coaches. Spec `specs/T-066-google-coach.md`.
+- "Continue with Google" now shows for coaches too. A new Google account answers one question first: "Tracking my own fitness" or "A coach".
+- Migration `20261030000000_choose_role.sql`: `profiles.role_chosen` and `choose_role`, which sets the role once. Direct role changes are still refused.
+- Google accounts made before this stay regular accounts; the admin People page will move them.
+- `tasks/TASKS.md`: admin work split into T-042a1 to a5 and T-042c1 to c5, from the updated admin plan. Coach approval stays off until the switch is built.
+- Tests: 4 in `src/auth/SignIn.test.tsx` (1 replaced), 1 in `src/db/rls.test.ts`.
+
 ## 2026-10-15: Open a client (T-026c)
 
 - Third part of the coach dashboard (T-026), next in order. Spec `specs/T-026c-open-client.md`.
