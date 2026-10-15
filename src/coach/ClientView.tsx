@@ -17,6 +17,7 @@ import type { ChatStore } from './chat'
 import { ClientCheckIns } from './CheckIn'
 import type { CheckInStore } from './checkIns'
 import type { ClientRow } from './store'
+import { copyTemplate, joinText, startForWeek } from './templates'
 
 /** A client's data as their coach sees it; row-level security allows the reads and target changes. */
 export interface ClientStores {
@@ -43,6 +44,7 @@ export function ClientView({
   coachId,
   today,
   chat,
+  programs = [],
   onBack,
 }: {
   client: ClientRow
@@ -52,6 +54,8 @@ export function ClientView({
   today: string
   /** Messages with the client (T-026f). */
   chat?: ChatStore
+  /** The coach's program templates, to add to this client (T-026g). */
+  programs?: Plan[]
   onBack: () => void
 }) {
   const [target, setTarget] = useState<DietTarget | null | undefined>(undefined)
@@ -61,6 +65,12 @@ export function ClientView({
   const [plans, setPlans] = useState<Plan[] | null>(null)
   const [plan, setPlan] = useState<Plan | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [starting, setStarting] = useState(false)
+  const [programId, setProgramId] = useState('')
+  const [week, setWeek] = useState(1)
+  const [added, setAdded] = useState<string | null>(null)
+  // The client's own exercise ids; the coach's own can't be copied to them.
+  const [clientOwn, setClientOwn] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const failed = () => setError('Couldn’t load all of this client’s data. Check your connection.')
@@ -76,7 +86,11 @@ export function ClientView({
     const own = customExercises()
     let live = true
     stores.exercises.custom().then(
-      (list) => live && setCustomExercises(list.map((x) => customExercise(x.id, x))),
+      (list) => {
+        if (!live) return
+        setCustomExercises(list.map((x) => customExercise(x.id, x)))
+        setClientOwn(new Set(list.map((x) => x.id)))
+      },
       () => undefined,
     )
     return () => {
@@ -89,6 +103,28 @@ export function ClientView({
     await stores.workouts.savePlan(p)
     setPlans(await stores.workouts.plans())
     setPlan(null)
+  }
+
+  const program = programs.find((p) => p.id === programId) ?? programs[0]
+
+  const addProgram = async () => {
+    if (!program) return
+    const { plan: copy, dropped } = copyTemplate(program, (id) => clientOwn.has(id))
+    if (!copy.days.length) return setError('This template only has your own exercises. Add exercises from the library first.')
+    try {
+      const saved = await stores.workouts.savePlan(copy)
+      await stores.workouts.startBlock(saved.id!, startForWeek(today, week))
+      setPlans(await stores.workouts.plans())
+      setStarting(false)
+      setWeek(1)
+      setError(null)
+      setAdded(
+        `Added ${copy.name}. ${joinText(first, week, copy.hardWeeks ?? 4)}` +
+          (dropped ? ` ${dropped === 1 ? '1 of your own exercises was' : `${dropped} of your own exercises were`} left out, because ${first} can’t see them.` : ''),
+      )
+    } catch {
+      setError('Couldn’t add the program. Check your connection.')
+    }
   }
 
   const saveTargets = async (v: TargetValues) => {
@@ -218,6 +254,35 @@ export function ClientView({
           <p className="muted">No plan yet.</p>
         )}
         <button className="add" onClick={() => setPlan({ name: '', days: [{ dayIndex: 0, name: '', exercises: [] }] })}>+ New plan</button>
+        {programs.length > 0 &&
+          (starting && program ? (
+            <div className="start-program">
+              <label className="field">
+                <span>Program</span>
+                <select value={program.id} onChange={(e) => (setProgramId(e.target.value), setWeek(1))}>
+                  {programs.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="field">
+                <span>Start at week</span>
+                <select value={week} onChange={(e) => setWeek(Number(e.target.value))}>
+                  {Array.from({ length: program.hardWeeks ?? 4 }, (_, i) => (
+                    <option key={i + 1} value={i + 1}>{i + 1}</option>
+                  ))}
+                </select>
+              </label>
+              <p className="muted">{joinText(first, week, program.hardWeeks ?? 4)}</p>
+              <div className="actions">
+                <button className="primary" onClick={() => void addProgram()}>Add to {first}’s plans</button>
+                <button className="link" onClick={() => setStarting(false)}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button className="add" onClick={() => (setStarting(true), setAdded(null))}>+ Start a program</button>
+          ))}
+        {added && <p className="muted" role="status">{added}</p>}
       </section>
 
       <Photos store={stores.photos} today={today} readOnly />

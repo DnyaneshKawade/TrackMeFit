@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { sortByAttention, type ClientAttention } from '../engine/attention'
 import { localDate } from '../log/types'
 import type { ChatStore } from './chat'
+import { PlanEditor } from '../training/PlanEditor'
+import type { Plan, WorkoutStore } from '../training/types'
 import { ClientView, type ClientStores } from './ClientView'
 import { inviteMessage, showCode, type ClientRow, type CoachStore, type Invite } from './store'
 import '../log/log.css'
@@ -17,6 +19,7 @@ export function Clients({
   coachId = '',
   today = localDate(),
   chat,
+  templates,
 }: {
   store: CoachStore
   /** A client's stores, to open them (T-026c). */
@@ -25,6 +28,8 @@ export function Clients({
   today?: string
   /** Messages with clients, and unread counts on the list (T-026f). */
   chat?: ChatStore
+  /** The coach's program templates (T-026g). */
+  templates?: WorkoutStore
 }) {
   const [clients, setClients] = useState<ClientAttention<ClientRow>[] | null>(null)
   const [open, setOpen] = useState<{ item: ClientAttention<ClientRow>; stores: ClientStores } | null>(null)
@@ -33,6 +38,8 @@ export function Clients({
   const [ending, setEnding] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [unread, setUnread] = useState<Map<string, number>>(new Map())
+  const [programs, setPrograms] = useState<Plan[] | null>(null)
+  const [editingProgram, setEditingProgram] = useState<Plan | null>(null)
 
   useEffect(() => {
     store.clients(today).then(
@@ -43,6 +50,25 @@ export function Clients({
       },
     )
   }, [store, today])
+
+  useEffect(() => {
+    templates?.plans().then(setPrograms, () => {
+      setPrograms([])
+      setError('Couldn’t load your program templates. Check your connection.')
+    })
+  }, [templates])
+
+  const saveProgram = async (p: Plan) => {
+    await templates!.savePlan(p)
+    setPrograms(await templates!.plans())
+    setEditingProgram(null)
+  }
+
+  const deleteProgram = async (id: string) => {
+    await templates!.deletePlan(id)
+    setPrograms(await templates!.plans())
+    setEditingProgram(null)
+  }
 
   // Counted again when the coach comes back from a client's page.
   useEffect(() => {
@@ -80,7 +106,30 @@ export function Clients({
   }
 
   if (open)
-    return <ClientView client={open.item.client} flags={open.item.flags} stores={open.stores} coachId={coachId} today={today} chat={chat} onBack={() => setOpen(null)} />
+    return (
+      <ClientView
+        client={open.item.client}
+        flags={open.item.flags}
+        stores={open.stores}
+        coachId={coachId}
+        today={today}
+        chat={chat}
+        programs={programs ?? []}
+        onBack={() => setOpen(null)}
+      />
+    )
+
+  if (editingProgram)
+    return (
+      <main className="log">
+        <PlanEditor
+          initial={editingProgram}
+          onSave={saveProgram}
+          onDelete={editingProgram.id ? () => deleteProgram(editingProgram.id!) : undefined}
+          onClose={() => setEditingProgram(null)}
+        />
+      </main>
+    )
 
   return (
     <main className="log progress clients">
@@ -153,6 +202,31 @@ export function Clients({
           </>
         )}
       </section>
+      {templates && (
+        <section aria-label="Program templates">
+          <h3>Program templates</h3>
+          <p className="muted">Make a plan once, then add it to any client from their page.</p>
+          {programs === null ? (
+            <p className="muted">Loading…</p>
+          ) : programs.length ? (
+            <ul className="session-list">
+              {programs.map((p) => (
+                <li key={p.id} className="plan-card">
+                  <div>
+                    <strong>{p.name}</strong>
+                    <br />
+                    <span className="muted">{p.days.map((d) => d.name).join(' · ')}</span>
+                  </div>
+                  <button className="link" aria-label={`Edit ${p.name}`} onClick={() => setEditingProgram(p)}>Edit</button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">No templates yet.</p>
+          )}
+          <button className="add" onClick={() => setEditingProgram({ name: '', days: [{ dayIndex: 0, name: '', exercises: [] }] })}>+ New template</button>
+        </section>
+      )}
     </main>
   )
 }

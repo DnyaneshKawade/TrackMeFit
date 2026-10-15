@@ -24,7 +24,7 @@ afterEach(() => {
 const TODAY = '2026-10-15'
 const COACH = 'coach-1'
 
-function setup(stores: Partial<ClientStores> = {}, chat?: ChatStore) {
+function setup(stores: Partial<ClientStores> = {}, chat?: ChatStore, templates?: WorkoutStore) {
   const all: ClientStores = {
     log: memoryLogStore(),
     targets: memoryTargetStore('client-l1', [
@@ -40,7 +40,7 @@ function setup(stores: Partial<ClientStores> = {}, chat?: ChatStore) {
     ...stores,
   }
   const client = { ...emptyClient('l1', 'Asha Rao'), trainingDays: 3 }
-  render(<Clients store={memoryCoachStore({ clients: [client] })} storesFor={() => all} coachId={COACH} today={TODAY} chat={chat} />)
+  render(<Clients store={memoryCoachStore({ clients: [client] })} storesFor={() => all} coachId={COACH} today={TODAY} chat={chat} templates={templates} />)
   return all
 }
 
@@ -198,5 +198,50 @@ describe('check-ins on the client page (T-026e)', () => {
     expect(await within(week).findByText('Yes, two rotis.')).toBeTruthy()
     expect(within(week).queryByRole('button', { name: 'Send reply' })).toBeNull()
     expect((await checkIns.list())[0].reply).toBe('Yes, two rotis.')
+  })
+})
+
+describe('program templates (T-026g)', () => {
+  const ppl: Plan = {
+    id: 't1',
+    name: 'Push Pull Legs',
+    hardWeeks: 4,
+    days: [
+      { id: 'td1', dayIndex: 0, name: 'Push', exercises: [{ exerciseId: 'bench-press', sets: 3, repMin: 6, repMax: 10 }, { exerciseId: 'custom:mine', sets: 3, repMin: 10, repMax: 15 }] },
+      { id: 'td2', dayIndex: 1, name: 'Legs', exercises: [{ exerciseId: 'back-squat', sets: 3, repMin: 5, repMax: 8 }] },
+    ],
+  }
+
+  it('2. the coach makes a template on the Clients tab and sees it listed', async () => {
+    const templates = memoryWorkoutStore()
+    setup({}, undefined, templates)
+    const section = await screen.findByRole('region', { name: 'Program templates' })
+    expect(await within(section).findByText('No templates yet.')).toBeTruthy()
+    fireEvent.click(within(section).getByRole('button', { name: '+ New template' }))
+    fireEvent.change(screen.getByLabelText('Plan name'), { target: { value: 'Beginner 3 day' } })
+    fireEvent.change(screen.getByLabelText('Day 1 name'), { target: { value: 'Day A' } })
+    fireEvent.click(screen.getByRole('button', { name: '+ Add exercise' }))
+    fireEvent.click(screen.getAllByRole('button', { name: /Back squat/ })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Save plan' }))
+    expect(await within(await screen.findByRole('region', { name: 'Program templates' })).findByText('Beginner 3 day')).toBeTruthy()
+    expect((await templates.plans()).map((p) => p.name)).toEqual(['Beginner 3 day'])
+  })
+
+  it('3. the coach adds a template to a client at week 3, and their own exercises are left out', async () => {
+    const stores = setup({ workouts: coachWorkouts([]) }, undefined, memoryWorkoutStore({ plans: [ppl] }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Asha Rao' }))
+    const plans = screen.getByRole('region', { name: 'Workout plans' })
+    fireEvent.click(await within(plans).findByRole('button', { name: '+ Start a program' }))
+    fireEvent.change(within(plans).getByLabelText('Start at week'), { target: { value: '3' } })
+    expect(within(plans).getByText('Asha joins in week 3 of 4. The light week comes after week 4, as for others on it.')).toBeTruthy()
+    fireEvent.click(within(plans).getByRole('button', { name: 'Add to Asha’s plans' }))
+    expect((await within(plans).findByRole('status')).textContent).toBe(
+      'Added Push Pull Legs. Asha joins in week 3 of 4. The light week comes after week 4, as for others on it. 1 of your own exercises was left out, because Asha can’t see them.',
+    )
+    expect(await within(plans).findByText('Push · Legs')).toBeTruthy()
+    const [copy] = await stores.workouts.plans()
+    expect(copy.id).not.toBe('t1')
+    expect(copy.blockStartedOn).toBe('2026-10-01')
+    expect(copy.days[0].exercises.map((e) => e.exerciseId)).toEqual(['bench-press'])
   })
 })

@@ -12,6 +12,16 @@ Newest first. One entry per finished piece of work: what changed, which tests co
 - Also removed four task rows that the #55 merge had doubled.
 - Left for T-026: chat, templates and a client limit.
 - Tests: 3 in `src/coach/YourCoach.test.tsx`, 1 in `src/coach/ClientView.test.tsx`, 3 in `src/coach/checkIns.test.ts`, 1 in `src/progress/Photos.test.tsx`, 1 in `src/db/coach.test.ts`.
+## 2026-10-15: Program templates (T-026g)
+
+- Next part of the coach dashboard (T-026). Spec `specs/T-026g-program-templates.md`.
+- The Clients tab has "Program templates". The coach makes and edits them with the plan editor.
+- On a client page, "+ Start a program" copies a template into the client's plans. The coach picks the start week, so a client can join a group partway.
+- The coach's own exercises are left out of the copy, with a note, because the client can't see them.
+- Migration `20261102000000_program_templates.sql`: column `workout_plans.is_template`; only coaches keep templates.
+- Left for T-026: a client limit. Live chat updates come next, as DK asked.
+- Tests: 1 in `src/db/coach.test.ts`, 2 in `src/coach/ClientView.test.tsx`, 2 in `src/coach/templates.test.ts`.
+
 ## 2026-10-15: Chat with the coach (T-026f)
 
 - Next part of the coach dashboard (T-026). Spec `specs/T-026f-chat.md`.
