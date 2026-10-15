@@ -107,3 +107,27 @@ export function exerciseRecords(sessions: StrengthSession[]): ExerciseRecords {
     notes,
   }
 }
+
+export interface NewRecord {
+  kind: 'heaviest' | 'e1rm' | 'reps'
+  /** Plain words for the person, with the old best. */
+  text: string
+}
+
+/** Does this set beat the person's best (spec T-044b)? Earlier workouts and
+ * the sets already done today count. Null for warm-ups, drop sets, ties, and
+ * the first workout with an exercise, which only sets the starting point. */
+export function newRecord(past: StrengthSession[], today: StrengthSet[], set: StrengthSet): NewRecord | null {
+  if (!working(set)) return null
+  if (!past.some((p) => p.sets.some(working))) return null
+  const before = exerciseRecords([...past, { performedOn: '9999-12-31', sets: today }])
+  const old = before.heaviest
+  if (old && set.weightKg > old.weightKg) return { kind: 'heaviest', text: `New record: heaviest weight. Your best before was ${old.weightKg} kg.` }
+  const est = e1rm(set.weightKg, set.reps)
+  const best = before.bestE1rm
+  if (est !== null && best && round05(est) > best.e1rm)
+    return { kind: 'e1rm', text: `New record: best estimated one-rep max, ${round05(est)} kg. Your best before was ${best.e1rm} kg.` }
+  const most = before.mostReps
+  if (!old && set.weightKg === 0 && most && set.reps > most.reps) return { kind: 'reps', text: `New record: most reps in a set. Your best before was ${most.reps}.` }
+  return null
+}

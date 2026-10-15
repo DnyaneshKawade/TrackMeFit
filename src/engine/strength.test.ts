@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { e1rm, exerciseRecords, REP_CAP } from './strength'
+import { e1rm, exerciseRecords, newRecord, REP_CAP } from './strength'
 
 const day = (performedOn: string, ...sets: [number, number, ('warmup' | 'drop' | 'failure')?][]) => ({
   performedOn,
@@ -60,5 +60,42 @@ describe('records (T-044)', () => {
 
   it('says what to do when there is nothing logged', () => {
     expect(exerciseRecords([]).notes[0]).toBe('Log this exercise to see your records.')
+  })
+})
+
+describe('new record during a workout (T-044b)', () => {
+  const past = [
+    { performedOn: '2026-10-01', sets: [{ weightKg: 80, reps: 5 }, { weightKg: 70, reps: 8 }] },
+    { performedOn: '2026-10-05', sets: [{ weightKg: 100, reps: 3, tag: 'warmup' as const }] },
+  ]
+
+  it('1. a heavier working set is a new record, with the old best', () => {
+    expect(newRecord(past, [], { weightKg: 82.5, reps: 2 })).toEqual({ kind: 'heaviest', text: 'New record: heaviest weight. Your best before was 80 kg.' })
+  })
+
+  it('2. a set that is not heavier can beat the best estimated one-rep max', () => {
+    // 80 × 5 = 93.5 before; 77.5 × 8 = 98 now.
+    expect(newRecord(past, [], { weightKg: 77.5, reps: 8 })?.text).toBe('New record: best estimated one-rep max, 98 kg. Your best before was 93.5 kg.')
+    expect(newRecord(past, [], { weightKg: 75, reps: 5 })).toBeNull()
+  })
+
+  it('3. with no weight, more reps than before is a new record', () => {
+    const dips = [{ performedOn: '2026-10-01', sets: [{ weightKg: 0, reps: 12 }] }]
+    expect(newRecord(dips, [], { weightKg: 0, reps: 13 })).toEqual({ kind: 'reps', text: 'New record: most reps in a set. Your best before was 12.' })
+    expect(newRecord(dips, [], { weightKg: 0, reps: 12 })).toBeNull()
+  })
+
+  it('4. sets done today count, so matching today’s record shows nothing', () => {
+    const today = [{ weightKg: 85, reps: 3 }]
+    expect(newRecord(past, today, { weightKg: 85, reps: 3 })).toBeNull()
+    expect(newRecord(past, today, { weightKg: 87.5, reps: 1 })?.text).toBe('New record: heaviest weight. Your best before was 85 kg.')
+  })
+
+  it('5. warm-ups, drop sets and a first workout show no record', () => {
+    expect(newRecord(past, [], { weightKg: 120, reps: 3, tag: 'warmup' })).toBeNull()
+    expect(newRecord(past, [], { weightKg: 120, reps: 3, tag: 'drop' })).toBeNull()
+    expect(newRecord([], [], { weightKg: 120, reps: 3 })).toBeNull()
+    // A past day with only warm-ups is still a first workout.
+    expect(newRecord([past[1]], [], { weightKg: 120, reps: 3 })).toBeNull()
   })
 })

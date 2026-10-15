@@ -108,3 +108,5 @@
   .strength-chart .dot { fill: #3fbf94; }
   .plate-row input { background: #161d1b; color: inherit; border-color: #3a4643; }
 }
+.record { font-size: 14px; font-weight: 600; color: #0f7a5c; }
+@media (prefers-color-scheme: dark) { .record { color: #4cc49b; } }
