@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { Workouts } from './Workouts'
 import { memoryWorkoutStore } from './memoryStore'
 import type { Session, SetLog, WorkoutStore } from './types'
@@ -132,5 +132,63 @@ describe('records and strength graphs (T-044)', () => {
     await open(memoryWorkoutStore())
     expect(await screen.findByText('Log a workout to see your records.')).toBeTruthy()
     expect(await screen.findByText('0 workouts in October 2026.')).toBeTruthy()
+  })
+})
+
+describe('"New record" during a workout (T-044b)', () => {
+  const start = async (store: WorkoutStore, name: RegExp, label: string) => {
+    render(<Workouts store={store} today={TODAY} />)
+    click('Start a workout')
+    click('Empty workout')
+    fireEvent.click(await screen.findByRole('button', { name: '+ Add exercise' }))
+    type('Search exercises', label)
+    click(name)
+  }
+  const logSet = async (name: string, weight: string, reps: string) => {
+    type(`${name} weight (kg)`, weight)
+    type(`${name} reps`, reps)
+    const before = screen.queryAllByText(/^Set \d+:/).length
+    fireEvent.click(within(screen.getByRole('region', { name })).getByRole('button', { name: 'Log set' }))
+    await waitFor(() => expect(screen.queryAllByText(/^Set \d+:/).length).toBe(before + 1))
+  }
+  const note = () => screen.queryByText(/New record/)?.textContent ?? null
+
+  it('1, 2, 4, 6. heavier sets and a better one-rep max show a note; ties and removed sets do not', async () => {
+    await start(memoryWorkoutStore({ sessions: SESSIONS }), /^Bench press \(barbell\)/, 'bench press')
+    const name = 'Bench press (barbell)'
+    await screen.findByText(/Last time/)
+    await logSet(name, '72.5', '5')
+    expect(note()).toBe('🏆 New record: heaviest weight. Your best before was 70 kg.')
+    // Today's sets count: the same set again is no record.
+    await logSet(name, '72.5', '5')
+    expect(note()).toBeNull()
+    await logSet(name, '70', '8')
+    expect(note()).toBe('🏆 New record: best estimated one-rep max, 88.5 kg. Your best before was 84.5 kg.')
+    click(`Remove set 3 of ${name}`)
+    await waitFor(() => expect(note()).toBeNull())
+  })
+
+  it('3, 5. more reps with no weight is a record; a warm-up is not', async () => {
+    await start(memoryWorkoutStore({ sessions: SESSIONS }), /^Dips/, 'dips')
+    await screen.findByText(/Last time/)
+    click('Warm-up')
+    await logSet('Dips', '0', '20')
+    expect(note()).toBeNull()
+    await logSet('Dips', '0', '16')
+    expect(note()).toBe('🏆 New record: most reps in a set. Your best before was 15.')
+  })
+
+  it('5. the first workout with an exercise shows no record', async () => {
+    await start(memoryWorkoutStore(), /^Bench press \(barbell\)/, 'bench press')
+    await logSet('Bench press (barbell)', '100', '5')
+    expect(note()).toBeNull()
+  })
+
+  it('offline, the set saves and no record note shows', async () => {
+    const store = memoryWorkoutStore({ sessions: SESSIONS })
+    await start({ ...store, exerciseHistory: () => Promise.reject(new TypeError('Failed to fetch')) }, /^Bench press \(barbell\)/, 'bench press')
+    await screen.findByText(/Last time/)
+    await logSet('Bench press (barbell)', '150', '1')
+    expect(note()).toBeNull()
   })
 })

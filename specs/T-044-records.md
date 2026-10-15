@@ -62,7 +62,7 @@ quick way to know which plates to put on the bar.
 - A weight below the bar: "The bar alone weighs 20 kg."
 
 ## Out of scope
-- A "New record" note during a workout (T-044b).
+- A "New record" note during a workout: built in [T-044b](T-044b-new-record.md).
 - Choosing which plates a gym has.
 - Coach screens and comparing people.
 

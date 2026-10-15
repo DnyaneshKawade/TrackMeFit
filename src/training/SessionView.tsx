@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { describePlates, platesFor } from '../engine/plates'
+import { newRecord, type StrengthSession } from '../engine/strength'
 import { targetRir } from '../engine/training'
 import { exerciseById, type Exercise } from './exercises'
 import { ExercisePicker, type ExerciseLibrary } from './ExercisePicker'
@@ -226,6 +227,9 @@ function ExerciseLog({
   const [busy, setBusy] = useState(false)
   const [tag, setTag] = useState<SetTag | null>(null)
   const [note, setNote] = useState<string | null>(null)
+  /** Earlier days with this exercise, for "New record" (T-044b); null until loaded or offline. */
+  const [past, setPast] = useState<StrengthSession[] | null>(null)
+  const [record, setRecord] = useState<{ setId: string; text: string } | null>(null)
 
   const range: [number, number] = plan ? [plan.repMin, plan.repMax] : exercise.isolation ? [10, 15] : [6, 10]
   // No weight increases in a deload week.
@@ -254,6 +258,18 @@ function ExerciseLog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, exercise.id, session.performedOn])
 
+  useEffect(() => {
+    let live = true
+    // Offline there is no record note; the set still saves.
+    store.exerciseHistory(exercise.id).then(
+      (h) => live && setPast(h.filter((p) => p.performedOn < session.performedOn)),
+      () => {},
+    )
+    return () => {
+      live = false
+    }
+  }, [store, exercise.id, session.performedOn])
+
   const { pending } = useSync(store.sync)
   const done = session.sets.filter((s) => s.exerciseId === exercise.id).sort((a, b) => a.setIndex - b.setIndex)
 
@@ -270,6 +286,8 @@ function ExerciseLog({
       const extra = { ...(tag ? { tag } : {}), ...(note?.trim() ? { note: note.trim() } : {}) }
       const saved = await store.addSet(session.id, { exerciseId: exercise.id, setIndex: nextIndex, weightKg: w, reps: r, rir: x, ...extra })
       onChange({ ...session, sets: [...session.sets, saved] })
+      const beat = past && newRecord(past, done, saved)
+      setRecord(beat ? { setId: saved.id, text: beat.text } : null)
       // Weight and reps stay for the next set; the tag and note were for this one.
       setTag(null)
       setNote(null)
@@ -291,6 +309,7 @@ function ExerciseLog({
     try {
       await store.removeSet(id)
       onChange({ ...session, sets: session.sets.filter((s) => s.id !== id) })
+      if (record?.setId === id) setRecord(null)
     } catch {
       setError('Couldn’t remove that set. Try again.')
     }
@@ -349,6 +368,11 @@ function ExerciseLog({
         <input aria-label={`${exercise.name} reps left`} placeholder="Left" inputMode="numeric" value={rir} onChange={(e) => setRir(e.target.value)} />
         <button className="primary" disabled={busy} onClick={log}>Log set</button>
       </div>
+      {record && (
+        <p className="record" role="status">
+          🏆 {record.text}
+        </p>
+      )}
       {exercise.equipment === 'barbell' && <PlateHint weight={weight} />}
       <div className="set-extras">
         {SET_TAGS.map((t) => (

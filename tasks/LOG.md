@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: "New record" during a workout (T-044b)
+
+- DK said to go by the logical order of tasks. T-044b follows Records and progress (T-044). Spec `specs/T-044b-new-record.md`.
+- When a working set beats your best, a note shows under the exercise, for example "New record: heaviest weight. Your best before was 70 kg."
+- Order: heaviest weight, then best estimated one-rep max, then most reps for exercises with no weight. Sets done earlier today count, so a tie shows nothing.
+- No note for warm-ups, drop sets, or the first workout with an exercise. Removing the record set removes its note. Offline, no note shows and the set still saves.
+- Uses the same history query as Records and progress, once per exercise. Nothing new is stored.
+- Tests: 5 in `src/engine/strength.test.ts`, 4 in `src/training/Records.test.tsx`.
+
 ## 2026-10-15: Every food shows in search (T-065)
 
 - DK said a veg, eggetarian or Jain person shouldn't have chicken, fish or onion hidden from search: "let them see all of it". People sometimes eat outside their diet, and a hidden food looks like a missing one.
