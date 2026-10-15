@@ -15,12 +15,13 @@ export function supabaseFromEnv(): SupabaseClient | null {
 export function createSupabaseAuth(sb: SupabaseClient): AuthService {
   const toAccount = async (user: User | null): Promise<Account | null> => {
     if (!user) return null
-    const { data } = await sb.from('profiles').select('role, full_name').eq('id', user.id).maybeSingle()
+    const { data } = await sb.from('profiles').select('role, full_name, role_chosen').eq('id', user.id).maybeSingle()
     return {
       id: user.id,
       email: user.email ?? '',
       name: data?.full_name || (user.user_metadata?.full_name as string | undefined) || '',
       role: (data?.role as Role | undefined) ?? 'user',
+      ...(data?.role_chosen === false ? { roleChosen: false } : {}),
     }
   }
 
@@ -40,6 +41,10 @@ export function createSupabaseAuth(sb: SupabaseClient): AuthService {
     },
     async signInWithGoogle() {
       const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })
+      if (error) throw error
+    },
+    async chooseRole(role) {
+      const { error } = await sb.rpc('choose_role', { picked: role })
       if (error) throw error
     },
     async resetPassword(email) {

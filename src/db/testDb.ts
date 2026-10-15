@@ -13,7 +13,8 @@ const AUTH_STUB = `
   create role authenticated nologin;
   create role anon nologin;
   create schema auth;
-  create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb default '{}'::jsonb);
+  create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb default '{}'::jsonb,
+    raw_app_meta_data jsonb default '{"provider":"email"}'::jsonb);
   create function auth.uid() returns uuid language sql stable as $$
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
   $$;
@@ -35,8 +36,9 @@ const AUTH_STUB = `
 
 export interface TestDb {
   db: PGlite
-  /** Creates a sign-up (which creates its profile) and returns the user id. */
-  signUp(email: string, meta?: Record<string, string>): Promise<string>
+  /** Creates a sign-up (which creates its profile) and returns the user id.
+   * `provider` is how they signed up: email (the default) or google. */
+  signUp(email: string, meta?: Record<string, string>, provider?: string): Promise<string>
   /** Runs queries as the given user, like the app would with their session. */
   as<T>(userId: string | null, fn: (db: PGlite) => Promise<T>): Promise<T>
 }
@@ -50,10 +52,10 @@ export async function createTestDb(): Promise<TestDb> {
 
   return {
     db,
-    async signUp(email, meta = {}) {
+    async signUp(email, meta = {}, provider = 'email') {
       counter++
       const id = `00000000-0000-4000-8000-${counter.toString().padStart(12, '0')}`
-      await db.query('insert into auth.users (id, email, raw_user_meta_data) values ($1, $2, $3)', [id, email, meta])
+      await db.query('insert into auth.users (id, email, raw_user_meta_data, raw_app_meta_data) values ($1, $2, $3, $4)', [id, email, meta, { provider }])
       return id
     },
     async as(userId, fn) {

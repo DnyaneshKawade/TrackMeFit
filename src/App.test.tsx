@@ -15,6 +15,7 @@ const auth = (account: Account): AuthService => ({
   signUp: vi.fn(),
   signIn: vi.fn(),
   signInWithGoogle: vi.fn(),
+  chooseRole: vi.fn().mockResolvedValue(undefined),
   resetPassword: vi.fn(),
   signOut: vi.fn().mockResolvedValue(undefined),
   current: vi.fn().mockResolvedValue(account),

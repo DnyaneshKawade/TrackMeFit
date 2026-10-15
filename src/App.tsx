@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
+import { RoleStep } from './auth/RoleStep'
 import { SignIn } from './auth/SignIn'
 import { createSupabaseAuth, supabaseFromEnv } from './auth/supabaseAuth'
 import type { Account, AuthService } from './auth/types'
@@ -150,6 +151,17 @@ export function AppShell({
   }
   if (account === undefined) return <main className="auth">Loading…</main>
   if (!account) return <SignIn auth={auth} />
+  if (account.roleChosen === false) {
+    return (
+      <RoleStep
+        name={account.name}
+        onChoose={async (role) => {
+          await auth.chooseRole(role)
+          setAccount({ ...account, role, roleChosen: true })
+        }}
+      />
+    )
+  }
   if (profile === undefined) return <main className="auth">Loading…</main>
 
   const topbar = (
