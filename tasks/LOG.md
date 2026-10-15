@@ -2,6 +2,17 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: Connect a coach and a client (T-026a)
+
+- Next task in order, the first part of the coach dashboard (T-026). Spec `specs/T-026a-coach-connect.md`.
+- Coaches get a Clients tab. "Invite a client" makes a code that works once for 7 days, with "Share on WhatsApp" and "Copy code".
+- People enter the code under "Your coach" on the Progress tab. They then see their coach's name and what the coach can see.
+- A code is used instead of searching by email, so nobody can find out who uses the app.
+- One coach at a time: joining a new coach ends the old link. Either side can end the link after a confirm.
+- Migration `supabase/migrations/20261027000000_coach_invites.sql` adds `coach_invites` and the `join_coach` function. It must be run in Supabase.
+- Left for T-026: clients sorted by who needs attention, opening a client's data, check-ins, chat, templates and a client limit.
+- Tests: 2 in `src/db/coach.test.ts`, 3 in `src/coach/YourCoach.test.tsx`, 2 in `src/coach/Clients.test.tsx`, 1 in `src/auth/SignIn.test.tsx`.
+
 ## 2026-10-15: Progress photos (T-022b)
 
 - Next task in order; DK said "go ahead". Spec `specs/T-022b-progress-photos.md`.

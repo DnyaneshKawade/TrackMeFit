@@ -137,4 +137,12 @@ describe('app shell', () => {
     expect((await screen.findByText(/Coach K/)).textContent).toBe('Coach K (coach)')
     expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
   })
+
+  it('6. gives coaches a Clients tab (T-026a)', async () => {
+    const coach: Account = { id: '1', email: 'k@coach.in', name: 'Coach K', role: 'coach' }
+    render(<AppShell auth={fakeAuth({ current: vi.fn().mockResolvedValue(coach) })} />)
+    fireEvent.click(await screen.findByRole('tab', { name: 'Clients' }))
+    expect(await screen.findByRole('button', { name: 'Invite a client' })).toBeTruthy()
+    expect(await screen.findByText('No clients yet. Send a code to someone you coach.')).toBeTruthy()
+  })
 })
