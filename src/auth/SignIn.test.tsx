@@ -53,6 +53,10 @@ describe('form checks', () => {
     expect(friendlyAuthError(new Error('Signups not allowed for this instance'))).toMatch(/use Google/)
     expect(friendlyAuthError(new Error('Password should be at least 6 characters.'))).toMatch(/stronger password/)
   })
+  it('says the email limit is reached instead of asking to wait a minute', () => {
+    expect(friendlyAuthError(new Error('email rate limit exceeded'))).toBe('We’ve sent too many emails this hour. Please try again later, or use Google.')
+    expect(friendlyAuthError(new Error('Request rate limit reached'))).toMatch(/wait a minute/)
+  })
   it('shows the service code when the error is unknown', () => {
     expect(friendlyAuthError(Object.assign(new Error('odd'), { code: 'unexpected_failure' }))).toBe('Something went wrong (unexpected_failure). Please try again.')
     expect(friendlyAuthError(Object.assign(new Error('odd'), { code: '<b>' }))).toBe('Something went wrong. Please try again.')

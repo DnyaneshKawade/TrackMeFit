@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: Email limit message (T-066b)
+
+- DK then saw "Too many tries. Please wait a minute". Supabase's built-in email sender allows about 2 emails an hour.
+- That error now says too many emails were sent this hour, and suggests Google. Other limits still say to wait a minute.
+- Tests: 1 in `src/auth/SignIn.test.tsx`.
+
 ## 2026-10-15: Clear sign-up errors (T-066b)
 
 - DK saw "Something went wrong" when creating an account, for both roles. Spec `specs/T-066b-sign-up-errors.md`.
