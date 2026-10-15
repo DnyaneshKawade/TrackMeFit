@@ -31,12 +31,13 @@ from the Food tab.
 7. (T-061b) Given the editor, when the person taps "+ Add a food" under a
    meal, then the full Add food page opens: search every food, pick an
    amount, or make a new food. Quick add is not offered, because a plan
-   needs a food. Foods the diet leaves out are hidden. The food can then be
+   needs a food. Every food shows, whatever the diet (changed 15 Oct 2026,
+   DK: "let them see all of it"). The food can then be
    changed in amount or removed, but has no Swap. A non-veg food added this
    way is swapped out on a veg day, like the plan's own foods.
 8. (T-061b) Given the usual day at signup, when the person taps "+ Add
    another food", then the same Add food page opens, with amounts and quick
-   add. Foods the diet leaves out are hidden.
+   add. Every food shows, whatever the diet.
 
 ## Rules and reasons
 - Changes are the person's own: the app never changes the plan by itself.

@@ -465,7 +465,6 @@ export function Onboarding({
       {step === 5 && (
         <TypicalDay
           items={dietItems}
-          excluded={excluded}
           counts={counts}
           extras={keptExtras}
           weightKg={weightKg}
