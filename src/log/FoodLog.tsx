@@ -13,6 +13,7 @@ import { useSync } from '../sync/useSync'
 import { excludedTags, hasNonvegOff } from '../profile/dietRules'
 import { dayExcluded, nonvegWeekday, vegDayReason, type DayChoice } from '../profile/nonvegDays'
 import { EntryRow, MealSection } from './MealSection'
+import { spreadFastingDay } from '../engine/fasting'
 import './log.css'
 
 const TodayPlan = lazy(() => import('./TodayPlan'))
@@ -297,6 +298,8 @@ export function FoodLog({
   }
 
   const day = totals(entries ?? [])
+  // A suggestion only; the targets stay as set (T-041c).
+  const spread = fasting && target && entries ? spreadFastingDay(target.kcal, day.kcal, date) : null
   const plainMeals = MEALS.map((meal) => {
     const items = (entries ?? []).filter((e) => e.meal === meal)
     return (
@@ -337,6 +340,11 @@ export function FoodLog({
           <button className="link" onClick={() => void markFasting(!fasting)}>
             {fasting ? 'Not a fasting day' : 'Mark as a fasting day'}
           </button>
+        </p>
+      )}
+      {spread && (
+        <p className="muted" aria-label="After your fast">
+          {spread.text}
         </p>
       )}
       {eatsNonveg && (

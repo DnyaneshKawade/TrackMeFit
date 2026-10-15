@@ -9,6 +9,7 @@ import { localFinder } from '../food/finder'
 import type { Food } from '../food/types'
 import type { LogStore } from './types'
 import { memoryCustomFoodStore } from '../food/custom'
+import { memoryTargetStore } from '../targets/stores'
 
 afterEach(cleanup)
 
@@ -411,6 +412,18 @@ describe('fasting days (T-041c)', () => {
     await screen.findByRole('status', { name: 'Fasting day' })
     fireEvent.click(screen.getByRole('button', { name: 'Previous day' }))
     expect((await screen.findByRole('status', { name: 'Fasting day' })).textContent).toBe('Fasted on this day? Mark as a fasting day')
+  })
+
+  it('5. a fasting day with a target suggests spreading the missed calories, without changing targets', async () => {
+    const targets = memoryTargetStore('me', [{ id: 't', startsOn: '2026-10-01', kcal: 2000, proteinG: 100, carbG: 250, fatG: 60, source: 'manual', setBy: 'me' }])
+    // 12 Oct 2026 is a Monday: six days are left in the week.
+    render(<FoodLog store={memoryLogStore([], [TODAY])} loadFoods={loadFoods} today={TODAY} diet={fasts} targets={targets} userId="me" />)
+    expect((await screen.findByLabelText('After your fast')).textContent).toBe(
+      'You ate 2,000 kcal less than your target. If you like, eat about 330 kcal more on each of the next 6 days, until Sunday. Your targets don’t change.',
+    )
+    expect((await targets.forDate('2026-10-13'))!.kcal).toBe(2000)
+    fireEvent.click(screen.getByRole('button', { name: 'Not a fasting day' }))
+    await waitFor(() => expect(screen.queryByLabelText('After your fast')).toBeNull())
   })
 
   it('saving needs a connection and says so', async () => {
