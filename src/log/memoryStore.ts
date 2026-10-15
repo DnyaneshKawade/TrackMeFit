@@ -2,9 +2,8 @@
 
 import type { LogEntry, LogStore, NewLogEntry } from './types'
 
-export function memoryLogStore(initial: LogEntry[] = [], fasting: string[] = []): LogStore {
+export function memoryLogStore(initial: LogEntry[] = []): LogStore {
   const rows = [...initial]
-  const fasts = new Set(fasting)
   let next = rows.length + 1
   return {
     async listDay(date) {
@@ -19,13 +18,6 @@ export function memoryLogStore(initial: LogEntry[] = [], fasting: string[] = [])
     },
     async listRange(from, to) {
       return rows.filter((r) => r.loggedOn >= from && r.loggedOn <= to)
-    },
-    async fastingDays(from, to) {
-      return [...fasts].filter((d) => d >= from && d <= to).sort()
-    },
-    async setFasting(date, on) {
-      if (on) fasts.add(date)
-      else fasts.delete(date)
     },
     async recent() {
       return [...rows].reverse().slice(0, 200)

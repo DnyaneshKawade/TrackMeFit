@@ -21,18 +21,14 @@ export interface StatsDay {
   eaten: Macros | null
   /** The target in force on the day; null when none was set. */
   target: Macros | null
-  /** Calories within 10% of the target; null without food or a target, or on a fasting day. */
+  /** Calories within 10% of the target; null without food or a target. */
   onTarget: boolean | null
-  /** Marked as a fasting day (T-041c): left out of averages and days on target. */
-  fasting: boolean
 }
 
 export interface DietStats {
   days: StatsDay[]
-  /** Finished days (before today) with food logged, fasting days left out. */
+  /** Finished days (before today) with food logged. */
   loggedDays: number
-  /** Fasting days in the range. */
-  fastingDays: number
   /** Averages over those days; null when there are none. */
   average: Macros | null
   /** Today's target, or the latest one in the range, to compare with. */
@@ -49,7 +45,6 @@ export interface DietStats {
 export const ON_TARGET_SHARE = 0.1
 export const PROTEIN_SHARE = 0.9
 const QUICK_ADD_ID = 'quick'
-const NO_FASTS: ReadonlySet<string> = new Set()
 
 const ZERO: Macros = { kcal: 0, proteinG: 0, carbG: 0, fatG: 0 }
 const add = (a: Macros, b: Macros): Macros => ({ kcal: a.kcal + b.kcal, proteinG: a.proteinG + b.proteinG, carbG: a.carbG + b.carbG, fatG: a.fatG + b.fatG })
@@ -72,14 +67,7 @@ export function datesBetween(from: string, to: string): string[] {
 export const metProtein = (eaten: Macros, target: Macros) => eaten.proteinG >= target.proteinG * PROTEIN_SHARE
 export const kcalOnTarget = (eaten: Macros, target: Macros) => Math.abs(eaten.kcal - target.kcal) <= target.kcal * ON_TARGET_SHARE
 
-export function dietStats(
-  entries: StatsEntry[],
-  targets: StatsTarget[],
-  from: string,
-  today: string,
-  topCount = 5,
-  fasting: ReadonlySet<string> = NO_FASTS,
-): DietStats {
+export function dietStats(entries: StatsEntry[], targets: StatsTarget[], from: string, today: string, topCount = 5): DietStats {
   // One pass to group entries by day and count foods.
   const byDay = new Map<string, Macros>()
   const foods = new Map<string, { name: string; times: number }>()
@@ -99,13 +87,10 @@ export function dietStats(
     while (ti + 1 < sorted.length && sorted[ti + 1].startsOn <= date) ti++
     const target = ti >= 0 ? macrosOf(sorted[ti]) : null
     const eaten = byDay.get(date) ?? null
-    const fast = fasting.has(date)
-    return { date, eaten, target, onTarget: eaten && target && !fast ? kcalOnTarget(eaten, target) : null, fasting: fast }
+    return { date, eaten, target, onTarget: eaten && target ? kcalOnTarget(eaten, target) : null }
   })
 
-  // A fasting day is meant to be low, so it doesn't pull the averages down.
-  const finished = days.filter((d) => d.date < today && d.eaten && !d.fasting)
-  const fastingDays = days.filter((d) => d.fasting).length
+  const finished = days.filter((d) => d.date < today && d.eaten)
   const sum = finished.reduce((s, d) => add(s, d.eaten!), ZERO)
   const n = finished.length
   const average = n ? { kcal: Math.round(sum.kcal / n), proteinG: round1(sum.proteinG / n), carbG: round1(sum.carbG / n), fatG: round1(sum.fatG / n) } : null
@@ -115,13 +100,11 @@ export function dietStats(
   const daysOnTarget = hasTargets ? withTarget.filter((d) => d.onTarget).length : null
 
   // The streak counts back from today; today counts only once it is met.
-  // Fasting days are skipped: they neither add to nor break the streak.
   let proteinStreak: number | null = null
   if (hasTargets) {
     proteinStreak = 0
     for (let i = days.length - 1; i >= 0; i--) {
       const d = days[i]
-      if (d.fasting) continue
       const met = d.eaten && d.target ? metProtein(d.eaten, d.target) : false
       if (met) proteinStreak++
       else if (d.date !== today) break
@@ -137,9 +120,8 @@ export function dietStats(
     notes.push(`On target means calories within ${ON_TARGET_SHARE * 100}% of your target.`)
     notes.push(`The protein streak counts days with at least ${PROTEIN_SHARE * 100}% of your protein target.`)
   }
-  if (fastingDays) notes.push('Fasting days are left out of the averages, days on target and the protein streak.')
   if (n && n < days.length - 1) notes.push('Days with nothing logged are left out of the averages. Today is left out until it is over.')
   else if (n) notes.push('Today is left out of the averages until it is over.')
 
-  return { days, loggedDays: n, fastingDays, average, target, daysOnTarget, proteinStreak, topFoods, notes }
+  return { days, loggedDays: n, average, target, daysOnTarget, proteinStreak, topFoods, notes }
 }

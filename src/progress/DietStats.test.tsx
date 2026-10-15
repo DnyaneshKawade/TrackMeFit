@@ -84,14 +84,3 @@ describe('food stats on Progress (T-062)', () => {
     expect(screen.queryByRole('region', { name: 'Food stats' })).toBeNull()
   })
 })
-
-describe('fasting days in food stats (T-041c)', () => {
-  it('3. fasting days are marked in the chart and left out of the averages', async () => {
-    const fastDay = shiftDate(TODAY, -2)
-    const days = [entry(1, 2000, 100), entry(2, 300, 5), entry(3, 2000, 100)]
-    const section = await show(days, [TARGET], memoryLogStore(days, [fastDay]))
-    expect(await within(section).findByText(/Bars with a dashed outline are fasting days\./)).toBeTruthy()
-    expect(avg('Calories')).toBe('2,000 of 2,000')
-    expect(within(section).getByText('Fasting days are left out of the averages, days on target and the protein streak.')).toBeTruthy()
-  })
-})

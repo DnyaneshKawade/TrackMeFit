@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: Fasting days rolled back (T-041c)
+
+- DK said most people eat a good amount when fasting and only avoid some foods. Marking the day is too much for now.
+- Removed "Fasting today?" from the food log, the fasting parts of food stats and the dashed bars. The code is the same as before #48.
+- Migration `supabase/migrations/20261025000000_drop_fasting_days.sql` drops the `fasting_days` table. It must be run in Supabase.
+- T-041c is back in To do with its spec. The calorie-spreading draft stays on branch `feat/fasting-spread`.
+- Tests: the 7 tests added in #48 are removed with the code; all other tests unchanged.
+
 ## 2026-10-15: Fasting days in the food log (T-041c)
 
 - Last part of T-041. DK got a choice card; "Mark the day" was recommended and built. Spec `specs/T-041c-fasting-days.md`.
