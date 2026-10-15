@@ -221,4 +221,14 @@ describe('change the meal plan (T-061)', () => {
     await screen.findByRole('region', { name: 'Your meal plan' })
     expect(within(dinner).queryByText('Chicken curry')).toBeNull()
   })
+
+  it('7. "Add a food" shows every food, whatever the diet', async () => {
+    const { mealPlans } = await setup({ diet: veg })
+    await openEditor()
+    await addFound('Dinner', 'chicken', 'Chicken curry')
+    fireEvent.click(screen.getByRole('button', { name: 'Save plan' }))
+    await screen.findByRole('region', { name: 'Your meal plan' })
+    const dinner = (await mealPlans.latest())!.plan.meals.find((m) => m.name === 'Dinner')!
+    expect(dinner.items.some((i) => i.foodId === CHICKEN.id)).toBe(true)
+  })
 })

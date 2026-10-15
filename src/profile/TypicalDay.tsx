@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { memoryCustomFoodStore, type CustomFood } from '../food/custom'
 import type { FoodFinder } from '../food/finder'
-import type { DietTag } from '../food/types'
 import { AddFood } from '../log/AddFood'
 import { QUICK_ADD_ID, type LogEntry, type NewLogEntry } from '../log/types'
 import { DIET_ITEMS, MAX_COUNT, checkCustom, describeDiet, estimateDiet, type DietExtra, type DietItem } from './currentDiet'
 
-const NOTHING_EXCLUDED = new Set<DietTag>()
 const NO_RECENT: LogEntry[] = []
 const NO_FOODS: CustomFood[] = []
 
@@ -29,7 +27,6 @@ function Stepper({ label, value, onChange }: { label: string; value: number; onC
  * person's own entry, with a running estimate. */
 export function TypicalDay({
   items = DIET_ITEMS,
-  excluded = NOTHING_EXCLUDED,
   counts,
   extras,
   weightKg,
@@ -38,8 +35,6 @@ export function TypicalDay({
 }: {
   /** Everyday foods to show, already filtered by diet (dietItemsFor). */
   items?: DietItem[]
-  /** What the diet leaves out; search results follow it too. */
-  excluded?: Set<DietTag>
   counts: Record<string, number>
   extras: DietExtra[]
   weightKg: number
@@ -157,7 +152,6 @@ export function TypicalDay({
           meal="snacks"
           target="your usual day"
           date=""
-          excluded={excluded}
           index={index}
           recent={NO_RECENT}
           myFoods={NO_FOODS}

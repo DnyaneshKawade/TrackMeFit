@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { amountFor, type DietTag, type Food } from '../food/types'
-import { allowedFoods } from '../profile/dietRules'
+import { amountFor, type Food } from '../food/types'
 import type { FoodFinder } from '../food/finder'
 import { useFoodSearch } from '../food/useFoodSearch'
 import { OFF_ATTRIBUTION } from '../food/off'
@@ -40,7 +39,6 @@ export function AddFood({
   nonvegOff = null,
   target,
   quickAdd = true,
-  excluded,
 }: {
   meal: Meal
   date: string
@@ -59,18 +57,16 @@ export function AddFood({
   target?: string
   /** Offer "Quick add" (calories only, no weight). */
   quickAdd?: boolean
-  /** Foods the diet leaves out, hidden from search; none by default. */
-  excluded?: Set<DietTag>
 }) {
   const to = target ?? MEAL_NAMES[meal]
   const [view, setView] = useState<View>('search')
   const [query, setQuery] = useState('')
   const [picked, setPicked] = useState<Food | null>(null)
   const [repeatError, setRepeatError] = useState<string | null>(null)
-  // With a diet, search wider and drop what it leaves out.
-  const found = useFoodSearch(index, query, excluded?.size ? 60 : 30)
+  // Every food shows, whatever the diet: people sometimes eat outside it.
+  const found = useFoodSearch(index, query, 30)
   const pending = found.pending
-  const results = useMemo(() => (excluded ? allowedFoods(found.results, excluded).slice(0, 30) : found.results), [found.results, excluded])
+  const results = found.results
   const offered = useMemo(() => recentFoods(recent ?? []), [recent])
   // Recent foods open with their portions, looked up by id once.
   const [recentFoodsById, setRecentFoodsById] = useState<Map<string, Food>>(new Map())

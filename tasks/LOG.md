@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: Every food shows in search (T-065)
+
+- DK said a veg, eggetarian or Jain person shouldn't have chicken, fish or onion hidden from search: "let them see all of it". People sometimes eat outside their diet, and a hidden food looks like a missing one.
+- The diet filter is gone from "Change plan > Add a food" and the usual day's "Add another food". Logging what you ate already showed every food.
+- Kept: meal plans the app makes, Swap choices and the usual day's everyday rows still follow the diet, since those are the app choosing for the person. A food added by hand stays in the plan; on a non-veg-free day it is still swapped.
+- Specs `specs/T-057-diet-rules.md` (criterion 8) and `specs/T-061-change-plan.md` (criteria 7, 8) updated.
+- Tests: 1 new in `src/log/PlanEditor.test.tsx`, 1 changed in `src/profile/Onboarding.test.tsx`.
 ## 2026-10-15: Edit and remove your own exercises (T-043c)
 
 - DK asked to add exercises that aren't listed, and to compare FitNotes and RP Hypertrophy. Adding was in T-043b; DK said "lets proceed" on editing and removing. Spec `specs/T-043-workout-logger.md`, criteria 14 to 16.

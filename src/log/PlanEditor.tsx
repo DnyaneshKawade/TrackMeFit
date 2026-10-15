@@ -92,7 +92,6 @@ export default function PlanEditor({
         meal={PLAN_MEAL[meal]}
         target={`${meal} in your plan`}
         quickAdd={false}
-        excluded={excluded}
         date=""
         index={search.index}
         recent={search.recent}

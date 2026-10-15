@@ -40,7 +40,10 @@ answers in.
    Jain recipes for the numbers. General rows such as "Fried snacks" stay,
    since a Jain version exists for each.
 8. Given any diet, when the person searches for "+ Add another food" on the
-   typical day, then results follow the same rules.
+   typical day, then every food shows. (Changed 15 Oct 2026, DK: "let them
+   see all of it". People sometimes eat outside their diet, and a hidden
+   food looks like a missing one. The everyday rows above still follow the
+   diet, and so do plans the app makes.)
 9. Given a hidden item already had a count (diet changed after answering),
    then that count is dropped and not counted in the estimate.
 10. Given an item on the typical day, then its weight is shown in grams next

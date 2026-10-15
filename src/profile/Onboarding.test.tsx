@@ -285,14 +285,14 @@ describe('diet rules (T-057)', () => {
     expect(screen.getByText('1 roti, 40 g')).toBeTruthy()
   })
 
-  it('8. filters "Add another food" search by diet', async () => {
+  it('8. "Add another food" search shows every food, whatever the diet', async () => {
     toFood(() => Promise.resolve(localFinder(createSearchIndex([EGG, PANEER]))))
     pick('What you eat', 'Vegetarian')
     click('Next')
     click('+ Add another food')
     type('Search foods', 'bhurji')
     expect(await screen.findByRole('button', { name: /^Paneer bhurji/ })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /^Egg bhurji/ })).toBeNull()
+    expect(screen.getByRole('button', { name: /^Egg bhurji/ })).toBeTruthy()
   })
 
   it('10 (T-061b). "Add another food" opens the Add food page, with amounts and quick add', async () => {
