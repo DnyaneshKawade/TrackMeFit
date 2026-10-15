@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { checkPhotoFile, fitWithin, supabasePhotoStore, wholeDays, type Photo } from './photos'
+import { checkPhotoFile, fitWithin, supabasePhotoStore, wholeDays, type Photo } from './photoStore'
 
 const photo = (id: string, date: string, pose: Photo['pose'] = 'front'): Photo => ({ id, date, pose, url: id })
 

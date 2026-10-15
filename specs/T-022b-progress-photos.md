@@ -60,5 +60,5 @@ private, without filling up their phone or our storage.
 | Criterion | Test file |
 |---|---|
 | 1, 3, 4, 5, 6 | `src/progress/Photos.test.tsx` |
-| 2 | `src/progress/photos.test.ts` |
+| 2 | `src/progress/photoStore.test.ts` |
 | 7 | `src/db/photos.test.ts` |

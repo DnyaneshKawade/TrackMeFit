@@ -11,7 +11,7 @@ Newest first. One entry per finished piece of work: what changed, which tests co
 - Migration `supabase/migrations/20261026000000_progress_photos.sql` adds the `progress_photos` table and a private storage bucket with its rules. It must be run in Supabase.
 - Only the person adds or removes photos. The person and their active coach can see them. Others can't read a file without its record.
 - Left: side-by-side compare of two dates, coach view (T-026), and deleting the photo folder when account delete is built.
-- Tests: 4 in `src/progress/photos.test.ts`, 5 in `src/progress/Photos.test.tsx`, 1 in `src/db/photos.test.ts`.
+- Tests: 4 in `src/progress/photoStore.test.ts`, 5 in `src/progress/Photos.test.tsx`, 1 in `src/db/photos.test.ts`.
 
 ## 2026-10-15: Fasting days rolled back (T-041c)
 

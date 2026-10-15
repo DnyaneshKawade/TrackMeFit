@@ -29,7 +29,7 @@ const Progress = lazy(() => import('./progress/Progress').then((m) => ({ default
 const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ default: m.Onboarding })))
 import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
 import type { ProgressStore } from './progress/types'
-import { memoryPhotoStore, supabasePhotoStore, type PhotoStore } from './progress/photos'
+import { memoryPhotoStore, supabasePhotoStore, type PhotoStore } from './progress/photoStore'
 
 // The bundled food list, downloaded only when the database can't answer.
 const loadBundledFoods = (): Promise<FoodFinder> => import('./food/catalogueData').then((m) => localFinder(m.searchIndex))

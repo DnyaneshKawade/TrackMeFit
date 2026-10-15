@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { Photos } from './Photos'
-import { memoryPhotoStore, type PhotoStore } from './photos'
+import { memoryPhotoStore, type PhotoStore } from './photoStore'
 import { shiftDate } from '../log/types'
 
 afterEach(cleanup)

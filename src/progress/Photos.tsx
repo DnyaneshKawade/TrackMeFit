@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { POSES, checkPhotoFile, shrinkImage, type Photo, type PhotoStore, type Pose } from './photos'
+import { POSES, checkPhotoFile, shrinkImage, type Photo, type PhotoStore, type Pose } from './photoStore'
 
 const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 const poseLabel = (pose: Pose) => POSES.find((p) => p.pose === pose)!.label
