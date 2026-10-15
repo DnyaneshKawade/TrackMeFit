@@ -52,6 +52,7 @@ export function AppShell({
   coachStoreFor = () => memoryCoachStore(),
   checkInStoreFor = () => memoryCheckInStore(),
   chatStoreFor = (a) => memoryChatStore(a.id),
+  templateStoreFor = () => memoryWorkoutStore(),
   clientStoresFor = () => ({
     log: memoryLogStore(),
     targets: memoryTargetStore(),
@@ -83,6 +84,8 @@ export function AppShell({
   checkInStoreFor?: (account: Account) => CheckInStore
   /** Messages between a person and their coach (T-026f). */
   chatStoreFor?: (account: Account) => ChatStore
+  /** A coach's program templates (T-026g). */
+  templateStoreFor?: (account: Account) => WorkoutStore
   foodStoreFor?: (account: Account) => CustomFoodStore
   mealPlanStoreFor?: (account: Account) => MealPlanStore
   /** Food search; the bundled list unless the database is set up. */
@@ -115,6 +118,7 @@ export function AppShell({
   const photos = useMemo(() => (account ? photoStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const checkIns = useMemo(() => (account ? checkInStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const chat = useMemo(() => (account ? chatStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const templates = useMemo(() => (account?.role === 'coach' ? templateStoreFor(account) : undefined), [account?.id, account?.role]) // eslint-disable-line react-hooks/exhaustive-deps
   // The latest weight, for a new meal plan from the Food tab (T-061).
   const latestWeight = useMemo(
     () => async () => {
@@ -250,7 +254,7 @@ export function AppShell({
       )}
       <Suspense fallback={<main className="log">Loading…</main>}>
         {tab === 'training' && <Workouts store={workouts!} exercises={exerciseStore} answers={profile ?? undefined} userId={account.id} />}
-        {tab === 'clients' && coaching && <Clients store={coaching} storesFor={clientStoresFor} coachId={account.id} chat={chat} />}
+        {tab === 'clients' && coaching && <Clients store={coaching} storesFor={clientStoresFor} coachId={account.id} chat={chat} templates={templates} />}
         {tab === 'progress' && (
           <Progress
             store={progress!}
@@ -305,6 +309,7 @@ export default function App() {
       })}
       checkInStoreFor={(a) => supabaseCheckInStore(sb!, a.id)}
       chatStoreFor={(a) => supabaseChatStore(sb!, a.id)}
+      templateStoreFor={(a) => supabaseWorkoutStore(sb!, a.id, { templates: true })}
       foodStoreFor={(a) => supabaseCustomFoodStore(sb!, a.id)}
       mealPlanStoreFor={(a) => supabaseMealPlanStore(sb!, a.id)}
       loadFoods={loadFoods}

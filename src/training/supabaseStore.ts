@@ -64,7 +64,9 @@ export const summaryFromRow = (r: SummaryRow): SessionSummary => ({
 
 const SET_COLUMNS = 'id, exercise_id, set_index, weight_kg, reps, rir, tag, note'
 
-export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): WorkoutStore {
+/** With `templates`, the store reads and saves a coach's program templates
+ * (T-026g), which never show on their own Training tab. */
+export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templates = false } = {}): WorkoutStore {
   const check = <T>({ data, error }: { data: T; error: unknown }): T => {
     if (error) throw error
     return data
@@ -77,6 +79,7 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): Workou
           .select('id, name, hard_weeks, block_started_on, updated_by, updated_at, plan_days(id, day_index, name, plan_exercises(position, exercise_id, sets, rep_min, rep_max, superset_next))')
           .eq('user_id', userId)
           .eq('is_active', true)
+          .eq('is_template', templates)
           .order('created_at'),
       )
       return (rows as PlanRow[]).map(planFromRow)
@@ -84,7 +87,7 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string): Workou
     async savePlan(plan) {
       let planId = plan.id
       if (planId) check(await sb.from('workout_plans').update({ name: plan.name.trim() }).eq('id', planId))
-      else planId = (check(await sb.from('workout_plans').insert({ user_id: userId, name: plan.name.trim() }).select('id').single()) as { id: string }).id
+      else planId = (check(await sb.from('workout_plans').insert({ user_id: userId, name: plan.name.trim(), is_template: templates }).select('id').single()) as { id: string }).id
 
       const keep = plan.days.filter((d) => d.id).map((d) => d.id!)
       let del = sb.from('plan_days').delete().eq('plan_id', planId)

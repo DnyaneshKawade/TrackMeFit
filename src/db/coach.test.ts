@@ -244,3 +244,28 @@ describe('chat (T-026f)', () => {
     await expect(send(k, 'Still there?')).rejects.toThrow(/row-level security/)
   })
 })
+
+describe('program templates (T-026g)', () => {
+  it('1. only coaches keep templates, and the coach copies one into a client’s plans', async () => {
+    const t6 = await createTestDb()
+    const neha = await t6.signUp('neha@example.com', { full_name: 'Neha' })
+    const k = await t6.signUp('k@example.com', { role: 'coach', full_name: 'Coach K' })
+    const code = await t6.as(k, newCode)
+    await t6.as(neha, (db) => join(db, code))
+
+    await expect(t6.as(neha, (db) => db.query(`insert into workout_plans (user_id, name, is_template) values ($1, 'Mine', true)`, [neha]))).rejects.toThrow(/only coaches keep templates/)
+    // A coach can't turn a client's plan into a template either.
+    await expect(t6.as(k, (db) => db.query(`insert into workout_plans (user_id, name, is_template) values ($1, 'PPL', true)`, [neha]))).rejects.toThrow(/only coaches keep templates/)
+    await t6.as(k, (db) => db.query(`insert into workout_plans (user_id, name, is_template) values ($1, 'PPL', true)`, [k]))
+    // The copy is an ordinary plan of the client, started two weeks back.
+    await t6.as(k, (db) => db.query(`insert into workout_plans (user_id, name, block_started_on) values ($1, 'PPL', '2026-10-01')`, [neha]))
+
+    const kinds = (as: string) =>
+      t6.as(as, (db) => db.query<{ user_id: string; is_template: boolean }>('select user_id, is_template from workout_plans order by is_template').then((r) => r.rows))
+    expect(await kinds(neha)).toEqual([{ user_id: neha, is_template: false }])
+    expect(await kinds(k)).toEqual([
+      { user_id: neha, is_template: false },
+      { user_id: k, is_template: true },
+    ])
+  })
+})
