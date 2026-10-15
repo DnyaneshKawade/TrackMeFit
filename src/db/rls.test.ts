@@ -191,6 +191,24 @@ describe('onboarding and progress', () => {
     await expect(t.as(me, (db) => db.query(`update profiles set equipment = 'castle' where id = $1`, [me]))).rejects.toThrow()
   })
 
+  it('lets only the person mark fasting days; their coach can read them (T-041c)', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('me@x.in')
+    const other = await t.signUp('other@x.in')
+    const coach = await t.signUp('c@x.in', { role: 'coach' })
+    await t.as(coach, (db) => db.query(`insert into coach_clients (coach_id, client_id) values ($1, $2)`, [coach, me]))
+    await t.as(me, (db) => db.query(`update coach_clients set status = 'active' where client_id = $1`, [me]))
+    await t.as(me, (db) => db.query(`insert into fasting_days (fasted_on) values ('2026-10-11')`))
+    await expect(t.as(me, (db) => db.query(`insert into fasting_days (user_id, fasted_on) values ($1, '2026-10-11')`, [other]))).rejects.toThrow()
+    await expect(t.as(coach, (db) => db.query(`insert into fasting_days (user_id, fasted_on) values ($1, '2026-10-12')`, [me]))).rejects.toThrow()
+    const read = (id: string) => t.as(id, async (db) => (await db.query('select fasted_on from fasting_days')).rows.length)
+    expect(await read(me)).toBe(1)
+    expect(await read(coach)).toBe(1)
+    expect(await read(other)).toBe(0)
+    const removed = await t.as(other, (db) => db.query(`delete from fasting_days where user_id = $1`, [me]))
+    expect(removed.affectedRows).toBe(0)
+  })
+
   it('keeps an event date on the person’s own profile only (T-041b)', async () => {
     const t = await createTestDb()
     const me = await t.signUp('me@x.in')

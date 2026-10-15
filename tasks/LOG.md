@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: Fasting days in the food log (T-041c)
+
+- Last part of T-041. DK got a choice card; "Mark the day" was recommended and built. Spec `specs/T-041c-fasting-days.md`.
+- People who fast see "Fasting today?" in the food log. A marked day keeps its targets but is left out of food averages and days on target, and doesn't break the protein streak.
+- Food stats show fasting days with a dashed bar and a note.
+- Migration `supabase/migrations/20261024000000_fasting_days.sql` adds the `fasting_days` table with row-level security. It must be run in Supabase.
+- Left: spreading missed calories over the week (opt-in, with T-047 or T-048), and festival calendars.
+- Tests: 2 in `src/engine/dietStats.test.ts`, 3 in `src/log/FoodLog.test.tsx`, 1 in `src/progress/DietStats.test.tsx`, 1 in `src/db/rls.test.ts`.
+
 ## 2026-10-15: Event date for the goal (T-041b)
 
 - Next part of T-041, by the order of tasks. Spec `specs/T-041b-event-date.md`.
