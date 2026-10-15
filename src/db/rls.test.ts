@@ -326,6 +326,25 @@ describe('exercise library (T-043b)', () => {
   })
 })
 
+describe('own exercises (T-043c)', () => {
+  it('only the person edits or hides their own exercise; the coach and others cannot', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('me@x.in')
+    const other = await t.signUp('other@x.in')
+    const myCoach = await t.signUp('coach@x.in', { role: 'coach' })
+    await t.as(myCoach, (db) => db.query(`insert into coach_clients (coach_id, client_id) values ($1, $2)`, [myCoach, me]))
+    await t.as(me, (db) => db.query(`update coach_clients set status = 'active' where coach_id = $1`, [myCoach]))
+    const id = await t.as(me, async (db) => (await db.query<{ id: string }>(`insert into custom_exercises (name, primary_muscle) values ('Neck curl', 'traps') returning id`)).rows[0].id)
+    await t.as(me, (db) => db.query(`update custom_exercises set name = 'Neck flexion', equipment = 'cable', hidden = true where id = $1`, [id]))
+    // Updates by anyone else touch no rows.
+    for (const who of [myCoach, other]) await t.as(who, (db) => db.query(`update custom_exercises set name = 'Taken', hidden = false where id = $1`, [id]))
+    const rows = await t.as(me, async (db) => (await db.query<{ name: string; hidden: boolean }>('select name, hidden from custom_exercises')).rows)
+    expect(rows).toEqual([{ name: 'Neck flexion', hidden: true }])
+    // The coach still reads it, hidden or not.
+    expect(await t.as(myCoach, (db) => count(db, 'custom_exercises'))).toBe(1)
+  })
+})
+
 describe('workout indexes (T-044)', () => {
   it('workouts are found by person and date, and sets by workout and exercise', async () => {
     const t = await createTestDb()
