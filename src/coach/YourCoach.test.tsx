@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { YourCoach } from './YourCoach'
 import { memoryCoachStore } from './store'
+import { memoryCheckInStore } from './checkIns'
 
 afterEach(cleanup)
 
@@ -37,5 +38,48 @@ describe('your coach (T-026a)', () => {
     click('Yes, stop')
     expect(await screen.findByLabelText('Coach code')).toBeTruthy()
     expect(await store.myCoach()).toBeNull()
+  })
+})
+
+describe('weekly check-in (T-026e)', () => {
+  const TODAY = '2026-10-15'
+  const linked = () => memoryCoachStore({ coach: { id: 'l1', personId: 'k1', name: 'Coach K' } })
+  const score = (q: string, n: number) => fireEvent.click(within(screen.getByRole('group', { name: q })).getByRole('button', { name: String(n) }))
+
+  it('1. the person answers five scores and two notes, and sends it for this week', async () => {
+    const checkIns = memoryCheckInStore([], TODAY)
+    render(<YourCoach store={linked()} checkIns={checkIns} today={TODAY} />)
+    await screen.findByRole('region', { name: 'Weekly check-in' })
+    click('Send check-in')
+    expect((await screen.findByRole('alert')).textContent).toMatch(/Pick a number for energy, sleep, mood/)
+    for (const q of ['Energy', 'Sleep', 'Mood', 'Sticking to your food plan', 'Training']) score(q, 4)
+    fireEvent.change(screen.getByLabelText('How did the week go?'), { target: { value: 'Two late nights' } })
+    fireEvent.change(screen.getByLabelText('Anything you need from your coach?'), { target: { value: 'Swap for rice?' } })
+    click('Send check-in')
+    expect(await screen.findByText('Sent for this week.')).toBeTruthy()
+    const [saved] = await checkIns.list()
+    expect([saved.weekStart, saved.energy, saved.note, saved.ask]).toEqual(['2026-10-12', 4, 'Two late nights', 'Swap for rice?'])
+  })
+
+  it('2. answers can change until the coach replies; then the reply shows', async () => {
+    const sent = { id: 'c1', weekStart: '2026-10-12', energy: 3, sleep: 3, mood: 3, diet: 3, training: 3, note: '', ask: '', reply: null, repliedOn: null } as const
+    const checkIns = memoryCheckInStore([{ ...sent }], TODAY)
+    render(<YourCoach store={linked()} checkIns={checkIns} today={TODAY} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Change answers' }))
+    score('Sleep', 5)
+    click('Send check-in')
+    expect(await screen.findByText(/Sleep 5/)).toBeTruthy()
+
+    await checkIns.reply('c1', 'Good week. Keep going.')
+    cleanup()
+    render(<YourCoach store={linked()} checkIns={checkIns} today={TODAY} />)
+    expect(await screen.findByText('Good week. Keep going.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Change answers' })).toBeNull()
+  })
+
+  it('3. no check-in without a coach', async () => {
+    render(<YourCoach store={memoryCoachStore()} checkIns={memoryCheckInStore()} today={TODAY} />)
+    await screen.findByLabelText('Coach code')
+    expect(screen.queryByRole('region', { name: 'Weekly check-in' })).toBeNull()
   })
 })

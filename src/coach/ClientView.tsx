@@ -12,6 +12,8 @@ import type { ExerciseStore } from '../training/exerciseStore'
 import { customExercise, customExercises, setCustomExercises } from '../training/exercises'
 import { PlanEditor } from '../training/PlanEditor'
 import type { Plan, SessionSummary, WorkoutStore } from '../training/types'
+import { ClientCheckIns } from './CheckIn'
+import type { CheckInStore } from './checkIns'
 import type { ClientRow } from './store'
 
 /** A client's data as their coach sees it; row-level security allows the reads and target changes. */
@@ -23,6 +25,8 @@ export interface ClientStores {
   workouts: WorkoutStore
   /** The client's own exercises, read only (T-026d). */
   exercises: ExerciseStore
+  /** Weekly check-ins; the coach replies (T-026e). */
+  checkIns: CheckInStore
 }
 
 const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
@@ -112,6 +116,8 @@ export function ClientView({
       ) : (
         <p className="muted">On track this week.</p>
       )}
+
+      <ClientCheckIns store={stores.checkIns} weighIns={weighIns} first={first} />
 
       <section aria-label="Targets">
         {editing ? (

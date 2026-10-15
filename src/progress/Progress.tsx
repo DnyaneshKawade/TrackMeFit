@@ -4,6 +4,7 @@ import { DietStats } from './DietStats'
 import { Photos } from './Photos'
 import { YourCoach } from '../coach/YourCoach'
 import type { CoachStore } from '../coach/store'
+import type { CheckInStore } from '../coach/checkIns'
 import type { PhotoStore } from './photoStore'
 import { steadySwitch, type PaceSwitch } from '../profile/steady'
 import type { GoalChoice, ProfileInfo } from '../profile/types'
@@ -149,6 +150,7 @@ export function Progress({
   log,
   photos,
   coach,
+  checkIns,
   today = localDate(),
 }: {
   store: ProgressStore
@@ -164,6 +166,8 @@ export function Progress({
   photos?: PhotoStore
   /** Join a coach or stop sharing (T-026a); not shown to coaches. */
   coach?: CoachStore
+  /** Weekly check-ins for the coach (T-026e). */
+  checkIns?: CheckInStore
   today?: string
 }) {
   const [target, setTarget] = useState<DietTarget | null>(null)
@@ -338,7 +342,7 @@ export function Progress({
 
       {photos && <Photos store={photos} today={today} />}
 
-      {coach && <YourCoach store={coach} />}
+      {coach && <YourCoach store={coach} checkIns={checkIns} today={today} />}
     </main>
   )
 }

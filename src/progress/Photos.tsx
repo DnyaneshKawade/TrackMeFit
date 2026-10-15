@@ -22,6 +22,8 @@ export function Photos({
   const [pose, setPose] = useState<Pose>('front')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [comparing, setComparing] = useState(false)
+  const [pair, setPair] = useState<[string, string] | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -79,6 +81,20 @@ export function Photos({
   }
 
   const dates = [...new Set((photos ?? []).map((p) => p.date))]
+  // Side by side (T-026e): two dates of one pose, oldest and newest loaded at first.
+  const poseDates = dates.filter((d) => photos!.some((p) => p.date === d && p.pose === pose))
+  const shown: [string, string] | null =
+    pair && poseDates.includes(pair[0]) && poseDates.includes(pair[1]) ? pair : poseDates.length > 1 ? [poseDates[poseDates.length - 1], poseDates[0]] : null
+  const photoOn = (d: string) => photos!.find((p) => p.date === d && p.pose === pose)!
+  const poseChips = (
+    <div className="range" role="group" aria-label="Pose">
+      {POSES.map((p) => (
+        <button key={p.pose} type="button" className={`chip${pose === p.pose ? ' on' : ''}`} aria-pressed={pose === p.pose} onClick={() => setPose(p.pose)}>
+          {p.label}
+        </button>
+      ))}
+    </div>
+  )
 
   return (
     <section aria-label="Progress photos" className="photos">
@@ -86,13 +102,7 @@ export function Photos({
       {!readOnly && <p className="muted">Only you and your coach, if you have one, can see these. Use the same place, light and pose each time.</p>}
       {!readOnly && (
         <div className="photo-add">
-          <div className="range" role="group" aria-label="Pose">
-            {POSES.map((p) => (
-              <button key={p.pose} type="button" className={`chip${pose === p.pose ? ' on' : ''}`} aria-pressed={pose === p.pose} onClick={() => setPose(p.pose)}>
-                {p.label}
-              </button>
-            ))}
-          </div>
+          {!comparing && poseChips}
           <label className={`primary photo-pick${busy ? ' busy' : ''}`}>
             {busy ? 'Saving…' : `Add today’s ${pose} photo`}
             <input type="file" accept="image/*" disabled={busy} aria-label={`Add today’s ${pose} photo`} onChange={(e) => void add(e.currentTarget)} />
@@ -100,7 +110,34 @@ export function Photos({
         </div>
       )}
       {error && <p className="error" role="alert">{error}</p>}
-      {photos === null ? (
+      {dates.length > 1 && (
+        <button className="link" aria-pressed={comparing} onClick={() => setComparing(!comparing)}>
+          {comparing ? 'Show all photos' : 'Compare two dates'}
+        </button>
+      )}
+      {comparing && photos ? (
+        <div className="photo-compare" aria-label="Compare photos" role="group">
+          {poseChips}
+          {shown ? (
+            <div className="photo-pair">
+              {([0, 1] as const).map((i) => (
+                <figure key={i}>
+                  <select
+                    aria-label={i === 0 ? 'Earlier date' : 'Later date'}
+                    value={shown[i]}
+                    onChange={(e) => setPair(i === 0 ? [e.target.value, shown[1]] : [shown[0], e.target.value])}
+                  >
+                    {poseDates.map((d) => <option key={d} value={d}>{shortDate(d)}</option>)}
+                  </select>
+                  <img src={photoOn(shown[i]).url} alt={`${poseLabel(pose)}, ${shortDate(shown[i])}`} />
+                </figure>
+              ))}
+            </div>
+          ) : (
+            <p className="muted">Two {pose} photos on different days are needed to compare.</p>
+          )}
+        </div>
+      ) : photos === null ? (
         <p className="muted">Loading photos…</p>
       ) : !photos.length ? (
         <p className="muted">{readOnly ? 'No photos yet.' : 'Take a photo every two to four weeks. Changes are easier to see in photos than in the mirror.'}</p>

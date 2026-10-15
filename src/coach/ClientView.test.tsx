@@ -11,6 +11,7 @@ import { memoryPhotoStore } from '../progress/photoStore'
 import { memoryWorkoutStore } from '../training/memoryStore'
 import { shiftDate } from '../log/types'
 import { memoryExerciseStore } from '../training/exerciseStore'
+import { memoryCheckInStore } from './checkIns'
 import { customExercises, exerciseById, setCustomExercises } from '../training/exercises'
 import type { Plan, WorkoutStore } from '../training/types'
 
@@ -34,6 +35,7 @@ function setup(stores: Partial<ClientStores> = {}) {
       sessions: [{ id: 's1', performedOn: shiftDate(TODAY, -2), planDayId: null, name: 'Upper A', sets: [] }],
     }),
     exercises: memoryExerciseStore(),
+    checkIns: memoryCheckInStore([], TODAY),
     ...stores,
   }
   const client = { ...emptyClient('l1', 'Asha Rao'), trainingDays: 3 }
@@ -157,5 +159,27 @@ describe('a coach edits a client’s plan (T-026d)', () => {
     expect(screen.queryByRole('button', { name: /Coach move/ })).toBeNull()
     cleanup()
     expect(customExercises().map((e) => e.id)).toEqual(['custom:mine'])
+  })
+})
+
+describe('check-ins on the client page (T-026e)', () => {
+  it('4. the coach reads a check-in with the week’s weight and replies once', async () => {
+    const checkIns = memoryCheckInStore(
+      [{ id: 'c1', weekStart: '2026-10-12', energy: 2, sleep: 3, mood: 4, diet: 2, training: 5, note: 'Office party', ask: 'Can I swap rice for roti?', reply: null, repliedOn: null }],
+      TODAY,
+    )
+    setup({ checkIns })
+    fireEvent.click(await screen.findByRole('button', { name: 'Asha Rao' }))
+    const week = await screen.findByRole('article', { name: 'Week of 12 Oct' })
+    expect(within(week).getByText(/Energy 2 · Sleep 3/)).toBeTruthy()
+    expect(within(week).getByText('“Office party”')).toBeTruthy()
+    expect(within(week).getByText(/Average 70\.\d kg, down 0\.\d kg from the week before\./)).toBeTruthy()
+    fireEvent.click(within(week).getByRole('button', { name: 'Send reply' }))
+    expect((await screen.findByRole('alert')).textContent).toBe('Write a reply first.')
+    fireEvent.change(within(week).getByLabelText('Reply to Asha'), { target: { value: 'Yes, two rotis.' } })
+    fireEvent.click(within(week).getByRole('button', { name: 'Send reply' }))
+    expect(await within(week).findByText('Yes, two rotis.')).toBeTruthy()
+    expect(within(week).queryByRole('button', { name: 'Send reply' })).toBeNull()
+    expect((await checkIns.list())[0].reply).toBe('Yes, two rotis.')
   })
 })

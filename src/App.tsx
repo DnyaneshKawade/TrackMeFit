@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import { RoleStep } from './auth/RoleStep'
+import { memoryCheckInStore, supabaseCheckInStore, type CheckInStore } from './coach/checkIns'
 import { SignIn } from './auth/SignIn'
 import { createSupabaseAuth, supabaseFromEnv } from './auth/supabaseAuth'
 import type { Account, AuthService } from './auth/types'
@@ -48,6 +49,7 @@ export function AppShell({
   progressStoreFor = () => memoryProgressStore(),
   photoStoreFor = () => memoryPhotoStore(),
   coachStoreFor = () => memoryCoachStore(),
+  checkInStoreFor = () => memoryCheckInStore(),
   clientStoresFor = () => ({
     log: memoryLogStore(),
     targets: memoryTargetStore(),
@@ -55,6 +57,7 @@ export function AppShell({
     photos: memoryPhotoStore(),
     workouts: memoryWorkoutStore(),
     exercises: memoryExerciseStore(),
+    checkIns: memoryCheckInStore(),
   }),
   foodStoreFor = () => memoryCustomFoodStore(),
   mealPlanStoreFor = () => memoryMealPlanStore(),
@@ -74,6 +77,8 @@ export function AppShell({
   coachStoreFor?: (account: Account) => CoachStore
   /** A client's data for their coach (T-026c). */
   clientStoresFor?: (clientId: string) => ClientStores
+  /** Weekly check-ins of the signed-in person (T-026e). */
+  checkInStoreFor?: (account: Account) => CheckInStore
   foodStoreFor?: (account: Account) => CustomFoodStore
   mealPlanStoreFor?: (account: Account) => MealPlanStore
   /** Food search; the bundled list unless the database is set up. */
@@ -104,6 +109,7 @@ export function AppShell({
   const progress = useMemo(() => (account ? progressStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const coaching = useMemo(() => (account ? coachStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const photos = useMemo(() => (account ? photoStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const checkIns = useMemo(() => (account ? checkInStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   // The latest weight, for a new meal plan from the Food tab (T-061).
   const latestWeight = useMemo(
     () => async () => {
@@ -249,6 +255,7 @@ export function AppShell({
             log={store!}
             photos={photos}
             coach={account.role === 'user' ? coaching : undefined}
+            checkIns={account.role === 'user' ? checkIns : undefined}
             onSwitchPace={async (rate, target) => {
               const p = { ...profile!, goalRate: rate }
               await profiles!.save(p)
@@ -288,7 +295,9 @@ export default function App() {
         photos: supabasePhotoStore(sb!, id),
         workouts: supabaseWorkoutStore(sb!, id),
         exercises: supabaseExerciseStore(sb!, id),
+        checkIns: supabaseCheckInStore(sb!, id),
       })}
+      checkInStoreFor={(a) => supabaseCheckInStore(sb!, a.id)}
       foodStoreFor={(a) => supabaseCustomFoodStore(sb!, a.id)}
       mealPlanStoreFor={(a) => supabaseMealPlanStore(sb!, a.id)}
       loadFoods={loadFoods}
