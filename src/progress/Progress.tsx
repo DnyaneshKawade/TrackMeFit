@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { localDate, shiftDate, type LogStore } from '../log/types'
 import { DietStats } from './DietStats'
 import { Photos } from './Photos'
+import { YourCoach } from '../coach/YourCoach'
+import type { CoachStore } from '../coach/store'
 import type { PhotoStore } from './photoStore'
 import { steadySwitch, type PaceSwitch } from '../profile/steady'
 import type { GoalChoice, ProfileInfo } from '../profile/types'
@@ -146,6 +148,7 @@ export function Progress({
   onSwitchPace,
   log,
   photos,
+  coach,
   today = localDate(),
 }: {
   store: ProgressStore
@@ -159,6 +162,8 @@ export function Progress({
   log?: LogStore
   /** Progress photos (T-022b). */
   photos?: PhotoStore
+  /** Join a coach or stop sharing (T-026a); not shown to coaches. */
+  coach?: CoachStore
   today?: string
 }) {
   const [target, setTarget] = useState<DietTarget | null>(null)
@@ -332,6 +337,8 @@ export function Progress({
       </section>
 
       {photos && <Photos store={photos} today={today} />}
+
+      {coach && <YourCoach store={coach} />}
     </main>
   )
 }

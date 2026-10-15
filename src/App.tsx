@@ -26,9 +26,11 @@ import { isOnboarded, type ProfileInfo, type ProfileStore } from './profile/type
 // Training and Progress load when their tab is first opened, to keep the first load small.
 const Workouts = lazy(() => import('./training/Workouts').then((m) => ({ default: m.Workouts })))
 const Progress = lazy(() => import('./progress/Progress').then((m) => ({ default: m.Progress })))
+const Clients = lazy(() => import('./coach/Clients').then((m) => ({ default: m.Clients })))
 const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ default: m.Onboarding })))
 import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
 import type { ProgressStore } from './progress/types'
+import { memoryCoachStore, supabaseCoachStore, type CoachStore } from './coach/store'
 import { memoryPhotoStore, supabasePhotoStore, type PhotoStore } from './progress/photoStore'
 
 // The bundled food list, downloaded only when the database can't answer.
@@ -43,6 +45,7 @@ export function AppShell({
   profileStoreFor = () => memoryProfileStore(),
   progressStoreFor = () => memoryProgressStore(),
   photoStoreFor = () => memoryPhotoStore(),
+  coachStoreFor = () => memoryCoachStore(),
   foodStoreFor = () => memoryCustomFoodStore(),
   mealPlanStoreFor = () => memoryMealPlanStore(),
   loadFoods = loadBundledFoods,
@@ -57,6 +60,8 @@ export function AppShell({
   progressStoreFor?: (account: Account) => ProgressStore
   /** Progress photos (T-022b). */
   photoStoreFor?: (account: Account) => PhotoStore
+  /** Coach links (T-026a). */
+  coachStoreFor?: (account: Account) => CoachStore
   foodStoreFor?: (account: Account) => CustomFoodStore
   mealPlanStoreFor?: (account: Account) => MealPlanStore
   /** Food search; the bundled list unless the database is set up. */
@@ -81,10 +86,11 @@ export function AppShell({
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [store, workouts])
-  const [tab, setTab] = useState<'food' | 'training' | 'progress'>('food')
+  const [tab, setTab] = useState<'food' | 'training' | 'progress' | 'clients'>('food')
   const targets = useMemo(() => (account ? targetStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const profiles = useMemo(() => (account ? profileStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const progress = useMemo(() => (account ? progressStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const coaching = useMemo(() => (account ? coachStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const photos = useMemo(() => (account ? photoStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   // The latest weight, for a new meal plan from the Food tab (T-061).
   const latestWeight = useMemo(
@@ -192,6 +198,9 @@ export function AppShell({
         <button role="tab" aria-selected={tab === 'food'} onClick={() => setTab('food')}>Food</button>
         <button role="tab" aria-selected={tab === 'training'} onClick={() => setTab('training')}>Training</button>
         <button role="tab" aria-selected={tab === 'progress'} onClick={() => setTab('progress')}>Progress</button>
+        {account.role === 'coach' && (
+          <button role="tab" aria-selected={tab === 'clients'} onClick={() => setTab('clients')}>Clients</button>
+        )}
       </nav>
       {tab === 'food' && (
         <FoodLog
@@ -207,6 +216,7 @@ export function AppShell({
       )}
       <Suspense fallback={<main className="log">Loading…</main>}>
         {tab === 'training' && <Workouts store={workouts!} exercises={exerciseStore} answers={profile ?? undefined} />}
+        {tab === 'clients' && coaching && <Clients store={coaching} />}
         {tab === 'progress' && (
           <Progress
             store={progress!}
@@ -215,6 +225,7 @@ export function AppShell({
             targets={targets}
             log={store!}
             photos={photos}
+            coach={account.role === 'user' ? coaching : undefined}
             onSwitchPace={async (rate, target) => {
               const p = { ...profile!, goalRate: rate }
               await profiles!.save(p)
@@ -246,6 +257,7 @@ export default function App() {
       profileStoreFor={(a) => supabaseProfileStore(sb!, a.id)}
       progressStoreFor={(a) => supabaseProgressStore(sb!, a.id)}
       photoStoreFor={(a) => supabasePhotoStore(sb!, a.id)}
+      coachStoreFor={(a) => supabaseCoachStore(sb!, a.id)}
       foodStoreFor={(a) => supabaseCustomFoodStore(sb!, a.id)}
       mealPlanStoreFor={(a) => supabaseMealPlanStore(sb!, a.id)}
       loadFoods={loadFoods}

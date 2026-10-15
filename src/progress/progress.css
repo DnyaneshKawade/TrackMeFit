@@ -59,3 +59,7 @@
 .photos .photo-day ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .photos .photo-day li { display: grid; gap: 2px; justify-items: center; }
 .photos .photo-day img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 8px; background: #eef2f0; }
+
+.your-coach .actions, .clients .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.clients .invite { margin: 12px 0; padding: 10px 12px; border: 1px solid #0f7a5c; border-radius: 12px; }
+.clients .code { font-size: 20px; letter-spacing: 1px; }
