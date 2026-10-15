@@ -63,3 +63,12 @@
 .your-coach .actions, .clients .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .clients .invite { margin: 12px 0; padding: 10px 12px; border: 1px solid #0f7a5c; border-radius: 12px; }
 .clients .code { font-size: 20px; letter-spacing: 1px; }
+.client-list { list-style: none; padding: 0; margin: 0; }
+.client-list > li { padding: 10px 0; border-bottom: 1px solid #eef2f0; }
+.client-list .client-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.client-list .flags { margin: 6px 0 0; padding-left: 18px; color: #9a3412; }
+.client-list .on-track { margin: 4px 0 0; }
+@media (prefers-color-scheme: dark) {
+  .client-list > li { border-color: #2c3734; }
+  .client-list .flags { color: #fdba74; }
+}

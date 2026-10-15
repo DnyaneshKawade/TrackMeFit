@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: Clients sorted by who needs attention (T-026b)
+
+- Second part of the coach dashboard (T-026), next in order. Spec `specs/T-026b-client-attention.md`.
+- The Clients tab now puts the clients who need help first. Each shows plain reasons, or "On track this week."
+- Reasons: no food or weigh-in for some days, missed workouts, calories or protein off target, and weight moving against the goal or too fast.
+- The rules are a pure engine, `src/engine/attention.ts`, with a weight per flag.
+- Migration `supabase/migrations/20261028000000_client_summaries.sql` adds `client_summaries(today)`. It must be run in Supabase. It counts last week per client in one request, with the coach's own rights.
+- Left for T-026: opening a client's screens, check-ins, chat, templates and a client limit.
+- Tests: 5 in `src/engine/attention.test.ts`, 1 new and 1 changed in `src/coach/Clients.test.tsx`, 1 in `src/db/coach.test.ts`.
+
 ## 2026-10-15: Connect a coach and a client (T-026a)
 
 - Next task in order, the first part of the coach dashboard (T-026). Spec `specs/T-026a-coach-connect.md`.
