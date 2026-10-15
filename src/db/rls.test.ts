@@ -191,6 +191,17 @@ describe('onboarding and progress', () => {
     await expect(t.as(me, (db) => db.query(`update profiles set equipment = 'castle' where id = $1`, [me]))).rejects.toThrow()
   })
 
+  it('keeps an event date on the person’s own profile only (T-041b)', async () => {
+    const t = await createTestDb()
+    const me = await t.signUp('me@x.in')
+    const other = await t.signUp('other@x.in')
+    const set = (id: string) => t.as(me, (db) => db.query(`update profiles set event_date = '2027-03-01' where id = $1`, [id]))
+    expect((await set(me)).affectedRows).toBe(1)
+    expect((await set(other)).affectedRows).toBe(0)
+    const rows = (await t.db.query<{ id: string; event_date: unknown }>('select id, event_date from profiles where event_date is not null')).rows
+    expect(rows.map((r) => r.id)).toEqual([me])
+  })
+
   it('keeps one weigh-in and one set of measurements per day, written only by the person', async () => {
     const t = await createTestDb()
     const me = await t.signUp('me@x.in')

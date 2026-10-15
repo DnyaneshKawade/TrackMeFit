@@ -25,6 +25,7 @@ export interface ProfileRow {
   goal: ProfileInfo['goal']
   goal_rate: number | string | null
   target_weight_kg: number | string | null
+  event_date: string | null
   diet_pref: ProfileInfo['dietPref']
   food_rules: string[] | null
   fasting: string[] | null
@@ -36,7 +37,7 @@ export interface ProfileRow {
 }
 
 const COLUMNS =
-  'full_name, sex, birth_date, height_cm, activity, training_days, experience, equipment, goal, goal_rate, target_weight_kg, ' +
+  'full_name, sex, birth_date, height_cm, activity, training_days, experience, equipment, goal, goal_rate, target_weight_kg, event_date, ' +
   'diet_pref, food_rules, fasting, allergies, current_diet, medical, other_health, onboarded_at'
 
 const numOrNull = (v: number | string | null | undefined) => (v === null || v === undefined ? null : Number(v))
@@ -53,6 +54,7 @@ export const fromRow = (r: ProfileRow): ProfileInfo => ({
   goal: r.goal,
   goalRate: numOrNull(r.goal_rate),
   targetWeightKg: numOrNull(r.target_weight_kg),
+  eventDate: r.event_date ?? null,
   dietPref: r.diet_pref,
   foodRules: r.food_rules ?? [],
   fasting: r.fasting ?? [],
@@ -75,6 +77,7 @@ export const toRow = (p: ProfileInfo): ProfileRow => ({
   goal: p.goal,
   goal_rate: p.goalRate,
   target_weight_kg: p.targetWeightKg,
+  event_date: p.eventDate,
   diet_pref: p.dietPref,
   food_rules: p.foodRules,
   fasting: p.fasting,

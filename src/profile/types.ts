@@ -23,6 +23,8 @@ export interface ProfileInfo {
   /** Fraction of body weight per week; negative to lose. */
   goalRate: number | null
   targetWeightKg: number | null
+  /** A date to be ready for, like a wedding or trip (T-041b); null if none. */
+  eventDate: string | null
   dietPref: DietPref | null
   /** e.g. ['no_onion_garlic'] */
   foodRules: string[]
@@ -56,6 +58,7 @@ export const EMPTY_PROFILE: ProfileInfo = {
   goal: null,
   goalRate: null,
   targetWeightKg: null,
+  eventDate: null,
   dietPref: null,
   foodRules: [],
   fasting: [],

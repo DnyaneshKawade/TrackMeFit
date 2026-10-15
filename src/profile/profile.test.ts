@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { catalogue } from '../food/catalogueData'
 import { amountFor } from '../food/types'
 import { ALL_DIET_ITEMS, PORTION_GRAMS, checkCustom, describeDiet, estimateDiet, extraFromFood } from './currentDiet'
-import { bmiResult, buildPlan, checkTargetWeight, goalTimeline, paceOptions, recommendedPace, waistNote, type PaceBody } from './goal'
+import { bmiResult, buildPlan, checkEventDate, checkTargetWeight, eventNote, goalTimeline, paceOptions, recommendedPace, waistNote, type PaceBody } from './goal'
 import { steadySwitch } from './steady'
 import { fromRow, memoryProfileStore, toRow } from './stores'
 import { EMPTY_PROFILE, ageOn, bodySize, checkAboutYou, healthNotes, isOnboarded, questionsFor, type ProfileInfo } from './types'
@@ -304,5 +304,42 @@ describe('Catch up to Steady (T-059c)', () => {
     const s = steadySwitch(onCatchUp, 55, null)!
     expect(s.target).toBeNull()
     expect(s.message).toMatch(/about 310 kcal a day less\.$/)
+  })
+})
+
+describe('event date for the goal (T-041b)', () => {
+  const T = '2026-10-13'
+  it('1. checks the date: empty is fine, past and far dates are not', () => {
+    expect(checkEventDate('', T)).toBeNull()
+    expect(checkEventDate('2026-12-01', T)).toBeNull()
+    expect(checkEventDate('2026-10-13', T)).toBe('Pick a date after today.')
+    expect(checkEventDate('2028-12-01', T)).toBe('Pick a date within 2 years.')
+    expect(checkEventDate('soon', T)).toBe('Enter a date.')
+  })
+
+  it('2. a target reached in time says so', () => {
+    expect(eventNote(64, 58, -0.005, T, '2027-03-01')).toBe('You’d reach 58 kg before your event on 1 March 2027.')
+  })
+
+  it('3. a target not reached in time gives the weight then and the pace it needs, without changing the pace', () => {
+    expect(eventNote(64, 58, -0.005, T, '2027-01-26')).toBe(
+      'By your event on 26 January 2027 you’d be about 59.2 kg, not 58 kg. Reaching 58 kg by then needs about 0.4 kg a week. ' +
+        'That is faster than your pace. Think about a closer target, or keep your pace and get there a bit later.',
+    )
+  })
+
+  it('4. with no target, says the weight on the day; gaining goes up', () => {
+    expect(eventNote(64, null, -0.005, T, '2026-12-08')).toBe('By your event on 8 December 2026 you’d be about 61.4 kg at this pace.')
+    expect(eventNote(60, null, 0.0025, T, '2026-12-08')).toBe('By your event on 8 December 2026 you’d be about 61.2 kg at this pace.')
+    expect(eventNote(64, null, 0, T, '2026-12-08')).toBeNull()
+    expect(eventNote(64, null, -0.005, T, null)).toBeNull()
+  })
+
+  it('5. the plan summary carries the note, and the date is saved', () => {
+    const plan = buildPlan({ ...asha, eventDate: '2027-03-01' }, 64, T)
+    expect(plan.eventNote).toBe('You’d reach 60 kg before your event on 1 March 2027.')
+    expect(buildPlan(asha, 64, T).eventNote).toBeNull()
+    expect(toRow({ ...asha, eventDate: '2027-03-01' }).event_date).toBe('2027-03-01')
+    expect(fromRow({ ...toRow(asha), event_date: '2027-03-01' }).eventDate).toBe('2027-03-01')
   })
 })

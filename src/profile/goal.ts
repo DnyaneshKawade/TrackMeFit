@@ -181,6 +181,40 @@ export function goalTimeline(currentKg: number, targetKg: number, rate: number, 
   return { weeks, byDate, message }
 }
 
+const fullDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+const daysBetween = (from: string, to: string) => Math.round((Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / 86_400_000)
+
+/** The latest event date allowed, in days from today. */
+export const MAX_EVENT_DAYS = 730
+
+/** Checks an optional event date (spec T-041b). Empty is fine. */
+export function checkEventDate(text: string, today: string): string | null {
+  if (!text.trim()) return null
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text) || Number.isNaN(Date.parse(text))) return 'Enter a date.'
+  if (text <= today) return 'Pick a date after today.'
+  if (daysBetween(today, text) > MAX_EVENT_DAYS) return 'Pick a date within 2 years.'
+  return null
+}
+
+/** What the pace means for an event like a wedding or trip (spec T-041b).
+ * Only says what happens at the chosen pace; it never changes the pace. */
+export function eventNote(currentKg: number, targetKg: number | null, rate: number, today: string, eventDate: string | null): string | null {
+  if (!rate || !eventDate || checkEventDate(eventDate, today)) return null
+  const weeks = daysBetween(today, eventDate) / 7
+  const when = fullDate(eventDate)
+  const perWeek = Math.abs(rate) * currentKg
+  const expected = Math.round((currentKg + Math.sign(rate) * perWeek * weeks) * 10) / 10
+  if (targetKg === null) return `By your event on ${when} you’d be about ${expected} kg at this pace.`
+  const t = goalTimeline(currentKg, targetKg, rate, today)
+  if (t && t.byDate <= eventDate) return `You’d reach ${targetKg} kg before your event on ${when}.`
+  const needed = Math.round((Math.abs(targetKg - currentKg) / weeks) * 100) / 100
+  return (
+    `By your event on ${when} you’d be about ${expected} kg, not ${targetKg} kg. ` +
+    `Reaching ${targetKg} kg by then needs about ${needed} kg a week. ` +
+    'That is faster than your pace. Think about a closer target, or keep your pace and get there a bit later.'
+  )
+}
+
 const DAY_TYPE: Record<Activity, DayType> = { desk: 'desk', on_feet: 'onFeet', physical: 'physical' }
 
 export interface Plan {
@@ -188,6 +222,8 @@ export interface Plan {
   /** How today's eating compares with maintenance; null without a typical day. */
   intakeNote: string | null
   timeline: Timeline | null
+  /** What the pace means for the event date; null without one. */
+  eventNote: string | null
   /** Suggested targets; null when we don't suggest any. */
   suggested: Macros | null
   /** Why these targets, or why none. */
@@ -228,11 +264,12 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
 
   const timeline =
     p.targetWeightKg !== null && p.goalRate ? goalTimeline(weightKg, p.targetWeightKg, p.goalRate, today) : null
+  const event = p.goalRate ? eventNote(weightKg, p.targetWeightKg, p.goalRate, today, p.eventDate) : null
 
   const reasons: string[] = []
   if ((p.goal === 'lose' || p.goal === 'gain') && noDeficit(p.medical)) {
     reasons.push('We don’t suggest calorie targets during pregnancy or breastfeeding. Set them with your doctor, or track without targets.')
-    return { maintenance, intakeNote, timeline, suggested: null, reasons }
+    return { maintenance, intakeNote, timeline, eventNote: event, suggested: null, reasons }
   }
   const rate = p.goal === 'lose' || p.goal === 'gain' ? (p.goalRate ?? 0) : p.goal === 'recomp' ? -0.0025 : 0
   const kcal = calorieTarget({ tdee, weightKg, rate, sex: p.sex! })
@@ -258,6 +295,6 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
       : `Protein is ${protein.perKg} g per kg of body weight, enough to keep and build muscle.`,
   )
   reasons.push('Fat is about a quarter of calories; carbs fill the rest.')
-  return { maintenance, intakeNote, timeline, suggested, reasons }
+  return { maintenance, intakeNote, timeline, eventNote: event, suggested, reasons }
 }
 

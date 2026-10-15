@@ -6,7 +6,7 @@ import { allowedExtras, dietItemsFor, estimateDiet, type DietExtra } from './cur
 import { NONVEG_OFF_DAYS, NO_ONION_GARLIC, cleanRules, excludedTags, hasNonvegOff, isNonvegOff } from './dietRules'
 import { TypicalDay } from './TypicalDay'
 import type { AcceptedMealPlan } from './MealPlanStep'
-import { bmiResult, buildPlan, checkTargetWeight, goalTimeline, paceOptions, recommendedPace, waistNote, type PaceBody } from './goal'
+import { bmiResult, buildPlan, checkEventDate, checkTargetWeight, eventNote, goalTimeline, paceOptions, recommendedPace, waistNote, type PaceBody } from './goal'
 import {
   ALLERGIES,
   FASTING,
@@ -163,6 +163,7 @@ export function Onboarding({
   const [allergyNone, setAllergyNone] = useState(false)
   const [fastNone, setFastNone] = useState(false)
   const [targetText, setTargetText] = useState(initial.targetWeightKg === null ? '' : String(initial.targetWeightKg))
+  const [eventText, setEventText] = useState(initial.eventDate ?? '')
   const [counts, setCounts] = useState<Record<string, number>>(initial.currentDiet?.counts ?? {})
   const [extras, setExtras] = useState<DietExtra[]>(initial.currentDiet?.extras ?? [])
   const [missing, setMissing] = useState<string | null>(null)
@@ -191,6 +192,7 @@ export function Onboarding({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paceKey])
   const targetError = size ? checkTargetWeight(targetText, weightKg, p.goal) : null
+  const eventError = checkEventDate(eventText, today)
 
   const chooseGoal = (goal: GoalChoice) => {
     const options = p.experience ? paceOptions(goal, p.experience, p.medical, paceBody) : []
@@ -207,6 +209,7 @@ export function Onboarding({
     // Answers to questions that don't apply (e.g. pregnancy for men) are dropped.
     medical: Object.fromEntries(questions.map((q) => [q.key, !!p.medical[q.key]])),
     targetWeightKg: (p.goal === 'lose' || p.goal === 'gain') && targetText.trim() && !targetError ? Number(targetText) : null,
+    eventDate: (p.goal === 'lose' || p.goal === 'gain') && eventText.trim() && !eventError ? eventText : null,
     currentDiet: estimate().kcal ? estimate() : null,
   })
 
@@ -223,6 +226,7 @@ export function Onboarding({
     if (step === 3) {
       if (!p.goal) return setMissing('Pick a goal to continue.')
       if (targetError) return setMissing(targetError)
+      if ((p.goal === 'lose' || p.goal === 'gain') && eventError) return setMissing(eventError)
     }
     if (step === 4 && !p.dietPref) return setMissing('Pick what you eat to continue.')
     setStep(step + 1)
@@ -410,6 +414,16 @@ export function Onboarding({
                   {goalTimeline(weightKg, Number(targetText), p.goalRate, today)?.message}
                 </p>
               ) : null}
+              <label className="field">
+                <span>Event date (optional), like a wedding or trip</span>
+                <input aria-label="Event date (optional)" type="date" min={today} value={eventText} onChange={(e) => setEventText(e.target.value)} />
+                {eventError && <small className="error">{eventError}</small>}
+              </label>
+              {!eventError && eventText.trim() && p.goalRate ? (
+                <p className="info" role="status" aria-label="At your event">
+                  {eventNote(weightKg, targetText.trim() && !targetError ? Number(targetText) : null, p.goalRate, today, eventText)}
+                </p>
+              ) : null}
             </>
           )}
         </>
@@ -483,6 +497,7 @@ export function Onboarding({
             <p>{plan.maintenance.message}</p>
             {plan.intakeNote && <p>{plan.intakeNote}</p>}
             {plan.timeline && <p>{plan.timeline.message}</p>}
+            {plan.eventNote && <p>{plan.eventNote}</p>}
           </section>
           {plan.suggested ? (
             <section className="plan-targets" aria-label="Suggested daily targets">
