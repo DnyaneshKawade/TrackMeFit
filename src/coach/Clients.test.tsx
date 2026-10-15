@@ -24,10 +24,10 @@ describe('clients tab (T-026a)', () => {
     const store = memoryCoachStore({ clients: [emptyClient('l2', 'Ravi'), emptyClient('l1', 'Asha')] })
     render(<Clients store={store} today={TODAY} />)
     const list = await screen.findByRole('region', { name: 'Your clients' })
-    expect(await within(list).findByText('Your clients (2)')).toBeTruthy()
+    expect(await within(list).findByText('Your clients (2 of 30)')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'End link with Ravi' }))
     fireEvent.click(screen.getByRole('button', { name: 'Yes, end' }))
-    await within(list).findByText('Your clients (1)')
+    await within(list).findByText('Your clients (1 of 30)')
     expect((await store.clients(TODAY)).map((c) => c.name)).toEqual(['Asha'])
   })
 
@@ -47,5 +47,14 @@ describe('clients tab (T-026a)', () => {
       'No weigh-in yet.',
     ])
     expect(within(items[1]).getByText('On track this week.')).toBeTruthy()
+  })
+
+  it('1 (T-026i). shows the client count against the limit and explains when it is reached', async () => {
+    render(<Clients store={memoryCoachStore({ clients: [emptyClient('l1', 'Asha'), emptyClient('l2', 'Ravi')], limit: 2 })} today={TODAY} />)
+    const list = await screen.findByRole('region', { name: 'Your clients' })
+    expect(await within(list).findByText('Your clients (2 of 2)')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Invite a client' }))
+    expect((await screen.findByRole('alert')).textContent).toBe('You have 2 clients, the most allowed now. End a link to invite someone new.')
+    expect(screen.queryByText(/^ABCDE-/)).toBeNull()
   })
 })

@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-15: Client limit per coach (T-026i)
+
+- Last part of the coach dashboard (T-026), which is now done. Spec `specs/T-026i-client-limit.md`.
+- Each coach can have up to 30 active clients for now. The admin pages (T-042) will change it per coach.
+- A full coach can't make a new code. A code made earlier says the coach is full, and it still works once there is room.
+- The Clients tab shows "Your clients (12 of 30)". Nobody can change their own limit.
+- Migration `20261104000000_client_limit.sql`: `profiles.client_limit`, a guard trigger, `coach_has_room`, a check on new codes, and `join_coach` checks the limit.
+- Tests: 1 in `src/db/coach.test.ts`, 1 in `src/coach/Clients.test.tsx`, 1 in `src/coach/YourCoach.test.tsx`.
+
 ## 2026-10-15: Weekly check-ins and side-by-side photos (T-026e)
 
 - Fifth part of the coach dashboard (T-026), next in order. Spec `specs/T-026e-check-ins.md`.
@@ -12,6 +21,7 @@ Newest first. One entry per finished piece of work: what changed, which tests co
 - Also removed four task rows that the #55 merge had doubled.
 - Left for T-026: chat, templates and a client limit.
 - Tests: 3 in `src/coach/YourCoach.test.tsx`, 1 in `src/coach/ClientView.test.tsx`, 3 in `src/coach/checkIns.test.ts`, 1 in `src/progress/Photos.test.tsx`, 1 in `src/db/coach.test.ts`.
+
 ## 2026-10-15: Live chat (T-026h)
 
 - DK asked whether chat is real time, like SignalR. Spec `specs/T-026h-live-chat.md`.

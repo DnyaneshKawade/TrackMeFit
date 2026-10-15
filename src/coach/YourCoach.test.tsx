@@ -21,6 +21,15 @@ describe('your coach (T-026a)', () => {
     expect((await store.myCoach())?.name).toBe('Coach K')
   })
 
+  it('2 (T-026i). a code from a full coach says so and changes nothing', async () => {
+    const store = memoryCoachStore({ codes: { ABCDE12345: 'Coach K' }, fullCodes: ['ABCDE12345'] })
+    render(<YourCoach store={store} />)
+    await type('ABCDE-12345')
+    click('Join')
+    expect((await screen.findByRole('alert')).textContent).toBe('This coach has no space for new clients right now. Ask them about it.')
+    expect(await store.myCoach()).toBeNull()
+  })
+
   it('3. a wrong code changes nothing and says to ask for a new one', async () => {
     const store = memoryCoachStore({ codes: { ABCDE12345: 'Coach K' } })
     render(<YourCoach store={store} />)

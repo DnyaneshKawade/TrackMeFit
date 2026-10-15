@@ -33,7 +33,14 @@ export function YourCoach({ store, checkIns, chat, today }: { store: CoachStore;
       setCoach(await store.myCoach())
       setCode('')
     } catch (err) {
-      setError(/invite not valid/i.test(String((err as Error)?.message)) ? 'That code didn’t work. Ask your coach for a new one.' : 'Couldn’t connect. Check your connection.')
+      const message = String((err as Error)?.message)
+      setError(
+        /invite not valid/i.test(message)
+          ? 'That code didn’t work. Ask your coach for a new one.'
+          : /coach is full/i.test(message)
+            ? 'This coach has no space for new clients right now. Ask them about it.'
+            : 'Couldn’t connect. Check your connection.',
+      )
     }
     setBusy(false)
   }

@@ -39,6 +39,7 @@ export function Clients({
   const [error, setError] = useState<string | null>(null)
   const [unread, setUnread] = useState<Map<string, number>>(new Map())
   const [programs, setPrograms] = useState<Plan[] | null>(null)
+  const [limit, setLimit] = useState<number | null>(null)
   const [editingProgram, setEditingProgram] = useState<Plan | null>(null)
 
   useEffect(() => {
@@ -50,6 +51,10 @@ export function Clients({
       },
     )
   }, [store, today])
+
+  useEffect(() => {
+    store.clientLimit().then(setLimit, () => undefined)
+  }, [store])
 
   useEffect(() => {
     templates?.plans().then(setPrograms, () => {
@@ -80,8 +85,12 @@ export function Clients({
     setCopied(false)
     try {
       setInvite(await store.createInvite())
-    } catch {
-      setError('Couldn’t make a code. Check your connection.')
+    } catch (err) {
+      setError(
+        /client limit reached/i.test(String((err as Error)?.message))
+          ? `You have ${clients?.length ?? limit} clients, the most allowed now. End a link to invite someone new.`
+          : 'Couldn’t make a code. Check your connection.',
+      )
     }
   }
 
@@ -153,7 +162,7 @@ export function Clients({
       </section>
       {error && <p className="error" role="alert">{error}</p>}
       <section aria-label="Your clients">
-        <h3>Your clients{clients?.length ? ` (${clients.length})` : ''}</h3>
+        <h3>Your clients{clients && limit ? ` (${clients.length} of ${limit})` : clients?.length ? ` (${clients.length})` : ''}</h3>
         {clients === null ? (
           <p className="muted">Loading…</p>
         ) : !clients.length ? (
