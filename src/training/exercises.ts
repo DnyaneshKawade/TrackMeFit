@@ -17,6 +17,8 @@ export interface Exercise {
   isolation: boolean
   /** Smallest usual weight jump, kg. */
   increment: number
+  /** An own exercise removed from the list; past sets still find it (T-043c). */
+  hidden?: boolean
 }
 
 const INC: Record<Equipment, number> = { barbell: 2.5, smith: 2.5, dumbbell: 2.5, machine: 5, cable: 2.5, bodyweight: 2.5, kettlebell: 4 }
@@ -116,8 +118,11 @@ export function setCustomExercises(list: Exercise[]) {
   for (const e of list) exerciseById.set(e.id, e)
 }
 
-/** The person's own exercises first, then the built-in library. */
-export const allExercises = () => (custom.length ? [...custom, ...EXERCISES] : EXERCISES)
+/** The person's own exercises first, then the built-in library. Hidden ones are left out. */
+export const allExercises = () => (custom.length ? [...custom.filter((e) => !e.hidden), ...EXERCISES] : EXERCISES)
+
+/** The person's own exercises, hidden ones included. */
+export const customExercises = () => custom
 
 export const EQUIPMENT_NAMES: Record<Equipment, string> = {
   barbell: 'Barbell',
@@ -134,6 +139,7 @@ export interface NewExercise {
   primary: Muscle
   equipment: Equipment
   isolation: boolean
+  hidden?: boolean
 }
 
 export const MAX_EXERCISE_NAME = 80
@@ -148,14 +154,16 @@ export const customExercise = (id: string, e: NewExercise): Exercise => ({
   equipment: e.equipment,
   isolation: e.isolation,
   increment: INC[e.equipment],
+  ...(e.hidden ? { hidden: true } : {}),
 })
 
-/** Why a new exercise can't be saved, or null when it can. */
-export function checkNewExercise(name: string, list: Exercise[] = allExercises()): string | null {
+/** Why a new or edited exercise can't be saved, or null when it can.
+ * `ownId` is the exercise being edited, which may keep its own name. */
+export function checkNewExercise(name: string, list: Exercise[] = allExercises(), ownId?: string): string | null {
   const n = name.trim()
   if (!n) return 'Give the exercise a name.'
   if (n.length > MAX_EXERCISE_NAME) return `Use up to ${MAX_EXERCISE_NAME} letters.`
-  const same = list.find((e) => norm(e.name) === norm(n))
+  const same = list.find((e) => e.id !== ownId && norm(e.name) === norm(n))
   return same ? `${same.name} is already in the list.` : null
 }
 

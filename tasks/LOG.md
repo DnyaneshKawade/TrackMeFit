@@ -9,6 +9,14 @@ Newest first. One entry per finished piece of work: what changed, which tests co
 - Kept: meal plans the app makes, Swap choices and the usual day's everyday rows still follow the diet, since those are the app choosing for the person. A food added by hand stays in the plan; on a non-veg-free day it is still swapped.
 - Specs `specs/T-057-diet-rules.md` (criterion 8) and `specs/T-061-change-plan.md` (criteria 7, 8) updated.
 - Tests: 1 new in `src/log/PlanEditor.test.tsx`, 1 changed in `src/profile/Onboarding.test.tsx`.
+## 2026-10-15: Edit and remove your own exercises (T-043c)
+
+- DK asked to add exercises that aren't listed, and to compare FitNotes and RP Hypertrophy. Adding was in T-043b; DK said "lets proceed" on editing and removing. Spec `specs/T-043-workout-logger.md`, criteria 14 to 16.
+- Your own exercises have "Edit" in the exercise list. It changes the name, main muscle, equipment and one-joint flag, with the same checks as a new exercise. Keeping the same name is fine.
+- "Remove from my list" hides the exercise, with "Undo". Past sets, records and plans keep it. FitNotes deletes the history instead; we don't, so a mistake never loses training.
+- Migration `supabase/migrations/20261022000000_hide_own_exercises.sql` adds `custom_exercises.hidden`. It must be run in Supabase. The "write own" policy already covers edits.
+- Left for later (from the FitNotes comparison): rest time, weight step and notes for each exercise, and timed or distance exercises.
+- Tests: 4 in `src/training/Workouts.test.tsx`, 3 in `src/training/training.test.ts`, 1 in `src/db/rls.test.ts`.
 
 ## 2026-10-13: Records and strength graphs (T-044)
 

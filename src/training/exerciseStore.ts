@@ -15,6 +15,10 @@ export interface ExerciseStore {
   /** The person's own exercises, newest first. */
   custom(): Promise<SavedExercise[]>
   addCustom(e: NewExercise): Promise<SavedExercise>
+  /** Changes name, muscle, equipment or one-joint flag (T-043c). */
+  updateCustom(id: string, e: NewExercise): Promise<SavedExercise>
+  /** Removes from the list, or brings back; past sets keep it (T-043c). */
+  setHidden(id: string, hidden: boolean): Promise<void>
   favourites(): Promise<string[]>
   setFavourite(exerciseId: string, on: boolean): Promise<void>
 }
@@ -32,6 +36,20 @@ export function memoryExerciseStore(init: { custom?: SavedExercise[]; favourites
       own.unshift(x)
       return x
     },
+    async updateCustom(id, e) {
+      const i = own.findIndex((x) => x.id === id)
+      if (i < 0) throw new Error('no such exercise')
+      own[i] = { ...own[i], ...e, name: e.name.trim(), id }
+      return { ...own[i] }
+    },
+    async setHidden(id, hidden) {
+      const i = own.findIndex((x) => x.id === id)
+      if (i < 0) throw new Error('no such exercise')
+      const x = { ...own[i] }
+      if (hidden) x.hidden = true
+      else delete x.hidden
+      own[i] = x
+    },
     async favourites() {
       return [...favs]
     },
@@ -48,6 +66,7 @@ export interface CustomExerciseRow {
   primary_muscle: Muscle
   equipment: Equipment
   isolation: boolean
+  hidden?: boolean
 }
 
 export const customFromRow = (r: CustomExerciseRow): SavedExercise => ({
@@ -56,9 +75,12 @@ export const customFromRow = (r: CustomExerciseRow): SavedExercise => ({
   primary: r.primary_muscle,
   equipment: r.equipment,
   isolation: r.isolation,
+  ...(r.hidden ? { hidden: true } : {}),
 })
 
-const COLUMNS = 'id, name, primary_muscle, equipment, isolation'
+const COLUMNS = 'id, name, primary_muscle, equipment, isolation, hidden'
+/** The row id from an app id like `custom:<uuid>`. */
+const rowId = (id: string) => id.replace(/^custom:/, '')
 
 export function supabaseExerciseStore(sb: SupabaseClient, userId: string): ExerciseStore {
   const check = <T>({ data, error }: { data: T; error: unknown }): T => {
@@ -79,6 +101,21 @@ export function supabaseExerciseStore(sb: SupabaseClient, userId: string): Exerc
           .single(),
       )
       return customFromRow(row as CustomExerciseRow)
+    },
+    async updateCustom(id, e) {
+      const row = check(
+        await sb
+          .from('custom_exercises')
+          .update({ name: e.name.trim(), primary_muscle: e.primary, equipment: e.equipment, isolation: e.isolation })
+          .eq('id', rowId(id))
+          .eq('owner_id', userId)
+          .select(COLUMNS)
+          .single(),
+      )
+      return customFromRow(row as CustomExerciseRow)
+    },
+    async setHidden(id, hidden) {
+      check(await sb.from('custom_exercises').update({ hidden }).eq('id', rowId(id)).eq('owner_id', userId))
     },
     async favourites() {
       const rows = check(await sb.from('favourite_exercises').select('exercise_id').eq('user_id', userId).limit(500))
