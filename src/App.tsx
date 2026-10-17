@@ -20,7 +20,7 @@ import type { WorkoutStore } from './training/types'
 import { memoryExerciseStore, supabaseExerciseStore, type ExerciseStore } from './training/exerciseStore'
 import { localFinder, serverFinder, type FoodFinder } from './food/finder'
 import { memoryCustomFoodStore, supabaseCustomFoodStore, type CustomFoodStore } from './food/custom'
-import { localDate } from './log/types'
+import { localDate, shiftDate } from './log/types'
 import { memoryProfileStore, supabaseProfileStore } from './profile/stores'
 import { memoryMealPlanStore, supabaseMealPlanStore, type MealPlanStore } from './profile/mealPlanStore'
 import { isOnboarded, type ProfileInfo, type ProfileStore } from './profile/types'
@@ -136,13 +136,19 @@ export function AppShell({
     () =>
       profile && isOnboarded(profile) && account
         ? async (target: DietTarget) => {
-            const weightKg = await latestWeight()
+            const weighIns = (await progress?.weighIns()) ?? []
+            const weightKg = weighIns.length ? weighIns[weighIns.length - 1].kg : null
             if (weightKg === null || !profile.sex || !profile.heightCm || !profile.birthDate || !profile.activity || profile.trainingDays === null) return null
-            const { nextStep: next } = await import('./profile/goal')
-            return next(profile, weightKg, target, localDate(), account.id)
+            // The weekly check looks at the last 3 weeks of food: one range query (T-067d).
+            const today = localDate()
+            const { nextStep: next, LEARN_DAYS } = await import('./profile/goal')
+            const entries = (await store?.listRange?.(shiftDate(today, -LEARN_DAYS), today).catch(() => [])) ?? []
+            const dayKcal = new Map<string, number>()
+            for (const e of entries) dayKcal.set(e.loggedOn, (dayKcal.get(e.loggedOn) ?? 0) + e.kcal)
+            return next(profile, weightKg, target, today, account.id, { weighIns, dayKcal })
           }
         : undefined,
-    [profile, latestWeight, account],
+    [profile, progress, store, account],
   )
   // Set while the person changes their sign-up answers (T-070).
   const [editing, setEditing] = useState<{ weightKg: number | null } | null>(null)

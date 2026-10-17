@@ -67,10 +67,12 @@ function sayLater(targetId: string, date: string) {
   }
 }
 
-/** A weekly calorie step the person can take (T-067a). */
+/** A weekly calorie step the person can take (T-067a), or a reason to stay
+ * at this level for now (T-067d). */
 export interface StepOffer {
   values: TargetValues
   message: string
+  hold?: boolean
 }
 
 function dayLabel(date: string, today: string): string {
@@ -191,6 +193,11 @@ export function FoodLog({
   }
   const stepLater = () => {
     if (target) sayLater(target.id, today)
+    setOffer(null)
+  }
+  // Staying for now: the next check is a week away.
+  const holdOk = () => {
+    if (target) for (let d = 0; d < 7; d++) sayLater(target.id, shiftDate(today, d))
     setOffer(null)
   }
 
@@ -351,8 +358,14 @@ export function FoodLog({
       {offer && (
         <p className="info" role="status" aria-label="Next step">
           {offer.message}{' '}
-          <button className="link" onClick={() => void takeStep()}>Use it</button>{' '}
-          <button className="link" onClick={stepLater}>Not now</button>
+          {offer.hold ? (
+            <button className="link" onClick={holdOk}>OK</button>
+          ) : (
+            <>
+              <button className="link" onClick={() => void takeStep()}>Use it</button>{' '}
+              <button className="link" onClick={stepLater}>Not now</button>
+            </>
+          )}
         </p>
       )}
       {targets && target === null && (

@@ -402,6 +402,16 @@ describe('next calorie step (T-067a)', () => {
     )
     expect(nextStep(asha, 64, target({ kcal: 1470 }), TODAY, 'me')).toBeNull()
   })
+
+  it('3 (T-067d). holds the step when weight already falls at the chosen pace', () => {
+    const day = (back: number) => new Date(Date.parse(TODAY + 'T00:00:00Z') - back * 86_400_000).toISOString().slice(0, 10)
+    const weighIns = Array.from({ length: 15 }, (_, k) => ({ date: day(14 - k), kg: 65 - (0.8 * k) / 7 }))
+    const hold = nextStep(asha, 64, target(), TODAY, 'me', { weighIns, dayKcal: new Map() })!
+    expect(hold.hold).toBe(true)
+    expect(hold.values.kcal).toBe(1820)
+    expect(hold.message).toMatch(/That is your pace, so stay at 1,820 kcal for now\.$/)
+    expect(nextStep(asha, 64, target(), TODAY, 'me')!.hold).toBe(false)
+  })
 })
 
 describe('protein, carbs, fat and fibre in the plan (T-068c)', () => {

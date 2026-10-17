@@ -110,4 +110,19 @@ describe('next calorie step on the food log (T-067a)', () => {
     expect((await targets.forDate(TODAY))?.kcal).toBe(1820)
     localStorage.clear()
   })
+
+  it('6 (T-067d). a hold has only OK, and OK hides it for a week', async () => {
+    localStorage.clear()
+    const targets = memoryTargetStore('me', [week1])
+    const hold = { ...offer, values: week1, hold: true, message: 'You are losing about 0.6 kg a week. That is your pace, so stay at 1,820 kcal for now.' }
+    show(targets, vi.fn(async () => hold))
+    const card = await screen.findByRole('status', { name: 'Next step' })
+    expect(within(card).queryByRole('button', { name: 'Use it' })).toBeNull()
+    fireEvent.click(within(card).getByRole('button', { name: 'OK' }))
+    expect(screen.queryByRole('status', { name: 'Next step' })).toBeNull()
+    expect((await targets.forDate(TODAY))?.kcal).toBe(1820)
+    const keys = Object.keys(localStorage).filter((k) => k.includes('w1'))
+    expect(keys).toHaveLength(7)
+    localStorage.clear()
+  })
 })

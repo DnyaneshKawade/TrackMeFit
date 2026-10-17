@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calorieSteps, nextStepKcal, plannedCut } from './steps'
+import { calorieSteps, nextStepKcal, plannedCut, weeklyCheck } from './steps'
 
 const man85 = { burn: 2430, weightKg: 85, sex: 'male' as const }
 
@@ -53,5 +53,53 @@ describe('calorie steps (T-067a)', () => {
     expect(nextStepKcal(2430, 1820, 7)).toBe(2180)
     expect(nextStepKcal(1930, 1820, 9)).toBe(1820)
     expect(nextStepKcal(1820, 1820, 30)).toBeNull()
+  })
+})
+
+describe('weekly check (T-067d)', () => {
+  const TODAY = '2026-10-29'
+  const day = (back: number) => new Date(Date.parse(TODAY + 'T00:00:00Z') - back * 86_400_000).toISOString().slice(0, 10)
+  // Daily weigh-ins over 28 days, changing by `perWeek` kg a week.
+  const weighIns = (perWeek: number, days = 28) => Array.from({ length: days + 1 }, (_, k) => ({ date: day(days - k), kg: 85 + (perWeek * k) / 7 }))
+  const logs = (kcal: number, days: number) => new Map(Array.from({ length: days }, (_, k) => [day(k), kcal] as [string, number]))
+  const base = { ...man85, rate: -0.005, currentKcal: 2180, goalKcal: 1960, daysOnStep: 7, today: TODAY, weighIns: [], dayKcal: new Map<string, number>() }
+
+  it('1. no check is due before 7 days on a step', () => {
+    expect(weeklyCheck({ ...base, daysOnStep: 6 })).toBeNull()
+  })
+
+  it('2. without weigh-ins it steps down 250 kcal, to the goal level at most', () => {
+    expect(weeklyCheck(base)).toMatchObject({ kind: 'step', kcal: 1960, learnedBurn: null, reason: 'Ready for your next step? Eat about 1,960 kcal a day from today. This is your goal level.' })
+    expect(weeklyCheck({ ...base, currentKcal: 2430 })).toMatchObject({ kind: 'step', kcal: 2180 })
+    expect(weeklyCheck({ ...base, currentKcal: 1960 })).toBeNull()
+  })
+
+  it('3. holds when weight already falls at the chosen pace or faster', () => {
+    const fast = weeklyCheck({ ...base, weighIns: weighIns(-0.6) })!
+    expect(fast.kind).toBe('hold')
+    expect(fast.kcal).toBe(2180)
+    expect(fast.reason).toMatch(/^You are losing about 0\.\d kg a week\. That is your pace, so stay at 2,180 kcal for now\.$/)
+    expect(weeklyCheck({ ...base, weighIns: weighIns(-0.1) })!.kind).toBe('step')
+    // Old weigh-ins only: no pace, so it steps as planned.
+    expect(weeklyCheck({ ...base, weighIns: weighIns(-0.6).slice(0, 10) })!.kind).toBe('step')
+  })
+
+  it('4. after 21 days of weight and 14 days of food, it learns the real burn and moves the goal', () => {
+    // Ate 2,200 a day and weight stayed the same: the real burn is lower than 2,430.
+    const c = weeklyCheck({ ...base, weighIns: weighIns(0), dayKcal: logs(2200, 21) })!
+    expect(c.learnedBurn).toBe(2320) // halfway from 2,430 to 2,200, to 10 kcal
+    expect(c.goalKcal).toBeLessThan(1960)
+    expect(c.kind).toBe('step')
+    expect(c.reason).toMatch(/^Your weight and food logs show you burn about 2,320 kcal\. Ready for your next step\?/)
+    // A big gap moves the burn 500 kcal at most, and floors still hold.
+    const big = weeklyCheck({ ...base, weighIns: weighIns(0), dayKcal: logs(900, 21) })!
+    expect(big.learnedBurn).toBe(1930)
+    expect(big.goalKcal).toBeGreaterThanOrEqual(1500)
+  })
+
+  it('5. fewer than 14 days of food logged: the goal level stays as planned', () => {
+    const c = weeklyCheck({ ...base, weighIns: weighIns(0), dayKcal: logs(2200, 13) })!
+    expect(c.learnedBurn).toBeNull()
+    expect(c.goalKcal).toBe(1960)
   })
 })
