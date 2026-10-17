@@ -131,6 +131,8 @@ export function AppShell({
   const mealPlans = useMemo(() => (account ? mealPlanStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   // undefined while loading; null when it couldn't be loaded (the app still works).
   const [profile, setProfile] = useState<ProfileInfo | null | undefined>(undefined)
+  // Set while the person changes their sign-up answers (T-070).
+  const [editing, setEditing] = useState<{ weightKg: number | null } | null>(null)
 
   useEffect(() => {
     setProfile(undefined)
@@ -179,6 +181,7 @@ export function AppShell({
   }
   if (profile === undefined) return <main className="auth">Loading…</main>
 
+  const canEdit = !!profile && account.role === 'user' && isOnboarded(profile) && !editing
   const topbar = (
     <header className="topbar">
       <strong className="topbar-brand">Track Me Fit</strong>
@@ -186,6 +189,11 @@ export function AppShell({
         {account.name || account.email}
         {account.role === 'coach' ? ' (coach)' : ''}
       </span>
+      {canEdit && (
+        <button onClick={() => void latestWeight().then((weightKg) => setEditing({ weightKg }), () => setEditing({ weightKg: null }))}>
+          Your details
+        </button>
+      )}
       <button
         onClick={() => {
           store?.sync?.clearCache()
@@ -199,26 +207,31 @@ export function AppShell({
   )
 
   // Coaches go straight to the app; everyone else sees the first-run questions
-  // until they finish or skip them once.
-  if (profile && account.role === 'user' && !isOnboarded(profile)) {
+  // until they finish or skip them once. The same steps change them later.
+  if (profile && account.role === 'user' && (!isOnboarded(profile) || editing)) {
     return (
       <>
         {topbar}
         <Suspense fallback={<main className="auth">Loading…</main>}>
           <Onboarding
+            key={editing ? 'edit' : 'setup'}
             initial={{ ...profile, fullName: profile.fullName || account.name }}
+            edit={editing ?? undefined}
             onFinish={async ({ profile: p, weightKg, waistCm, targets: suggested, mealPlan }) => {
               const today = localDate()
               await profiles!.save(p)
-              await progress!.saveWeighIn(today, weightKg)
+              // An unchanged weight adds no weigh-in.
+              if (weightKg !== editing?.weightKg) await progress!.saveWeighIn(today, weightKg)
               if (waistCm !== null) await progress!.saveMeasurement({ date: today, waistCm })
               if (suggested && targets) await targets.save(suggested, today, 'suggested')
               // The plan is optional: if it can't be saved, setup still finishes.
               if (mealPlan && mealPlans) await mealPlans.save(mealPlan.plan, mealPlan.picks).catch(() => null)
               setProfile(p)
+              setEditing(null)
             }}
             loadFoods={loadFoods}
             onSkip={async () => {
+              if (editing) return setEditing(null)
               const p = { ...profile, fullName: profile.fullName || account.name, onboardedAt: new Date().toISOString() }
               await profiles!.save(p)
               setProfile(p)
