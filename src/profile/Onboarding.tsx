@@ -536,7 +536,7 @@ export function Onboarding({
           </section>
           {plan.suggested ? (
             <section className="plan-targets" aria-label="Suggested daily targets">
-              <h2>Suggested daily targets</h2>
+              <h2>{plan.steps && plan.steps.steps.length > 1 ? 'Suggested daily targets for week 1' : 'Suggested daily targets'}</h2>
               <dl className="macros">
                 <div>
                   <dt>Calories</dt>
@@ -555,6 +555,15 @@ export function Onboarding({
                   <dd>{plan.suggested.fatG} g</dd>
                 </div>
               </dl>
+              {plan.steps && plan.steps.steps.length > 1 && (
+                <ol className="steps" aria-label="Weekly steps">
+                  {plan.steps.steps.map((k, i) => (
+                    <li key={i}>
+                      Week {i + 1}: {fmt(k)} kcal{i === plan.steps!.steps.length - 1 ? ' (your goal level)' : ''}
+                    </li>
+                  ))}
+                </ol>
+              )}
               <ul className="reasons">
                 {plan.reasons.map((r) => (
                   <li key={r}>{r}</li>

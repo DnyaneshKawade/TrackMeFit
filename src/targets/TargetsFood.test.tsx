@@ -74,3 +74,40 @@ describe('daily targets on the food log', () => {
     expect(screen.getByText('700 kcal left')).toBeTruthy()
   })
 })
+
+describe('next calorie step on the food log (T-067a)', () => {
+  const week1 = { id: 'w1', startsOn: '2026-10-05', kcal: 1820, proteinG: 102, carbG: 196, fatG: 51, source: 'suggested' as const, setBy: 'me' }
+  const offer = { values: { kcal: 1570, proteinG: 102, carbG: 133, fatG: 51 }, message: 'Ready for your next step? Eat about 1,570 kcal a day from today.' }
+  // Like the real one: a step that just started has no next step yet.
+  const show = (targets: TargetStore, nextStep = vi.fn(async (t: { id: string }) => (t.id === 'w1' ? offer : null))) => {
+    render(<FoodLog store={memoryLogStore([lunch])} loadFoods={loadFoods} targets={targets} userId="me" nextStep={nextStep} today={TODAY} />)
+    return nextStep
+  }
+
+  it('6. nothing changes until "Use it"; then the step starts today as a suggested target', async () => {
+    const targets = memoryTargetStore('me', [week1])
+    const nextStep = show(targets)
+    const card = await screen.findByRole('status', { name: 'Next step' })
+    expect(card.textContent).toMatch(/^Ready for your next step\? Eat about 1,570 kcal a day from today\./)
+    expect(nextStep).toHaveBeenCalledWith(week1)
+    expect((await targets.forDate(TODAY))?.kcal).toBe(1820)
+    fireEvent.click(within(card).getByRole('button', { name: 'Use it' }))
+    expect(await screen.findByText(/of 1570 kcal/)).toBeTruthy()
+    expect(screen.queryByRole('status', { name: 'Next step' })).toBeNull()
+    expect(await targets.forDate(TODAY)).toMatchObject({ kcal: 1570, startsOn: TODAY, source: 'suggested' })
+  })
+
+  it('6. "Not now" hides the step for the rest of the day', async () => {
+    localStorage.clear()
+    const targets = memoryTargetStore('me', [week1])
+    show(targets)
+    fireEvent.click(within(await screen.findByRole('status', { name: 'Next step' })).getByRole('button', { name: 'Not now' }))
+    expect(screen.queryByRole('status', { name: 'Next step' })).toBeNull()
+    cleanup()
+    const nextStep = show(targets)
+    await screen.findByRole('region', { name: 'Left for the day' })
+    expect(nextStep).not.toHaveBeenCalled()
+    expect((await targets.forDate(TODAY))?.kcal).toBe(1820)
+    localStorage.clear()
+  })
+})

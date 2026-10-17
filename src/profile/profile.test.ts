@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { catalogue } from '../food/catalogueData'
 import { amountFor } from '../food/types'
 import { ALL_DIET_ITEMS, PORTION_GRAMS, checkCustom, describeDiet, estimateDiet, extraFromFood } from './currentDiet'
-import { bmiResult, buildPlan, checkEventDate, checkTargetWeight, eventNote, goalTimeline, maxLossRate, noLossReason, paceOptions, recommendedPace, waistNote, type PaceBody } from './goal'
+import { bmiResult, buildPlan, checkEventDate, checkTargetWeight, eventNote, goalTimeline, maxLossRate, nextStep, noLossReason, paceOptions, recommendedPace, waistNote, type PaceBody } from './goal'
 import { steadySwitch } from './steady'
 import { fromRow, memoryProfileStore, toRow } from './stores'
 import { EMPTY_PROFILE, ageOn, bodySize, checkAboutYou, healthNotes, isOnboarded, questionsFor, type ProfileInfo } from './types'
+import type { DietTarget } from '../targets/types'
 
 const TODAY = '2026-10-13'
 const asha: ProfileInfo = {
@@ -175,9 +176,11 @@ describe('plan', () => {
     const plan = buildPlan({ ...asha, currentDiet: estimateDiet({ 'tmf:dish:roti': 6, 'tmf:dish:steamed-rice': 2, 'tmf:dish:samosa': 2 }) }, 64, TODAY)
     expect(plan.maintenance.low).toBeLessThan(plan.maintenance.high)
     expect(plan.maintenance.message).toMatch(/2 to 3 weeks of logging/)
-    expect(plan.suggested!.kcal).toBeLessThan(plan.maintenance.low)
+    // Week 1 is at the burn; the goal level is below it (T-067a).
+    expect(plan.suggested!.kcal).toBe(plan.steps!.steps[0])
+    expect(plan.steps!.goalKcal).toBeLessThan(plan.maintenance.low)
     expect(plan.suggested!.proteinG).toBe(102) // 1.6 g per kg for a beginner
-    expect(plan.reasons[0]).toMatch(/lose 0\.5 % of your weight a week/)
+    expect(plan.reasons[0]).toMatch(/^Week 1 is .* kcal a day\. That is about what you burn\.$/)
     expect(plan.timeline!.message).toMatch(/60 kg/)
     expect(plan.intakeNote).toMatch(/usual day/)
   })
@@ -369,7 +372,34 @@ describe('safe paces (T-071)', () => {
   it('3. keeps a saved pace within the safe weekly limit for the body', () => {
     expect([maxLossRate(26), maxLossRate(24), maxLossRate(21)]).toEqual([0.01, 0.0075, 0.005])
     const plan = buildPlan({ ...asha, goalRate: -0.0075 }, 52, TODAY)
-    expect(plan.reasons[0]).toBe('Calories are set to lose 0.5 % of your weight a week.')
+    // Faster is cut back to Steady: 52 kg × 5.5 kcal less than the burn.
+    const burn = plan.steps!.steps[0]
+    expect(plan.steps!.goalKcal).toBe(Math.round((burn - 52 * 5.5) / 10) * 10)
+    expect(plan.reasons).toContain('At your goal level, you’d lose about 0.25 kg a week.')
   })
 })
 
+
+describe('next calorie step (T-067a)', () => {
+  const target = (over: Partial<DietTarget> = {}): DietTarget => ({
+    id: 't1', startsOn: '2026-10-06', kcal: 1820, proteinG: 102, carbG: 196, fatG: 51, source: 'suggested', setBy: 'me', ...over,
+  })
+
+  it('6. offers the next step after 7 days on suggested targets, but never for hand-set or coach targets', () => {
+    const step = nextStep(asha, 64, target(), TODAY, 'me')!
+    expect(step.values.kcal).toBe(1570)
+    expect(step.values.proteinG).toBe(102)
+    expect(step.message).toBe('Ready for your next step? Eat about 1,570 kcal a day from today.')
+    expect(nextStep(asha, 64, target({ startsOn: '2026-10-08' }), TODAY, 'me')).toBeNull()
+    expect(nextStep(asha, 64, target({ source: 'manual' }), TODAY, 'me')).toBeNull()
+    expect(nextStep(asha, 64, target({ setBy: 'coach' }), TODAY, 'me')).toBeNull()
+    expect(nextStep({ ...asha, goal: 'maintain', goalRate: 0 }, 64, target(), TODAY, 'me')).toBeNull()
+  })
+
+  it('7. the last step says it is the goal level, and then steps stop', () => {
+    expect(nextStep(asha, 64, target({ kcal: 1570 }), TODAY, 'me')!.message).toBe(
+      'Ready for your next step? Eat about 1,470 kcal a day from today. This is your goal level.',
+    )
+    expect(nextStep(asha, 64, target({ kcal: 1470 }), TODAY, 'me')).toBeNull()
+  })
+})

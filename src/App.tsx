@@ -12,7 +12,7 @@ import { offlineLogStore } from './log/offlineStore'
 import { browserStorage } from './sync/outbox'
 import type { LogStore } from './log/types'
 import { memoryTargetStore, supabaseTargetStore } from './targets/stores'
-import type { TargetStore } from './targets/types'
+import type { DietTarget, TargetStore } from './targets/types'
 import { memoryWorkoutStore } from './training/memoryStore'
 import { supabaseWorkoutStore } from './training/supabaseStore'
 import { offlineWorkoutStore } from './training/offlineStore'
@@ -131,6 +131,19 @@ export function AppShell({
   const mealPlans = useMemo(() => (account ? mealPlanStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   // undefined while loading; null when it couldn't be loaded (the app still works).
   const [profile, setProfile] = useState<ProfileInfo | null | undefined>(undefined)
+  // The next weekly calorie step, offered on the Food tab (T-067a).
+  const nextStep = useMemo(
+    () =>
+      profile && isOnboarded(profile) && account
+        ? async (target: DietTarget) => {
+            const weightKg = await latestWeight()
+            if (weightKg === null || !profile.sex || !profile.heightCm || !profile.birthDate || !profile.activity || profile.trainingDays === null) return null
+            const { nextStep: next } = await import('./profile/goal')
+            return next(profile, weightKg, target, localDate(), account.id)
+          }
+        : undefined,
+    [profile, latestWeight, account],
+  )
   // Set while the person changes their sign-up answers (T-070).
   const [editing, setEditing] = useState<{ weightKg: number | null } | null>(null)
 
@@ -263,6 +276,7 @@ export function AppShell({
           diet={profile ?? undefined}
           mealPlans={mealPlans}
           latestWeight={latestWeight}
+          nextStep={nextStep}
         />
       )}
       <Suspense fallback={<main className="log">Loading…</main>}>
