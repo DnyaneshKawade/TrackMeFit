@@ -380,6 +380,8 @@ describe('suggested day of meals (T-058b)', () => {
   it('1. asks first, and “Not now” keeps nothing', async () => {
     const { onFinish } = toPlan()
     expect(await screen.findByRole('heading', { name: 'Want us to suggest a day of meals?' })).toBeTruthy()
+    // T-068b criterion 10: the plan says what stays out.
+    expect(screen.getByText('Fried snacks, sweets and cold drinks stay out. Amounts come in roti, katori and grams.')).toBeTruthy()
     click('Not now')
     expect(plan().textContent).toMatch(/No problem/)
     click('Use these targets')
@@ -399,7 +401,7 @@ describe('suggested day of meals (T-058b)', () => {
     expect(screen.getByRole('status', { name: 'Protein check' })).toBeTruthy()
 
     const lunch = screen.getByRole('region', { name: 'Lunch' })
-    expect(lunch.textContent).toMatch(/Rice\D*\d+ g raw, about \d+ g cooked/)
+    expect(lunch.textContent).toMatch(/Rice\D*\d+ g raw, about [\d½]+ katori cooked rice/)
     const cookedRice = within(lunch).getByRole('button', { name: /^Cooked weight for Rice/ })
     fireEvent.click(cookedRice)
     expect(cookedRice.getAttribute('aria-pressed')).toBe('true')

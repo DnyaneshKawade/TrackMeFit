@@ -2,6 +2,20 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-17: Clean meal plan (T-068b)
+
+- Fourth of the five diet engine parts. Spec `specs/T-068b-clean-meal-plan.md`.
+- Each main meal now has one cereal base (roti, rice, oats or sooji). Lunch can have roti and rice.
+- At most one dal per meal. Dinner uses a different protein food from lunch.
+- Amounts come in whole steps: 1 roti, ½ katori rice, 1 egg, 1 katori curd. No more 15 g of rice.
+- The usual day sets which foods are used, not how much. Sugar goes only with milk.
+- Big calorie targets add rice at dinner, then oil up to ICMR's level, then curd, milk or peanuts as a snack.
+- "Close enough" is now 8 % of calories, since a whole roti is about 100 kcal.
+- Atta goes up to 240 g a day and oil to 15 g a meal for big targets.
+- The plan screen says fried snacks, sweets and cold drinks stay out.
+- T-068a units are folded in. New foods (besan, sattu, low-fat paneer and others) moved to T-068a2.
+- Tests: 9 new in `src/engine/mealPlan.test.ts`, 1 in `src/profile/Onboarding.test.tsx`, and updated plan tests.
+
 ## 2026-10-17: Protein, carbs, fat and fibre (T-068c)
 
 - Third of the five diet engine parts. Spec `specs/T-068c-protein-carbs-fat-fibre.md`.

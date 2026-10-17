@@ -287,7 +287,8 @@ describe('veg days (T-058c)', () => {
     const plan = await planShown()
     expect(plan.textContent).toMatch(/veg today/)
     expect(plan.textContent).not.toMatch(/Chicken/)
-    expect(plan.textContent).toMatch(/so chicken is swapped for paneer/)
+    // Paneer is already at its daily limit, so dal comes next.
+    expect(plan.textContent).toMatch(/so chicken is swapped for toor dal/)
   })
 
   it('4, 7. shows the usual plan on other days, and the person can make any day a veg day', async () => {

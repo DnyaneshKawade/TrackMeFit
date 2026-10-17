@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { MAX_PROTEIN_PER_MEAL_KG, SUGAR_MAX_G, VEG_G, amountHint, buildMealPlan, checkFeasibility, cookedGrams, swapItem, swapOptions, vegDayPlan, addItem, addFoundItem, planCheck, removeItem, setItemGrams, tidyPlan, MAX_PLAN_GRAMS, type MealPlan, type MealPlanInput } from './mealPlan'
 import { PLAN_FOODS_BY_ID, PROTEIN_PICKS, planFoodsFor, typicalDayToBase } from '../profile/planFoods'
 import { excludedTags } from '../profile/dietRules'
+import { dailyTargets } from './nutrients'
 
 const picks = (...keys: string[]) => PROTEIN_PICKS.filter((p) => keys.includes(p.key)).flatMap((p) => p.foods)
 const USUAL_VEG_DAY = { 'tmf:dish:roti': 4, 'tmf:dish:dal-tadka': 2, 'tmf:dish:steamed-rice': 1, 'usda:170886': 1, 'tmf:dish:chai': 2, 'tmf:dish:aloo-gobi': 1 }
@@ -34,7 +35,7 @@ describe('meal plan (T-058)', () => {
     }
     const rice = items(plan).find((i) => i.foodId === 'tmf:ing:rice')!
     expect(rice.weighed).toBe('raw')
-    expect(rice.hint).toMatch(/^about \d+ g cooked$/)
+    expect(rice.hint).toMatch(/^about [\d½]+ katori cooked rice$/)
     expect(amountHint(PLAN_FOODS_BY_ID.get('tmf:ing:atta')!, 90)).toBe('about 3 roti')
     expect(amountHint(PLAN_FOODS_BY_ID.get('tmf:ing:egg')!, 100)).toBe('about 2 eggs')
   })
@@ -42,10 +43,12 @@ describe('meal plan (T-058)', () => {
   it('5. never goes over a food’s per-meal or per-day limit, and says when a limit was hit', () => {
     for (const i of items(plan)) expect(i.grams, `${i.name} at ${i.meal}`).toBeLessThanOrEqual(PLAN_FOODS_BY_ID.get(i.foodId)!.maxPerMealG)
     for (const f of asha.foods) expect(dayGrams(plan, f.id), f.name).toBeLessThanOrEqual(f.maxPerDayG)
+    // Big amounts in the usual day don't carry over.
     const lots = buildMealPlan({ ...asha, base: [...asha.base, { foodId: 'tmf:ing:rice', grams: 500 }, { foodId: 'tmf:ing:soya-chunks', grams: 200 }] })
     expect(dayGrams(lots, 'tmf:ing:rice')).toBeLessThanOrEqual(150)
     expect(dayGrams(lots, 'tmf:ing:soya-chunks')).toBeLessThanOrEqual(50)
-    expect(lots.notes).toContain('Soya chunks is kept to 50 g dry a day. That is a fair amount for one food.')
+    const short = buildMealPlan({ ...asha, picks: picks('soya'), targets: { ...asha.targets, proteinG: 140 } })
+    expect(short.notes.some((n) => /is kept to \d+ g .* a day. That is a fair amount for one food./.test(n))).toBe(true)
   })
 
   it('6. says how much protein the picks can reach when it is not enough, and suggests more', () => {
@@ -59,9 +62,9 @@ describe('meal plan (T-058)', () => {
     expect(checkFeasibility(asha)).toMatchObject({ feasible: true, suggestions: [] })
   })
 
-  it('7. lands within 5% of calories and 5 g of protein', () => {
+  it('7. lands within 8% of calories and 5 g of protein', () => {
     expect(plan.onTarget).toBe(true)
-    expect(Math.abs(plan.totals.kcal - 2200)).toBeLessThanOrEqual(110)
+    expect(Math.abs(plan.totals.kcal - 2200)).toBeLessThanOrEqual(0.08 * 2200)
     expect(Math.abs(plan.totals.proteinG - 112)).toBeLessThanOrEqual(5)
   })
 
@@ -100,7 +103,7 @@ describe('meal plan (T-058)', () => {
   })
 
   it('works for a non-vegetarian with no usual day, using eggs and chicken', () => {
-    const p = buildMealPlan({ targets: { kcal: 2400, proteinG: 130, fatG: 67, carbG: 319 }, weightKg: 80, base: [], picks: picks('eggs', 'chicken'), foods: planFoodsFor(excludedTags('nonveg')) })
+    const p = buildMealPlan({ targets: dailyTargets({ kcal: 2400, weightKg: 80, heightCm: 178 }).values, weightKg: 80, base: [], picks: picks('eggs', 'chicken'), foods: planFoodsFor(excludedTags('nonveg')) })
     expect(p.onTarget).toBe(true)
     for (const m of p.meals) expect(m.macros.proteinG, m.name).toBeLessThanOrEqual(MAX_PROTEIN_PER_MEAL_KG * 80 + 0.1)
     expect(dayGrams(p, 'tmf:ing:chicken')).toBeGreaterThan(0)
@@ -147,7 +150,8 @@ describe('swaps and cooked weights (T-058b)', () => {
     const rice = lunch.items.find((i) => i.foodId === 'tmf:ing:rice')!
     const after = swapItem(plan, 'Lunch', rice.foodId, food('tmf:ing:atta'), asha.foods).meals.find((m) => m.name === 'Lunch')!
     expect(after.items.find((i) => i.foodId === 'tmf:ing:atta')).toBeTruthy()
-    expect(Math.abs(after.macros.kcal - lunch.macros.kcal)).toBeLessThan(60)
+    // Within one roti, since roti come whole.
+    expect(Math.abs(after.macros.kcal - lunch.macros.kcal)).toBeLessThan(105)
   })
 
   it('4. gives a cooked weight for foods that change when cooked', () => {
@@ -240,5 +244,83 @@ describe('changing a plan by hand (T-061)', () => {
     const half = setItemGrams(once, 'Breakfast', at, 75, asha.foods).meals.find((m) => m.name === 'Breakfast')!.items[at]
     expect(half.grams).toBe(75)
     expect(half.macros.kcal).toBeCloseTo(97.5)
+  })
+})
+
+describe('clean meal plan (T-068b)', () => {
+  const food = (id: string) => PLAN_FOODS_BY_ID.get(id)!
+  const nonveg = (kcal: number, keys = ['eggs', 'chicken']) =>
+    buildMealPlan({ targets: dailyTargets({ kcal, weightKg: 80, heightCm: 178 }).values, weightKg: 80, base: [], picks: picks(...keys), foods: planFoodsFor(excludedTags('nonveg')) })
+  const plans = [buildMealPlan(asha), nonveg(2400), nonveg(2900), buildMealPlan({ ...asha, targets: dailyTargets({ kcal: 1500, weightKg: 70, heightCm: 160 }).values })]
+  const groupsIn = (p: MealPlan, meal: string) => p.meals.find((m) => m.name === meal)?.items.map((i) => food(i.foodId).group) ?? []
+
+  it('1. breakfast, lunch and dinner each have one cereal base, and lunch has at most two', () => {
+    for (const p of plans)
+      for (const meal of ['Breakfast', 'Lunch', 'Dinner']) {
+        const cereals = groupsIn(p, meal).filter((g) => g === 'cereal').length
+        expect(cereals, meal).toBeGreaterThanOrEqual(1)
+        expect(cereals, meal).toBeLessThanOrEqual(2)
+      }
+    expect(groupsIn(plans[0], 'Breakfast').filter((g) => g === 'cereal')).toHaveLength(1)
+  })
+
+  it('2. no meal has more than one dal', () => {
+    for (const p of [...plans, buildMealPlan({ ...asha, picks: picks('dal'), targets: { ...asha.targets, proteinG: 140 } })])
+      for (const m of p.meals) expect(groupsIn(p, m.name).filter((g) => g === 'pulse').length, m.name).toBeLessThanOrEqual(1)
+  })
+
+  it('3. every amount is a whole step of its food and at least its smallest amount', () => {
+    for (const p of plans)
+      for (const i of items(p)) {
+        const f = food(i.foodId)
+        if (f.group === 'fruit') continue // one whole piece
+        const step = f.stepG ?? 5
+        expect(i.grams % step, `${i.name} ${i.grams}`).toBe(0)
+        expect(i.grams, i.name).toBeGreaterThanOrEqual(f.minG ?? step)
+      }
+  })
+
+  it('4. hints are in whole or half units', () => {
+    expect(amountHint(food('tmf:ing:atta'), 60)).toBe('about 2 roti')
+    expect(amountHint(food('tmf:ing:toor-dal'), 25)).toBe('about 1 katori cooked dal')
+    expect(amountHint(food('tmf:ing:milk'), 100)).toBe('about ½ glass')
+    expect(amountHint(food('tmf:ing:rice'), 75)).toBe('about 1½ katori cooked rice')
+  })
+
+  it('5. the usual day sets the foods, not the amounts; fried food never carries over; sugar only with milk', () => {
+    const fried = buildMealPlan({ ...asha, base: typicalDayToBase({ ...USUAL_VEG_DAY, 'tmf:dish:samosa': 3, 'tmf:dish:gulab-jamun': 2 }) })
+    expect(fried.meals).toEqual(buildMealPlan(asha).meals)
+    const lots = buildMealPlan({ ...asha, base: typicalDayToBase({ ...USUAL_VEG_DAY, 'tmf:dish:roti': 12 }) })
+    expect(dayGrams(lots, 'tmf:ing:atta')).toBe(dayGrams(buildMealPlan(asha), 'tmf:ing:atta'))
+    for (const p of plans)
+      for (const m of p.meals) if (m.items.some((i) => i.foodId === 'tmf:ing:sugar')) expect(m.items.some((i) => i.foodId === 'tmf:ing:milk'), m.name).toBe(true)
+    const noChai = buildMealPlan({ ...asha, base: typicalDayToBase({ ...USUAL_VEG_DAY, 'tmf:dish:chai': 0, 'tmf:dish:toned-milk': 1 }) })
+    expect(dayGrams(noChai, 'tmf:ing:sugar')).toBe(0)
+  })
+
+  it('6. adds another cereal when every cereal is at its limit, and lands within 8 % of calories', () => {
+    const big = nonveg(2900)
+    expect(Math.abs(big.totals.kcal - 2900)).toBeLessThanOrEqual(0.08 * 2900)
+    expect(groupsIn(big, 'Dinner').filter((g) => g === 'cereal').length).toBe(2)
+    for (const p of plans) expect(Math.abs(p.totals.kcal - p.targets.kcal), String(p.targets.kcal)).toBeLessThanOrEqual(0.08 * p.targets.kcal)
+  })
+
+  it('7. dinner uses a different protein food from lunch', () => {
+    const p = nonveg(2400, ['dal', 'chicken'])
+    const main = (meal: string) => p.meals.find((m) => m.name === meal)!.items.find((i) => ['pulse', 'meat'].includes(food(i.foodId).group))!.foodId
+    expect(main('Lunch')).toBe('tmf:ing:toor-dal')
+    expect(main('Dinner')).toBe('tmf:ing:chicken')
+  })
+
+  it('8. no meal goes over 0.55 g protein per kg, even with big cereal portions', () => {
+    for (const p of plans) for (const m of p.meals) expect(m.macros.proteinG, m.name).toBeLessThanOrEqual(MAX_PROTEIN_PER_MEAL_KG * 80 + 0.1)
+  })
+
+  it('9. veg-day swaps use at least the smallest amount', () => {
+    const p = nonveg(2400, ['chicken', 'paneer'])
+    const veg = vegDayPlan(p, planFoodsFor(excludedTags('nonveg')), new Set(planFoodsFor(excludedTags('veg')).map((f) => f.id)), picks('chicken', 'paneer'), 'Tuesday is your non-veg-free day')
+    const swapped = items(veg).filter((i) => i.reason.includes('is swapped for'))
+    expect(swapped.length).toBeGreaterThan(0)
+    for (const i of swapped) expect(i.grams, i.name).toBeGreaterThanOrEqual(food(i.foodId).minG ?? 0)
   })
 })
