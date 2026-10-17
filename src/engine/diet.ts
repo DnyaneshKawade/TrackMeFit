@@ -183,52 +183,9 @@ export function indianBmiBand(value: number): BmiBand {
   return 'obese'
 }
 
-export interface ProteinInput {
-  weightKg: number
-  heightCm: number
-  trained: boolean
-  losingFat: boolean
-  kidneyDisease?: boolean
-}
-
-export interface ProteinTarget {
-  grams: number
-  perKg: number
-  referToDoctor: boolean
-}
-
-/** 1.6 g/kg default (where gains plateau; matches ICMR-NIN 2024). Up to
- * 2.2 g/kg only for trained lifters losing fat. People with BMI 27.5+ are
- * dosed on the weight they'd have at BMI 25. Kidney disease: capped and
- * referred to a doctor. */
-export function proteinTarget(p: ProteinInput): ProteinTarget {
-  const b = bmi(p.weightKg, p.heightCm)
-  const doseWeight = b >= 27.5 ? 25 * (p.heightCm / 100) ** 2 : p.weightKg
-  if (p.kidneyDisease) return { grams: Math.round(0.8 * doseWeight), perKg: 0.8, referToDoctor: true }
-  const perKg = p.trained && p.losingFat ? 2.2 : 1.6
-  return { grams: Math.round(perKg * doseWeight), perKg, referToDoctor: false }
-}
-
-export type CarbPreference = 'balanced' | 'lowerCarb' | 'lowerFat'
-
 export interface Macros {
   kcal: number
   proteinG: number
   fatG: number
   carbG: number
-}
-
-const FAT_SHARE: Record<CarbPreference, number> = { balanced: 0.25, lowerCarb: 0.3, lowerFat: 0.2 }
-const MIN_FAT_PER_KG = 0.6
-
-/** Protein first, then fat (20-30% of calories, never below 0.6 g/kg), carbs fill the rest. */
-export function macroTargets(kcal: number, proteinG: number, weightKg: number, pref: CarbPreference = 'balanced'): Macros {
-  const minFat = MIN_FAT_PER_KG * weightKg
-  let fatG = Math.max(minFat, (kcal * FAT_SHARE[pref]) / 9)
-  let carbG = (kcal - proteinG * 4 - fatG * 9) / 4
-  if (carbG < 0) {
-    fatG = minFat
-    carbG = Math.max(0, (kcal - proteinG * 4 - fatG * 9) / 4)
-  }
-  return { kcal, proteinG: Math.round(proteinG), fatG: Math.round(fatG), carbG: Math.round(carbG) }
 }

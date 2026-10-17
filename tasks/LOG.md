@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-17: Protein, carbs, fat and fibre (T-068c)
+
+- Third of the five diet engine parts. Spec `specs/T-068c-protein-carbs-fat-fibre.md`.
+- Protein is 1.4 g per kg from day 1, down from 1.6. From BMI 25 it uses the weight at BMI 25.
+- Carbs never drop below 130 g and 40 % of calories. Fat goes down first, then protein, to 1.2 g/kg at least.
+- The plan now shows a fibre goal: 14 g per 1,000 kcal, at least 25 g.
+- The old protein and macro helpers in `src/engine/diet.ts` were replaced by `src/engine/nutrients.ts`.
+- Tests: 5 in `src/engine/nutrients.test.ts`, 1 in `src/profile/profile.test.ts`.
+
 ## 2026-10-17: Calorie steps (T-067a)
 
 - Second of the five diet engine parts. Spec `specs/T-067a-calorie-steps.md`.
