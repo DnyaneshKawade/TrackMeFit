@@ -484,3 +484,17 @@ describe('gain paces (T-059)', () => {
     expect(screen.getByText(/won’t set a weight-gain pace/)).toBeTruthy()
   })
 })
+
+describe('safe paces (T-071)', () => {
+  it('4. says why weight loss isn’t offered when someone is underweight', () => {
+    setup()
+    aboutYou('Female', '', '44')
+    pick('Health conditions', 'None of these')
+    click('Next')
+    training()
+    pick('Your main goal', 'Lose fat')
+    expect(screen.getByRole('note').textContent).toMatch(/already underweight, so losing weight isn’t safe/)
+    expect(screen.queryByRole('group', { name: 'Pace' })).toBeNull()
+  })
+})
+

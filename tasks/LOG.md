@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-17: Safe paces (T-071)
+
+- First step of the new diet engine plan, after DK's diet feedback. Spec `specs/T-071-safe-paces.md`.
+- Underweight people aren't offered "Lose", and see why. Below BMI 17 no targets are suggested; the app asks them to see a doctor.
+- "Faster" loss shows only from BMI 25. A saved pace is kept within 1%, 0.75% or 0.5% of weight a week, by BMI.
+- Added the diet engine plan to the To do list.
+- Tests: 3 in `src/profile/profile.test.ts`, 1 in `src/profile/Onboarding.test.tsx`.
+
 ## 2026-10-15: Change your details (T-070)
 
 - DK asked that sign-up answers can be changed at any time. Spec `specs/T-070-your-details.md`.

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { catalogue } from '../food/catalogueData'
 import { amountFor } from '../food/types'
 import { ALL_DIET_ITEMS, PORTION_GRAMS, checkCustom, describeDiet, estimateDiet, extraFromFood } from './currentDiet'
-import { bmiResult, buildPlan, checkEventDate, checkTargetWeight, eventNote, goalTimeline, paceOptions, recommendedPace, waistNote, type PaceBody } from './goal'
+import { bmiResult, buildPlan, checkEventDate, checkTargetWeight, eventNote, goalTimeline, maxLossRate, noLossReason, paceOptions, recommendedPace, waistNote, type PaceBody } from './goal'
 import { steadySwitch } from './steady'
 import { fromRow, memoryProfileStore, toRow } from './stores'
 import { EMPTY_PROFILE, ageOn, bodySize, checkAboutYou, healthNotes, isOnboarded, questionsFor, type ProfileInfo } from './types'
@@ -96,7 +96,8 @@ describe('BMI and goal', () => {
   })
 
   it('recommends a steady loss, offers gentle only when health calls for it, and none in pregnancy', () => {
-    expect(paceOptions('lose', 'beginner', {}).map((p) => p.rate)).toEqual([-0.005, -0.0025, -0.0075])
+    // Without a known weight, "Faster" isn't offered (T-071).
+    expect(paceOptions('lose', 'beginner', {}).map((p) => p.rate)).toEqual([-0.005, -0.0025])
     expect(paceOptions('lose', 'beginner', { eatingDisorder: true }).map((p) => p.rate)).toEqual([-0.0025])
     expect(paceOptions('lose', 'beginner', { pregnant: true })).toEqual([])
     expect(paceOptions('maintain', 'beginner', {})).toEqual([])
@@ -343,3 +344,32 @@ describe('event date for the goal (T-041b)', () => {
     expect(fromRow({ ...toRow(asha), event_date: '2027-03-01' }).eventDate).toBe('2027-03-01')
   })
 })
+
+describe('safe paces (T-071)', () => {
+  const body = (weightKg: number): PaceBody => ({ weightKg, heightCm: 160, ageYears: 31 })
+
+  it('1. offers no weight loss when underweight, and no targets at all below BMI 17', () => {
+    expect(paceOptions('lose', 'beginner', {}, body(44))).toEqual([])
+    expect(noLossReason(body(44))).toMatch(/already underweight/)
+    expect(noLossReason(body(40))).toMatch(/see a doctor/)
+    expect(noLossReason(body(50))).toBeNull()
+    const none = buildPlan({ ...asha, goal: 'gain', goalRate: 0.0025 }, 40, TODAY)
+    expect(none.suggested).toBeNull()
+    expect(none.reasons[0]).toMatch(/see a doctor first/)
+    const kept = buildPlan(asha, 44, TODAY)
+    expect(kept.reasons[0]).toMatch(/underweight, so we don’t suggest eating less/)
+    expect(kept.suggested!.kcal).toBeGreaterThan(buildPlan(asha, 50, TODAY).suggested!.kcal - 300)
+  })
+
+  it('2. offers “Faster” loss only from BMI 25', () => {
+    expect(paceOptions('lose', 'beginner', {}, body(64)).map((p) => p.label)).toEqual(['Steady', 'Gentle', 'Faster'])
+    expect(paceOptions('lose', 'beginner', {}, body(58)).map((p) => p.label)).toEqual(['Steady', 'Gentle'])
+  })
+
+  it('3. keeps a saved pace within the safe weekly limit for the body', () => {
+    expect([maxLossRate(26), maxLossRate(24), maxLossRate(21)]).toEqual([0.01, 0.0075, 0.005])
+    const plan = buildPlan({ ...asha, goalRate: -0.0075 }, 52, TODAY)
+    expect(plan.reasons[0]).toBe('Calories are set to lose 0.5 % of your weight a week.')
+  })
+})
+
