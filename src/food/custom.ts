@@ -101,7 +101,7 @@ export function foodFromForm(f: FoodForm): { food: NewCustomFood; warning: strin
     carbG: round1(values.carbs * factor),
     fatG: round1(values.fat * factor),
   }
-  if (per100g.kcal > 950) return { errors: { kcal: 'That’s more than any food has (pure oil is 900 kcal per 100 g). Check the number and the serving size.' } }
+  if (per100g.kcal > 950) return { errors: { kcal: 'That’s more than any food has. Pure oil is 900 kcal per 100 g. Check the number and the serving size.' } }
   if (per100g.proteinG + per100g.carbG + per100g.fatG > 101)
     return { errors: { form: 'Protein, carbs and fat add up to more than the food weighs. Check the numbers and the serving size.' } }
 
@@ -112,7 +112,7 @@ export function foodFromForm(f: FoodForm): { food: NewCustomFood; warning: strin
   const hasMacros = per100g.proteinG + per100g.carbG + per100g.fatG > 0
   const warning =
     hasMacros && energyMismatch(per100g) > 0.2
-      ? 'The calories don’t match the protein, carbs and fat (4, 4 and 9 kcal per gram). Worth a second look at the label.'
+      ? 'The calories don’t match the protein, carbs and fat. Check the label again. Worth a second look at the label.'
       : null
   return { food, warning }
 }

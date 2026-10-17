@@ -74,7 +74,7 @@ const DIETS: [DietPref, string][] = [
   ['vegan', 'Vegan'],
   ['jain', 'Jain'],
 ]
-const STEPS = ['About you', 'Health check', 'Training', 'Your goal', 'Food habits', 'A typical day', 'Your plan']
+const STEPS = ['About you', 'Health check', 'Training', 'Your goal', 'Food habits', 'Your usual day', 'Your plan']
 
 function Choice<T extends string | number>({
   label,
@@ -395,7 +395,7 @@ export function Onboarding({
                   <li key={n}>{n}</li>
                 ))}
               </ul>
-              <p>Track Me Fit gives general guidance and doesn’t replace medical advice.</p>
+              <p>Track Me Fit gives general help. It is not medical advice.</p>
             </aside>
           )}
         </>

@@ -44,7 +44,7 @@ describe('progress tab', () => {
     const weighIns = Array.from({ length: 14 }, (_, i) => ({ date: shiftDate(TODAY, i - 13), kg: Math.round((70 - 0.08 * i) * 10) / 10 }))
     render(<Progress store={memoryProgressStore(weighIns)} goal="lose" today={TODAY} />)
     const trend = await screen.findByRole('region', { name: 'Average weight' })
-    expect(trend.textContent).toMatch(/Your average weight is .* kg, down .* kg over the last week\./)
+    expect(trend.textContent).toMatch(/Your average weight is .* kg\. It went down .* kg this week\./)
     expect(trend.textContent).toMatch(/isn’t dropping yet|good pace/)
     expect(screen.getByRole('img', { name: /^Weight from/ })).toBeTruthy()
     expect(within(screen.getByRole('region', { name: 'Recent weigh-ins' })).getAllByRole('listitem')).toHaveLength(7)

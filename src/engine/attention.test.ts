@@ -38,8 +38,8 @@ describe('client attention (T-026b)', () => {
   })
 
   it('3. flags calories more than 15% off target and protein under 80%, after 3 logged days', () => {
-    expect(reasons({ avgKcal: 2200 })).toEqual(['Ate about 2200 kcal a day last week, 22% over the 1800 kcal target.'])
-    expect(reasons({ avgKcal: 1400 })).toEqual(['Ate about 1400 kcal a day last week, 22% under the 1800 kcal target.'])
+    expect(reasons({ avgKcal: 2200 })).toEqual(['Ate about 2200 kcal a day last week. That is 22% over 1800 kcal.'])
+    expect(reasons({ avgKcal: 1400 })).toEqual(['Ate about 1400 kcal a day last week. That is 22% under 1800 kcal.'])
     expect(reasons({ avgKcal: 2000 })).toEqual([])
     expect(reasons({ avgProteinG: 70 })).toEqual(['Protein was about 70 g a day, below the 100 g target.'])
     expect(reasons({ avgKcal: 2500, foodDays: 2 })).toEqual([])
@@ -49,8 +49,8 @@ describe('client attention (T-026b)', () => {
   it('4. flags weight moving the wrong way for the goal, or too fast', () => {
     const rising = Array.from({ length: 14 }, (_, i) => ({ date: shiftDate(TODAY, -i), kg: 70 - i * 0.1 }))
     expect(weeklyRate(rising)! > 0).toBe(true)
-    expect(reasons({ weighIns: rising })[0]).toMatch(/^Weight is going up \d\.\d% a week, but the goal is to lose\.$/)
-    expect(reasons({ goal: 'gain', weighIns: ok.weighIns })[0]).toMatch(/^Weight is going down \d\.\d% a week, but the goal is to gain\.$/)
+    expect(reasons({ weighIns: rising })[0]).toMatch(/^Weight is going up \d\.\d% a week\. The goal is to lose\.$/)
+    expect(reasons({ goal: 'gain', weighIns: ok.weighIns })[0]).toMatch(/^Weight is going down \d\.\d% a week\. The goal is to gain\.$/)
     const fast = Array.from({ length: 14 }, (_, i) => ({ date: shiftDate(TODAY, -i), kg: 70 + i * 0.2 }))
     expect(reasons({ weighIns: fast })[0]).toMatch(/^Losing \d\.\d% a week, faster than the 1% safe limit\.$/)
     expect(reasons({ goal: 'maintain', weighIns: fast })).toEqual([])

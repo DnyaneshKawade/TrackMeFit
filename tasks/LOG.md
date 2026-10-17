@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-17: Simpler words (T-075)
+
+- DK asked for words a 5th grader can follow. Spec `specs/T-075-simpler-words.md`.
+- Sentences are now 12 words or fewer, down from 20. About 55 messages were split or reworded.
+- A new check keeps each file at school grade 5 or lower. Thirteen more hard words are banned.
+- "Typical day" is now "usual day". `docs/words.md` has the new rules.
+- DK agreed to every pick in the plan's open questions, and cut the diet build to five parts.
+- Tests: 3 in `src/words.test.ts`, plus updated wording in the tests that check messages.
+
 ## 2026-10-17: Safe paces (T-071)
 
 - First step of the new diet engine plan, after DK's diet feedback. Spec `specs/T-071-safe-paces.md`.

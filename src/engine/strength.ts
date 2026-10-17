@@ -88,10 +88,10 @@ export function exerciseRecords(sessions: StrengthSession[]): ExerciseRecords {
   const notes: string[] = []
   if (!perSession.length) notes.push('Log this exercise to see your records.')
   else if (measure === 'e1rm') {
-    notes.push(`Estimated from sets of ${REP_CAP} reps or fewer. Higher reps give a poor guess.`)
-    notes.push('Heaviest for 5 reps means the most weight lifted for 5 reps or more.')
-    if (!best) notes.push(`Do a set of ${REP_CAP} reps or fewer to see your one-rep max.`)
-  } else notes.push('You did this with no weight, so the graph shows your most reps.')
+    notes.push(`Worked out from sets of ${REP_CAP} reps or fewer. Higher reps give a poor guess.`)
+    notes.push('Heaviest for 5 reps: the most you lifted 5 or more times.')
+    if (!best) notes.push(`Do ${REP_CAP} reps or fewer in a set for your one-rep max.`)
+  } else notes.push('You did this with no weight. So the graph shows your most reps.')
   notes.push('Warm-ups and drop sets are left out.')
 
   return {
@@ -126,7 +126,7 @@ export function newRecord(past: StrengthSession[], today: StrengthSet[], set: St
   const est = e1rm(set.weightKg, set.reps)
   const best = before.bestE1rm
   if (est !== null && best && round05(est) > best.e1rm)
-    return { kind: 'e1rm', text: `New record: best estimated one-rep max, ${round05(est)} kg. Your best before was ${best.e1rm} kg.` }
+    return { kind: 'e1rm', text: `New record: best one-rep max guess, ${round05(est)} kg. Your best before was ${best.e1rm} kg.` }
   const most = before.mostReps
   if (!old && set.weightKg === 0 && most && set.reps > most.reps) return { kind: 'reps', text: `New record: most reps in a set. Your best before was ${most.reps}.` }
   return null

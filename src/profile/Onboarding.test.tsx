@@ -96,7 +96,7 @@ describe('onboarding', () => {
     type('Target weight (kg, optional)', '66')
     expect(screen.getByText(/should be below your weight today/)).toBeTruthy()
     type('Target weight (kg, optional)', '58')
-    expect(screen.getByRole('status', { name: 'Goal date' }).textContent).toMatch(/^First 2 kg by 1 December\. At about 0\.32 kg a week you’d reach 58 kg in about 4 months/)
+    expect(screen.getByRole('status', { name: 'Goal date' }).textContent).toMatch(/^First 2 kg by 1 December\. At about 0\.32 kg a week, you’d reach 58 kg by .*\. That is about 4 months\./)
   })
 
   it('an event date says where the pace gets you by then, and a past date is refused (T-041b)', () => {
@@ -108,7 +108,7 @@ describe('onboarding', () => {
     pick('Your main goal', 'Lose fat')
     type('Target weight (kg, optional)', '58')
     type('Event date (optional)', '2027-01-26')
-    expect(screen.getByRole('status', { name: 'At your event' }).textContent).toMatch(/^By your event on 26 January 2027 you’d be about 59\.2 kg, not 58 kg\./)
+    expect(screen.getByRole('status', { name: 'At your event' }).textContent).toMatch(/^On 26 January 2027, you’d be about 59\.2 kg, not 58 kg\./)
     // The pace stays as chosen.
     expect(screen.getByRole('button', { name: 'Steady (recommended)' }).getAttribute('aria-pressed')).toBe('true')
     type('Event date (optional)', '2026-10-01')
@@ -136,14 +136,14 @@ describe('onboarding', () => {
     expect(screen.getByRole('button', { name: 'Skip this step' })).toBeTruthy()
     for (let i = 0; i < 4; i++) click('More Roti or chapati')
     click('More Dal (no onion or garlic)')
-    expect(screen.getByRole('status', { name: 'Typical day' }).textContent).toMatch(/about 520 kcal and 22 g protein/)
+    expect(screen.getByRole('status', { name: 'Usual day' }).textContent).toMatch(/about 520 kcal and 22 g protein/)
     click('Next')
 
     expect(heading()).toBe('Your plan')
     expect(screen.getByText('You’d reach 58 kg before your event on 1 March 2027.')).toBeTruthy()
     const targets = screen.getByRole('region', { name: 'Suggested daily targets' })
     expect(targets.textContent).toMatch(/lose 0\.5 % of your weight a week/)
-    expect(targets.textContent).toMatch(/only suggestions, based on nutrition research\. They are not medical advice\. You decide whether to follow them\./)
+    expect(targets.textContent).toMatch(/only suggestions, based on food research\. They are not medical advice\. You decide whether to follow them\./)
     click('Use these targets')
     await waitFor(() => expect(onFinish).toHaveBeenCalled())
     const r = onFinish.mock.calls[0][0]
@@ -195,7 +195,7 @@ describe('onboarding', () => {
     type('Calories a day', '200')
     type('Protein (g, optional)', '20')
     click('Add')
-    expect(screen.getByRole('status', { name: 'Typical day' }).textContent).toMatch(/about 840 kcal and 32 g protein/) // 2 x 320 + 200
+    expect(screen.getByRole('status', { name: 'Usual day' }).textContent).toMatch(/about 840 kcal and 32 g protein/) // 2 x 320 + 200
     click('Next')
     click('I’ll set my own')
     await waitFor(() => expect(onFinish).toHaveBeenCalled())
@@ -336,7 +336,7 @@ describe('diet rules (T-057)', () => {
     type('Calories', '700')
     click('Add to your usual day')
     expect(await screen.findByText('your amount, 700 kcal')).toBeTruthy()
-    expect(screen.getByRole('status', { name: 'Typical day' }).textContent).toMatch(/about 1,?340 kcal/)
+    expect(screen.getByRole('status', { name: 'Usual day' }).textContent).toMatch(/about 1,?340 kcal/)
   })
 
   it('9. drops counts for foods the diet no longer allows', async () => {
@@ -345,11 +345,11 @@ describe('diet rules (T-057)', () => {
     click('Next')
     click('More Eggs')
     click('More Roti or chapati')
-    expect(screen.getByRole('status', { name: 'Typical day' }).textContent).toMatch(/about 170 kcal/)
+    expect(screen.getByRole('status', { name: 'Usual day' }).textContent).toMatch(/about 170 kcal/)
     click('Back')
     pick('What you eat', 'Vegetarian')
     click('Next')
-    expect(screen.getByRole('status', { name: 'Typical day' }).textContent).toMatch(/about 100 kcal/)
+    expect(screen.getByRole('status', { name: 'Usual day' }).textContent).toMatch(/about 100 kcal/)
     click('Next')
     click('I’ll set my own')
     await waitFor(() => expect(onFinish).toHaveBeenCalled())
@@ -407,7 +407,7 @@ describe('suggested day of meals (T-058b)', () => {
     fireEvent.change(swap, { target: { value: 'tmf:ing:paneer' } })
     expect(within(screen.getByRole('region', { name: 'Lunch' })).getByText(/Swapped in for toor dal/)).toBeTruthy()
     expect(screen.getByRole('status', { name: 'Plan total' }).textContent).toMatch(/kcal and \d+ g protein/)
-    expect(plan().textContent).toMatch(/only suggestions, based on nutrition research/)
+    expect(plan().textContent).toMatch(/only suggestions, based on food research/)
     expect(onFinish).not.toHaveBeenCalled()
 
     click('Use this plan')
@@ -439,7 +439,7 @@ describe('gain paces (T-059)', () => {
     pick('Your main goal', 'Build muscle and gain weight')
     expect(paceButtons()).toEqual(['Lean', 'Steady (recommended)', 'Faster'])
     expect(pressed()).toBe('Steady (recommended)')
-    expect(screen.getByText(/about 0\.28 kg a week and 310 extra kcal a day/)).toBeTruthy()
+    expect(screen.getByText(/about 0\.28 kg a week\. You eat 310 extra kcal a day/)).toBeTruthy()
   })
 
   it('3, 10. an underweight person gets Catch up, Faster picked, and a first milestone', () => {
@@ -452,7 +452,7 @@ describe('gain paces (T-059)', () => {
     expect(paceButtons()).toEqual(['Lean', 'Steady', 'Faster (recommended)', 'Catch up'])
     expect(pressed()).toBe('Faster (recommended)')
     type('Target weight (kg, optional)', '55')
-    expect(screen.getByRole('status', { name: 'Goal date' }).textContent).toMatch(/^First 2 kg by .* you’d reach 55 kg in about 7 months/)
+    expect(screen.getByRole('status', { name: 'Goal date' }).textContent).toMatch(/^First 2 kg by .* you’d reach 55 kg by .*\. That is about 7 months\./)
   })
 
   it('6, 11. a health answer changed later keeps the pace gentle and re-picks it', () => {

@@ -46,7 +46,7 @@ export const sentLabel = (iso: string) =>
 export function nudgeText(body: string, appUrl: string): string {
   const text = body.trim().replace(/\s+/g, ' ')
   const short = text.length > 100 ? `${text.slice(0, 97)}…` : text
-  return `I sent you a message on Track Me Fit: "${short}" Open the app to reply: ${appUrl}`
+  return `I sent you a message on Track Me Fit. "${short}" Open the app to reply: ${appUrl}`
 }
 
 export const nudgeLink = (body: string, appUrl: string) => `https://wa.me/?text=${encodeURIComponent(nudgeText(body, appUrl))}`

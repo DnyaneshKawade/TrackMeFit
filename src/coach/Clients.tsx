@@ -214,7 +214,7 @@ export function Clients({
       {templates && (
         <section aria-label="Program templates">
           <h3>Program templates</h3>
-          <p className="muted">Make a plan once, then add it to any client from their page.</p>
+          <p className="muted">Make a plan once. Then add it to any client from their page.</p>
           {programs === null ? (
             <p className="muted">Loading…</p>
           ) : programs.length ? (

@@ -43,7 +43,7 @@ export const showCode = (code: string) => (code.length === 10 ? `${code.slice(0,
 
 /** The message a coach sends, ready for WhatsApp. */
 export const inviteMessage = (code: string) =>
-  `Join me as your coach on Track Me Fit. Open the app, go to Progress, and enter this code under Your coach: ${showCode(code)}`
+  `Join me as your coach on Track Me Fit. Open the app and go to Progress. Enter this code under Your coach: ${showCode(code)}`
 
 /** A client row with nothing logged yet, for tests and new clients. */
 export const emptyClient = (linkId: string, name: string): ClientRow => ({

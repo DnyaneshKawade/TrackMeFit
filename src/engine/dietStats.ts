@@ -118,7 +118,7 @@ export function dietStats(entries: StatsEntry[], targets: StatsTarget[], from: s
   else if (!hasTargets) notes.push('Set your daily targets to see days on target.')
   else {
     notes.push(`On target means calories within ${ON_TARGET_SHARE * 100}% of your target.`)
-    notes.push(`The protein streak counts days with at least ${PROTEIN_SHARE * 100}% of your protein target.`)
+    notes.push(`The protein streak counts days you reach ${PROTEIN_SHARE * 100}% of your protein target.`)
   }
   if (n && n < days.length - 1) notes.push('Days with nothing logged are left out of the averages. Today is left out until it is over.')
   else if (n) notes.push('Today is left out of the averages until it is over.')

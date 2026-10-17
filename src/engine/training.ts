@@ -84,7 +84,7 @@ export function nextWeekSets(current: number, f: MuscleFeedback, landmarks: Land
     if (f.downStreak >= 2) {
       change = -2
       recoverySession = true
-      why = 'You got weaker two workouts in a row, so we cut sets and add an easier workout.'
+      why = 'You got weaker two workouts in a row. So we cut sets and add an easier workout.'
     } else {
       why = 'You were a little weaker once. Sets stay the same to see if it happens again.'
     }
@@ -172,7 +172,7 @@ export function nextLoad(i: LoadInput): LoadDecision {
   const topOfRange = i.repsDone.length > 0 && i.repsDone.every((r) => r >= hi)
   if (topOfRange) {
     if (i.weight > 0 && i.increment / i.weight > MAX_JUMP_FRACTION) {
-      return { weight: i.weight, targetReps: hi + 1, why: 'The next weight is a big jump, so add a rep to each set first.' }
+      return { weight: i.weight, targetReps: hi + 1, why: 'The next weight is a big jump. So add a rep to each set first.' }
     }
     return { weight: i.weight + i.increment, targetReps: lo, why: `Hit ${hi} reps on every set, so the weight goes up.` }
   }

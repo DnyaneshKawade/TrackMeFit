@@ -55,7 +55,7 @@ describe('daily targets on the food log', () => {
     type('Protein', '150')
     type('Carbs', '250')
     type('Fat', '70')
-    expect(screen.getByRole('note').textContent).toMatch(/2230 kcal, 730 more/)
+    expect(screen.getByRole('note').textContent).toMatch(/2230 kcal\. That is 730 more/)
     fireEvent.click(screen.getByRole('button', { name: 'Save targets' }))
     expect(await screen.findByText('1000 kcal left')).toBeTruthy()
   })

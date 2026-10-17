@@ -159,7 +159,7 @@ export function reviewWeek(input: {
         ? `You've finished ${input.hardWeeks} hard weeks, so this is a light week.`
         : input.runDown
           ? 'You feel tired, so take a light week now.'
-          : 'Half your muscles got weaker at once, so take a light week now.'
+          : 'Half your muscles got weaker at once. Take a light week now.'
     return { week: input.week, deload, why, muscles, proposed: input.plan }
   }
   return { week: input.week, deload, why: `Week ${input.week} of ${input.hardWeeks}.`, muscles, proposed }

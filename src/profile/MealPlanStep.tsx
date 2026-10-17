@@ -84,7 +84,7 @@ export default function MealPlanStep({
     return (
       <section className="meal-plan" aria-label="Meal plan">
         <h2>Want us to suggest a day of meals?</h2>
-        <p className="muted">We start from your typical day and add the protein foods you like. Every amount is in grams.</p>
+        <p className="muted">We start from your usual day. Then we add protein foods you like. Every amount is in grams.</p>
         {phase === 'no' && <p className="muted">No problem. You can log food your own way.</p>}
         <div className="choice">
           <button type="button" className="primary" onClick={() => setPhase('pick')}>
@@ -112,7 +112,7 @@ export default function MealPlanStep({
   return (
     <section className="meal-plan" aria-label="Meal plan">
       <h2>Which protein foods do you like?</h2>
-      <p className="muted">Pick a few. Most Indian meals are short on protein, so the plan adds these to your usual food.</p>
+      <p className="muted">Pick a few. Most Indian meals are low in protein. The plan adds these to your food.</p>
       <div className="choice" role="group" aria-label="Protein foods you like">
         {choices.map((c) => (
           <button key={c.key} type="button" aria-pressed={keys.includes(c.key)} onClick={() => toggle(c.key)}>

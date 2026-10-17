@@ -245,7 +245,7 @@ export function Workouts({
       <h2 className="plans-head">My plans</h2>
       {plans === null && <p className="muted">Loading…</p>}
       {plans?.length === 0 && (
-        <p className="muted">No plan yet. A plan is a few training days, each with its exercises, sets and rep ranges. Not sure where to start? Get a suggested plan.</p>
+        <p className="muted">No plan yet. A plan is a few training days. Each day has exercises, sets and reps. Not sure where to start? Get a suggested plan.</p>
       )}
       <ul className="session-list">
         {plans?.map((p) => {

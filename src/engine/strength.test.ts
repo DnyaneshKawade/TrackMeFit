@@ -19,7 +19,7 @@ describe('records (T-044)', () => {
     const r = exerciseRecords([day('2026-10-01', [60, 8]), day('2026-10-03', [70, 3])])
     const byTarget = Object.fromEntries(r.repMaxes.map((x) => [x.target, x.weightKg]))
     expect(byTarget).toEqual({ 1: 70, 2: 70, 3: 70, 5: 60, 8: 60 })
-    expect(r.notes).toContain('Heaviest for 5 reps means the most weight lifted for 5 reps or more.')
+    expect(r.notes).toContain('Heaviest for 5 reps: the most you lifted 5 or more times.')
   })
 
   it('leaves out warm-ups and drop sets, and keeps the first date on a tie', () => {
@@ -34,7 +34,7 @@ describe('records (T-044)', () => {
     expect(e1rm(60, 13)).toBeNull()
     const r = exerciseRecords([day('2026-10-01', [40, 20])])
     expect(r.bestE1rm).toBeNull()
-    expect(r.notes).toContain('Do a set of 12 reps or fewer to see your one-rep max.')
+    expect(r.notes).toContain('Do 12 reps or fewer in a set for your one-rep max.')
   })
 
   it('5. the graph has the best estimated one-rep max of each workout, oldest first', () => {
@@ -55,7 +55,7 @@ describe('records (T-044)', () => {
       { date: '2026-10-01', value: 15 },
       { date: '2026-10-04', value: 18 },
     ])
-    expect(r.notes[0]).toBe('You did this with no weight, so the graph shows your most reps.')
+    expect(r.notes[0]).toBe('You did this with no weight. So the graph shows your most reps.')
   })
 
   it('says what to do when there is nothing logged', () => {
@@ -75,7 +75,7 @@ describe('new record during a workout (T-044b)', () => {
 
   it('2. a set that is not heavier can beat the best estimated one-rep max', () => {
     // 80 × 5 = 93.5 before; 77.5 × 8 = 98 now.
-    expect(newRecord(past, [], { weightKg: 77.5, reps: 8 })?.text).toBe('New record: best estimated one-rep max, 98 kg. Your best before was 93.5 kg.')
+    expect(newRecord(past, [], { weightKg: 77.5, reps: 8 })?.text).toBe('New record: best one-rep max guess, 98 kg. Your best before was 93.5 kg.')
     expect(newRecord(past, [], { weightKg: 75, reps: 5 })).toBeNull()
   })
 

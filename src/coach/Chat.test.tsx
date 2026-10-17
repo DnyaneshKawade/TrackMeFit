@@ -57,7 +57,7 @@ describe('chat with the coach (T-026f)', () => {
     await send('Two roti is fine.')
     const link = (await screen.findByRole('link', { name: 'Tell Neha on WhatsApp' })) as HTMLAnchorElement
     expect(link.href).toBe(`https://wa.me/?text=${encodeURIComponent(nudgeText('Two roti is fine.', URL))}`)
-    expect(nudgeText('Two roti is fine.', URL)).toBe(`I sent you a message on Track Me Fit: "Two roti is fine." Open the app to reply: ${URL}`)
+    expect(nudgeText('Two roti is fine.', URL)).toBe(`I sent you a message on Track Me Fit. "Two roti is fine." Open the app to reply: ${URL}`)
     expect(nudgeText('a'.repeat(150), URL)).toContain(`"${'a'.repeat(97)}…"`)
   })
 

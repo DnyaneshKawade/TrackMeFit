@@ -141,7 +141,7 @@ export const HEALTH_QUESTIONS: HealthQuestion[] = [
   {
     key: 'heart',
     label: 'High blood pressure or a heart condition',
-    note: 'Ask your doctor which kinds of training are safe for you before lifting hard.',
+    note: 'Ask your doctor which training is safe before you lift hard.',
   },
   {
     key: 'thyroid',
@@ -168,7 +168,7 @@ export const HEALTH_QUESTIONS: HealthQuestion[] = [
   {
     key: 'glp1',
     label: 'Weight-loss medicine (like Ozempic or Mounjaro)',
-    note: 'Eat enough protein and keep lifting weights to protect muscle on this medicine. Tell your doctor about big diet changes.',
+    note: 'On this medicine, eat enough protein and lift weights to protect muscle. Tell your doctor about big diet changes.',
   },
   {
     key: 'eatingDisorder',
@@ -222,4 +222,4 @@ export const MAX_OTHER_HEALTH = 500
 
 /** Shown with every suggested number. */
 export const SUGGESTION_NOTE =
-  'Please note: these numbers are only suggestions, based on nutrition research. They are not medical advice. You decide whether to follow them. If you have a health problem, are pregnant, or take regular medicine, talk to your doctor first.'
+  'Please note: these numbers are only suggestions, based on food research. They are not medical advice. You decide whether to follow them. Are you pregnant, ill or on daily medicine? Talk to your doctor first.'
