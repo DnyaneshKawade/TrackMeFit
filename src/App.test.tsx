@@ -72,7 +72,7 @@ describe('first run', () => {
     expect((await progress.weighIns()).map((w) => w.kg)).toEqual([64.5])
     expect((await progress.measurements())[0].waistCm).toBe(82)
     const t = await targets.forDate('2999-01-01')
-    expect(t).toMatchObject({ source: 'suggested', proteinG: 103 })
+    expect(t).toMatchObject({ source: 'suggested', proteinG: 90 }) // 1.4 g per kg of the weight at BMI 25
 
     fireEvent.click(screen.getByRole('tab', { name: 'Progress' }))
     expect(await screen.findByText('64.5 kg')).toBeTruthy()

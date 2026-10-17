@@ -179,7 +179,7 @@ describe('plan', () => {
     // Week 1 is at the burn; the goal level is below it (T-067a).
     expect(plan.suggested!.kcal).toBe(plan.steps!.steps[0])
     expect(plan.steps!.goalKcal).toBeLessThan(plan.maintenance.low)
-    expect(plan.suggested!.proteinG).toBe(102) // 1.6 g per kg for a beginner
+    expect(plan.suggested!.proteinG).toBe(90) // 1.4 g per kg of 64 kg (T-068c)
     expect(plan.reasons[0]).toMatch(/^Week 1 is .* kcal a day\. That is about what you burn\.$/)
     expect(plan.timeline!.message).toMatch(/60 kg/)
     expect(plan.intakeNote).toMatch(/usual day/)
@@ -388,7 +388,7 @@ describe('next calorie step (T-067a)', () => {
   it('6. offers the next step after 7 days on suggested targets, but never for hand-set or coach targets', () => {
     const step = nextStep(asha, 64, target(), TODAY, 'me')!
     expect(step.values.kcal).toBe(1570)
-    expect(step.values.proteinG).toBe(102)
+    expect(step.values.proteinG).toBe(90)
     expect(step.message).toBe('Ready for your next step? Eat about 1,570 kcal a day from today.')
     expect(nextStep(asha, 64, target({ startsOn: '2026-10-08' }), TODAY, 'me')).toBeNull()
     expect(nextStep(asha, 64, target({ source: 'manual' }), TODAY, 'me')).toBeNull()
@@ -401,5 +401,18 @@ describe('next calorie step (T-067a)', () => {
       'Ready for your next step? Eat about 1,470 kcal a day from today. This is your goal level.',
     )
     expect(nextStep(asha, 64, target({ kcal: 1470 }), TODAY, 'me')).toBeNull()
+  })
+})
+
+describe('protein, carbs, fat and fibre in the plan (T-068c)', () => {
+  it('6. setup targets and each weekly step use the new rules, and the plan says why', () => {
+    const plan = buildPlan(asha, 64, TODAY)
+    expect(plan.suggested!.proteinG).toBe(90)
+    expect(plan.reasons).toContain('Protein is 1.4 g per kg of body weight. That is enough to build muscle.')
+    expect(plan.reasons).toContain('Eat about 25 g of fibre a day. Dal, vegetables and fruit help.')
+    const week1: DietTarget = { id: 't', startsOn: '2026-10-06', ...plan.suggested!, source: 'suggested', setBy: 'me' }
+    const step = nextStep(asha, 64, week1, TODAY, 'me')!
+    expect(step.values.carbG).toBeGreaterThanOrEqual(130)
+    expect(step.values.proteinG).toBe(90)
   })
 })

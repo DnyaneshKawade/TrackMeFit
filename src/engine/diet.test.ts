@@ -7,9 +7,7 @@ import {
   indianBmiBand,
   bmi,
   initialExpenditure,
-  macroTargets,
   mifflinBmr,
-  proteinTarget,
   trendWeights,
   updateExpenditure,
 } from './diet'
@@ -108,33 +106,3 @@ describe('Indian BMI bands', () => {
   })
 })
 
-describe('proteinTarget', () => {
-  it('defaults to 1.6 g/kg', () => {
-    expect(proteinTarget({ weightKg: 60, heightCm: 165, trained: false, losingFat: true })).toEqual({ grams: 96, perKg: 1.6, referToDoctor: false })
-  })
-  it('goes to 2.2 g/kg only for trained lifters losing fat', () => {
-    expect(proteinTarget({ weightKg: 80, heightCm: 180, trained: true, losingFat: true }).perKg).toBe(2.2)
-    expect(proteinTarget({ weightKg: 80, heightCm: 180, trained: true, losingFat: false }).perKg).toBe(1.6)
-  })
-  it('doses on BMI-25 weight when BMI is 27.5 or more', () => {
-    // 100 kg at 170 cm: BMI 34.6 -> dose weight 25 * 1.7^2 = 72.25 kg.
-    expect(proteinTarget({ weightKg: 100, heightCm: 170, trained: false, losingFat: true }).grams).toBe(116)
-  })
-  it('caps protein and refers to a doctor for kidney disease', () => {
-    const p = proteinTarget({ weightKg: 70, heightCm: 170, trained: true, losingFat: true, kidneyDisease: true })
-    expect(p.perKg).toBe(0.8)
-    expect(p.referToDoctor).toBe(true)
-  })
-})
-
-describe('macroTargets', () => {
-  it('fills carbs after protein and fat', () => {
-    const m = macroTargets(2000, 110, 65)
-    expect(m.fatG).toBe(56)
-    expect(m.proteinG * 4 + m.fatG * 9 + m.carbG * 4).toBeGreaterThan(1990)
-    expect(m.proteinG * 4 + m.fatG * 9 + m.carbG * 4).toBeLessThan(2010)
-  })
-  it('never sets fat below 0.6 g/kg', () => {
-    expect(macroTargets(1200, 100, 90, 'lowerFat').fatG).toBe(54)
-  })
-})

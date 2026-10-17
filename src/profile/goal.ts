@@ -8,15 +8,14 @@ import {
   indianBmiBand,
   initialExpenditure,
   KCAL_PER_KG,
-  macroTargets,
   MAX_GAIN_KG_PER_WEEK,
   MAX_GAIN_RATE,
-  proteinTarget,
   surplusKcal,
   type BmiBand,
   type DayType,
   type Macros,
 } from '../engine/diet'
+import { dailyTargets } from '../engine/nutrients'
 import { calorieSteps, nextStepKcal, type StepPlan } from '../engine/steps'
 import { shiftDate } from '../log/types'
 import type { DietTarget } from '../targets/types'
@@ -320,14 +319,8 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
   // Losing: start at the burn and step down each week (T-067a).
   const steps = rate < 0 ? calorieSteps({ burn: tdee, weightKg, rate, sex: p.sex!, usualKcal: p.currentDiet?.kcal ?? null }) : null
   const kcal = steps ? steps.steps[0] : calorieTarget({ tdee, weightKg, rate, sex: p.sex! })
-  const protein = proteinTarget({
-    weightKg,
-    heightCm: p.heightCm!,
-    trained: p.experience !== 'beginner',
-    losingFat: rate < 0,
-    kidneyDisease: !!p.medical.kidney,
-  })
-  const suggested = macroTargets(kcal, protein.grams, weightKg)
+  const daily = dailyTargets({ kcal, weightKg, heightCm: p.heightCm!, kidneyDisease: !!p.medical.kidney })
+  const suggested = daily.values
   if (steps) {
     reasons.push(...steps.reasons)
     const kgWeek = Math.round((((tdee - steps.goalKcal) * 7) / KCAL_PER_KG) * 20) / 20
@@ -338,12 +331,7 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
   }
   else reasons.push('Calories are set to keep your weight where it is.')
   if (p.goal === 'recomp') reasons.push('This goal is to lose fat and build muscle. Eat a little less than you burn. Eat plenty of protein.')
-  reasons.push(
-    protein.referToDoctor
-      ? `Protein is kept to ${protein.perKg} g per kg because of kidney disease. Ask your doctor for your own limit.`
-      : `Protein is ${protein.perKg} g per kg of body weight. That is enough to build muscle.`,
-  )
-  reasons.push('Fat is about a quarter of calories; carbs fill the rest.')
+  reasons.push(...daily.reasons)
   return { maintenance, intakeNote, timeline, eventNote: event, suggested, steps, reasons }
 }
 
@@ -363,7 +351,7 @@ export function nextStep(p: ProfileInfo, weightKg: number, target: DietTarget, t
   if (kcal === null) return null
   const goal = kcal === plan.steps.goalKcal ? ' This is your goal level.' : ''
   return {
-    values: macroTargets(kcal, plan.suggested.proteinG, weightKg),
+    values: dailyTargets({ kcal, weightKg, heightCm: p.heightCm!, kidneyDisease: !!p.medical.kidney }).values,
     message: `Ready for your next step? Eat about ${kcal.toLocaleString('en-IN')} kcal a day from today.${goal}`,
   }
 }

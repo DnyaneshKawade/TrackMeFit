@@ -151,7 +151,7 @@ describe('onboarding', () => {
     const r = onFinish.mock.calls[0][0]
     expect(r.weightKg).toBe(64)
     expect(r.waistCm).toBe(84)
-    expect(r.targets.proteinG).toBe(102)
+    expect(r.targets.proteinG).toBe(90) // 1.4 g per kg of 64 kg
     expect(r.profile).toMatchObject({
       fullName: 'Asha',
       sex: 'female',
