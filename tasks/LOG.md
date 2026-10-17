@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-17: How your plan works (T-076)
+
+- Spec `specs/T-076-how-your-plan-works.md`. Unparked from the later list, as agreed with DK.
+- Setup now shows three short cards under the suggested targets, one at a time.
+- They say why week 1 is not a cut, why fried food and sweets stay out, and why early loss is mostly water.
+- Plans with no weekly steps show only the clean food card.
+- Tests: 3 in `src/profile/HowPlanWorks.test.tsx`, 1 in `src/profile/Onboarding.test.tsx`.
+
 ## 2026-10-17: Clean meal plan (T-068b)
 
 - Fourth of the five diet engine parts. Spec `specs/T-068b-clean-meal-plan.md`.

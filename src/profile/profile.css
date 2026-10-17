@@ -60,3 +60,9 @@
 @media (prefers-color-scheme: dark) {
   .plan-items li { border-color: #2c3734; }
 }
+.how-plan { margin: 16px 0; padding: 12px 14px; border: 1px solid #dfe5e2; border-radius: 10px; }
+.how-plan h2 { font-size: 18px; margin: 0 0 6px; }
+.how-plan h3 { font-size: 16px; margin: 6px 0; }
+.how-plan p { margin: 4px 0; font-size: 15px; }
+.how-plan .choice { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+@media (prefers-color-scheme: dark) { .how-plan { border-color: #2c3734; } }
