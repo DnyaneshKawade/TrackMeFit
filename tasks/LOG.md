@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-17: Weekly check (T-067d)
+
+- Last of the five diet engine parts. Spec `specs/T-067d-weekly-check.md`.
+- Before each step, the app looks at the average weight over the last 14 days.
+- If weight already falls at the chosen pace, the Food tab says to stay for now. "OK" hides it for a week.
+- After 21 days of weigh-ins and 14 days of food logs, it learns the real burn. The goal level moves with it, within the same caps and floors.
+- One range query reads the last 21 days of food. No tables change.
+- Tests: 5 in `src/engine/steps.test.ts`, 1 in `src/profile/profile.test.ts`, 1 in `src/targets/TargetsFood.test.tsx`.
+
 ## 2026-10-17: How your plan works (T-076)
 
 - Spec `specs/T-076-how-your-plan-works.md`. Unparked from the later list, as agreed with DK.

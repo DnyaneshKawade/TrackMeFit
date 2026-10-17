@@ -16,7 +16,9 @@ import {
   type Macros,
 } from '../engine/diet'
 import { dailyTargets } from '../engine/nutrients'
-import { calorieSteps, nextStepKcal, type StepPlan } from '../engine/steps'
+import { calorieSteps, weeklyCheck, type StepPlan } from '../engine/steps'
+export { LEARN_DAYS } from '../engine/steps'
+import type { WeighIn } from '../engine/diet'
 import { shiftDate } from '../log/types'
 import type { DietTarget } from '../targets/types'
 import { NORMAL_BMI } from './steady'
@@ -338,21 +340,41 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
 export interface NextStep {
   values: Macros
   message: string
+  /** Stay at this level for now: the person only taps OK. */
+  hold: boolean
 }
 
-/** The next weekly step for a person on suggested targets, or null when
- * there is none. Nothing changes until they tap to use it (T-067a). */
-export function nextStep(p: ProfileInfo, weightKg: number, target: DietTarget, today: string, userId: string): NextStep | null {
+/** Weight and food the weekly check looks at (T-067d). */
+export interface CheckData {
+  weighIns: WeighIn[]
+  /** Calories logged on each day with food logged. */
+  dayKcal: Map<string, number>
+}
+
+/** The weekly check for a person on suggested targets: the next step, a
+ * reason to stay for now, or null. Nothing changes until they tap
+ * (T-067a, T-067d). */
+export function nextStep(p: ProfileInfo, weightKg: number, target: DietTarget, today: string, userId: string, data: CheckData = { weighIns: [], dayKcal: new Map() }): NextStep | null {
   // Targets set by hand or by a coach are never stepped.
   if (target.source !== 'suggested' || target.setBy !== userId) return null
   const plan = buildPlan(p, weightKg, today)
   if (!plan.steps || !plan.suggested) return null
-  const kcal = nextStepKcal(target.kcal, plan.steps.goalKcal, daysBetween(target.startsOn, today))
-  if (kcal === null) return null
-  const goal = kcal === plan.steps.goalKcal ? ' This is your goal level.' : ''
+  const check = weeklyCheck({
+    burn: plan.steps.burn,
+    rate: plan.steps.rate,
+    weightKg,
+    sex: p.sex!,
+    currentKcal: target.kcal,
+    goalKcal: plan.steps.goalKcal,
+    daysOnStep: daysBetween(target.startsOn, today),
+    today,
+    ...data,
+  })
+  if (!check) return null
   return {
-    values: dailyTargets({ kcal, weightKg, heightCm: p.heightCm!, kidneyDisease: !!p.medical.kidney }).values,
-    message: `Ready for your next step? Eat about ${kcal.toLocaleString('en-IN')} kcal a day from today.${goal}`,
+    values: dailyTargets({ kcal: check.kcal, weightKg, heightCm: p.heightCm!, kidneyDisease: !!p.medical.kidney }).values,
+    message: check.reason,
+    hold: check.kind === 'hold',
   }
 }
 
