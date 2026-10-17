@@ -521,6 +521,8 @@ describe('calorie steps in setup (T-067a)', () => {
     const steps = within(targets).getAllByRole('listitem').filter((li) => li.closest('ol'))
     expect(steps.map((li) => li.textContent)).toEqual(['Week 1: 1,820 kcal', 'Week 2: 1,570 kcal', 'Week 3: 1,470 kcal (your goal level)'])
     expect(targets.textContent).toMatch(/You tap OK before each new step\./)
+    // T-076: the cards on how the plan works sit under the targets.
+    expect(screen.getByRole('region', { name: 'How your plan works' }).textContent).toMatch(/Week 1 is 1,820 kcal, about what you burn\./)
     click('Use these targets')
     await waitFor(() => expect(onFinish).toHaveBeenCalled())
     expect(onFinish.mock.calls[0][0].targets.kcal).toBe(1820)

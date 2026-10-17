@@ -30,6 +30,7 @@ import {
 import '../log/log.css'
 import '../training/training.css'
 import './profile.css'
+import { HowPlanWorks } from './HowPlanWorks'
 
 export interface OnboardingResult {
   profile: ProfileInfo
@@ -577,6 +578,7 @@ export function Onboarding({
               <p className="muted disclaimer">{SUGGESTION_NOTE}</p>
             </section>
           ) : null}
+          {plan.suggested && <HowPlanWorks steps={plan.steps} />}
           {plan.suggested ? (
             <Suspense fallback={<p className="muted">Loading…</p>}>
               <MealPlanStep
