@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-17: Picks first, then other foods (T-068e)
+
+- DK: use the person's picks first; if they are not enough, use any other food.
+- When picks can't reach the protein target, the plan now adds other allowed protein foods, leanest first.
+- Whey is never added unless the person picked it.
+- Each added food says why, and a note names them. Suggestions no longer list foods already in the plan.
+- Veg-day swaps go: picks, then paneer, toor dal, soya and tofu, then any other allowed protein food.
+- Tests: 1 rewritten and 1 new in `src/engine/mealPlan.test.ts`.
+
 ## 2026-10-17: Weekly check (T-067d)
 
 - Last of the five diet engine parts. Spec `specs/T-067d-weekly-check.md`.

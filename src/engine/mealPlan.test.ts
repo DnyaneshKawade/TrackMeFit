@@ -47,17 +47,21 @@ describe('meal plan (T-058)', () => {
     const lots = buildMealPlan({ ...asha, base: [...asha.base, { foodId: 'tmf:ing:rice', grams: 500 }, { foodId: 'tmf:ing:soya-chunks', grams: 200 }] })
     expect(dayGrams(lots, 'tmf:ing:rice')).toBeLessThanOrEqual(150)
     expect(dayGrams(lots, 'tmf:ing:soya-chunks')).toBeLessThanOrEqual(50)
-    const short = buildMealPlan({ ...asha, picks: picks('soya'), targets: { ...asha.targets, proteinG: 140 } })
+    const short = buildMealPlan({ ...asha, picks: picks('curd'), weightKg: 120, targets: { kcal: 3600, proteinG: 260, fatG: 100, carbG: 450 } })
     expect(short.notes.some((n) => /is kept to \d+ g .* a day. That is a fair amount for one food./.test(n))).toBe(true)
   })
 
-  it('6. says how much protein the picks can reach when it is not enough, and suggests more', () => {
-    const hard: MealPlanInput = { ...asha, targets: { kcal: 2600, proteinG: 160, fatG: 70, carbG: 330 }, weightKg: 90, picks: picks('curd') }
-    const f = checkFeasibility(hard)
+  it('6. fills a protein gap with other allowed foods, says so, and says how much it can reach when still short', () => {
+    // Curd alone can't reach 160 g: other veg protein foods come in, never whey.
+    const hard = buildMealPlan({ ...asha, targets: { kcal: 2600, proteinG: 160, fatG: 70, carbG: 330 }, weightKg: 90, picks: picks('curd') })
+    expect(items(hard).some((i) => i.reason === 'Added because your picks were not enough for your protein.')).toBe(true)
+    expect(hard.notes.some((n) => /^Your picks were not enough for your protein\. So we added .+\. You can swap them\.$/.test(n))).toBe(true)
+    expect(items(hard).some((i) => PLAN_FOODS_BY_ID.get(i.foodId)!.group === 'supplement')).toBe(false)
+    expect(items(hard).every((i) => (PLAN_FOODS_BY_ID.get(i.foodId)!.tags ?? []).every((t) => !excludedTags('veg').has(t)))).toBe(true)
+    // Too much protein for the calories: it says how much it reaches.
+    const f = checkFeasibility({ ...asha, targets: { kcal: 1800, proteinG: 200, fatG: 50, carbG: 200 }, weightKg: 90, picks: picks('curd') })
     expect(f.feasible).toBe(false)
-    expect(f.reachableProteinG).toBeLessThan(155)
-    expect(f.message).toMatch(new RegExp(`about ${f.reachableProteinG} g of your 160 g protein`))
-    expect(f.suggestions.length).toBeGreaterThan(0)
+    expect(f.message).toMatch(new RegExp(`about ${f.reachableProteinG} g of your 200 g protein`))
     expect(f.suggestions.every((s) => s.tags.every((t) => !excludedTags('veg').has(t)))).toBe(true)
     expect(checkFeasibility(asha)).toMatchObject({ feasible: true, suggestions: [] })
   })
@@ -174,6 +178,16 @@ describe('non-veg-free day plan (T-058c)', () => {
     expect(Math.abs(day.totals.kcal - usual.totals.kcal)).toBeLessThanOrEqual(usual.totals.kcal * 0.05)
     for (const i of items(day)) expect(i.grams, i.name).toBeLessThanOrEqual(PLAN_FOODS_BY_ID.get(i.foodId)!.maxPerMealG)
     expect(vegDayPlan(day, nonveg, vegIds, [], 'Tuesday is your non-veg-free day')).toBe(day) // nothing left to swap
+  })
+
+  it('5. uses the picks first, then any other allowed protein food', () => {
+    // Paneer, toor dal, soya and tofu are left out: moong dal steps in.
+    const fallbacks = new Set(['tmf:ing:paneer', 'tmf:ing:toor-dal', 'tmf:ing:soya-chunks', 'usda:172475'])
+    const some = new Set([...vegIds].filter((id) => !fallbacks.has(id) && PLAN_FOODS_BY_ID.get(id)!.group !== 'dairy'))
+    const day = vegDayPlan(usual, nonveg, some, [], 'Tuesday is your non-veg-free day')
+    const swapped = items(day).filter((i) => i.reason.includes('is swapped for'))
+    expect(swapped.length).toBeGreaterThan(0)
+    expect(swapped.every((i) => some.has(i.foodId) && PLAN_FOODS_BY_ID.get(i.foodId)!.group !== 'supplement')).toBe(true)
   })
 
   it('5. drops an item with a note when no veg protein food is allowed', () => {
