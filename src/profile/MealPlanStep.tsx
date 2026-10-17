@@ -84,7 +84,8 @@ export default function MealPlanStep({
     return (
       <section className="meal-plan" aria-label="Meal plan">
         <h2>Want us to suggest a day of meals?</h2>
-        <p className="muted">We start from your usual day. Then we add protein foods you like. Every amount is in grams.</p>
+        <p className="muted">We use foods from your usual day. Then we add protein foods you like.</p>
+        <p className="muted">Fried snacks, sweets and cold drinks stay out. Amounts come in roti, katori and grams.</p>
         {phase === 'no' && <p className="muted">No problem. You can log food your own way.</p>}
         <div className="choice">
           <button type="button" className="primary" onClick={() => setPhase('pick')}>
