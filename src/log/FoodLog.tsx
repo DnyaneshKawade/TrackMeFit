@@ -50,6 +50,29 @@ function writeChoice(date: string, choice: DayChoice) {
   }
 }
 
+// "Not now" on a weekly step hides it for the rest of the day, on this device.
+const laterKey = (targetId: string, date: string) => `tmf:step-later:${targetId}:${date}`
+function saidLater(targetId: string, date: string): boolean {
+  try {
+    return localStorage.getItem(laterKey(targetId, date)) === '1'
+  } catch {
+    return false
+  }
+}
+function sayLater(targetId: string, date: string) {
+  try {
+    localStorage.setItem(laterKey(targetId, date), '1')
+  } catch {
+    // Not kept; it is hidden until the page reloads.
+  }
+}
+
+/** A weekly calorie step the person can take (T-067a). */
+export interface StepOffer {
+  values: TargetValues
+  message: string
+}
+
 function dayLabel(date: string, today: string): string {
   if (date === today) return 'Today'
   if (date === shiftDate(today, -1)) return 'Yesterday'
@@ -66,6 +89,7 @@ export function FoodLog({
   diet,
   mealPlans,
   latestWeight = noWeight,
+  nextStep,
   today = localDate(),
 }: {
   store: LogStore
@@ -79,6 +103,8 @@ export function FoodLog({
   mealPlans?: MealPlanStore | null
   /** The latest weight, for a new meal plan; null when none is logged. */
   latestWeight?: () => Promise<number | null>
+  /** The next weekly calorie step for the current target, if one is due. */
+  nextStep?: (target: DietTarget) => Promise<StepOffer | null>
   today?: string
 }) {
   const [date, setDate] = useState(today)
@@ -96,6 +122,7 @@ export function FoodLog({
   const [saved, setSaved] = useState<SavedMealPlan | null>(null)
   const [planning, setPlanning] = useState(false)
   const [choice, setChoice] = useState<DayChoice>(() => readChoice(date))
+  const [offer, setOffer] = useState<StepOffer | null>(null)
   // Entries waiting on the phone to sync (T-027).
   const sync = store.sync
   const { pending } = useSync(sync)
@@ -141,6 +168,31 @@ export function FoodLog({
       live = false
     }
   }, [targets, date])
+
+  useEffect(() => {
+    setOffer(null)
+    if (!nextStep || !target || date !== today || saidLater(target.id, today)) return
+    let live = true
+    // A convenience: if it can't be worked out, nothing is offered.
+    nextStep(target).then(
+      (o) => live && setOffer(o),
+      () => {},
+    )
+    return () => {
+      live = false
+    }
+  }, [nextStep, target, date, today])
+
+  const takeStep = async () => {
+    if (!offer) return
+    const saved = await targets!.save(offer.values, today, 'suggested')
+    setOffer(null)
+    setTarget(saved)
+  }
+  const stepLater = () => {
+    if (target) sayLater(target.id, today)
+    setOffer(null)
+  }
 
   const saveTargets = async (v: TargetValues) => {
     const saved = await targets!.save(v, today)
@@ -296,6 +348,13 @@ export function FoodLog({
       </dl>
 
       {targets && target && <LeftToday target={target} eaten={day} byCoach={!!userId && target.setBy !== userId} onEdit={() => setEditingTargets(true)} />}
+      {offer && (
+        <p className="info" role="status" aria-label="Next step">
+          {offer.message}{' '}
+          <button className="link" onClick={() => void takeStep()}>Use it</button>{' '}
+          <button className="link" onClick={stepLater}>Not now</button>
+        </p>
+      )}
       {targets && target === null && (
         <button className="set-targets" onClick={() => setEditingTargets(true)}>Set your daily targets</button>
       )}

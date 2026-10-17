@@ -29,6 +29,9 @@
 .plan-targets h2 { font-size: 18px; margin: 16px 0 0; }
 .reasons { padding-left: 18px; margin: 4px 0; font-size: 14px; }
 .reasons li { margin: 4px 0; }
+.plan-targets .steps { padding-left: 22px; margin: 8px 0; font-size: 15px; }
+.plan-targets .steps li { margin: 2px 0; }
+.plan-targets .steps li:last-child { font-weight: 600; }
 .step-buttons .finish { display: grid; gap: 4px; }
 @media (prefers-color-scheme: dark) {
   .progress-bar { background: #1f2826; }

@@ -3,11 +3,11 @@
 
 import {
   bmi,
-  calorieFloor,
   calorieTarget,
   gainLadder,
   indianBmiBand,
   initialExpenditure,
+  KCAL_PER_KG,
   macroTargets,
   MAX_GAIN_KG_PER_WEEK,
   MAX_GAIN_RATE,
@@ -17,7 +17,9 @@ import {
   type DayType,
   type Macros,
 } from '../engine/diet'
+import { calorieSteps, nextStepKcal, type StepPlan } from '../engine/steps'
 import { shiftDate } from '../log/types'
+import type { DietTarget } from '../targets/types'
 import { NORMAL_BMI } from './steady'
 import { ageOn, gentleOnly, noDeficit, type Activity, type Experience, type GoalChoice, type ProfileInfo } from './types'
 
@@ -254,8 +256,11 @@ export interface Plan {
   timeline: Timeline | null
   /** What the pace means for the event date; null without one. */
   eventNote: string | null
-  /** Suggested targets; null when we don't suggest any. */
+  /** Suggested targets; null when we don't suggest any. When losing, these
+   * are for week 1 of the steps. */
   suggested: Macros | null
+  /** Weekly calorie steps down to the goal level; null when not losing. */
+  steps: StepPlan | null
   /** Why these targets, or why none. */
   reasons: string[]
 }
@@ -299,20 +304,22 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
   const reasons: string[] = []
   if ((p.goal === 'lose' || p.goal === 'gain') && noDeficit(p.medical)) {
     reasons.push('We don’t suggest calorie targets during pregnancy or breastfeeding. Set them with your doctor, or track without targets.')
-    return { maintenance, intakeNote, timeline, eventNote: event, suggested: null, reasons }
+    return { maintenance, intakeNote, timeline, eventNote: event, suggested: null, steps: null, reasons }
   }
   // Very low weight: no targets of any kind, only a doctor (T-071).
   const bmiValue = shownBmi(weightKg, p.heightCm!)
   if (bmiValue < DOCTOR_FIRST_BMI) {
     reasons.push('Your weight is very low for your height. So we don’t suggest targets. Please see a doctor first. You can still track food and training.')
-    return { maintenance, intakeNote, timeline, eventNote: event, suggested: null, reasons }
+    return { maintenance, intakeNote, timeline, eventNote: event, suggested: null, steps: null, reasons }
   }
   const asked = p.goal === 'lose' || p.goal === 'gain' ? (p.goalRate ?? 0) : p.goal === 'recomp' ? -0.0025 : 0
   // A saved pace is kept within today's safe limits: no loss when
   // underweight, and no faster loss than the body allows (T-071).
   const rate = asked < 0 ? (bmiValue < 18.5 ? 0 : Math.max(asked, -maxLossRate(bmiValue))) : asked
   if (asked < 0 && rate === 0) reasons.push('You are underweight, so we don’t suggest eating less. Calories are set to keep your weight steady.')
-  const kcal = calorieTarget({ tdee, weightKg, rate, sex: p.sex! })
+  // Losing: start at the burn and step down each week (T-067a).
+  const steps = rate < 0 ? calorieSteps({ burn: tdee, weightKg, rate, sex: p.sex!, usualKcal: p.currentDiet?.kcal ?? null }) : null
+  const kcal = steps ? steps.steps[0] : calorieTarget({ tdee, weightKg, rate, sex: p.sex! })
   const protein = proteinTarget({
     weightKg,
     heightCm: p.heightCm!,
@@ -321,20 +328,43 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
     kidneyDisease: !!p.medical.kidney,
   })
   const suggested = macroTargets(kcal, protein.grams, weightKg)
-  if (rate < 0) reasons.push(`Calories are set to lose ${Math.abs(rate * 100)} % of your weight a week.`)
-  else if (rate > 0) {
+  if (steps) {
+    reasons.push(...steps.reasons)
+    const kgWeek = Math.round((((tdee - steps.goalKcal) * 7) / KCAL_PER_KG) * 20) / 20
+    if (kgWeek > 0) reasons.push(`At your goal level, you’d lose about ${kgWeek} kg a week.`)
+  } else if (rate > 0) {
     const r = Math.min(MAX_GAIN_RATE, rate)
     reasons.push(`Calories are set to gain ${pctText(r)} of your weight a week. You eat ${surplusKcal(r, weightKg)} kcal a day more than you burn.`)
   }
   else reasons.push('Calories are set to keep your weight where it is.')
   if (p.goal === 'recomp') reasons.push('This goal is to lose fat and build muscle. Eat a little less than you burn. Eat plenty of protein.')
-  if (rate < 0 && kcal <= calorieFloor(p.sex!)) reasons.push('Calories don’t go below a safe level without a coach.')
   reasons.push(
     protein.referToDoctor
       ? `Protein is kept to ${protein.perKg} g per kg because of kidney disease. Ask your doctor for your own limit.`
       : `Protein is ${protein.perKg} g per kg of body weight. That is enough to build muscle.`,
   )
   reasons.push('Fat is about a quarter of calories; carbs fill the rest.')
-  return { maintenance, intakeNote, timeline, eventNote: event, suggested, reasons }
+  return { maintenance, intakeNote, timeline, eventNote: event, suggested, steps, reasons }
+}
+
+export interface NextStep {
+  values: Macros
+  message: string
+}
+
+/** The next weekly step for a person on suggested targets, or null when
+ * there is none. Nothing changes until they tap to use it (T-067a). */
+export function nextStep(p: ProfileInfo, weightKg: number, target: DietTarget, today: string, userId: string): NextStep | null {
+  // Targets set by hand or by a coach are never stepped.
+  if (target.source !== 'suggested' || target.setBy !== userId) return null
+  const plan = buildPlan(p, weightKg, today)
+  if (!plan.steps || !plan.suggested) return null
+  const kcal = nextStepKcal(target.kcal, plan.steps.goalKcal, daysBetween(target.startsOn, today))
+  if (kcal === null) return null
+  const goal = kcal === plan.steps.goalKcal ? ' This is your goal level.' : ''
+  return {
+    values: macroTargets(kcal, plan.suggested.proteinG, weightKg),
+    message: `Ready for your next step? Eat about ${kcal.toLocaleString('en-IN')} kcal a day from today.${goal}`,
+  }
 }
 

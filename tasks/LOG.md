@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-17: Calorie steps (T-067a)
+
+- Second of the five diet engine parts. Spec `specs/T-067a-calorie-steps.md`.
+- Losing weight now starts at the app's own burn number, not with the full cut on day 1.
+- Calories go down 250 kcal a week to the goal level. The cut is capped at 25 % of the burn and 750 kcal.
+- Setup shows each week's calories. After 7 days, the Food tab offers the next step; it changes only on "Use it".
+- No migration: each step is a new suggested target.
+- Tests: 5 in `src/engine/steps.test.ts`, 2 in `src/profile/profile.test.ts`, 1 in `src/profile/Onboarding.test.tsx`, 2 in `src/targets/TargetsFood.test.tsx`.
+
 ## 2026-10-17: Simpler words (T-075)
 
 - DK asked for words a 5th grader can follow. Spec `specs/T-075-simpler-words.md`.

@@ -142,7 +142,9 @@ describe('onboarding', () => {
     expect(heading()).toBe('Your plan')
     expect(screen.getByText('You’d reach 58 kg before your event on 1 March 2027.')).toBeTruthy()
     const targets = screen.getByRole('region', { name: 'Suggested daily targets' })
-    expect(targets.textContent).toMatch(/lose 0\.5 % of your weight a week/)
+    // The usual day (520 kcal) is below the goal level, so there are no steps.
+    expect(targets.textContent).toMatch(/Your usual day is already low\. So you start at your goal of 1,470 kcal\./)
+    expect(targets.textContent).toMatch(/you’d lose about 0\.\d+ kg a week/)
     expect(targets.textContent).toMatch(/only suggestions, based on food research\. They are not medical advice\. You decide whether to follow them\./)
     click('Use these targets')
     await waitFor(() => expect(onFinish).toHaveBeenCalled())
@@ -498,3 +500,27 @@ describe('safe paces (T-071)', () => {
   })
 })
 
+
+describe('calorie steps in setup (T-067a)', () => {
+  it('5. shows the weekly steps, with week 1 as the targets to accept', async () => {
+    const { onFinish } = setup()
+    aboutYou()
+    pick('Health conditions', 'None of these')
+    click('Next')
+    training()
+    pick('Your main goal', 'Lose fat')
+    click('Next')
+    food()
+    click('Skip this step')
+
+    expect(heading()).toBe('Your plan')
+    const targets = screen.getByRole('region', { name: 'Suggested daily targets' })
+    expect(within(targets).getByRole('heading').textContent).toBe('Suggested daily targets for week 1')
+    const steps = within(targets).getAllByRole('listitem').filter((li) => li.closest('ol'))
+    expect(steps.map((li) => li.textContent)).toEqual(['Week 1: 1,820 kcal', 'Week 2: 1,570 kcal', 'Week 3: 1,470 kcal (your goal level)'])
+    expect(targets.textContent).toMatch(/You tap OK before each new step\./)
+    click('Use these targets')
+    await waitFor(() => expect(onFinish).toHaveBeenCalled())
+    expect(onFinish.mock.calls[0][0].targets.kcal).toBe(1820)
+  })
+})
