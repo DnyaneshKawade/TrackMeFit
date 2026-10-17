@@ -33,6 +33,13 @@ Each one becomes a test with the same words in its name.
 10. Given the meal plan screen, then it says fried snacks, sweets and cold
     drinks stay out.
 
+11. Given picks that can't reach the protein target, then the plan adds other
+    allowed protein foods, leanest first, but never whey. Each added food says
+    "Added because your picks were not enough for your protein." A note names
+    them (T-068e, DK 17 Oct 2026).
+12. Given a non-veg-free day, then swaps use the picks first, then paneer,
+    toor dal, soya and tofu, then any other allowed protein food but whey.
+
 ## Rules and reasons
 - Cereals start at about 40 % of calories, split by meal (breakfast 25 %,
   lunch 40 %, dinner 35 %). They grow in whole steps to reach calories.
@@ -64,3 +71,4 @@ Each one becomes a test with the same words in its name.
 |---|---|
 | 1–9 | `src/engine/mealPlan.test.ts` (clean meal plan (T-068b)) |
 | 10 | `src/profile/Onboarding.test.tsx` |
+| 11, 12 | `src/engine/mealPlan.test.ts` (tests 6 and 5 of T-058c) |

@@ -165,7 +165,9 @@ export function amountHint(f: PlanFood, grams: number): string | undefined {
  * the calories, from the plan itself so the two always agree. */
 export const checkFeasibility = (input: MealPlanInput): Feasibility => buildMealPlan(input).feasibility
 
-function feasibilityOf(input: MealPlanInput, proteinG: number): Feasibility {
+const listText = (names: string[]) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`)
+
+function feasibilityOf(input: MealPlanInput, proteinG: number, used: Set<string>): Feasibility {
   const target = input.targets.proteinG
   const reachable = Math.round(proteinG)
   const feasible = reachable >= target - 5
@@ -173,7 +175,7 @@ function feasibilityOf(input: MealPlanInput, proteinG: number): Feasibility {
   const suggestions = feasible
     ? []
     : input.foods
-        .filter((f) => PROTEIN_GROUPS.includes(f.group) && !pickedIds.has(f.id))
+        .filter((f) => PROTEIN_GROUPS.includes(f.group) && !pickedIds.has(f.id) && !used.has(f.id))
         .sort((a, b) => leanness(b) - leanness(a))
         .slice(0, 3)
   const message = feasible
@@ -230,6 +232,10 @@ export function buildMealPlan(input: MealPlanInput): MealPlan {
     return (mine.length ? mine : any).slice(0, m === 'Lunch' ? 2 : 1)
   }
   const choices = usualFirst(input.foods.filter((f) => PROTEIN_GROUPS.includes(f.group) || f.group === 'nut').filter((f) => input.picks.includes(f.id) || usual.has(f.id)))
+  // Other allowed protein foods, leanest first, for when the picks fall short.
+  // Whey stays a choice the person makes.
+  const others = input.foods.filter((f) => PROTEIN_GROUPS.includes(f.group) && f.group !== 'supplement' && !choices.includes(f)).sort((a, b) => leanness(b) - leanness(a))
+  const added = new Set<string>()
   const isMain = (f: PlanFood) => !f.side && f.group !== 'nut' && f.group !== 'supplement'
   const mains = choices.filter(isMain)
   const fallback = input.foods.find((f) => f.group === 'pulse')
@@ -304,14 +310,17 @@ export function buildMealPlan(input: MealPlanInput): MealPlan {
         continue
       }
       // Every chosen food is at its limit: add another one to a meal,
-      // never a second dal.
+      // never a second dal. The person's own foods first, then any other
+      // allowed protein food (DK, 17 Oct 2026).
+      const pool = [...choices, ...others]
       const extra = MEALS.flatMap((m) =>
-        choices
+        pool
           .filter((f) => fits(m, f) && !slots.get(m)!.has(f.id) && !(f.group === 'pulse' && has(m, (x) => x.group === 'pulse')) && room(m, f) >= minOf(f) && mealProtein(m) + (f.per100g.proteinG * minOf(f)) / 100 <= maxProtein + 1)
           .map((f) => ({ m, f })),
-      ).sort((a, b) => mealProtein(a.m) - mealProtein(b.m) || leanness(b.f) - leanness(a.f))[0]
+      ).sort((a, b) => Number(others.includes(a.f)) - Number(others.includes(b.f)) || mealProtein(a.m) - mealProtein(b.m) || leanness(b.f) - leanness(a.f))[0]
       if (!extra) break
-      put(extra.m, extra.f, minOf(extra.f), proteinReason(extra.f))
+      if (others.includes(extra.f)) added.add(extra.f.name.toLowerCase())
+      put(extra.m, extra.f, minOf(extra.f), others.includes(extra.f) ? `Added because your picks were not enough for your protein.` : proteinReason(extra.f))
     }
   }
   const fitFat = () => {
@@ -418,8 +427,9 @@ export function buildMealPlan(input: MealPlanInput): MealPlan {
   }
 
   const totals = total()
+  if (added.size) notes.push(`Your picks were not enough for your protein. So we added ${listText([...added])}. You can swap them.`)
   if (targets.proteinG - totals.proteinG > 5)
-    for (const f of choices) if (inDay(f.id) >= f.maxPerDayG) notes.push(`${f.name} is kept to ${fmtG(f.maxPerDayG)} ${f.weighed} a day. That is a fair amount for one food.`)
+    for (const f of [...choices, ...others]) if (inDay(f.id) >= f.maxPerDayG) notes.push(`${f.name} is kept to ${fmtG(f.maxPerDayG)} ${f.weighed} a day. That is a fair amount for one food.`)
   if (totals.kcal > targets.kcal * (1 + CLOSE_ENOUGH)) notes.push('Even small amounts of these foods go over your calories. Try leaner protein picks.')
 
   const meals = MEALS.map((name) => {
@@ -432,7 +442,7 @@ export function buildMealPlan(input: MealPlanInput): MealPlan {
       })
     return { name, items, macros: items.reduce((t, i) => add(t, i.macros), ZERO) }
   }).filter((m) => m.items.length)
-  return { targets, meals, totals, feasibility: feasibilityOf(input, totals.proteinG), onTarget: isOnTarget(totals, targets), notes: [...new Set(notes)] }
+  return { targets, meals, totals, feasibility: feasibilityOf(input, totals.proteinG, new Set(MEALS.flatMap((m) => [...slots.get(m)!.keys()]))), onTarget: isOnTarget(totals, targets), notes: [...new Set(notes)] }
 }
 
 const isOnTarget = (totals: Macros, targets: Macros) =>
@@ -493,12 +503,14 @@ export const VEG_FALLBACKS = ['tmf:ing:paneer', 'tmf:ing:toor-dal', 'tmf:ing:soy
 
 /** The plan for a non-veg-free day: each item the day leaves out is swapped
  * for an allowed protein food of about the same protein (the person's picks
- * first, then VEG_FALLBACKS), with the day's reason (`why`, e.g. "Tuesday is
+ * first, then VEG_FALLBACKS, then any other allowed protein food), with the day's reason (`why`, e.g. "Tuesday is
  * your non-veg-free day"). Items with no allowed
  * swap are dropped with a note. Spec: specs/T-058c-nonveg-free-days.md. */
 export function vegDayPlan(plan: MealPlan, foods: PlanFood[], allowed: Set<string>, picks: string[], why: string): MealPlan {
   const byId = new Map(foods.map((f) => [f.id, f]))
-  const choices = [...picks, ...VEG_FALLBACKS]
+  // The person's picks first, then the usual fallbacks, then any other
+  // allowed protein food (DK, 17 Oct 2026).
+  const choices = [...picks, ...VEG_FALLBACKS, ...foods.filter((f) => f.group !== 'supplement').map((f) => f.id)]
     .filter((id, i, all) => all.indexOf(id) === i && allowed.has(id))
     .map((id) => byId.get(id))
     .filter((f): f is PlanFood => !!f && PROTEIN_GROUPS.includes(f.group))
