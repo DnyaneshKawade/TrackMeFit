@@ -6,7 +6,7 @@ import { allowedExtras, dietItemsFor, estimateDiet, type DietExtra } from './cur
 import { NONVEG_OFF_DAYS, NO_ONION_GARLIC, cleanRules, excludedTags, hasNonvegOff, isNonvegOff } from './dietRules'
 import { TypicalDay } from './TypicalDay'
 import type { AcceptedMealPlan } from './MealPlanStep'
-import { bmiResult, buildPlan, checkEventDate, checkTargetWeight, eventNote, goalTimeline, paceOptions, recommendedPace, waistNote, type PaceBody } from './goal'
+import { bmiResult, buildPlan, checkEventDate, checkTargetWeight, eventNote, goalTimeline, noLossReason, paceOptions, recommendedPace, waistNote, type PaceBody } from './goal'
 import {
   ALLERGIES,
   FASTING,
@@ -418,6 +418,9 @@ export function Onboarding({
       {step === 3 && (
         <>
           <Choice label="Your main goal" options={GOALS} value={p.goal} onChange={chooseGoal} />
+          {(p.goal === 'lose' || p.goal === 'recomp') && !noDeficit(p.medical) && noLossReason(paceBody) && (
+            <p className="info" role="note">{noLossReason(paceBody)}</p>
+          )}
           {p.goal === 'lose' && noDeficit(p.medical) && (
             <p className="info">We won’t set a weight-loss pace during pregnancy or breastfeeding. You can still track food and training.</p>
           )}

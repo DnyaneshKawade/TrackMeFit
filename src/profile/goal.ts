@@ -80,18 +80,48 @@ export interface PaceBody {
 
 const pctText = (r: number) => `${Number(Math.abs(r * 100).toFixed(3))} %`
 
+/** Below this BMI we suggest no calorie targets at all: eating less, or
+ * suddenly more, needs a doctor (NICE CG32; WHO thinness grades). */
+export const DOCTOR_FIRST_BMI = 17
+/** "Faster" loss is only offered from this BMI: bigger cuts suit more body
+ * fat (ISSN 2017; Indian obese cut-off). */
+export const FASTER_LOSS_BMI = 25
+
+/** The most weight a person should lose a week, as a share of their weight:
+ * leaner people lose more muscle when going fast (Helms 2014; Garthe 2011). */
+export function maxLossRate(bmiValue: number): number {
+  if (bmiValue >= 25) return 0.01
+  if (bmiValue >= 23) return 0.0075
+  return 0.005
+}
+
+/** BMI to one decimal, as the screen shows it, so the rules match what people read. */
+const shownBmi = (weightKg: number, heightCm: number) => Math.round(bmi(weightKg, heightCm) * 10) / 10
+
+/** Why losing weight isn't offered for this body, or null when it is (T-071). */
+export function noLossReason(body: PaceBody | undefined): string | null {
+  if (!body) return null
+  const value = shownBmi(body.weightKg, body.heightCm)
+  if (value < DOCTOR_FIRST_BMI) return 'Your weight is very low for your height. Please see a doctor before you change what you eat.'
+  if (value < 18.5) return 'You are already underweight, so losing weight isn’t safe. Try “Build muscle and gain weight” or “Stay as I am”.'
+  return null
+}
+
 /** Pace choices for a goal, with the recommended one marked. */
 export function paceOptions(goal: GoalChoice, experience: Experience, medical: Record<string, boolean>, body?: PaceBody): Pace[] {
   const pct = (r: number) => `${pctText(r)} of your weight a week`
   if (goal === 'lose') {
-    if (noDeficit(medical)) return []
+    if (noDeficit(medical) || noLossReason(body)) return []
     const gentle = { rate: -0.0025, label: 'Gentle', note: `${pct(-0.0025)}. The easiest to follow.` }
     if (gentleOnly(medical)) return [{ ...gentle, recommended: true }]
-    return [
+    const options: Pace[] = [
       { rate: -0.005, label: 'Steady', note: `${pct(-0.005)}. Keeps muscle and is easy to follow.`, recommended: true },
       gentle,
-      { rate: -0.0075, label: 'Faster', note: `${pct(-0.0075)}. Harder; hunger and tiredness are more likely.` },
     ]
+    // Without a known weight, the safer choices only.
+    if (body && shownBmi(body.weightKg, body.heightCm) >= FASTER_LOSS_BMI)
+      options.push({ rate: -0.0075, label: 'Faster', note: `${pct(-0.0075)}. Harder; hunger and tiredness are more likely.` })
+    return options
   }
   if (goal === 'gain') return gainPaces(experience, medical, body)
   return []
@@ -271,7 +301,17 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
     reasons.push('We don’t suggest calorie targets during pregnancy or breastfeeding. Set them with your doctor, or track without targets.')
     return { maintenance, intakeNote, timeline, eventNote: event, suggested: null, reasons }
   }
-  const rate = p.goal === 'lose' || p.goal === 'gain' ? (p.goalRate ?? 0) : p.goal === 'recomp' ? -0.0025 : 0
+  // Very low weight: no targets of any kind, only a doctor (T-071).
+  const bmiValue = shownBmi(weightKg, p.heightCm!)
+  if (bmiValue < DOCTOR_FIRST_BMI) {
+    reasons.push('Your weight is very low for your height, so we don’t suggest targets. Please see a doctor first. You can still track food and training.')
+    return { maintenance, intakeNote, timeline, eventNote: event, suggested: null, reasons }
+  }
+  const asked = p.goal === 'lose' || p.goal === 'gain' ? (p.goalRate ?? 0) : p.goal === 'recomp' ? -0.0025 : 0
+  // A saved pace is kept within today's safe limits: no loss when
+  // underweight, and no faster loss than the body allows (T-071).
+  const rate = asked < 0 ? (bmiValue < 18.5 ? 0 : Math.max(asked, -maxLossRate(bmiValue))) : asked
+  if (asked < 0 && rate === 0) reasons.push('You are underweight, so we don’t suggest eating less. Calories are set to keep your weight steady.')
   const kcal = calorieTarget({ tdee, weightKg, rate, sex: p.sex! })
   const protein = proteinTarget({
     weightKg,
