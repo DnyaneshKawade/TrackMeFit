@@ -49,7 +49,7 @@ export function bmiResult(weightKg: number, heightCm: number): BmiResult {
   const message =
     `BMI ${value}: ${BAND_WORDS[band]} for Indian adults. ` +
     `At your height that’s ${healthyMinKg} to ${healthyMaxKg} kg. ` +
-    'BMI can’t tell muscle from fat, so take it as a rough guide.'
+    'BMI can’t tell muscle from fat. Use it only as a rough guide.'
   return { value, band, healthyMinKg, healthyMaxKg, message }
 }
 
@@ -59,8 +59,8 @@ export const WAIST_LIMIT_CM = { male: 90, female: 80 } as const
 export function waistNote(waistCm: number, sex: 'male' | 'female'): string {
   const limit = WAIST_LIMIT_CM[sex]
   return waistCm >= limit
-    ? `A waist of ${limit} cm or more raises health risk for Indian ${sex === 'male' ? 'men' : 'women'}. Bringing it down matters more than the scale.`
-    : `Your waist is under ${limit} cm, the level where health risk starts to rise.`
+    ? `For Indian ${sex === 'male' ? 'men' : 'women'}, a waist of ${limit} cm or more is risky. Bringing it down matters more than the scale.`
+    : `Your waist is under ${limit} cm. Health risk starts to rise above that.`
 }
 
 export interface Pace {
@@ -138,7 +138,7 @@ function gainPaces(experience: Experience, medical: Record<string, boolean>, bod
   const amounts = (rate: number) => {
     if (!body) return `${pct(rate)}.`
     const kg = Math.round(rate * body.weightKg * 100) / 100
-    return `${pctText(rate)} of your weight a week: about ${kg} kg a week and ${surplusKcal(rate, body.weightKg)} extra kcal a day.`
+    return `${pctText(rate)} of your weight a week. That is about ${kg} kg a week. You eat ${surplusKcal(rate, body.weightKg)} extra kcal a day.`
   }
   const pace = (rate: number, label: string, text: string): Pace => ({ rate, label, note: `${amounts(rate)} ${text}` })
   const leanPace = pace(lean, 'Lean', 'Slow and clean: most of what you gain is muscle.')
@@ -148,7 +148,7 @@ function gainPaces(experience: Experience, medical: Record<string, boolean>, bod
     return [{ ...leanPace, note: `${leanPace.note} Because of your health answers, we keep the pace gentle.${care}`, recommended: true }]
   }
   if (band === 'obese') {
-    return [{ ...leanPace, note: `${leanPace.note} At your weight, “Lose fat and build muscle” may suit you better.`, recommended: true }]
+    return [{ ...leanPace, note: `${leanPace.note} “Lose fat and build muscle” may suit your weight better.`, recommended: true }]
   }
   const options: Pace[] = [leanPace, pace(steady, 'Steady', 'A good mix of muscle and size for most people.')]
   if (band !== 'overweight' && adult) options.push(pace(faster, 'Faster', 'The scale moves sooner; more of the gain will be fat.'))
@@ -160,7 +160,7 @@ function gainPaces(experience: Experience, medical: Record<string, boolean>, bod
       options.push({
         rate: catchUp,
         label: 'Catch up',
-        note: `About ${kg} kg a week and ${surplusKcal(catchUp, body.weightKg)} extra kcal a day. Reach a healthy weight sooner. More of the gain is fat, which is fine while you are underweight. Switch to Steady once you reach ${healthyMin} kg.`,
+        note: `About ${kg} kg a week and ${surplusKcal(catchUp, body.weightKg)} extra kcal a day. Reach a healthy weight sooner. More of the gain is fat. That is fine while you are underweight. Switch to Steady once you reach ${healthyMin} kg.`,
       })
     }
   }
@@ -202,7 +202,7 @@ export function goalTimeline(currentKg: number, targetKg: number, rate: number, 
   const byDate = shiftDate(today, weeks * 7)
   const pace = Math.round(perWeek * 100) / 100
   const span = weeks > 12 ? `about ${Math.round(weeks / 4.35)} months` : `around ${weeks} weeks`
-  let message = `At about ${pace} kg a week you’d reach ${targetKg} kg in ${span}, by ${monthOf(byDate)}.`
+  let message = `At about ${pace} kg a week, you’d reach ${targetKg} kg by ${monthOf(byDate)}. That is ${span}.`
   if (weeks > 8) {
     const firstKg = Math.min(2, gap)
     const first = shiftDate(today, Math.max(1, Math.ceil(firstKg / perWeek)) * 7)
@@ -234,14 +234,14 @@ export function eventNote(currentKg: number, targetKg: number | null, rate: numb
   const when = fullDate(eventDate)
   const perWeek = Math.abs(rate) * currentKg
   const expected = Math.round((currentKg + Math.sign(rate) * perWeek * weeks) * 10) / 10
-  if (targetKg === null) return `By your event on ${when} you’d be about ${expected} kg at this pace.`
+  if (targetKg === null) return `At this pace, you’d be about ${expected} kg on ${when}.`
   const t = goalTimeline(currentKg, targetKg, rate, today)
   if (t && t.byDate <= eventDate) return `You’d reach ${targetKg} kg before your event on ${when}.`
   const needed = Math.round((Math.abs(targetKg - currentKg) / weeks) * 100) / 100
   return (
-    `By your event on ${when} you’d be about ${expected} kg, not ${targetKg} kg. ` +
+    `On ${when}, you’d be about ${expected} kg, not ${targetKg} kg. ` +
     `Reaching ${targetKg} kg by then needs about ${needed} kg a week. ` +
-    'That is faster than your pace. Think about a closer target, or keep your pace and get there a bit later.'
+    'That is faster than your pace. Pick a closer target. Or keep your pace and get there later.'
   )
 }
 
@@ -278,7 +278,7 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
   const maintenance = {
     low,
     high,
-    message: `You likely burn about ${low.toLocaleString('en-IN')} to ${high.toLocaleString('en-IN')} kcal a day. This is a first guess. It gets better after 2 to 3 weeks of logging food and weight.`,
+    message: `You likely burn about ${low.toLocaleString('en-IN')} to ${high.toLocaleString('en-IN')} kcal a day. This is a first guess. It gets better after 2 to 3 weeks of logging.`,
   }
 
   let intakeNote: string | null = null
@@ -286,10 +286,10 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
     const k = p.currentDiet.kcal
     intakeNote =
       k < low
-        ? `Your typical day (about ${k.toLocaleString('en-IN')} kcal) is below that, or some foods were missed. Logging for a week will tell.`
+        ? `Your usual day is about ${k.toLocaleString('en-IN')} kcal. That is less, or some foods were missed. Logging for a week will tell.`
         : k > high
-          ? `Your typical day (about ${k.toLocaleString('en-IN')} kcal) is above that, so your weight is probably going up.`
-          : `Your typical day (about ${k.toLocaleString('en-IN')} kcal) is close to that, so your weight is probably steady.`
+          ? `Your usual day is about ${k.toLocaleString('en-IN')} kcal. That is more, so your weight may be going up.`
+          : `Your usual day is about ${k.toLocaleString('en-IN')} kcal. That is close, so your weight may be steady.`
   }
 
   const timeline =
@@ -304,7 +304,7 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
   // Very low weight: no targets of any kind, only a doctor (T-071).
   const bmiValue = shownBmi(weightKg, p.heightCm!)
   if (bmiValue < DOCTOR_FIRST_BMI) {
-    reasons.push('Your weight is very low for your height, so we don’t suggest targets. Please see a doctor first. You can still track food and training.')
+    reasons.push('Your weight is very low for your height. So we don’t suggest targets. Please see a doctor first. You can still track food and training.')
     return { maintenance, intakeNote, timeline, eventNote: event, suggested: null, reasons }
   }
   const asked = p.goal === 'lose' || p.goal === 'gain' ? (p.goalRate ?? 0) : p.goal === 'recomp' ? -0.0025 : 0
@@ -324,15 +324,15 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
   if (rate < 0) reasons.push(`Calories are set to lose ${Math.abs(rate * 100)} % of your weight a week.`)
   else if (rate > 0) {
     const r = Math.min(MAX_GAIN_RATE, rate)
-    reasons.push(`Calories are set to gain ${pctText(r)} of your weight a week, about ${surplusKcal(r, weightKg)} kcal a day above what you burn.`)
+    reasons.push(`Calories are set to gain ${pctText(r)} of your weight a week. You eat ${surplusKcal(r, weightKg)} kcal a day more than you burn.`)
   }
   else reasons.push('Calories are set to keep your weight where it is.')
-  if (p.goal === 'recomp') reasons.push('For losing fat while building muscle, you eat a little less than you burn, with high protein.')
-  if (rate < 0 && kcal <= calorieFloor(p.sex!)) reasons.push('Calories don’t go below the safe minimum without a coach.')
+  if (p.goal === 'recomp') reasons.push('This goal is to lose fat and build muscle. Eat a little less than you burn. Eat plenty of protein.')
+  if (rate < 0 && kcal <= calorieFloor(p.sex!)) reasons.push('Calories don’t go below a safe level without a coach.')
   reasons.push(
     protein.referToDoctor
-      ? `Protein is kept to ${protein.perKg} g per kg because of kidney disease; ask your doctor for your own limit.`
-      : `Protein is ${protein.perKg} g per kg of body weight, enough to keep and build muscle.`,
+      ? `Protein is kept to ${protein.perKg} g per kg because of kidney disease. Ask your doctor for your own limit.`
+      : `Protein is ${protein.perKg} g per kg of body weight. That is enough to build muscle.`,
   )
   reasons.push('Fat is about a quarter of calories; carbs fill the rest.')
   return { maintenance, intakeNote, timeline, eventNote: event, suggested, reasons }

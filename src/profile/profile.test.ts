@@ -115,7 +115,7 @@ describe('BMI and goal', () => {
     const t = goalTimeline(70, 68, -0.005, TODAY)!
     expect(t.weeks).toBe(6) // 0.35 kg a week for 2 kg
     expect(t.byDate).toBe('2026-11-24')
-    expect(t.message).toBe('At about 0.35 kg a week you’d reach 68 kg in around 6 weeks, by November 2026.')
+    expect(t.message).toBe('At about 0.35 kg a week, you’d reach 68 kg by November 2026. That is around 6 weeks.')
     expect(goalTimeline(70, 70, -0.005, TODAY)).toBeNull()
   })
 })
@@ -179,7 +179,7 @@ describe('plan', () => {
     expect(plan.suggested!.proteinG).toBe(102) // 1.6 g per kg for a beginner
     expect(plan.reasons[0]).toMatch(/lose 0\.5 % of your weight a week/)
     expect(plan.timeline!.message).toMatch(/60 kg/)
-    expect(plan.intakeNote).toMatch(/typical day/)
+    expect(plan.intakeNote).toMatch(/usual day/)
   })
 
   it('caps protein for kidney disease and holds weight for maintenance', () => {
@@ -259,20 +259,20 @@ describe('gain paces (T-059)', () => {
 
   it('9. each note gives the kg a week and the extra calories a day', () => {
     const steady = gain('beginner', body(60))[1]
-    expect(steady.note).toBe('0.5 % of your weight a week: about 0.3 kg a week and 330 extra kcal a day. A good mix of muscle and size for most people.')
+    expect(steady.note).toBe('0.5 % of your weight a week. That is about 0.3 kg a week. You eat 330 extra kcal a day. A good mix of muscle and size for most people.')
   })
 
   it('10. a long goal starts with a first milestone and is said in months', () => {
     const t = goalTimeline(50, 60, 0.005, TODAY)!
     expect(t.weeks).toBe(40)
-    expect(t.message).toBe('First 2 kg by 8 December. At about 0.25 kg a week you’d reach 60 kg in about 9 months, by July 2027.')
+    expect(t.message).toBe('First 2 kg by 8 December. At about 0.25 kg a week, you’d reach 60 kg by July 2027. That is about 9 months.')
     const faster = goalTimeline(50, 60, 0.0075, TODAY)!
     expect(faster.weeks).toBe(27)
   })
 
   it('12. gain is capped at 1 % a week, and the plan says how many extra calories it adds', () => {
     const plan = buildPlan({ ...asha, goal: 'gain', goalRate: 0.005, experience: 'beginner' }, 50, TODAY)
-    expect(plan.reasons[0]).toBe('Calories are set to gain 0.5 % of your weight a week, about 280 kcal a day above what you burn.')
+    expect(plan.reasons[0]).toBe('Calories are set to gain 0.5 % of your weight a week. You eat 280 kcal a day more than you burn.')
   })
 })
 
@@ -324,14 +324,14 @@ describe('event date for the goal (T-041b)', () => {
 
   it('3. a target not reached in time gives the weight then and the pace it needs, without changing the pace', () => {
     expect(eventNote(64, 58, -0.005, T, '2027-01-26')).toBe(
-      'By your event on 26 January 2027 you’d be about 59.2 kg, not 58 kg. Reaching 58 kg by then needs about 0.4 kg a week. ' +
-        'That is faster than your pace. Think about a closer target, or keep your pace and get there a bit later.',
+      'On 26 January 2027, you’d be about 59.2 kg, not 58 kg. Reaching 58 kg by then needs about 0.4 kg a week. ' +
+        'That is faster than your pace. Pick a closer target. Or keep your pace and get there later.',
     )
   })
 
   it('4. with no target, says the weight on the day; gaining goes up', () => {
-    expect(eventNote(64, null, -0.005, T, '2026-12-08')).toBe('By your event on 8 December 2026 you’d be about 61.4 kg at this pace.')
-    expect(eventNote(60, null, 0.0025, T, '2026-12-08')).toBe('By your event on 8 December 2026 you’d be about 61.2 kg at this pace.')
+    expect(eventNote(64, null, -0.005, T, '2026-12-08')).toBe('At this pace, you’d be about 61.4 kg on 8 December 2026.')
+    expect(eventNote(60, null, 0.0025, T, '2026-12-08')).toBe('At this pace, you’d be about 61.2 kg on 8 December 2026.')
     expect(eventNote(64, null, 0, T, '2026-12-08')).toBeNull()
     expect(eventNote(64, null, -0.005, T, null)).toBeNull()
   })

@@ -190,7 +190,7 @@ export function TypicalDay({
         </section>
       )}
 
-      <p className="info" role="status" aria-label="Typical day">
+      <p className="info" role="status" aria-label="Usual day">
         {describeDiet(diet, weightKg)}
       </p>
     </>

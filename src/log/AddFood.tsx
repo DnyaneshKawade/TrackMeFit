@@ -268,7 +268,7 @@ function QuickAdd({
     <form className="form" onSubmit={add} aria-label="Quick add">
       <button type="button" className="link" onClick={onBack}>← Back to search</button>
       <h3>Quick add</h3>
-      <p className="muted">For when you know the calories but not the food, like a restaurant meal.</p>
+      <p className="muted">Use this when you know the calories but not the food. A hotel meal is one example.</p>
       {field('name', 'What was it? (optional)', 'text')}
       {field('kcal', 'Calories')}
       <div className="three">

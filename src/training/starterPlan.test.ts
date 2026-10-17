@@ -20,7 +20,7 @@ describe('suggested workout plan (T-041a)', () => {
   it('2. fewer than 2 or more than 6 workouts are brought in range, with a reason', () => {
     const low = plan({ days: 0 })
     expect(low.plan.days).toHaveLength(2)
-    expect(low.reasons[0]).toBe('This plan has 2 workouts a week, the fewest that build muscle well.')
+    expect(low.reasons[0]).toBe('This plan has 2 workouts a week. That is the fewest that build muscle.')
     const high = plan({ days: 7 })
     expect(high.plan.days).toHaveLength(6)
     expect(high.reasons[0]).toBe('This plan has 6 workouts a week. One rest day helps you recover.')

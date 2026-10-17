@@ -107,7 +107,7 @@ export function updateExpenditure(previousTdee: number, week: WeekLog): Expendit
   const storedPerDay = ((week.trendEndKg - week.trendStartKg) * KCAL_PER_KG) / days
   const observed = avgIntake - storedPerDay
   const tdee = Math.round(previousTdee + BLEND * (observed - previousTdee))
-  return { tdee, updated: true, reason: `You ate about ${Math.round(avgIntake)} kcal a day and your average weight changed by ${(week.trendEndKg - week.trendStartKg).toFixed(2)} kg.` }
+  return { tdee, updated: true, reason: `You ate about ${Math.round(avgIntake)} kcal a day. Your average weight changed by ${(week.trendEndKg - week.trendStartKg).toFixed(2)} kg.` }
 }
 
 /** Weekly rate of change as a fraction of body weight. */

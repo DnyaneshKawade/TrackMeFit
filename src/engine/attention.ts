@@ -65,7 +65,7 @@ export function clientFlags(c: ClientSummary, today: string): Flag[] {
     const off = (c.avgKcal - c.targetKcal) / c.targetKcal
     if (Math.abs(off) > 0.15)
       flags.push({
-        reason: `Ate about ${round(c.avgKcal, 10)} kcal a day last week, ${Math.round(Math.abs(off) * 100)}% ${off > 0 ? 'over' : 'under'} the ${c.targetKcal} kcal target.`,
+        reason: `Ate about ${round(c.avgKcal, 10)} kcal a day last week. That is ${Math.round(Math.abs(off) * 100)}% ${off > 0 ? 'over' : 'under'} ${c.targetKcal} kcal.`,
         weight: 2,
       })
   }
@@ -79,9 +79,9 @@ export function clientFlags(c: ClientSummary, today: string): Flag[] {
   const rate = weeklyRate(c.weighIns)
   if (rate !== null) {
     const pct = `${Math.abs(round(rate * 100, 0.1)).toFixed(1)}%`
-    if (c.goal === 'lose' && rate > 0.0025) flags.push({ reason: `Weight is going up ${pct} a week, but the goal is to lose.`, weight: 2 })
+    if (c.goal === 'lose' && rate > 0.0025) flags.push({ reason: `Weight is going up ${pct} a week. The goal is to lose.`, weight: 2 })
     else if (c.goal === 'lose' && rate < -0.01) flags.push({ reason: `Losing ${pct} a week, faster than the 1% safe limit.`, weight: 2 })
-    else if (c.goal === 'gain' && rate < -0.0025) flags.push({ reason: `Weight is going down ${pct} a week, but the goal is to gain.`, weight: 2 })
+    else if (c.goal === 'gain' && rate < -0.0025) flags.push({ reason: `Weight is going down ${pct} a week. The goal is to gain.`, weight: 2 })
     else if (c.goal === 'gain' && rate > 0.005) flags.push({ reason: `Gaining ${pct} a week, faster than 0.5%. More of it may be fat.`, weight: 1 })
   }
 

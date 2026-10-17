@@ -176,7 +176,7 @@ function feasibilityOf(input: MealPlanInput, proteinG: number): Feasibility {
         .slice(0, 3)
   const message = feasible
     ? `With these foods you can reach your ${target} g protein.`
-    : `With these foods you can reach about ${reachable} g of your ${target} g protein. Each food has a fair daily limit.` +
+    : `These foods give about ${reachable} g of your ${target} g protein. Each food has a fair daily limit.` +
       (suggestions.length ? ` Adding ${suggestions.map((s) => s.name.toLowerCase()).join(', ')} will help.` : '')
   return { reachableProteinG: reachable, feasible, message, suggestions }
 }
@@ -193,7 +193,7 @@ export function buildMealPlan(input: MealPlanInput): MealPlan {
     else day.set(f.id, g)
     if (reason && !why.has(f.id)) why.set(f.id, reason)
   }
-  const capNote = (f: PlanFood) => notes.push(`${f.name} is kept to ${fmtG(f.maxPerDayG)} ${f.weighed} a day, a fair amount for one food.`)
+  const capNote = (f: PlanFood) => notes.push(`${f.name} is kept to ${fmtG(f.maxPerDayG)} ${f.weighed} a day. That is a fair amount for one food.`)
 
   // 1. The usual day, within the caps.
   const left = new Set<string>()
@@ -291,7 +291,7 @@ export function buildMealPlan(input: MealPlanInput): MealPlan {
   const totals = totalsOf(day, byId)
   const feasibility = feasibilityOf(input, totals.proteinG)
   const onTarget = isOnTarget(totals, targets)
-  if (totals.kcal > targets.kcal * 1.05) notes.push('Even at small amounts these foods go over your calories; try leaner protein picks.')
+  if (totals.kcal > targets.kcal * 1.05) notes.push('Even small amounts of these foods go over your calories. Try leaner protein picks.')
 
   return { targets, meals: splitMeals(day, byId, why, weightKg), totals, feasibility, onTarget, notes: [...new Set(notes)] }
 }

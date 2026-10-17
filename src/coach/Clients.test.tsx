@@ -16,7 +16,7 @@ describe('clients tab (T-026a)', () => {
     expect(screen.getByText(/It works once, until/)).toBeTruthy()
     const share = screen.getByRole('link', { name: 'Share on WhatsApp' }) as HTMLAnchorElement
     expect(share.href).toBe(`https://wa.me/?text=${encodeURIComponent(inviteMessage('ABCDE00001'))}`)
-    expect(inviteMessage('ABCDE00001')).toMatch(/enter this code under Your coach: ABCDE-00001$/)
+    expect(inviteMessage('ABCDE00001')).toMatch(/Enter this code under Your coach: ABCDE-00001$/)
     expect(screen.getByRole('button', { name: 'Copy code' })).toBeTruthy()
   })
 

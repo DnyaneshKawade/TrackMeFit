@@ -43,7 +43,7 @@ export function SignIn({ auth }: { auth: AuthService }) {
       if (mode === 'signIn') await auth.signIn(email, password)
       else if (mode === 'reset') {
         await auth.resetPassword(email)
-        setNotice('If that email has an account, a reset link is on its way.')
+        setNotice('If that email has an account, we sent it a reset link.')
       } else {
         const { needsEmailConfirm } = await auth.signUp({ email, password, name, role })
         if (needsEmailConfirm) setNotice('Almost done. Open the link we emailed you to confirm your account.')

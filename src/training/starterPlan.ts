@@ -78,7 +78,7 @@ const SPLITS: Record<number, { name: string; days: [string, string][]; why: stri
   5: {
     name: 'Upper, lower, push, pull, legs',
     days: [['Upper A', 'Upper'], ['Lower A', 'Lower'], ['Push A', 'Push'], ['Pull A', 'Pull'], ['Lower B', 'Legs']],
-    why: 'With 5 workouts a week, the days are upper, lower, push, pull and legs.',
+    why: 'The 5 days are upper, lower, push, pull and legs.',
   },
   6: {
     name: 'Push, pull, legs, 6 days a week',
@@ -98,7 +98,7 @@ export function suggestPlan(c: StarterChoices): StarterPlan {
   let days = c.days
   if (days < 2) {
     days = 2
-    reasons.push('This plan has 2 workouts a week, the fewest that build muscle well.')
+    reasons.push('This plan has 2 workouts a week. That is the fewest that build muscle.')
   } else if (days > 6) {
     days = 6
     reasons.push('This plan has 6 workouts a week. One rest day helps you recover.')

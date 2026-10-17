@@ -79,8 +79,8 @@ describe('records and strength graphs (T-044)', () => {
       '860 kg28 Sept',
       '1060 kg28 Sept',
     ])
-    expect(within(page).getByRole('img', { name: /Best estimated one-rep max in each workout, from 80 kg on 28 Sept to 81.5 kg on 5 Oct/ })).toBeTruthy()
-    expect(within(page).getByText('Estimated from sets of 12 reps or fewer. Higher reps give a poor guess.')).toBeTruthy()
+    expect(within(page).getByRole('img', { name: /Best one-rep max guess in each workout, from 80 kg on 28 Sept to 81.5 kg on 5 Oct/ })).toBeTruthy()
+    expect(within(page).getByText('Worked out from sets of 12 reps or fewer. Higher reps give a poor guess.')).toBeTruthy()
     click('← All exercises')
     expect(await screen.findByRole('region', { name: 'Your exercises' })).toBeTruthy()
   })
@@ -163,7 +163,7 @@ describe('"New record" during a workout (T-044b)', () => {
     await logSet(name, '72.5', '5')
     expect(note()).toBeNull()
     await logSet(name, '70', '8')
-    expect(note()).toBe('🏆 New record: best estimated one-rep max, 88.5 kg. Your best before was 84.5 kg.')
+    expect(note()).toBe('🏆 New record: best one-rep max guess, 88.5 kg. Your best before was 84.5 kg.')
     click(`Remove set 3 of ${name}`)
     await waitFor(() => expect(note()).toBeNull())
   })

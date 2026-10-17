@@ -28,7 +28,7 @@ describe('weight summary', () => {
     expect(s.weekChangeKg).toBe(expected)
     expect(s.weekChangeKg!).toBeLessThan(0)
     expect(s.trendKg).toBe(Math.round(trend[13].kg * 10) / 10)
-    expect(s.message).toBe(`Your average weight is ${s.trendKg} kg, down ${Math.abs(expected)} kg over the last week.`)
+    expect(s.message).toBe(`Your average weight is ${s.trendKg} kg. It went down ${Math.abs(expected)} kg this week.`)
   })
 
   it('uses the latest trend point at least a week old when days are missing', () => {

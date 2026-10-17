@@ -114,7 +114,7 @@ function StrengthChart({ points, measure }: Pick<ExerciseRecords, 'points' | 'me
   const x = (i: number) => (i / (points.length - 1)) * CHART_W
   const y = (v: number) => CHART_H - ((v - (lo - pad)) / (hi - lo + 2 * pad)) * CHART_H
   const unit = measure === 'e1rm' ? ' kg' : ' reps'
-  const what = measure === 'e1rm' ? 'Best estimated one-rep max' : 'Most reps in a set'
+  const what = measure === 'e1rm' ? 'Best one-rep max guess' : 'Most reps in a set'
   return (
     <figure className="strength-chart">
       <svg
@@ -172,7 +172,7 @@ function ExerciseDetail({ store, exerciseId, onBack }: { store: WorkoutStore; ex
             )}
             {records.bestE1rm && (
               <div>
-                <dt>Best estimated one-rep max</dt>
+                <dt>Best one-rep max guess</dt>
                 <dd>
                   {records.bestE1rm.e1rm} kg <span className="muted">· from {lift(records.bestE1rm)} · {shortDate(records.bestE1rm.performedOn)}</span>
                 </dd>

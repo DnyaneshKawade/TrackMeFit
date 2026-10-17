@@ -83,7 +83,7 @@ export function weightSummary(weighIns: WeighIn[]): WeightSummary | null {
       trendKg: round1(now),
       weekChangeKg: null,
       weekRate: null,
-      message: 'Weigh in most mornings for a week to see which way your weight is really moving.',
+      message: 'Weigh in most mornings for a week. Then you’ll see where your weight is going.',
     }
   }
   const change = round1(now - before.kg)
@@ -91,7 +91,7 @@ export function weightSummary(weighIns: WeighIn[]): WeightSummary | null {
   const message =
     change === 0
       ? `Your average weight is ${round1(now)} kg, steady over the last week.`
-      : `Your average weight is ${round1(now)} kg, ${change < 0 ? 'down' : 'up'} ${Math.abs(change)} kg over the last week.`
+      : `Your average weight is ${round1(now)} kg. It went ${change < 0 ? 'down' : 'up'} ${Math.abs(change)} kg this week.`
   return { latestKg: last.kg, latestDate: last.date, trendKg: round1(now), weekChangeKg: change, weekRate: rate, message }
 }
 
@@ -101,7 +101,7 @@ export function goalNote(goal: GoalChoice | null, weekRate: number | null): stri
   if (weekRate === null || goal === null) return null
   const pct = (r: number) => `${Math.abs(Math.round(r * 1000) / 10)} %`
   if (goal === 'lose') {
-    if (weekRate < -0.01) return `You’re losing ${pct(weekRate)} of your weight a week, faster than the 1 % safe limit. Eat a little more to keep your muscle.`
+    if (weekRate < -0.01) return `You’re losing ${pct(weekRate)} of your weight a week. That is faster than the 1 % safe limit. Eat a little more to keep your muscle.`
     if (weekRate <= -0.0025) return `You’re losing ${pct(weekRate)} of your weight a week. That’s a good pace for fat loss.`
     return 'Your weight isn’t dropping yet. Give it two weeks of steady logging before cutting food further.'
   }

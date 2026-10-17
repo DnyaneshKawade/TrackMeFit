@@ -38,8 +38,8 @@ export function steadySwitch(p: ProfileInfo, trendKg: number | null, target: Tar
     next = { kcal, proteinG: target.proteinG, fatG: target.fatG, carbG: carbsFromRest(kcal, target.proteinG, target.fatG) }
   }
   const message =
-    `Your average weight is ${trendKg} kg. That is a healthy weight for your height (from ${healthyMinKg} kg), so you don’t need Catch up now. ` +
-    `Steady gains ${pctText(steady)} of your weight a week (about ${kg} kg), so more of what you add is muscle.` +
+    `Your average weight is ${trendKg} kg. That is a healthy weight for your height (from ${healthyMinKg} kg). You don’t need Catch up now. ` +
+    `Steady gains ${pctText(steady)} of your weight a week (about ${kg} kg). More of what you add is muscle.` +
     (kcalLess ? ` That’s about ${kcalLess} kcal a day less${next ? `: ${target!.kcal.toLocaleString('en-IN')} to ${next.kcal.toLocaleString('en-IN')} kcal` : ''}.` : '')
   return { rate: steady, healthyMinKg, kcalLess, target: next, message }
 }
