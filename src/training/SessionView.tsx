@@ -232,8 +232,10 @@ function ExerciseLog({
   const [record, setRecord] = useState<{ setId: string; text: string } | null>(null)
 
   const range: [number, number] = plan ? [plan.repMin, plan.repMax] : exercise.isolation ? [10, 15] : [6, 10]
+  // Reps left to aim for; 2 when the session follows no plan (T-082b).
+  const aim = block ? targetRir(block.week, block.hardWeeks, exercise.isolation) : 2
   // No weight increases in a deload week.
-  const suggestion = history && !deload ? suggestNext(history, exercise, range) : null
+  const suggestion = history && !deload ? suggestNext(history, exercise, range, aim) : null
 
   useEffect(() => {
     let live = true
@@ -241,7 +243,7 @@ function ExerciseLog({
       (h) => {
         if (!live) return
         setHistory(h)
-        const s = deload ? null : suggestNext(h, exercise, range)
+        const s = deload ? null : suggestNext(h, exercise, range, aim)
         // Otherwise start from last time's first working set.
         const last = deload ? undefined : workingSets(h[0]?.sets ?? [])[0]
         const fill = s ? { weight: s.weight, reps: s.targetReps } : last ? { weight: last.weightKg, reps: last.reps } : null

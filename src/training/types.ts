@@ -167,17 +167,19 @@ export function describeSets(sets: SetLog[]): string {
 }
 
 /** Weight and reps for next time from the last sessions (double progression).
+ * Logged reps left are compared with `targetRir`, the aim for this week.
  * Null when there is no history or no rep range to aim for. */
-export function suggestNext(all: PastSession[], exercise: Exercise, repRange: [number, number]): LoadDecision | null {
+export function suggestNext(all: PastSession[], exercise: Exercise, repRange: [number, number], targetRir?: number): LoadDecision | null {
   const history = all.map((h) => ({ ...h, sets: workingSets(h.sets) })).filter((h) => h.sets.length)
   const last = history[0]
   if (!last || last.sets.length === 0) return null
   const top = Math.max(...last.sets.map((s) => s.weightKg))
-  const repsDone = last.sets.filter((s) => s.weightKg === top).map((s) => s.reps)
+  const topSets = last.sets.filter((s) => s.weightKg === top)
+  const repsDone = topSets.map((s) => s.reps)
   let missStreak = 0
   for (const h of history) {
     if (h.sets.some((s) => s.reps < repRange[0])) missStreak++
     else break
   }
-  return nextLoad({ weight: top, repsDone, repRange, increment: exercise.increment, missStreak })
+  return nextLoad({ weight: top, repsDone, repRange, increment: exercise.increment, missStreak, rirDone: topSets.map((s) => s.rir), targetRir })
 }
