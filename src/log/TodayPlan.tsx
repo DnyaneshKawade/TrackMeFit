@@ -32,6 +32,7 @@ export default function TodayPlan({
   onRemove,
   onAdd,
   onChangePlan,
+  byCoach = false,
 }: {
   saved: SavedMealPlan
   excluded: Set<DietTag>
@@ -47,6 +48,8 @@ export default function TodayPlan({
   onAdd: (meal: Meal) => void
   /** Opens the plan editor (T-061). */
   onChangePlan?: () => void
+  /** The person's coach saved this plan (T-078). */
+  byCoach?: boolean
 }) {
   const plan = useMemo(() => {
     if (!vegWhy) return saved.plan
@@ -132,6 +135,7 @@ export default function TodayPlan({
             <strong>Your meal plan{vegWhy ? ', veg today' : ''}</strong>{' '}
             <span className="muted">
               about {plan.totals.kcal.toLocaleString('en-IN')} kcal, {Math.round(plan.totals.proteinG)} g protein, {done} of {rows.length} eaten
+              {byCoach && '. Changed by your coach'}
             </span>
           </span>
         </label>

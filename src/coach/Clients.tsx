@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { FoodFinder } from '../food/finder'
 import { sortByAttention, type ClientAttention } from '../engine/attention'
 import { localDate } from '../log/types'
 import type { ChatStore } from './chat'
@@ -20,6 +21,7 @@ export function Clients({
   today = localDate(),
   chat,
   templates,
+  loadFoods,
 }: {
   store: CoachStore
   /** A client's stores, to open them (T-026c). */
@@ -30,6 +32,8 @@ export function Clients({
   chat?: ChatStore
   /** The coach's program templates (T-026g). */
   templates?: WorkoutStore
+  /** Food search for client meal plans (T-078). */
+  loadFoods?: () => Promise<FoodFinder>
 }) {
   const [clients, setClients] = useState<ClientAttention<ClientRow>[] | null>(null)
   const [open, setOpen] = useState<{ item: ClientAttention<ClientRow>; stores: ClientStores } | null>(null)
@@ -124,6 +128,7 @@ export function Clients({
         today={today}
         chat={chat}
         programs={programs ?? []}
+        loadFoods={loadFoods}
         onBack={() => setOpen(null)}
       />
     )

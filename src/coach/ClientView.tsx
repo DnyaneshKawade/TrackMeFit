@@ -12,7 +12,11 @@ import type { ExerciseStore } from '../training/exerciseStore'
 import { customExercise, customExercises, setCustomExercises } from '../training/exercises'
 import { PlanEditor } from '../training/PlanEditor'
 import type { Plan, SessionSummary, WorkoutStore } from '../training/types'
+import type { FoodFinder } from '../food/finder'
+import type { MealPlanStore } from '../profile/mealPlanStore'
+import type { ProfileStore } from '../profile/types'
 import { Chat } from './Chat'
+import { ClientMealPlan } from './ClientMealPlan'
 import type { ChatStore } from './chat'
 import { ClientCheckIns } from './CheckIn'
 import type { CheckInStore } from './checkIns'
@@ -30,13 +34,16 @@ export interface ClientStores {
   exercises: ExerciseStore
   /** Weekly check-ins; the coach replies (T-026e). */
   checkIns: CheckInStore
+  /** The meal plan the coach can change, and the profile for food rules (T-078). */
+  mealPlans?: MealPlanStore
+  profile?: ProfileStore
 }
 
 const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 
 /** One client's week for their coach (T-026c): what needs attention, targets
- * the coach can change, weight, food stats, workouts, plans the coach can
- * change (T-026d) and photos. */
+ * the coach can change, the meal plan (T-078), weight, food stats, workouts,
+ * plans the coach can change (T-026d) and photos. */
 export function ClientView({
   client,
   flags,
@@ -45,6 +52,7 @@ export function ClientView({
   today,
   chat,
   programs = [],
+  loadFoods,
   onBack,
 }: {
   client: ClientRow
@@ -56,6 +64,8 @@ export function ClientView({
   chat?: ChatStore
   /** The coach's program templates, to add to this client (T-026g). */
   programs?: Plan[]
+  /** Food search, to add foods to the meal plan (T-078). */
+  loadFoods?: () => Promise<FoodFinder>
   onBack: () => void
 }) {
   const [target, setTarget] = useState<DietTarget | null | undefined>(undefined)
@@ -188,6 +198,18 @@ export function ClientView({
           </>
         )}
       </section>
+
+      {stores.mealPlans && stores.profile && target !== undefined && (
+        <ClientMealPlan
+          mealPlans={stores.mealPlans}
+          profile={stores.profile}
+          progress={stores.progress}
+          target={target}
+          coachId={coachId}
+          first={first}
+          loadFoods={loadFoods}
+        />
+      )}
 
       <section aria-label="Weight">
         <h3>Weight</h3>

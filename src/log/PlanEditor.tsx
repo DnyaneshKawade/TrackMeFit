@@ -36,6 +36,7 @@ const fmt = (n: number) => Math.round(n).toLocaleString('en-IN')
 
 export default function PlanEditor({
   saved,
+  name,
   targets,
   excluded,
   blocked,
@@ -46,6 +47,8 @@ export default function PlanEditor({
   onClose,
 }: {
   saved: SavedMealPlan | null
+  /** The client's first name when their coach edits the plan (T-078). */
+  name?: string
   /** Today's calorie and macro targets; null when none are set. */
   targets: Macros | null
   /** Foods the person's diet leaves out (not the day's veg rule). */
@@ -79,6 +82,9 @@ export default function PlanEditor({
     }
   }
 
+  const whose = name ? `${name}’s` : 'your'
+  const title = mode === 'edit' ? `Change ${whose} meal plan` : name ? `New meal plan for ${name}` : 'New meal plan'
+
   if (adding && plan) {
     const meal = adding
     const addFound = async (e: NewLogEntry) => {
@@ -90,7 +96,7 @@ export default function PlanEditor({
     return (
       <AddFood
         meal={PLAN_MEAL[meal]}
-        target={`${meal} in your plan`}
+        target={`${meal} in ${whose} plan`}
         quickAdd={false}
         date=""
         index={search.index}
@@ -105,9 +111,9 @@ export default function PlanEditor({
   }
 
   return (
-    <section className="plan-editor meal-plan" aria-label={mode === 'edit' ? 'Change your meal plan' : 'New meal plan'}>
+    <section className="plan-editor meal-plan" aria-label={title}>
       <header className="sheet-head">
-        <h2>{mode === 'edit' ? 'Change your meal plan' : 'New meal plan'}</h2>
+        <h2>{title}</h2>
         <button className="link" onClick={onClose}>Cancel</button>
       </header>
       {error && <p className="error" role="alert">{error}</p>}

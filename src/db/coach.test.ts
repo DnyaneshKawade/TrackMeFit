@@ -306,3 +306,21 @@ describe('client limit (T-026i)', () => {
     expect(await t8.as(ravi, (db) => join(db, second))).toBe('Coach Kavita')
   })
 })
+
+describe('coach meal plans (T-078)', () => {
+  it('4. only the client’s active, approved coach saves their meal plan', async () => {
+    const db = await createTestDb()
+    const me = await db.signUp('me@example.com')
+    const mine = await db.signUp('mine@example.com', { role: 'coach' })
+    const other = await db.signUp('other@example.com', { role: 'coach' })
+    const save = (pg: PGlite) => pg.query(`insert into meal_plans (user_id, plan) values ($1, '{}')`, [me])
+    const code = await db.as(mine, newCode)
+    await db.as(me, (pg) => join(pg, code))
+    await db.as(mine, save)
+    await expect(db.as(other, save)).rejects.toThrow(/row-level security/)
+    await db.db.query(`update profiles set coach_status = 'paused' where id = $1`, [mine])
+    await expect(db.as(mine, save)).rejects.toThrow(/row-level security/)
+    const rows = await db.as(me, (pg) => pg.query<{ created_by: string }>('select created_by from meal_plans'))
+    expect(rows.rows.map((r) => r.created_by)).toEqual([mine])
+  })
+})

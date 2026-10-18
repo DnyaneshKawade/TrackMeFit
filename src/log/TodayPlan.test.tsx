@@ -20,13 +20,13 @@ const TUESDAY = '2026-10-13'
 const WEDNESDAY = '2026-10-14'
 const diet = { dietPref: 'nonveg' as const, foodRules: ['nonveg_off:tue'], allergies: [] }
 
-async function setup(opts: { today?: string; store?: LogStore; entries?: LogEntry[] } = {}) {
+async function setup(opts: { today?: string; store?: LogStore; entries?: LogEntry[]; savedBy?: string } = {}) {
   const picks = PROTEIN_PICKS.filter((p) => ['chicken', 'paneer'].includes(p.key)).flatMap((p) => p.foods)
   const plan = buildMealPlan({ targets: { kcal: 2400, proteinG: 130, fatG: 67, carbG: 319 }, weightKg: 80, base: [], picks, foods: planFoodsFor(excludedTags('nonveg')) })
-  const mealPlans = memoryMealPlanStore()
+  const mealPlans = memoryMealPlanStore(opts.savedBy ?? 'me')
   await mealPlans.save(plan, picks)
   const store = opts.store ?? memoryLogStore(opts.entries)
-  render(<FoodLog store={store} loadFoods={() => Promise.resolve(localFinder(createSearchIndex([])))} today={opts.today ?? WEDNESDAY} diet={diet} mealPlans={mealPlans} />)
+  render(<FoodLog store={store} loadFoods={() => Promise.resolve(localFinder(createSearchIndex([])))} today={opts.today ?? WEDNESDAY} diet={diet} mealPlans={mealPlans} userId="me" />)
   await screen.findByRole('region', { name: 'Your meal plan' })
   const box = screen.getByRole('main')
   return { plan, store, box }
@@ -204,5 +204,15 @@ describe('meal plan inside the meals (T-063)', () => {
     expect(rows[rows.length - 1].textContent).toMatch(/Masala chai/)
     fireEvent.click(within(region).getByRole('button', { name: 'Remove Masala chai' }))
     await waitFor(async () => expect(await logged(store)).toEqual([]))
+  })
+})
+
+describe('coach meal plans (T-078)', () => {
+  it('3. the Food tab says "Changed by your coach" when the coach saved the plan', async () => {
+    await setup({ savedBy: 'coach-1' })
+    expect(screen.getByRole('region', { name: 'Your meal plan' }).textContent).toContain('Changed by your coach')
+    cleanup()
+    await setup()
+    expect(screen.getByRole('region', { name: 'Your meal plan' }).textContent).not.toContain('Changed by your coach')
   })
 })
