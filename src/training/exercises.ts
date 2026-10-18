@@ -77,9 +77,9 @@ export const EXERCISES: Exercise[] = [
   ex('cable-kickback', 'Cable glute kickback', 'glutes', [], 'cable', true, ['kickback']),
   ex('hip-abduction', 'Hip abduction machine', 'glutes', [], 'machine', true, ['abductor']),
   // Shoulders
-  ex('overhead-press', 'Overhead press (barbell)', 'sideDelts', ['triceps'], 'barbell', false, ['ohp', 'military press', 'shoulder press']),
-  ex('db-shoulder-press', 'Seated dumbbell shoulder press', 'sideDelts', ['triceps'], 'dumbbell', false, ['db shoulder press']),
-  ex('machine-shoulder-press', 'Machine shoulder press', 'sideDelts', ['triceps'], 'machine', false),
+  ex('overhead-press', 'Overhead press (barbell)', 'sideDelts', ['triceps', 'frontDelts'], 'barbell', false, ['ohp', 'military press', 'shoulder press']),
+  ex('db-shoulder-press', 'Seated dumbbell shoulder press', 'sideDelts', ['triceps', 'frontDelts'], 'dumbbell', false, ['db shoulder press']),
+  ex('machine-shoulder-press', 'Machine shoulder press', 'sideDelts', ['triceps', 'frontDelts'], 'machine', false),
   ex('lateral-raise', 'Dumbbell lateral raise', 'sideDelts', [], 'dumbbell', true, ['side raise', 'lateral']),
   ex('cable-lateral-raise', 'Cable lateral raise', 'sideDelts', [], 'cable', true),
   ex('machine-lateral-raise', 'Machine lateral raise', 'sideDelts', [], 'machine', true),
@@ -110,7 +110,7 @@ export const EXERCISES: Exercise[] = [
   ex('reverse-lunge', 'Reverse lunge', 'quads', ['glutes'], 'bodyweight', false),
   ex('inverted-row', 'Inverted row', 'back', ['biceps', 'rearDelts'], 'bodyweight', false, ['table row', 'australian pull-up']),
   ex('glute-bridge', 'Glute bridge', 'glutes', ['hamstrings'], 'bodyweight', false, ['single-leg glute bridge']),
-  ex('pike-push-up', 'Pike push-up', 'sideDelts', ['triceps'], 'bodyweight', false),
+  ex('pike-push-up', 'Pike push-up', 'sideDelts', ['triceps', 'frontDelts'], 'bodyweight', false),
   ex('db-overhead-extension', 'Dumbbell overhead triceps extension', 'triceps', [], 'dumbbell', true, ['db overhead extension']),
   ex('bench-dip', 'Bench dip', 'triceps', [], 'bodyweight', true, ['chair dip']),
   ex('single-leg-calf-raise', 'Single-leg calf raise', 'calves', [], 'bodyweight', true),
@@ -182,6 +182,7 @@ export function checkNewExercise(name: string, list: Exercise[] = allExercises()
 export const MUSCLE_NAMES: Record<Muscle, string> = {
   chest: 'Chest', back: 'Back', quads: 'Quads', hamstrings: 'Hamstrings', glutes: 'Glutes', sideDelts: 'Side delts',
   rearDelts: 'Rear delts', biceps: 'Biceps', triceps: 'Triceps', calves: 'Calves', abs: 'Abs', traps: 'Traps',
+  frontDelts: 'Front delts', forearms: 'Forearms', adductors: 'Inner thighs', neck: 'Neck',
 }
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()

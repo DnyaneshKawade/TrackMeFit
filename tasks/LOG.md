@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-18: Four more muscles (T-082a)
+
+- Research for T-082 is in `trackmefit-notes/training-research.md`: RP Strength, other apps and the studies. It split T-082 into T-082a to T-082m.
+- New muscles: front delts, forearms, inner thighs and neck. Each starts at 0 sets, so no plan adds them on its own.
+- Front raises now count for front delts, not side delts. Shoulder presses give front delts half sets.
+- 30 new moves, like wrist curls, the hip adduction machine and neck work. The list has 437.
+- Migration `20261110000000_more_muscles.sql` widens the muscle checks.
+- Tests: 4 in `src/training/moreMuscles.test.ts`, 1 in `src/db/moreMuscles.test.ts`.
+
 ## 2026-10-18: 409 gym exercises (T-081)
 
 - The exercise list grew from 71 to 409, in `src/training/exerciseLibrary.ts`.

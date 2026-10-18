@@ -378,19 +378,19 @@ describe('logger (T-043b)', () => {
   })
 
   it('12. own exercises load with the workouts', async () => {
-    const exercises = memoryExerciseStore({ custom: [{ id: 'custom:9', name: 'Neck curl', primary: 'traps', equipment: 'machine', isolation: true }] })
+    const exercises = memoryExerciseStore({ custom: [{ id: 'custom:9', name: 'Tyre flip', primary: 'traps', equipment: 'machine', isolation: true }] })
     const store = memoryWorkoutStore({
       sessions: [{ id: 's1', performedOn: TODAY, planDayId: null, name: 'Workout', sets: [{ id: 'a', exerciseId: 'custom:9', setIndex: 0, weightKg: 10, reps: 15, rir: null }] }],
     })
     render(<Workouts store={store} exercises={exercises} today={TODAY} />)
     fireEvent.click(await screen.findByRole('button', { name: /sets logged/ }))
     expect(await screen.findByText('Set 1: 10 kg × 15')).toBeTruthy()
-    expect(screen.getByRole('region', { name: 'Neck curl' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Tyre flip' })).toBeTruthy()
   })
 })
 
 describe('own exercises (T-043c)', () => {
-  const neck = { id: 'custom:9', name: 'Neck curl', primary: 'traps' as const, equipment: 'machine' as const, isolation: true }
+  const neck = { id: 'custom:9', name: 'Tyre flip', primary: 'traps' as const, equipment: 'machine' as const, isolation: true }
   const openPicker = async (exercises = memoryExerciseStore({ custom: [neck] }), store = memoryWorkoutStore()) => {
     render(<Workouts store={store} exercises={exercises} today={TODAY} />)
     fireEvent.click(await screen.findByRole('button', { name: 'Start a workout' }))
@@ -402,32 +402,32 @@ describe('own exercises (T-043c)', () => {
   it('14. an own exercise can be edited; built-in ones have no Edit', async () => {
     const exercises = await openPicker()
     expect(screen.queryByRole('button', { name: 'Edit Leg press' })).toBeNull()
-    click('Edit Neck curl')
+    click('Edit Tyre flip')
     const form = screen.getByRole('form', { name: 'Edit exercise' })
-    expect((within(form).getByLabelText('Exercise name') as HTMLInputElement).value).toBe('Neck curl')
+    expect((within(form).getByLabelText('Exercise name') as HTMLInputElement).value).toBe('Tyre flip')
     expect((within(form).getByLabelText('Main muscle') as HTMLSelectElement).value).toBe('traps')
-    type('Exercise name', 'Neck flexion')
+    type('Exercise name', 'Tyre push')
     fireEvent.change(screen.getByLabelText('Equipment'), { target: { value: 'cable' } })
     click('Save changes')
-    expect(await screen.findByRole('button', { name: /^Neck flexion.*your exercise/ })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /^Neck curl/ })).toBeNull()
-    expect((await exercises.custom())[0]).toMatchObject({ id: 'custom:9', name: 'Neck flexion', equipment: 'cable' })
-    expect(exerciseById.get('custom:9')?.name).toBe('Neck flexion')
+    expect(await screen.findByRole('button', { name: /^Tyre push.*your exercise/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Tyre flip/ })).toBeNull()
+    expect((await exercises.custom())[0]).toMatchObject({ id: 'custom:9', name: 'Tyre push', equipment: 'cable' })
+    expect(exerciseById.get('custom:9')?.name).toBe('Tyre push')
   })
 
   it('15. an edit is checked like a new exercise, but may keep its own name', async () => {
     await openPicker()
-    click('Edit Neck curl')
+    click('Edit Tyre flip')
     type('Exercise name', 'leg press')
     click('Save changes')
     expect(screen.getByRole('alert').textContent).toBe('Leg press is already in the list.')
     type('Exercise name', ' ')
     click('Save changes')
     expect(screen.getByRole('alert').textContent).toBe('Give the exercise a name.')
-    type('Exercise name', 'Neck curl')
+    type('Exercise name', 'Tyre flip')
     fireEvent.click(screen.getByRole('checkbox'))
     click('Save changes')
-    expect(await screen.findByRole('button', { name: /^Neck curl/ })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: /^Tyre flip/ })).toBeTruthy()
   })
 
   it('16. removing hides the exercise but past sets keep it; Undo brings it back', async () => {
@@ -435,25 +435,25 @@ describe('own exercises (T-043c)', () => {
       sessions: [{ id: 's0', performedOn: '2026-10-01', planDayId: null, name: 'Workout', sets: [{ id: 'a', exerciseId: 'custom:9', setIndex: 0, weightKg: 10, reps: 15, rir: null }] }],
     })
     const exercises = await openPicker(undefined, store)
-    click('Edit Neck curl')
+    click('Edit Tyre flip')
     expect(screen.getByText('Past sets, records and plans keep this exercise.')).toBeTruthy()
     click('Remove from my list')
-    expect((await screen.findByRole('status')).textContent).toMatch(/^Removed Neck curl from your list\. Past sets stay\./)
-    expect(screen.queryByRole('button', { name: /^Neck curl/ })).toBeNull()
-    type('Search exercises', 'neck curl')
-    expect(screen.getByText('No exercise matches “neck curl”.')).toBeTruthy()
+    expect((await screen.findByRole('status')).textContent).toMatch(/^Removed Tyre flip from your list\. Past sets stay\./)
+    expect(screen.queryByRole('button', { name: /^Tyre flip/ })).toBeNull()
+    type('Search exercises', 'tyre flip')
+    expect(screen.getByText('No exercise matches “tyre flip”.')).toBeTruthy()
     expect((await exercises.custom())[0].hidden).toBe(true)
     // Past sets still know its name.
-    expect(exerciseById.get('custom:9')?.name).toBe('Neck curl')
+    expect(exerciseById.get('custom:9')?.name).toBe('Tyre flip')
     click('Undo')
-    expect(await screen.findByRole('button', { name: /^Neck curl/ })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: /^Tyre flip/ })).toBeTruthy()
     expect((await exercises.custom())[0].hidden).toBeUndefined()
   })
 
   it('16. a failed save or removal keeps the form open and says so', async () => {
     const base = memoryExerciseStore({ custom: [neck] })
     await openPicker({ ...base, updateCustom: () => Promise.reject(new TypeError('offline')), setHidden: () => Promise.reject(new TypeError('offline')) })
-    click('Edit Neck curl')
+    click('Edit Tyre flip')
     click('Remove from my list')
     expect((await screen.findByRole('alert')).textContent).toBe('Couldn’t remove the exercise. Check your connection and try again.')
     click('Save changes')

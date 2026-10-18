@@ -32,7 +32,18 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-018c | Food logging extras: barcode scan (free for everyone, Open Food Facts kept separate under the ODbL), batch-cooked weighing | Component tests for each |
 | T-067 / T-068 later | Parked until users ask (DK, 17 Oct 2026): diet break, SCOFF check, doctor ticks, after the goal, weigh-in habit, plan from logs, gain check, protein choices question | — |
 | T-042a3b | Email to the coach at each approval decision; needs an email service and its key (e.g. Resend), sent from an Edge Function | Function test: one email per decision, key never in the app |
-| T-082 | Training research and a better engine: study RP Strength (Hypertrophy app), other apps and the research, then plan and build better training features (DK, 18 Oct 2026) | Research notes; engine tests, each with its reason |
+| T-082b | Weight steps use the reps you had left, not just the reps you did (research 4.2) | Engine tests, each with its reason |
+| T-082c | Warm-up sets worked out from the first set, using the plate math (4.4) | Engine and screen tests |
+| T-082d | Weekly sets per muscle shown against the low and high limits (4.10) | Screen tests |
+| T-082e | Plateau check: three sessions with no new best gives three choices (4.5) | Engine tests |
+| T-082f | Back after a break: start 10–30% lighter after 10, 21 or 43 days off; tidier light week (4.9) | Engine tests |
+| T-082g | RP-style soreness timing and an optional pump question; new set-change table (4.6) | Engine tests, migration test |
+| T-082h | Muscle priority: Grow more, Grow or Keep, in the plan editor and engine (4.7) | Engine and screen tests |
+| T-082i | Tag moves that train the muscle when stretched; starter plans and swaps prefer them (4.8) | Library and starter plan tests |
+| T-082j | Beginner start: add weight each session on big lifts, then switch to rep ranges (4.3) | Engine tests |
+| T-082k | Once a block, a "reps left" check on one-joint moves (4.11) | Engine and screen tests |
+| T-082l | Starter plan defaults for people 60 and over; rep range and rest defaults (4.12, 4.13) | Starter plan tests |
+| T-082m | Optional readiness question before a session (4.14, later) | Engine tests |
 | T-080 | A coach makes a new exercise while editing a client's plan, saved so the client can see it (needs a database change: today a coach's own exercises are private to the coach) | RLS test; component test on the client page |
 | T-042b | Admin phase 2, food and content (after T-038): food editor, review queue for user-submitted foods, wrong-food reports, searches that found nothing, exercise library and popular own exercises | Approved foods public with reviewer recorded; rejected stay private |
 | T-042c1 | Today page and a daily summary email: sign-ups, active people, coaches waiting, open requests, errors, storage against the free plan | Numbers match a seeded database |
@@ -55,6 +66,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 ## Done
 
 | ID | Task | Tests |
+| T-082a | Four more muscles: front delts, forearms, inner thighs, neck. Front raises count for front delts, presses give them half sets, 30 new moves (research in trackmefit-notes/training-research.md) | `src/training/moreMuscles.test.ts` (4), `src/db/moreMuscles.test.ts` (1), `src/training/exerciseLibrary.test.ts` (4) |
 | T-081 | Exercise library: 409 gym exercises (was 71). Machines, cables, free weights, Smith, kettlebell and body weight, with main and helper muscles and other names people search for (DK, 18 Oct 2026) | `src/training/exerciseLibrary.test.ts` (4) |
 |---|---|---|
 | T-078 | Coach meal plans ([spec](../specs/T-078-coach-meal-plans.md)): the client page shows the meal plan, its size and who set it when; the coach changes it or makes a new one in the same editor, with the client's food rules and targets; the client's Food tab says "Changed by your coach". No migration | `src/coach/ClientMealPlan.test.tsx` (3), `src/log/TodayPlan.test.tsx` (1), `src/db/coach.test.ts` (1) |
