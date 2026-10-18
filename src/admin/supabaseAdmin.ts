@@ -3,7 +3,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { VIEW_KEY, type ViewMarker } from './viewing'
-import { COACH_PAGE, PEOPLE_PAGE, type AdminLevel, type AdminService, type CoachRow, type CoachStatus } from './service'
+import { COACH_PAGE, PEOPLE_PAGE, REQUEST_PAGE, type AdminLevel, type AdminService, type CoachRow, type CoachStatus } from './service'
 
 /** Starts a view from the Admin tab. Runs as the owner. */
 async function startView(sb: SupabaseClient, storage: Pick<Storage, 'setItem' | 'removeItem'>, person: string, name: string, reason: string, now = Date.now()): Promise<void> {
@@ -145,6 +145,23 @@ export function supabaseAdmin(sb: SupabaseClient): AdminService {
     },
     // The app switches to the person when the sign-in changes.
     viewAs: (userId, name, reason) => startView(sb, localStorage, userId, name, reason),
+    async requests(status, after) {
+      const { data, error } = await sb.rpc('admin_requests', { status_filter: status, after_at: after?.createdAt ?? null, after_id: after?.id ?? null, lim: REQUEST_PAGE })
+      if (error) throw error
+      return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
+        id: r.id as string,
+        personId: r.person_id as string,
+        email: r.email as string,
+        name: (r.name as string) ?? '',
+        note: r.note as string,
+        status: r.status as 'open' | 'closed',
+        answer: (r.answer as string) ?? '',
+        createdAt: r.created_at as string,
+        closedAt: (r.closed_at as string | null) ?? null,
+        daysLeft: r.days_left as number,
+      }))
+    },
+    closeRequest: (id, answer) => run('admin_close_request', { request: id, answer_text: answer }),
     setCoachApproval: (on, reason) => run('admin_set_switch', { switch_key: 'coach approval', turn_on: on, why: reason }),
   }
 }

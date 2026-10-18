@@ -1,0 +1,11 @@
+.account section { border-top: 1px solid #e3e8e6; padding: 12px 0; }
+.account form { display: grid; gap: 10px; margin: 12px 0; }
+.account label { display: grid; gap: 4px; font-size: 14px; }
+.account input, .account textarea { font: inherit; padding: 8px 10px; border: 1px solid #c9d2cf; border-radius: 8px; }
+.account textarea { min-height: 80px; }
+.account .actions { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.account .requests { list-style: none; padding: 0; margin: 12px 0 0; }
+.account .requests li { border-bottom: 1px solid #e3e8e6; padding: 8px 0; }
+.account .requests p { margin: 4px 0; }
+.account .link.danger { color: #b42318; }
+.account .primary.danger { background: #b42318; width: auto; }

@@ -34,6 +34,8 @@ const CoachHome = lazy(() => import('./coach/CoachStatus').then((m) => ({ defaul
 const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ default: m.Onboarding })))
 // Only admins open the Admin tab (T-042a1).
 const AdminTab = lazy(() => import('./admin/Admin').then((m) => ({ default: m.AdminTab })))
+// Download, change requests and delete (T-042a5), opened from the top bar.
+const AccountPage = lazy(() => import('./account/Account').then((m) => ({ default: m.AccountTab })))
 // Only shown while an owner views as a person (T-042a4).
 const ViewBar = lazy(() => import('./admin/ViewBar').then((m) => ({ default: m.ViewBar })))
 import { supabaseViewing, type Viewing, type ViewMarker } from './admin/viewing'
@@ -44,6 +46,7 @@ import { memoryCoachStore, supabaseCoachStore, type CoachStore } from './coach/s
 import { memoryApprovalStore, supabaseApprovalStore, type CoachApprovalStore } from './coach/approval'
 import type { ClientStores } from './coach/ClientView'
 import { memoryPhotoStore, supabasePhotoStore, type PhotoStore } from './progress/photoStore'
+import type { DataStore } from './account/data'
 
 // The bundled food list, downloaded only when the database can't answer.
 const loadBundledFoods = (): Promise<FoodFinder> => import('./food/catalogueData').then((m) => localFinder(m.searchIndex))
@@ -76,6 +79,7 @@ export function AppShell({
   adminFor = () => null,
   approvalFor = () => memoryApprovalStore(),
   viewing = null,
+  dataFor = () => () => import('./account/data').then((m) => m.memoryDataStore()),
 }: {
   auth: AuthService | null
   logStoreFor?: (account: Account) => LogStore
@@ -107,6 +111,8 @@ export function AppShell({
   approvalFor?: (account: Account) => CoachApprovalStore
   /** An owner viewing as a person (T-042a4); null where there is no database. */
   viewing?: Viewing | null
+  /** The person's own data: download, requests and delete (T-042a5). Loaded when the page opens. */
+  dataFor?: (account: Account) => () => Promise<DataStore>
 }) {
   const [account, setAccount] = useState<Account | null | undefined>(undefined)
   const store = useMemo(() => (account ? logStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -135,7 +141,7 @@ export function AppShell({
   useEffect(() => {
     if (account === null && view) void viewing?.exit().finally(() => setView(null))
   }, [account, view, viewing])
-  const [tab, setTab] = useState<'food' | 'training' | 'progress' | 'clients' | 'admin'>('food')
+  const [tab, setTab] = useState<'food' | 'training' | 'progress' | 'clients' | 'admin' | 'account'>('food')
   const admin = useMemo(() => (account ? adminFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const [adminLevel, setAdminLevel] = useState<AdminLevel | null>(null)
   useEffect(() => {
@@ -149,6 +155,7 @@ export function AppShell({
   const photos = useMemo(() => (account ? photoStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const checkIns = useMemo(() => (account ? checkInStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const chat = useMemo(() => (account ? chatStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const myData = useMemo(() => (account ? dataFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const approval = useMemo(() => (account?.role === 'coach' ? approvalFor(account) : undefined), [account?.id, account?.role]) // eslint-disable-line react-hooks/exhaustive-deps
   const templates = useMemo(() => (account?.role === 'coach' ? templateStoreFor(account) : undefined), [account?.id, account?.role]) // eslint-disable-line react-hooks/exhaustive-deps
   // The latest weight, for a new meal plan from the Food tab (T-061).
@@ -268,6 +275,7 @@ export function AppShell({
             Your details
           </button>
         )}
+        {!view && tab !== 'account' && <button onClick={() => setTab('account')}>Account</button>}
         {!view && (
           <button
             onClick={() => {
@@ -282,6 +290,26 @@ export function AppShell({
       </header>
     </>
   )
+
+  if (tab === 'account' && myData && !view) {
+    return (
+      <>
+        {topbar}
+        <Suspense fallback={<main className="log">Loading…</main>}>
+          <AccountPage
+            load={myData}
+            onBack={() => setTab('food')}
+            onDeleted={() => {
+              store?.sync?.clearCache()
+              workouts?.sync?.clearCache()
+              setTab('food')
+              void auth.signOut().catch(() => null)
+            }}
+          />
+        </Suspense>
+      </>
+    )
+  }
 
   // Coaches go straight to the app; everyone else sees the first-run questions
   // until they finish or skip them once. The same steps change them later.
@@ -416,6 +444,7 @@ export default function App() {
       adminFor={() => supabaseAdminAccess(sb!)}
       approvalFor={(a) => supabaseApprovalStore(sb!, a.id)}
       viewing={viewing}
+      dataFor={(a) => () => import('./account/data').then((m) => m.supabaseDataStore(sb!, a.id))}
     />
   )
 }
