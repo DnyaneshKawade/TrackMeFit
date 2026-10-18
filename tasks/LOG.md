@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-18: Open button for clients (T-079)
+
+- Each client on the Clients tab has a green "Open" button, with a line that says what it is for.
+- DK had not seen that the client's name was a button.
+- Tests: 1 in `src/coach/ClientView.test.tsx`.
+
 ## 2026-10-18: Data requests (T-042a5)
 
 - New migration `20261109000000_data_requests.sql`: `data_requests`, `export_my_data`, `prepare_delete_me`, `admin_requests` and `admin_close_request`.

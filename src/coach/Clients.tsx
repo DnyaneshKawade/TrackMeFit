@@ -170,6 +170,7 @@ export function Clients({
         ) : (
           <>
             <p className="muted">Clients who need you most come first.</p>
+            {storesFor && <p className="muted">Tap Open to set targets, plans and more.</p>}
             <ul className="client-list">
               {clients.map((item) => {
                 const { client: c, flags } = item
@@ -189,7 +190,14 @@ export function Clients({
                           <button className="link" onClick={() => setEnding(null)}>Cancel</button>
                         </span>
                       ) : (
-                        <button className="link" aria-label={`End link with ${c.name}`} onClick={() => setEnding(c.linkId)}>End</button>
+                        <span className="actions">
+                          {storesFor && (
+                            <button className="open-client" aria-label={`Open ${c.name}`} onClick={() => setOpen({ item, stores: storesFor(c.clientId) })}>
+                              Open
+                            </button>
+                          )}
+                          <button className="link" aria-label={`End link with ${c.name}`} onClick={() => setEnding(c.linkId)}>End</button>
+                        </span>
                       )}
                     </div>
                     {(unread.get(c.linkId) ?? 0) > 0 && (
