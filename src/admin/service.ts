@@ -71,6 +71,24 @@ export interface CoachFile extends CoachRow {
 /** Coaches shown per page. */
 export const COACH_PAGE = 50
 
+/** A person's request to correct their data (T-042a5). */
+export interface RequestRow {
+  id: string
+  personId: string
+  email: string
+  name: string
+  note: string
+  status: 'open' | 'closed'
+  answer: string
+  createdAt: string
+  closedAt: string | null
+  /** Days left to answer, out of 90. */
+  daysLeft: number
+}
+
+/** Requests shown per page. */
+export const REQUEST_PAGE = 50
+
 export interface NewFactor {
   factorId: string
   /** A picture to scan, as an image link. */
@@ -107,6 +125,10 @@ export interface AdminService {
   setCoachApproval(on: boolean, reason: string): Promise<void>
   /** Signs this device in as the person, read and write, until Exit or 30 idle minutes (T-042a4). */
   viewAs(userId: string, name: string, reason: string): Promise<void>
+  /** Requests with one status, REQUEST_PAGE at a time (T-042a5). Open ones come oldest first. */
+  requests(status: 'open' | 'closed', after?: RequestRow): Promise<RequestRow[]>
+  /** Closes a request. The person sees the answer; the log saves it. */
+  closeRequest(id: string, answer: string): Promise<void>
 }
 
 /** Database errors in plain words. */
@@ -126,6 +148,7 @@ export function adminError(e: unknown): string {
   if (/email not confirmed/.test(msg)) return 'They must confirm their email first.'
   if (/decision not valid/.test(msg)) return 'That step does not fit their status now.'
   if (/limit not valid/.test(msg)) return 'The limit must be from 1 to 500.'
+  if (/request not open/.test(msg)) return 'This request is already closed.'
   if (/action failed/.test(msg)) return "It didn't work. Please try again."
   if (/not allowed/.test(msg)) return 'Only owners who used the second step can do this.'
   if (/invalid totp|invalid code|expired/i.test(msg)) return 'That code is wrong or too old. Try the new one.'
@@ -159,6 +182,7 @@ export function memoryAdmin(opts: {
   people?: PersonRow[]
   coaches?: CoachFile[]
   coachApproval?: boolean
+  requests?: RequestRow[]
 }): AdminService & { log: string[] } {
   let step: SecondStep = opts.step ?? 'not set up'
   const team = new Map((opts.team ?? []).map((m) => [m.userId, { ...m }]))
@@ -187,8 +211,25 @@ export function memoryAdmin(opts: {
     decline: [['waiting', 'needs more'], 'not approved'],
     pause: [['approved'], 'paused'],
   }
+  const requests = new Map((opts.requests ?? []).map((r) => [r.id, { ...r }]))
   return {
     log,
+    async requests(status, after) {
+      need('x')
+      const sign = status === 'open' ? 1 : -1
+      const all = [...requests.values()]
+        .filter((r) => r.status === status)
+        .sort((a, b) => sign * (a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)))
+      const start = after ? all.findIndex((r) => r.id === after.id) + 1 : 0
+      return all.slice(start, start + REQUEST_PAGE).map((r) => ({ ...r }))
+    },
+    async closeRequest(id, answer) {
+      need(answer)
+      const r = requests.get(id)
+      if (!r || r.status !== 'open') throw new Error('request not open')
+      Object.assign(r, { status: 'closed', answer: answer.trim(), closedAt: '2026-10-18T12:00:00Z' })
+      log.push(`close request ${r.personId} ${answer}`)
+    },
     async coaches(group, after) {
       need('x')
       const wanted: CoachStatus[] = group === 'waiting' ? ['waiting', 'needs more'] : [group]

@@ -2,6 +2,19 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-18: Data requests (T-042a5)
+
+- New migration `20261109000000_data_requests.sql`: `data_requests`, `export_my_data`, `prepare_delete_me`, `admin_requests` and `admin_close_request`.
+- Fixed: deleting a coach failed when they had set a client's targets, plans or replies. Those rows now stay with the client, with no coach name.
+- New Account page from the top bar: download all my data, ask for a change, and delete my account.
+- New Edge Function `delete-account`: checks the caller, removes their photos, then the sign-in. Admins must be removed as admin first.
+- `admin-account` now removes a coach's certificate photos too.
+- New Requests page for owners: open requests oldest first, days left out of 90, closed with an answer that is logged.
+- The admin log keeps who an admin acted on, even after that account is deleted.
+- Tests: 5 in `src/db/dataRequests.test.ts`, 4 in `src/account/deleteFunction.test.ts`, 4 in `src/account/Account.test.tsx`, 2 in `src/admin/Requests.test.tsx`.
+- New tasks: T-078 (coach meal plans) and T-079 (clearer Open button for clients).
+- DK: run the migration, deploy `delete-account`, and redeploy `admin-account`.
+
 ## 2026-10-18: View as a person (T-042a4)
 
 - New migration `20261108000000_view_as.sql`: `view_sessions`, `admin_start_view` and `admin_end_view`.

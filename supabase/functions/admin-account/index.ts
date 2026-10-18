@@ -13,7 +13,8 @@ const CORS = {
 }
 // Blocked until someone unblocks them (about 100 years).
 const FOREVER = '876000h'
-const PHOTOS = 'progress-photos'
+// A coach's certificate photos go too (T-042a5).
+const BUCKETS = ['progress-photos', 'coach-certificates']
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
@@ -37,14 +38,15 @@ Deno.serve(async (req) => {
       if (error) throw error
     },
     async removePhotos(person) {
-      // 100 files at a time until the folder is empty.
-      for (;;) {
-        const { data, error } = await service.storage.from(PHOTOS).list(person, { limit: 100 })
-        if (error) throw error
-        if (!data.length) return
-        const { error: rmError } = await service.storage.from(PHOTOS).remove(data.map((f) => `${person}/${f.name}`))
-        if (rmError) throw rmError
-      }
+      // 100 files at a time until each folder is empty.
+      for (const bucket of BUCKETS)
+        for (;;) {
+          const { data, error } = await service.storage.from(bucket).list(person, { limit: 100 })
+          if (error) throw error
+          if (!data.length) break
+          const { error: rmError } = await service.storage.from(bucket).remove(data.map((f) => `${person}/${f.name}`))
+          if (rmError) throw rmError
+        }
     },
     async deleteAccount(person) {
       const { error } = await service.auth.admin.deleteUser(person)
