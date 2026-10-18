@@ -32,7 +32,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-018c | Food logging extras: barcode scan (free for everyone, Open Food Facts kept separate under the ODbL), batch-cooked weighing | Component tests for each |
 | T-067 / T-068 later | Parked until users ask (DK, 17 Oct 2026): diet break, SCOFF check, doctor ticks, after the goal, weigh-in habit, plan from logs, gain check, protein choices question | — |
 | T-042a3b | Email to the coach at each approval decision; needs an email service and its key (e.g. Resend), sent from an Edge Function | Function test: one email per decision, key never in the app |
-| T-081 | Exercise library to 400–500 gym exercises: machines, cables, free weights, bodyweight and stretches, each with main and helper muscles, equipment, one-joint flag and other names people search for (DK, 18 Oct 2026) | Library tests: unique ids and names, every muscle covered, search finds common Indian gym names |
 | T-082 | Training research and a better engine: study RP Strength (Hypertrophy app), other apps and the research, then plan and build better training features (DK, 18 Oct 2026) | Research notes; engine tests, each with its reason |
 | T-080 | A coach makes a new exercise while editing a client's plan, saved so the client can see it (needs a database change: today a coach's own exercises are private to the coach) | RLS test; component test on the client page |
 | T-042b | Admin phase 2, food and content (after T-038): food editor, review queue for user-submitted foods, wrong-food reports, searches that found nothing, exercise library and popular own exercises | Approved foods public with reviewer recorded; rejected stay private |
@@ -56,6 +55,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 ## Done
 
 | ID | Task | Tests |
+| T-081 | Exercise library: 409 gym exercises (was 71). Machines, cables, free weights, Smith, kettlebell and body weight, with main and helper muscles and other names people search for (DK, 18 Oct 2026) | `src/training/exerciseLibrary.test.ts` (4) |
 |---|---|---|
 | T-078 | Coach meal plans ([spec](../specs/T-078-coach-meal-plans.md)): the client page shows the meal plan, its size and who set it when; the coach changes it or makes a new one in the same editor, with the client's food rules and targets; the client's Food tab says "Changed by your coach". No migration | `src/coach/ClientMealPlan.test.tsx` (3), `src/log/TodayPlan.test.tsx` (1), `src/db/coach.test.ts` (1) |
 | T-077 | Privacy policy ([spec](../specs/T-077-privacy-policy.md)): a plain page at `/privacy.html`, written by the build from `src/legal/privacy.ts` (what we keep, why, who sees it including support, where, rights, how long, 18 and over, contact); linked from sign-in, sign-up and the Account page; the offline copy of the app is no longer replaced by other pages | `build/privacyPage.test.ts` (2), `src/auth/SignIn.test.tsx` (1), `src/account/Account.test.tsx` (1), `src/pwa.test.ts` (1 new, 1 changed) |

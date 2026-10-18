@@ -132,7 +132,7 @@ function coachWorkouts(plans: Plan[]): WorkoutStore {
   return { ...store, savePlan: (p) => store.savePlan({ ...p, changedBy: COACH, changedOn: TODAY }) }
 }
 
-const clientExercises = () => memoryExerciseStore({ custom: [{ id: 'custom:c1', name: 'Band pull-apart', primary: 'rearDelts', equipment: 'cable', isolation: true }] })
+const clientExercises = () => memoryExerciseStore({ custom: [{ id: 'custom:c1', name: 'Band W raise', primary: 'rearDelts', equipment: 'cable', isolation: true }] })
 
 describe('a coach edits a client’s plan (T-026d)', () => {
   it('1. shows the client’s plans with their days and who changed them last', async () => {
@@ -175,13 +175,13 @@ describe('a coach edits a client’s plan (T-026d)', () => {
     setCustomExercises([mine])
     setup({ workouts: coachWorkouts([upper]), exercises: clientExercises() })
     fireEvent.click(await screen.findByRole('button', { name: 'Asha Rao' }))
-    await waitFor(() => expect(exerciseById.get('custom:c1')?.name).toBe('Band pull-apart'))
+    await waitFor(() => expect(exerciseById.get('custom:c1')?.name).toBe('Band W raise'))
     fireEvent.click(await screen.findByRole('button', { name: 'Edit Upper Lower' }))
-    expect(screen.getByText('Band pull-apart')).toBeTruthy()
+    expect(screen.getByText('Band W raise')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Delete plan' })).toBeNull()
     fireEvent.click(screen.getAllByRole('button', { name: '+ Add exercise' })[0])
-    fireEvent.change(screen.getByLabelText('Search exercises'), { target: { value: 'band pull' } })
-    expect(screen.getByRole('button', { name: /Band pull-apart/ })).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Search exercises'), { target: { value: 'band w' } })
+    expect(screen.getByRole('button', { name: /Band W raise/ })).toBeTruthy()
     fireEvent.change(screen.getByLabelText('Search exercises'), { target: { value: 'coach move' } })
     expect(screen.queryByRole('button', { name: /Coach move/ })).toBeNull()
     cleanup()
