@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-18: View as a person (T-042a4)
+
+- New migration `20261108000000_view_as.sql`: `view_sessions`, `admin_start_view` and `admin_end_view`.
+- New Edge Function `admin-view`: the database checks and logs first, then it makes a one-time sign-in for the person.
+- The People page has "View as them". The owner is signed in as the person with full access, as DK decided.
+- An orange bar and frame show during a view. Exit, or 30 minutes with no activity, signs the owner back in.
+- Admins, your own account and unconfirmed accounts can't be viewed.
+- Tests: 3 in `src/db/viewAs.test.ts`, 1 in `src/admin/viewFunction.test.ts`, 5 in `src/admin/ViewBar.test.tsx`.
+- DK: run the migration and deploy `admin-view`. The privacy policy (T-077) must say support may sign in.
+
 ## 2026-10-18: Coach approval (T-042a3)
 
 - New migration `20261107000000_coach_approval.sql`: coach statuses, the Coach approval switch, coach details and certificate photos, owner functions.

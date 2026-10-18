@@ -34,6 +34,9 @@ const CoachHome = lazy(() => import('./coach/CoachStatus').then((m) => ({ defaul
 const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ default: m.Onboarding })))
 // Only admins open the Admin tab (T-042a1).
 const AdminTab = lazy(() => import('./admin/Admin').then((m) => ({ default: m.AdminTab })))
+// Only shown while an owner views as a person (T-042a4).
+const ViewBar = lazy(() => import('./admin/ViewBar').then((m) => ({ default: m.ViewBar })))
+import { supabaseViewing, type Viewing, type ViewMarker } from './admin/viewing'
 import { supabaseAdminAccess, type AdminAccess, type AdminLevel } from './admin/service'
 import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
 import type { ProgressStore } from './progress/types'
@@ -72,6 +75,7 @@ export function AppShell({
   loadFoods = loadBundledFoods,
   adminFor = () => null,
   approvalFor = () => memoryApprovalStore(),
+  viewing = null,
 }: {
   auth: AuthService | null
   logStoreFor?: (account: Account) => LogStore
@@ -101,6 +105,8 @@ export function AppShell({
   adminFor?: (account: Account) => AdminAccess | null
   /** A coach's status and details for review (T-042a3). */
   approvalFor?: (account: Account) => CoachApprovalStore
+  /** An owner viewing as a person (T-042a4); null where there is no database. */
+  viewing?: Viewing | null
 }) {
   const [account, setAccount] = useState<Account | null | undefined>(undefined)
   const store = useMemo(() => (account ? logStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -121,6 +127,14 @@ export function AppShell({
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [store, workouts])
+  const [view, setView] = useState<ViewMarker | null>(() => viewing?.current() ?? null)
+  const [viewNote, setViewNote] = useState('')
+  // A view starts or ends with a change of sign-in.
+  useEffect(() => setView(viewing?.current() ?? null), [account?.id, viewing])
+  // A view left with no sign-in at all gives the owner theirs back.
+  useEffect(() => {
+    if (account === null && view) void viewing?.exit().finally(() => setView(null))
+  }, [account, view, viewing])
   const [tab, setTab] = useState<'food' | 'training' | 'progress' | 'clients' | 'admin'>('food')
   const admin = useMemo(() => (account ? adminFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const [adminLevel, setAdminLevel] = useState<AdminLevel | null>(null)
@@ -218,29 +232,55 @@ export function AppShell({
   }
   if (profile === undefined) return <main className="auth">Loading…</main>
 
-  const canEdit = !!profile && account.role === 'user' && isOnboarded(profile) && !editing
-  const topbar = (
-    <header className="topbar">
-      <strong className="topbar-brand">Track Me Fit</strong>
-      <span>
-        {account.name || account.email}
-        {account.role === 'coach' ? ' (coach)' : ''}
-      </span>
-      {canEdit && (
-        <button onClick={() => void latestWeight().then((weightKg) => setEditing({ weightKg }), () => setEditing({ weightKg: null }))}>
-          Your details
-        </button>
-      )}
-      <button
-        onClick={() => {
+  const viewBar = view && (
+    <Suspense fallback={null}>
+      <ViewBar
+        viewing={viewing!}
+        marker={view}
+        onEnd={(idle) => {
+          // Nothing of the person's stays on this device.
           store?.sync?.clearCache()
           workouts?.sync?.clearCache()
-          void auth.signOut()
+          setView(null)
+          setTab('food')
+          setViewNote(idle ? 'The view ended after 30 minutes with no activity.' : '')
         }}
-      >
-        Sign out
-      </button>
-    </header>
+      />
+    </Suspense>
+  )
+  const canEdit = !!profile && account.role === 'user' && isOnboarded(profile) && !editing
+  const topbar = (
+    <>
+      {viewBar}
+      {viewNote && (
+        <p className="view-note" role="status">
+          {viewNote}
+        </p>
+      )}
+      <header className="topbar">
+        <strong className="topbar-brand">Track Me Fit</strong>
+        <span>
+          {account.name || account.email}
+          {account.role === 'coach' ? ' (coach)' : ''}
+        </span>
+        {canEdit && (
+          <button onClick={() => void latestWeight().then((weightKg) => setEditing({ weightKg }), () => setEditing({ weightKg: null }))}>
+            Your details
+          </button>
+        )}
+        {!view && (
+          <button
+            onClick={() => {
+              store?.sync?.clearCache()
+              workouts?.sync?.clearCache()
+              void auth.signOut()
+            }}
+          >
+            Sign out
+          </button>
+        )}
+      </header>
+    </>
   )
 
   // Coaches go straight to the app; everyone else sees the first-run questions
@@ -341,6 +381,7 @@ export function AppShell({
 export default function App() {
   const sb = useMemo(() => supabaseFromEnv(), [])
   const auth = useMemo(() => (sb ? createSupabaseAuth(sb) : null), [sb])
+  const viewing = useMemo(() => (sb ? supabaseViewing(sb, localStorage) : null), [sb])
   // One finder for the session, so the "are foods loaded" check runs once.
   const loadFoods = useMemo(() => {
     const finder = sb ? serverFinder(sb, loadBundledFoods) : null
@@ -374,6 +415,7 @@ export default function App() {
       loadFoods={loadFoods}
       adminFor={() => supabaseAdminAccess(sb!)}
       approvalFor={(a) => supabaseApprovalStore(sb!, a.id)}
+      viewing={viewing}
     />
   )
 }

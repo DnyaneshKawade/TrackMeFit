@@ -12,12 +12,14 @@ type Pending =
   | { kind: 'account'; action: AccountAction }
   | { kind: 'end link' }
   | { kind: 'role'; role: 'user' | 'coach' }
+  | { kind: 'view' }
 
 const label = (p: PersonRow) => p.name || p.email
 
 function question(p: PersonRow, pending: Pending): { text: string; button: string } {
   const who = label(p)
   if (pending.kind === 'end link') return { text: `End ${who}'s link with ${p.coachName}?`, button: 'End link' }
+  if (pending.kind === 'view') return { text: `Sign in as ${who}? You can change things as them.`, button: 'View as them' }
   if (pending.kind === 'role') return { text: pending.role === 'coach' ? `Make ${who} a coach?` : `Move ${who} to "For myself"?`, button: 'Save' }
   switch (pending.action) {
     case 'block':
@@ -65,6 +67,9 @@ function Person({ p, me, onAct }: { p: PersonRow; me: string; onAct: (pending: P
       ) : (
         <span className="actions">
           <button className="link" onClick={() => setPending({ kind: 'account', action: p.blocked ? 'unblock' : 'block' })}>{p.blocked ? 'Unblock' : 'Block'}</button>
+          {!p.adminLevel && p.userId !== me && p.confirmed && (
+            <button className="link" onClick={() => setPending({ kind: 'view' })}>View as them</button>
+          )}
           <button className="link" onClick={() => setPending({ kind: 'account', action: 'sign out' })}>Sign out everywhere</button>
           {!p.confirmed && <button className="link" onClick={() => setPending({ kind: 'account', action: 'resend confirm' })}>Resend confirm email</button>}
           {p.coachName && <button className="link" onClick={() => setPending({ kind: 'end link' })}>End coach link</button>}
@@ -106,6 +111,11 @@ export function People({ service, me }: { service: AdminService; me: string }) {
       if (pending.kind === 'account') await service.accountAction(p.userId, pending.action, reason)
       if (pending.kind === 'end link') await service.endCoachLink(p.userId, reason)
       if (pending.kind === 'role') await service.setRole(p.userId, pending.role, reason)
+      // The app switches to the person once the new sign-in starts.
+      if (pending.kind === 'view') {
+        await service.viewAs(p.userId, label(p), reason)
+        return true
+      }
       setDone(pending.kind === 'account' && pending.action === 'delete' ? `${label(p)} was deleted.` : 'Done. It is saved in the admin log.')
       await load(shown)
       return true
