@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { buildId, stampServiceWorker } from './build/swStamp'
+import { privacyPage } from './build/privacyPage'
 
 // After a production build, name the offline cache after this build so the
 // service worker drops the previous deploy's files.
@@ -25,7 +26,22 @@ function stampSw(): Plugin {
   }
 }
 
+// Writes the privacy policy as a plain page at /privacy.html (T-077).
+function privacy(): Plugin {
+  let outDir = 'dist'
+  return {
+    name: 'tmf-privacy',
+    apply: 'build',
+    configResolved(c) {
+      outDir = c.build.outDir
+    },
+    closeBundle() {
+      writeFileSync(resolve(outDir, 'privacy.html'), privacyPage())
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), stampSw()],
+  plugins: [react(), stampSw(), privacy()],
 })

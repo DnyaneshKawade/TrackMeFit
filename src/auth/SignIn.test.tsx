@@ -198,3 +198,14 @@ describe('app shell', () => {
     expect(await screen.findByText('No clients yet. Send a code to someone you coach.')).toBeTruthy()
   })
 })
+
+describe('privacy policy link (T-077)', () => {
+  it('2. sign-in and sign-up both link to the privacy policy', () => {
+    render(<SignIn auth={fakeAuth()} />)
+    const link = () => screen.getByRole('link', { name: 'Privacy policy' }) as HTMLAnchorElement
+    expect(link().getAttribute('href')).toBe('/privacy.html')
+    fireEvent.click(screen.getByRole('tab', { name: 'Create account' }))
+    expect(link().getAttribute('href')).toBe('/privacy.html')
+    expect(screen.getByText(/See what we keep and why/)).toBeTruthy()
+  })
+})

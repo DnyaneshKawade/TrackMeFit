@@ -16,15 +16,17 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET' || url.origin !== self.location.origin) return
 
   // Pages: network first so updates show at once, cached copy when offline.
+  // Plain pages such as /privacy.html keep their own copy, not the app's.
   if (req.mode === 'navigate') {
+    const key = /\.html$/.test(url.pathname) && url.pathname !== '/index.html' ? url.pathname : '/'
     event.respondWith(
       fetch(req)
         .then((res) => {
           const copy = res.clone()
-          caches.open(CACHE).then((c) => c.put('/', copy))
+          caches.open(CACHE).then((c) => c.put(key, copy))
           return res
         })
-        .catch(() => caches.match('/')),
+        .catch(() => caches.match(key)),
     )
     return
   }

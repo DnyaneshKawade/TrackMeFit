@@ -162,6 +162,9 @@ export function Account({
     <main className="log account">
       <button className="link" onClick={onBack}>Back</button>
       <h2>Your account and data</h2>
+      <p>
+        <a href="/privacy.html" target="_blank" rel="noreferrer">Read our privacy policy</a>
+      </p>
       <Download store={store} save={save} />
       <AskForChange store={store} />
       <DeleteAccount store={store} onDeleted={onDeleted} />

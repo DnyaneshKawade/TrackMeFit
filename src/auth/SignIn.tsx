@@ -122,6 +122,10 @@ export function SignIn({ auth }: { auth: AuthService }) {
 
       {mode !== 'reset' && <button className="auth-google" onClick={google}>Continue with Google</button>}
       {mode === 'signUp' && <p className="auth-hint">With Google, you pick coach or not on the next screen.</p>}
+      <p className="auth-hint">
+        {mode === 'signUp' && 'See what we keep and why: '}
+        <a href="/privacy.html" target="_blank" rel="noreferrer">Privacy policy</a>
+      </p>
 
       {mode === 'signIn' && <button className="auth-link" onClick={() => switchMode('reset')}>Forgot password?</button>}
       {mode === 'reset' && <button className="auth-link" onClick={() => switchMode('signIn')}>Back to sign in</button>}

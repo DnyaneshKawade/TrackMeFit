@@ -46,6 +46,7 @@ describe('hosting', () => {
   const rewrite = new RegExp(`^${vercel.rewrites[0].source.replace('/(', '/(?:')}$`)
 
   it('sends app paths to the app but leaves built files and icons alone', () => {
+    expect(rewrite.test('/privacy.html')).toBe(false)
     expect(rewrite.test('/')).toBe(true)
     expect(rewrite.test('/training')).toBe(true)
     expect(rewrite.test('/assets/index-abc.js')).toBe(false)
@@ -68,5 +69,28 @@ describe('hosting', () => {
     expect(keys['X-Frame-Options']).toBe('DENY')
     expect(keys['Referrer-Policy']).toBe('strict-origin-when-cross-origin')
     expect(keys['Permissions-Policy']).toContain('microphone=()')
+  })
+})
+
+describe('service worker pages (T-077)', () => {
+  /** Runs sw.js with a fake browser and returns where each page was saved. */
+  async function navigate(path: string) {
+    const saved: string[] = []
+    const listeners: Record<string, (e: unknown) => void> = {}
+    const self = { location: { origin: 'https://app.test' }, addEventListener: (t: string, fn: (e: unknown) => void) => (listeners[t] = fn) }
+    const caches = { open: async () => ({ put: async (key: string) => void saved.push(key) }), match: async () => undefined, keys: async () => [] }
+    const fetch = async () => ({ clone: () => ({}) })
+    new Function('self', 'caches', 'fetch', read('public/sw.js').toString())(self, caches, fetch)
+    let reply: Promise<unknown> = Promise.resolve()
+    listeners.fetch({ request: { method: 'GET', url: `https://app.test${path}`, mode: 'navigate' }, respondWith: (p: Promise<unknown>) => (reply = p) })
+    await reply
+    await new Promise((r) => setTimeout(r, 0))
+    return saved
+  }
+
+  it('3. the privacy page keeps its own copy, so the app page is not replaced', async () => {
+    expect(await navigate('/privacy.html')).toEqual(['/privacy.html'])
+    expect(await navigate('/')).toEqual(['/'])
+    expect(await navigate('/training')).toEqual(['/'])
   })
 })
