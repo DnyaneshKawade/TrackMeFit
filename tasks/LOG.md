@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-18: Privacy policy (T-077)
+
+- New page `/privacy.html`, made by the build from the words in `src/legal/privacy.ts`. It needs no sign-in.
+- It covers what we keep, why, who sees it, where, your rights, how long, age and contact.
+- It says support may sign in as you to fix a problem, as decided for T-042a4.
+- Links on the sign-in and sign-up screens and on the Account page.
+- The service worker now keeps plain pages apart, so the app's offline page stays the app.
+- Tests: 2 in `build/privacyPage.test.ts`, 1 in `src/auth/SignIn.test.tsx`, 1 in `src/account/Account.test.tsx`, 1 in `src/pwa.test.ts`.
+- DK: pick a contact email for `CONTACT_EMAIL`. Use `https://<your site>/privacy.html` in both store forms.
+
 ## 2026-10-18: Open button for clients (T-079)
 
 - Each client on the Clients tab has a green "Open" button, with a line that says what it is for.

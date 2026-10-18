@@ -14,6 +14,11 @@ const setup = (store = memoryDataStore()) => {
 }
 
 describe('Account page (T-042a5)', () => {
+  it('2 (T-077). links to the privacy policy', () => {
+    setup()
+    expect(screen.getByRole('link', { name: 'Read our privacy policy' }).getAttribute('href')).toBe('/privacy.html')
+  })
+
   it('1. "Download my data" saves one file with all of it', async () => {
     const { saved } = setup(memoryDataStore({ data: { food_logs: [{ food_name: 'Dal' }], progress_photos: [{ path: 'a/p1.jpg', link: 'https://x/p1' }] } }))
     fireEvent.click(screen.getByRole('button', { name: 'Download my data' }))
