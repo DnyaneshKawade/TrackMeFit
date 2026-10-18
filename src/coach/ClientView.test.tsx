@@ -44,6 +44,16 @@ function setup(stores: Partial<ClientStores> = {}, chat?: ChatStore, templates?:
   return all
 }
 
+describe('open button (T-079)', () => {
+  it('1. each client has an Open button that opens the client page; 2. a line says what it is for', async () => {
+    setup()
+    expect(await screen.findByText('Tap Open to set targets, plans and more.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Open Asha Rao' }))
+    expect(await screen.findByRole('region', { name: 'Targets' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Workout plans' })).toBeTruthy()
+  })
+})
+
 describe('chat on the client page (T-026f)', () => {
   it('5. the coach opens a client with a new message, reads it there, and the count clears', async () => {
     const rows: Parameters<typeof memoryChatStore>[1] = [{ id: 'm1', linkId: 'l1', sender: 'client-l1', body: 'Is curd okay at night?', sentAt: '2026-10-15T03:00:00.000Z', readAt: null }]

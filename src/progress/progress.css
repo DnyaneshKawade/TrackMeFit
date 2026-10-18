@@ -73,6 +73,7 @@
   .client-list .flags { color: #fdba74; }
 }
 .client-list .client-name { font-weight: 700; font-size: 16px; padding: 0; }
+.client-list .open-client { font: inherit; font-weight: 600; padding: 6px 16px; border-radius: 10px; border: 0; background: #0f7a5c; color: #fff; cursor: pointer; }
 .client-view .back { padding: 0; margin: 4px 0; }
 .client-view .flags { margin: 6px 0 0; padding-left: 18px; color: #9a3412; }
 @media (prefers-color-scheme: dark) { .client-view .flags { color: #fdba74; } }
