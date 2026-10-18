@@ -1,10 +1,11 @@
 // The Admin tab (spec T-042a1): the second step at sign-in, then the People
-// page (T-042a2) and the admin team for owners. The database checks every rule; these screens only ask.
+// page (T-042a2), the Coaches page (T-042a3) and the admin team for owners. The database checks every rule; these screens only ask.
 
 import { useEffect, useState } from 'react'
 import { adminError, type AdminAccess, type AdminLevel, type AdminMember, type AdminService, type NewFactor, type SecondStep } from './service'
 import { ReasonForm } from './ReasonForm'
 import { People } from './People'
+import { Coaches } from './Coaches'
 import './admin.css'
 
 const LEVELS: { value: AdminLevel; label: string }[] = [
@@ -202,7 +203,7 @@ function Team({ service, me }: { service: AdminService; me: string }) {
 
 export function Admin({ service, me, level }: { service: AdminService; me: string; level: AdminLevel }) {
   const [step, setStep] = useState<SecondStep | null>(null)
-  const [page, setPage] = useState<'people' | 'team'>('people')
+  const [page, setPage] = useState<'people' | 'coaches' | 'team'>('people')
   useEffect(() => {
     void service.secondStep().then(setStep)
   }, [service])
@@ -217,9 +218,10 @@ export function Admin({ service, me, level }: { service: AdminService; me: strin
         <>
           <nav className="tabs" role="tablist" aria-label="Admin pages">
             <button role="tab" aria-selected={page === 'people'} onClick={() => setPage('people')}>People</button>
+            <button role="tab" aria-selected={page === 'coaches'} onClick={() => setPage('coaches')}>Coaches</button>
             <button role="tab" aria-selected={page === 'team'} onClick={() => setPage('team')}>Admin team</button>
           </nav>
-          {page === 'people' ? <People service={service} me={me} /> : <Team service={service} me={me} />}
+          {page === 'people' ? <People service={service} me={me} /> : page === 'coaches' ? <Coaches service={service} /> : <Team service={service} me={me} />}
         </>
       ) : (
         <p>You are a content admin. Food and exercise pages come next.</p>

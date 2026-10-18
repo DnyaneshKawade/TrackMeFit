@@ -1,8 +1,24 @@
 // Asks for the reason every admin change needs before it runs (T-042a1).
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 
-export function ReasonForm({ question, button, onSave, onCancel }: { question: string; button: string; onSave: (reason: string) => void; onCancel: () => void }) {
+export function ReasonForm({
+  question,
+  button,
+  onSave,
+  onCancel,
+  label = 'Reason',
+  children,
+}: {
+  question: string
+  button: string
+  onSave: (reason: string) => void
+  onCancel: () => void
+  /** "Note for the coach" when the person sees the reason (T-042a3). */
+  label?: string
+  /** More fields, shown before the reason. */
+  children?: ReactNode
+}) {
   const [reason, setReason] = useState('')
   return (
     <form
@@ -13,8 +29,9 @@ export function ReasonForm({ question, button, onSave, onCancel }: { question: s
       }}
     >
       <p>{question}</p>
+      {children}
       <label>
-        Reason
+        {label}
         <input value={reason} onChange={(e) => setReason(e.target.value)} />
       </label>
       <span className="actions">

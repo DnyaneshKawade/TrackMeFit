@@ -15,6 +15,8 @@ export interface CoachLink {
   /** The other person: the client for a coach, the coach for a client. */
   personId: string
   name: string
+  /** The coach is paused by Track Me Fit (T-042a3); only set for a client's coach. */
+  paused?: boolean
 }
 
 /** A client in the coach's list, with what the attention rules need (T-026b). */
@@ -121,17 +123,19 @@ interface SummaryRow {
   last_workout_on: string | null
 }
 
-type LinkRow = { id: string; coach_id: string; coach: { full_name: string } | null }
+type LinkRow = { id: string; coach_id: string; coach: { full_name: string; coach_status?: string } | null }
 
 export function supabaseCoachStore(sb: SupabaseClient, userId: string): CoachStore {
   // The coach's name comes with the link in one request.
-  const select = 'id, coach_id, coach:profiles!coach_clients_coach_id_fkey(full_name)'
+  const select = 'id, coach_id, coach:profiles!coach_clients_coach_id_fkey(full_name, coach_status)'
   return {
     async myCoach() {
       const { data, error } = await sb.from('coach_clients').select(select).eq('client_id', userId).eq('status', 'active').limit(1)
       if (error) throw error
       const r = (data as unknown as LinkRow[])[0]
-      return r ? { id: r.id, personId: r.coach_id, name: r.coach?.full_name || 'Your coach' } : null
+      return r
+        ? { id: r.id, personId: r.coach_id, name: r.coach?.full_name || 'Your coach', paused: !!r.coach?.coach_status && r.coach.coach_status !== 'approved' }
+        : null
     },
     async join(code) {
       const { data, error } = await sb.rpc('join_coach', { invite_code: code })

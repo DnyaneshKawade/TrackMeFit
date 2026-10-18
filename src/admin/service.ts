@@ -39,6 +39,38 @@ export type AccountAction = 'block' | 'unblock' | 'delete' | 'sign out' | 'resen
 /** People shown per page. */
 export const PEOPLE_PAGE = 50
 
+/** Coach statuses (T-042a3). */
+export type CoachStatus = 'approved' | 'waiting' | 'needs more' | 'not approved' | 'paused'
+/** The lists on the Coaches page; "waiting" also holds "needs more". */
+export type CoachGroup = 'waiting' | 'approved' | 'paused' | 'not approved'
+export type CoachDecision = 'approve' | 'ask more' | 'decline' | 'pause'
+
+/** One coach in a Coaches list. */
+export interface CoachRow {
+  userId: string
+  email: string
+  name: string
+  status: CoachStatus
+  statusAt: string
+  clients: number
+  clientLimit: number
+  hasDetails: boolean
+}
+
+/** One coach opened for review. */
+export interface CoachFile extends CoachRow {
+  note: string
+  phone: string
+  city: string
+  years: number | null
+  link: string
+  answer: string
+  certificates: { id: string; name: string; url: string }[]
+}
+
+/** Coaches shown per page. */
+export const COACH_PAGE = 50
+
 export interface NewFactor {
   factorId: string
   /** A picture to scan, as an image link. */
@@ -65,6 +97,14 @@ export interface AdminService {
   accountAction(userId: string, action: AccountAction, reason: string): Promise<void>
   endCoachLink(userId: string, reason: string): Promise<void>
   setRole(userId: string, role: 'user' | 'coach', reason: string): Promise<void>
+  /** Coaches with one status, COACH_PAGE at a time (T-042a3). Waiting comes oldest first. */
+  coaches(group: CoachGroup, after?: CoachRow): Promise<CoachRow[]>
+  coach(userId: string): Promise<CoachFile>
+  decideCoach(userId: string, decision: CoachDecision, reason: string): Promise<void>
+  setClientLimit(userId: string, limit: number, reason: string): Promise<void>
+  /** Whether new coaches wait for a check. */
+  coachApproval(): Promise<boolean>
+  setCoachApproval(on: boolean, reason: string): Promise<void>
 }
 
 /** Database errors in plain words. */
@@ -80,6 +120,8 @@ export function adminError(e: unknown): string {
   if (/no coach link/.test(msg)) return 'They have no coach now.'
   if (/coach has clients/.test(msg)) return 'End their client links first.'
   if (/already this role/.test(msg)) return 'They already have this role.'
+  if (/decision not valid/.test(msg)) return 'That step does not fit their status now.'
+  if (/limit not valid/.test(msg)) return 'The limit must be from 1 to 500.'
   if (/action failed/.test(msg)) return "It didn't work. Please try again."
   if (/not allowed/.test(msg)) return 'Only owners who used the second step can do this.'
   if (/invalid totp|invalid code|expired/i.test(msg)) return 'That code is wrong or too old. Try the new one.'
@@ -104,7 +146,16 @@ export const supabaseAdminAccess = (sb: SupabaseClient): AdminAccess => ({
 export const readyAccess = (service: AdminService): AdminAccess => ({ level: () => service.myLevel(), load: async () => service })
 
 /** An in-memory stand-in with the same rules, for screen tests. */
-export function memoryAdmin(opts: { me: string; level: AdminLevel | null; step?: SecondStep; team?: AdminMember[]; accounts?: Record<string, string>; people?: PersonRow[] }): AdminService & { log: string[] } {
+export function memoryAdmin(opts: {
+  me: string
+  level: AdminLevel | null
+  step?: SecondStep
+  team?: AdminMember[]
+  accounts?: Record<string, string>
+  people?: PersonRow[]
+  coaches?: CoachFile[]
+  coachApproval?: boolean
+}): AdminService & { log: string[] } {
   let step: SecondStep = opts.step ?? 'not set up'
   const team = new Map((opts.team ?? []).map((m) => [m.userId, { ...m }]))
   const log: string[] = []
@@ -119,8 +170,66 @@ export function memoryAdmin(opts: { me: string; level: AdminLevel | null; step?:
     if (!p) throw new Error('no such account')
     return p
   }
+  const coaches = new Map((opts.coaches ?? []).map((c) => [c.userId, { ...c }]))
+  let approvalOn = opts.coachApproval ?? false
+  const coach = (id: string) => {
+    const c = coaches.get(id)
+    if (!c) throw new Error('not a coach')
+    return c
+  }
+  const NEXT: Record<CoachDecision, [CoachStatus[], CoachStatus]> = {
+    approve: [['waiting', 'needs more', 'not approved', 'paused'], 'approved'],
+    'ask more': [['waiting', 'needs more'], 'needs more'],
+    decline: [['waiting', 'needs more'], 'not approved'],
+    pause: [['approved'], 'paused'],
+  }
   return {
     log,
+    async coaches(group, after) {
+      need('x')
+      const wanted: CoachStatus[] = group === 'waiting' ? ['waiting', 'needs more'] : [group]
+      const sign = group === 'waiting' ? 1 : -1
+      const all = [...coaches.values()]
+        .filter((c) => wanted.includes(c.status))
+        .sort((a, b) => sign * (a.statusAt.localeCompare(b.statusAt) || a.userId.localeCompare(b.userId)))
+      const start = after ? all.findIndex((c) => c.userId === after.userId) + 1 : 0
+      return all.slice(start, start + COACH_PAGE).map((c) => ({
+        userId: c.userId,
+        email: c.email,
+        name: c.name,
+        status: c.status,
+        statusAt: c.statusAt,
+        clients: c.clients,
+        clientLimit: c.clientLimit,
+        hasDetails: c.hasDetails,
+      }))
+    },
+    async coach(userId) {
+      need('x')
+      const c = coach(userId)
+      return { ...c, certificates: [...c.certificates] }
+    },
+    async decideCoach(userId, decision, reason) {
+      need(reason)
+      const c = coach(userId)
+      const [from, to] = NEXT[decision]
+      if (!from.includes(c.status)) throw new Error('decision not valid')
+      Object.assign(c, { status: to, note: reason.trim(), statusAt: '2026-10-18T12:00:00Z' })
+      log.push(`coach ${decision} ${userId} ${reason}`)
+    },
+    async setClientLimit(userId, limit, reason) {
+      need(reason)
+      const c = coach(userId)
+      if (!Number.isInteger(limit) || limit < 1 || limit > 500) throw new Error('limit not valid')
+      c.clientLimit = limit
+      log.push(`set client limit ${userId} ${reason}`)
+    },
+    coachApproval: async () => approvalOn,
+    async setCoachApproval(on, reason) {
+      need(reason)
+      approvalOn = on
+      log.push(`set switch ${on ? 'on' : 'off'} ${reason}`)
+    },
     async people(search, after) {
       need('x')
       const q = search.trim().toLowerCase()
