@@ -57,4 +57,12 @@ describe('resolveIngredients', () => {
     expect(foods.get('tmf:ing:paneer')).toMatchObject({ source: 'trackMeFit', sourceId: 'label' })
     expect(unresolved.map((u) => u.id)).toEqual(['tmf:ing:okra'])
   })
+
+  it('uses values copied from a packet label into the ingredient', () => {
+    const per100g = { kcal: 170, proteinG: 25, carbG: 4, fatG: 6 }
+    const labelled: Ingredient[] = [{ id: 'tmf:ing:low-fat-paneer', name: 'Paneer, low fat', aliases: [], values: { kind: 'label', note: 'Brand label', per100g } }]
+    const { foods, unresolved } = resolveIngredients(labelled, parseUsdaMacros(CSV))
+    expect(foods.get('tmf:ing:low-fat-paneer')).toMatchObject({ per100g, source: 'trackMeFit', sourceId: 'label' })
+    expect(unresolved).toEqual([])
+  })
 })

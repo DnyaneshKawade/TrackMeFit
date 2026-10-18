@@ -10,7 +10,13 @@ import { excludedTags } from './dietRules'
 const db = buildIndianDatabase(usdaCsv)
 const usda = new Map(parseUsdaMacros(usdaCsv).map((r) => [r.fdcId, r]))
 // Stand-ins until packet labels arrive (T-031).
-const STAND_INS: Record<string, string> = { 'tmf:ing:paneer': '172223', 'tmf:ing:soya-chunks': '174275', 'usda:173177': '173177' }
+const STAND_INS: Record<string, string> = {
+  'tmf:ing:paneer': '172223',
+  'tmf:ing:soya-chunks': '174275',
+  'usda:173177': '173177',
+  'tmf:ing:sattu': '173756',
+  'usda:170903': '170903',
+}
 
 describe('plan foods', () => {
   it('match our ingredient database, or the named USDA stand-in', () => {
@@ -33,7 +39,7 @@ describe('plan foods', () => {
 
   it('offers protein choices the diet allows, in plain words', () => {
     expect(proteinPicksFor(excludedTags('veg')).map((p) => p.label)).not.toContain('Chicken')
-    expect(proteinPicksFor(excludedTags('vegan')).map((p) => p.label)).toEqual(['Dal, chana and rajma', 'Soya chunks', 'Tofu', 'Peanuts'])
+    expect(proteinPicksFor(excludedTags('vegan')).map((p) => p.label)).toEqual(['Dal, chana and rajma', 'Besan and sattu', 'Soya chunks', 'Tofu', 'Peanuts'])
     expect(PROTEIN_PICKS.every((p) => p.foods.every((id) => PLAN_FOODS_BY_ID.has(id)))).toBe(true)
   })
 

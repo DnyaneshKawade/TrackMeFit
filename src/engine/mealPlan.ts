@@ -36,6 +36,8 @@ export interface PlanFood {
   tags: DietTag[]
   /** Values borrowed from a similar USDA food until we have an Indian label. */
   standIn?: string
+  /** Foods of one kind (milk and skimmed milk) don't go in one meal together. */
+  kind?: string
 }
 
 export interface MealPlanInput {
@@ -310,12 +312,12 @@ export function buildMealPlan(input: MealPlanInput): MealPlan {
         continue
       }
       // Every chosen food is at its limit: add another one to a meal,
-      // never a second dal. The person's own foods first, then any other
+      // never a second dal or a second food of one kind. The person's own foods first, then any other
       // allowed protein food (DK, 17 Oct 2026).
       const pool = [...choices, ...others]
       const extra = MEALS.flatMap((m) =>
         pool
-          .filter((f) => fits(m, f) && !slots.get(m)!.has(f.id) && !(f.group === 'pulse' && has(m, (x) => x.group === 'pulse')) && room(m, f) >= minOf(f) && mealProtein(m) + (f.per100g.proteinG * minOf(f)) / 100 <= maxProtein + 1)
+          .filter((f) => fits(m, f) && !slots.get(m)!.has(f.id) && !(f.group === 'pulse' && has(m, (x) => x.group === 'pulse')) && !(f.kind && has(m, (x) => x.kind === f.kind)) && room(m, f) >= minOf(f) && mealProtein(m) + (f.per100g.proteinG * minOf(f)) / 100 <= maxProtein + 1)
           .map((f) => ({ m, f })),
       ).sort((a, b) => Number(others.includes(a.f)) - Number(others.includes(b.f)) || mealProtein(a.m) - mealProtein(b.m) || leanness(b.f) - leanness(a.f))[0]
       if (!extra) break
