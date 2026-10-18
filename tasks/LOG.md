@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-18: Coach meal plans (T-078)
+
+- The client page has a Meal plan part: size, who set it and when, and "Change meal plan" or "Make a meal plan".
+- The coach uses the client's own editor, with the client's food rules, targets and weight.
+- The client's Food tab says "Changed by your coach" on a plan the coach saved.
+- No migration: the database already let the active, approved coach save, and records who saved.
+- Tests: 3 in `src/coach/ClientMealPlan.test.tsx`, 1 in `src/log/TodayPlan.test.tsx`, 1 in `src/db/coach.test.ts`.
+- New tasks: T-080 (coach makes an exercise), T-081 (400–500 exercises) and T-082 (training research and engine), as DK asked.
+
 ## 2026-10-18: Privacy policy (T-077)
 
 - New page `/privacy.html`, made by the build from the words in `src/legal/privacy.ts`. It needs no sign-in.

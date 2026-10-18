@@ -379,7 +379,7 @@ export function AppShell({
         {tab === 'admin' && admin && adminLevel && <AdminTab access={admin} me={account.id} level={adminLevel} />}
         {tab === 'clients' && coaching && approval && (
           <CoachHome store={approval}>
-            <Clients store={coaching} storesFor={clientStoresFor} coachId={account.id} chat={chat} templates={templates} />
+            <Clients store={coaching} storesFor={clientStoresFor} coachId={account.id} chat={chat} templates={templates} loadFoods={loadFoods} />
           </CoachHome>
         )}
         {tab === 'progress' && (
@@ -434,6 +434,8 @@ export default function App() {
         workouts: supabaseWorkoutStore(sb!, id),
         exercises: supabaseExerciseStore(sb!, id),
         checkIns: supabaseCheckInStore(sb!, id),
+        mealPlans: supabaseMealPlanStore(sb!, id),
+        profile: supabaseProfileStore(sb!, id),
       })}
       checkInStoreFor={(a) => supabaseCheckInStore(sb!, a.id)}
       chatStoreFor={(a) => supabaseChatStore(sb!, a.id)}

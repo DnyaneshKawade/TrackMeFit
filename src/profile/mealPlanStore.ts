@@ -10,6 +10,8 @@ export interface SavedMealPlan {
   plan: MealPlan
   picks: string[]
   createdAt: string
+  /** Who saved it: the person or their coach (T-078). Empty if that account is gone. */
+  createdBy: string | null
 }
 
 export interface MealPlanStore {
@@ -17,14 +19,14 @@ export interface MealPlanStore {
   save(plan: MealPlan, picks: string[]): Promise<SavedMealPlan>
 }
 
-export function memoryMealPlanStore(): MealPlanStore {
-  const rows: SavedMealPlan[] = []
+/** `by` is who saves; `rows` are plans saved before. */
+export function memoryMealPlanStore(by: string | null = null, rows: SavedMealPlan[] = []): MealPlanStore {
   return {
     async latest() {
       return rows[rows.length - 1] ?? null
     },
     async save(plan, picks) {
-      const row = { id: String(rows.length + 1), plan, picks, createdAt: new Date(rows.length).toISOString() }
+      const row = { id: String(rows.length + 1), plan, picks, createdAt: new Date(rows.length).toISOString(), createdBy: by }
       rows.push(row)
       return row
     },
@@ -36,15 +38,16 @@ interface Row {
   plan: MealPlan
   picks: string[]
   created_at: string
+  created_by: string | null
 }
-const fromRow = (r: Row): SavedMealPlan => ({ id: r.id, plan: r.plan, picks: r.picks, createdAt: r.created_at })
+const fromRow = (r: Row): SavedMealPlan => ({ id: r.id, plan: r.plan, picks: r.picks, createdAt: r.created_at, createdBy: r.created_by })
 
 export function supabaseMealPlanStore(sb: SupabaseClient, userId: string): MealPlanStore {
   return {
     async latest() {
       const { data, error } = await sb
         .from('meal_plans')
-        .select('id, plan, picks, created_at')
+        .select('id, plan, picks, created_at, created_by')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -55,7 +58,7 @@ export function supabaseMealPlanStore(sb: SupabaseClient, userId: string): MealP
       const { data, error } = await sb
         .from('meal_plans')
         .insert({ user_id: userId, plan, picks })
-        .select('id, plan, picks, created_at')
+        .select('id, plan, picks, created_at, created_by')
         .single()
       if (error) throw error
       return fromRow(data as Row)

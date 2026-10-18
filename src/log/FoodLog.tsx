@@ -411,6 +411,7 @@ export function FoodLog({
               onRemove={(id) => void remove(id)}
               onAdd={openAdd}
               onChangePlan={mealPlans ? () => setPlanning(true) : undefined}
+              byCoach={!!userId && !!saved.createdBy && saved.createdBy !== userId}
             />
           </Suspense>
         ) : (
