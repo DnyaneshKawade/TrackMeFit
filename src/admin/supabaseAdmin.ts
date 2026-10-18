@@ -2,7 +2,27 @@
 // admin opens the tab.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { VIEW_KEY, type ViewMarker } from './viewing'
 import { COACH_PAGE, PEOPLE_PAGE, type AdminLevel, type AdminService, type CoachRow, type CoachStatus } from './service'
+
+/** Starts a view from the Admin tab. Runs as the owner. */
+async function startView(sb: SupabaseClient, storage: Pick<Storage, 'setItem' | 'removeItem'>, person: string, name: string, reason: string, now = Date.now()): Promise<void> {
+  const { data: s } = await sb.auth.getSession()
+  if (!s.session) throw new Error('not allowed')
+  const { data, error } = await sb.functions.invoke('admin-view', { body: { person, reason } })
+  if (error) {
+    const body = await (error as { context?: Response }).context?.json?.().catch(() => null)
+    throw new Error((body as { error?: string } | null)?.error ?? error.message)
+  }
+  const { viewId, tokenHash } = data as { viewId: string; tokenHash: string }
+  const marker: ViewMarker = { viewId, name, adminAccess: s.session.access_token, adminRefresh: s.session.refresh_token, lastActive: now }
+  storage.setItem(VIEW_KEY, JSON.stringify(marker))
+  const signedIn = await sb.auth.verifyOtp({ token_hash: tokenHash, type: 'email' })
+  if (signedIn.error) {
+    storage.removeItem(VIEW_KEY)
+    throw signedIn.error
+  }
+}
 
 const coachRow = (r: Record<string, unknown>): CoachRow => ({
   userId: r.user_id as string,
@@ -123,6 +143,8 @@ export function supabaseAdmin(sb: SupabaseClient): AdminService {
       if (error) throw error
       return data?.value === true
     },
+    // The app switches to the person when the sign-in changes.
+    viewAs: (userId, name, reason) => startView(sb, localStorage, userId, name, reason),
     setCoachApproval: (on, reason) => run('admin_set_switch', { switch_key: 'coach approval', turn_on: on, why: reason }),
   }
 }

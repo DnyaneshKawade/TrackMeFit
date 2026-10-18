@@ -105,6 +105,8 @@ export interface AdminService {
   /** Whether new coaches wait for a check. */
   coachApproval(): Promise<boolean>
   setCoachApproval(on: boolean, reason: string): Promise<void>
+  /** Signs this device in as the person, read and write, until Exit or 30 idle minutes (T-042a4). */
+  viewAs(userId: string, name: string, reason: string): Promise<void>
 }
 
 /** Database errors in plain words. */
@@ -120,6 +122,8 @@ export function adminError(e: unknown): string {
   if (/no coach link/.test(msg)) return 'They have no coach now.'
   if (/coach has clients/.test(msg)) return 'End their client links first.'
   if (/already this role/.test(msg)) return 'They already have this role.'
+  if (/admins cannot be viewed/.test(msg)) return "Admins can't be viewed."
+  if (/email not confirmed/.test(msg)) return 'They must confirm their email first.'
   if (/decision not valid/.test(msg)) return 'That step does not fit their status now.'
   if (/limit not valid/.test(msg)) return 'The limit must be from 1 to 500.'
   if (/action failed/.test(msg)) return "It didn't work. Please try again."
@@ -223,6 +227,14 @@ export function memoryAdmin(opts: {
       if (!Number.isInteger(limit) || limit < 1 || limit > 500) throw new Error('limit not valid')
       c.clientLimit = limit
       log.push(`set client limit ${userId} ${reason}`)
+    },
+    async viewAs(userId, _name, reason) {
+      need(reason)
+      const p = person(userId)
+      if (userId === opts.me) throw new Error('not on yourself')
+      if (p.adminLevel) throw new Error('admins cannot be viewed')
+      if (!p.confirmed) throw new Error('email not confirmed')
+      log.push(`view as ${userId} ${reason}`)
     },
     coachApproval: async () => approvalOn,
     async setCoachApproval(on, reason) {
