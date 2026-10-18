@@ -39,7 +39,9 @@ export function YourCoach({ store, checkIns, chat, today }: { store: CoachStore;
           ? 'That code didn’t work. Ask your coach for a new one.'
           : /coach is full/i.test(message)
             ? 'This coach has no space for new clients right now. Ask them about it.'
-            : 'Couldn’t connect. Check your connection.',
+            : /coach not approved/i.test(message)
+              ? 'This coach can’t take clients right now.'
+              : 'Couldn’t connect. Check your connection.',
       )
     }
     setBusy(false)
@@ -68,7 +70,11 @@ export function YourCoach({ store, checkIns, chat, today }: { store: CoachStore;
           <p>
             You’re working with <strong>{coach.name}</strong>.
           </p>
-          <p className="muted">{SHARED_TEXT}</p>
+          {coach.paused ? (
+            <p className="note">Your coach is paused for now. They can’t see your data or chat. All your data stays yours.</p>
+          ) : (
+            <p className="muted">{SHARED_TEXT}</p>
+          )}
           {confirming ? (
             <div className="actions">
               <span>Stop sharing with {coach.name}?</span>
@@ -78,7 +84,7 @@ export function YourCoach({ store, checkIns, chat, today }: { store: CoachStore;
           ) : (
             <button className="link" onClick={() => setConfirming(true)}>Stop sharing with your coach</button>
           )}
-          {chat && <Chat store={chat} linkId={coach.id} name={coach.name.split(' ')[0]} />}
+          {chat && !coach.paused && <Chat store={chat} linkId={coach.id} name={coach.name.split(' ')[0]} />}
           {checkIns && <CheckInCard store={checkIns} today={today ?? localDate()} />}
         </>
       ) : (

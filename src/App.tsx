@@ -30,6 +30,7 @@ import { isOnboarded, type ProfileInfo, type ProfileStore } from './profile/type
 const Workouts = lazy(() => import('./training/Workouts').then((m) => ({ default: m.Workouts })))
 const Progress = lazy(() => import('./progress/Progress').then((m) => ({ default: m.Progress })))
 const Clients = lazy(() => import('./coach/Clients').then((m) => ({ default: m.Clients })))
+const CoachHome = lazy(() => import('./coach/CoachStatus').then((m) => ({ default: m.CoachHome })))
 const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ default: m.Onboarding })))
 // Only admins open the Admin tab (T-042a1).
 const AdminTab = lazy(() => import('./admin/Admin').then((m) => ({ default: m.AdminTab })))
@@ -37,6 +38,7 @@ import { supabaseAdminAccess, type AdminAccess, type AdminLevel } from './admin/
 import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
 import type { ProgressStore } from './progress/types'
 import { memoryCoachStore, supabaseCoachStore, type CoachStore } from './coach/store'
+import { memoryApprovalStore, supabaseApprovalStore, type CoachApprovalStore } from './coach/approval'
 import type { ClientStores } from './coach/ClientView'
 import { memoryPhotoStore, supabasePhotoStore, type PhotoStore } from './progress/photoStore'
 
@@ -69,6 +71,7 @@ export function AppShell({
   mealPlanStoreFor = () => memoryMealPlanStore(),
   loadFoods = loadBundledFoods,
   adminFor = () => null,
+  approvalFor = () => memoryApprovalStore(),
 }: {
   auth: AuthService | null
   logStoreFor?: (account: Account) => LogStore
@@ -96,6 +99,8 @@ export function AppShell({
   loadFoods?: () => Promise<FoodFinder>
   /** Admin access (T-042a1); null where there is no database. */
   adminFor?: (account: Account) => AdminAccess | null
+  /** A coach's status and details for review (T-042a3). */
+  approvalFor?: (account: Account) => CoachApprovalStore
 }) {
   const [account, setAccount] = useState<Account | null | undefined>(undefined)
   const store = useMemo(() => (account ? logStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -130,6 +135,7 @@ export function AppShell({
   const photos = useMemo(() => (account ? photoStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const checkIns = useMemo(() => (account ? checkInStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const chat = useMemo(() => (account ? chatStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const approval = useMemo(() => (account?.role === 'coach' ? approvalFor(account) : undefined), [account?.id, account?.role]) // eslint-disable-line react-hooks/exhaustive-deps
   const templates = useMemo(() => (account?.role === 'coach' ? templateStoreFor(account) : undefined), [account?.id, account?.role]) // eslint-disable-line react-hooks/exhaustive-deps
   // The latest weight, for a new meal plan from the Food tab (T-061).
   const latestWeight = useMemo(
@@ -303,7 +309,11 @@ export function AppShell({
       <Suspense fallback={<main className="log">Loading…</main>}>
         {tab === 'training' && <Workouts store={workouts!} exercises={exerciseStore} answers={profile ?? undefined} userId={account.id} />}
         {tab === 'admin' && admin && adminLevel && <AdminTab access={admin} me={account.id} level={adminLevel} />}
-        {tab === 'clients' && coaching && <Clients store={coaching} storesFor={clientStoresFor} coachId={account.id} chat={chat} templates={templates} />}
+        {tab === 'clients' && coaching && approval && (
+          <CoachHome store={approval}>
+            <Clients store={coaching} storesFor={clientStoresFor} coachId={account.id} chat={chat} templates={templates} />
+          </CoachHome>
+        )}
         {tab === 'progress' && (
           <Progress
             store={progress!}
@@ -363,6 +373,7 @@ export default function App() {
       mealPlanStoreFor={(a) => supabaseMealPlanStore(sb!, a.id)}
       loadFoods={loadFoods}
       adminFor={() => supabaseAdminAccess(sb!)}
+      approvalFor={(a) => supabaseApprovalStore(sb!, a.id)}
     />
   )
 }

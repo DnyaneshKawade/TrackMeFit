@@ -8,3 +8,9 @@
 .admin .actions { display: flex; flex-wrap: wrap; gap: 4px; }
 .admin .add-admin { border-top: 1px solid #e3e8e6; padding-top: 12px; }
 .admin .search { grid-template-columns: 1fr auto; align-items: end; }
+.admin textarea { font: inherit; padding: 8px 10px; border: 1px solid #c9d2cf; border-radius: 8px; }
+.admin .coach-details { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 8px 0; }
+.admin .coach-details dt { color: #5b6b66; }
+.admin .coach-details dd { margin: 0; overflow-wrap: anywhere; }
+.admin .certs { list-style: none; padding: 0; display: grid; gap: 12px; }
+.admin .certs img { display: block; max-width: 100%; height: auto; border-radius: 8px; }

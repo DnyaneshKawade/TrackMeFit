@@ -2,6 +2,18 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-18: Coach approval (T-042a3)
+
+- New migration `20261107000000_coach_approval.sql`: coach statuses, the Coach approval switch, coach details and certificate photos, owner functions.
+- The switch starts off, so new coaches start Approved as today. Coaches working now stay Approved when it turns on.
+- Only an Approved coach makes codes, takes clients, reads or changes client data, or chats. The database checks it.
+- Coaches who are not Approved see their status, the owner's note, and a details form on the Clients tab.
+- A paused coach's clients are told, and keep all their own data.
+- Owners get a Coaches page: lists by status (Waiting oldest first), details with photos, decisions, client limit and the switch. Each writes one log row.
+- Tests: 9 in `src/db/coachApproval.test.ts`, 5 in `src/coach/CoachStatus.test.tsx`, 3 in `src/admin/Coaches.test.tsx`.
+- Left open: the email at each decision (T-042a3b) needs an email service.
+- DK: run the migration before merging.
+
 ## 2026-10-18: People page (T-042a2)
 
 - New migration `20261106000000_admin_people.sql`: search people, account actions, end a coach link, change role.

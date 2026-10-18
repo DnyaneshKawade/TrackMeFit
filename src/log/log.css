@@ -119,3 +119,10 @@
   .log > .info, .amount .info { background: #12302a; }
   .today-plan { border-color: #2c3734; }
 }
+/* A message from Track Me Fit to a coach or client (T-042a3). */
+.note, .notice { background: #fff7e0; border: 1px solid #f0d78a; border-radius: 8px; padding: 10px 12px; }
+.notice { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 12px 16px 0; }
+.coach-status form, .coach-status section { display: grid; gap: 10px; margin: 12px 0; }
+.coach-status label { display: grid; gap: 4px; font-size: 14px; }
+.coach-status input, .coach-status textarea { font: inherit; padding: 8px 10px; border: 1px solid #c9d2cf; border-radius: 8px; }
+.coach-status img { border-radius: 6px; object-fit: cover; }
