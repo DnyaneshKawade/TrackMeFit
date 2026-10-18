@@ -18,6 +18,10 @@ const AUTH_STUB = `
   create function auth.uid() returns uuid language sql stable as $$
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
   $$;
+  -- The session's claims; "aal" is "aal2" once the second factor is used.
+  create function auth.jwt() returns jsonb language sql stable as $$
+    select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb
+  $$;
   grant usage on schema auth to authenticated, anon;
   -- Supabase Realtime sends changes of the tables in this publication.
   create publication supabase_realtime;
@@ -41,8 +45,9 @@ export interface TestDb {
   /** Creates a sign-up (which creates its profile) and returns the user id.
    * `provider` is how they signed up: email (the default) or google. */
   signUp(email: string, meta?: Record<string, string>, provider?: string): Promise<string>
-  /** Runs queries as the given user, like the app would with their session. */
-  as<T>(userId: string | null, fn: (db: PGlite) => Promise<T>): Promise<T>
+  /** Runs queries as the given user, like the app would with their session.
+   * `secondFactor` is true when that sign-in used an authenticator code. */
+  as<T>(userId: string | null, fn: (db: PGlite) => Promise<T>, secondFactor?: boolean): Promise<T>
 }
 
 let counter = 0
@@ -60,12 +65,13 @@ export async function createTestDb(): Promise<TestDb> {
       await db.query('insert into auth.users (id, email, raw_user_meta_data, raw_app_meta_data) values ($1, $2, $3, $4)', [id, email, meta, { provider }])
       return id
     },
-    async as(userId, fn) {
-      await db.exec(userId ? `set role authenticated; set request.jwt.claim.sub = '${userId}';` : `set role anon; reset request.jwt.claim.sub;`)
+    async as(userId, fn, secondFactor = false) {
+      const claims = JSON.stringify({ sub: userId, aal: secondFactor ? 'aal2' : 'aal1' })
+      await db.exec(userId ? `set role authenticated; set request.jwt.claim.sub = '${userId}'; set request.jwt.claims = '${claims}';` : `set role anon; reset request.jwt.claim.sub;`)
       try {
         return await fn(db)
       } finally {
-        await db.exec('reset role; reset request.jwt.claim.sub;')
+        await db.exec('reset role; reset request.jwt.claim.sub; reset request.jwt.claims;')
       }
     },
   }
