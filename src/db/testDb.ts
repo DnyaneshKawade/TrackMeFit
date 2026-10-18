@@ -14,7 +14,9 @@ const AUTH_STUB = `
   create role anon nologin;
   create schema auth;
   create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb default '{}'::jsonb,
-    raw_app_meta_data jsonb default '{"provider":"email"}'::jsonb);
+    raw_app_meta_data jsonb default '{"provider":"email"}'::jsonb, phone text, created_at timestamptz default clock_timestamp(),
+    last_sign_in_at timestamptz, banned_until timestamptz, email_confirmed_at timestamptz);
+  create table auth.sessions (id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users (id) on delete cascade);
   create function auth.uid() returns uuid language sql stable as $$
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
   $$;

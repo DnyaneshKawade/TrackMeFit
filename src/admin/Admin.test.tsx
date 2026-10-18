@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { Admin } from './Admin'
-import { memoryAdmin, type AdminMember } from './service'
+import { memoryAdmin, readyAccess, type AdminMember } from './service'
 import { AppShell } from '../App'
 import type { Account, AuthService } from '../auth/types'
 import { memoryProfileStore } from '../profile/stores'
@@ -28,11 +28,11 @@ describe('admin tab (T-042a1)', () => {
       onChange: vi.fn().mockReturnValue(() => {}),
     }
     const profiles = memoryProfileStore({ onboardedAt: '2026-10-12T10:00:00Z' })
-    const { unmount } = render(<AppShell auth={auth} profileStoreFor={() => profiles} adminFor={() => memoryAdmin({ me: 'dk', level: null })} />)
+    const { unmount } = render(<AppShell auth={auth} profileStoreFor={() => profiles} adminFor={() => readyAccess(memoryAdmin({ me: 'dk', level: null }))} />)
     await screen.findByRole('tab', { name: 'Food' })
     expect(screen.queryByRole('tab', { name: 'Admin' })).toBeNull()
     unmount()
-    render(<AppShell auth={auth} profileStoreFor={() => profiles} adminFor={() => memoryAdmin({ me: 'dk', level: 'owner' })} />)
+    render(<AppShell auth={auth} profileStoreFor={() => profiles} adminFor={() => readyAccess(memoryAdmin({ me: 'dk', level: 'owner' }))} />)
     fireEvent.click(await screen.findByRole('tab', { name: 'Admin' }))
     expect(await screen.findByRole('heading', { name: 'Turn on the second step' })).toBeTruthy()
   })
@@ -48,7 +48,7 @@ describe('admin tab (T-042a1)', () => {
     expect((await screen.findByRole('alert')).textContent).toBe('That code is wrong or too old. Try the new one.')
     type('6-digit code', '123 456')
     click('Turn on')
-    expect(await screen.findByRole('region', { name: 'Admin team' })).toBeTruthy()
+    expect(await screen.findByRole('region', { name: 'People' })).toBeTruthy()
   })
 
   it('10. an admin with the step set up enters a code each sign-in', async () => {
@@ -63,6 +63,7 @@ describe('admin tab (T-042a1)', () => {
   it('11. an owner adds, changes and removes admins, each with a reason', async () => {
     const service = memoryAdmin({ me: 'dk', level: 'owner', step: 'on', team: [DK], accounts: { 'meera@example.com': 'meera' } })
     render(<Admin service={service} me="dk" level="owner" />)
+    fireEvent.click(await screen.findByRole('tab', { name: 'Admin team' }))
     const form = await screen.findByRole('form', { name: 'Add an admin' })
     type('Email', 'nobody@example.com', form)
     type('Reason', 'Helps with foods', form)
@@ -90,6 +91,7 @@ describe('admin tab (T-042a1)', () => {
   it('12. says when the last owner would be removed', async () => {
     const service = memoryAdmin({ me: 'dk', level: 'owner', step: 'on', team: [DK] })
     render(<Admin service={service} me="dk" level="owner" />)
+    fireEvent.click(await screen.findByRole('tab', { name: 'Admin team' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Remove DK' }))
     const row = screen.getByRole('listitem', { name: 'DK' })
     type('Reason', 'Leaving', row)

@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-18: People page (T-042a2)
+
+- New migration `20261106000000_admin_people.sql`: search people, account actions, end a coach link, change role.
+- New Edge Function `admin-account` for block, unblock, delete and the confirm email. The service key stays on the server.
+- The database checks the owner and the second step and writes the log row first. Only then does the function act.
+- Admins can't be blocked or deleted. A coach with clients can't lose the coach role.
+- The People page lists account facts only, 50 at a time, with search and Show more.
+- Tests: 5 in `src/db/admin.test.ts`, 4 in `src/admin/accountFunction.test.ts`, 4 in `src/admin/People.test.tsx`.
+- DK: run the migration and deploy the function before using the page.
+
 ## 2026-10-18: Admin access (T-042a1)
 
 - New migration `20261105000000_admin_access.sql`: `user_roles` (content, owner), `is_admin()`, `admin_log`, and team functions.

@@ -7,3 +7,4 @@
 .admin-team li { border-bottom: 1px solid #e3e8e6; padding: 10px 0; display: grid; gap: 6px; }
 .admin .actions { display: flex; flex-wrap: wrap; gap: 4px; }
 .admin .add-admin { border-top: 1px solid #e3e8e6; padding-top: 12px; }
+.admin .search { grid-template-columns: 1fr auto; align-items: end; }

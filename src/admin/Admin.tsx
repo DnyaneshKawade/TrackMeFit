@@ -1,8 +1,10 @@
-// The Admin tab (spec T-042a1): the second step at sign-in, then the admin
-// team for owners. The database checks every rule; these screens only ask.
+// The Admin tab (spec T-042a1): the second step at sign-in, then the People
+// page (T-042a2) and the admin team for owners. The database checks every rule; these screens only ask.
 
 import { useEffect, useState } from 'react'
-import { adminError, type AdminLevel, type AdminMember, type AdminService, type NewFactor, type SecondStep } from './service'
+import { adminError, type AdminAccess, type AdminLevel, type AdminMember, type AdminService, type NewFactor, type SecondStep } from './service'
+import { ReasonForm } from './ReasonForm'
+import { People } from './People'
 import './admin.css'
 
 const LEVELS: { value: AdminLevel; label: string }[] = [
@@ -97,7 +99,6 @@ function Team({ service, me }: { service: AdminService; me: string }) {
   const [team, setTeam] = useState<AdminMember[] | null>(null)
   const [error, setError] = useState('')
   const [pending, setPending] = useState<Pending | null>(null)
-  const [reason, setReason] = useState('')
   const [email, setEmail] = useState('')
   const [level, setLevel] = useState<AdminLevel>('content')
   const [addReason, setAddReason] = useState('')
@@ -118,7 +119,6 @@ function Team({ service, me }: { service: AdminService; me: string }) {
     try {
       await fn()
       setPending(null)
-      setReason('')
       await load()
       return true
     } catch (e) {
@@ -147,23 +147,12 @@ function Team({ service, me }: { service: AdminService; me: string }) {
                 </div>
               </div>
               {pending?.member.userId === m.userId ? (
-                <form
-                  className="reason"
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    void act(() => (pending.kind === 'remove' ? service.remove(m.userId, reason) : service.setLevel(m.userId, pending.level, reason)))
-                  }}
-                >
-                  <p>{pending.kind === 'remove' ? `Remove ${m.name || m.email} as admin?` : `Make ${m.name || m.email} ${pending.level === 'owner' ? 'an owner' : 'a content admin'}?`}</p>
-                  <label>
-                    Reason
-                    <input value={reason} onChange={(e) => setReason(e.target.value)} />
-                  </label>
-                  <span className="actions">
-                    <button className="primary" disabled={!reason.trim()}>{pending.kind === 'remove' ? 'Remove' : 'Save'}</button>
-                    <button type="button" className="link" onClick={() => { setPending(null); setReason('') }}>Cancel</button>
-                  </span>
-                </form>
+                <ReasonForm
+                  question={pending.kind === 'remove' ? `Remove ${m.name || m.email} as admin?` : `Make ${m.name || m.email} ${pending.level === 'owner' ? 'an owner' : 'a content admin'}?`}
+                  button={pending.kind === 'remove' ? 'Remove' : 'Save'}
+                  onSave={(reason) => void act(() => (pending.kind === 'remove' ? service.remove(m.userId, reason) : service.setLevel(m.userId, pending.level, reason)))}
+                  onCancel={() => setPending(null)}
+                />
               ) : (
                 <span className="actions">
                   <button className="link" onClick={() => setPending({ kind: 'level', member: m, level: m.level === 'owner' ? 'content' : 'owner' })}>
@@ -213,6 +202,7 @@ function Team({ service, me }: { service: AdminService; me: string }) {
 
 export function Admin({ service, me, level }: { service: AdminService; me: string; level: AdminLevel }) {
   const [step, setStep] = useState<SecondStep | null>(null)
+  const [page, setPage] = useState<'people' | 'team'>('people')
   useEffect(() => {
     void service.secondStep().then(setStep)
   }, [service])
@@ -224,10 +214,25 @@ export function Admin({ service, me, level }: { service: AdminService; me: strin
       ) : step !== 'on' ? (
         <SecondStepScreen step={step} service={service} onDone={() => setStep('on')} />
       ) : level === 'owner' ? (
-        <Team service={service} me={me} />
+        <>
+          <nav className="tabs" role="tablist" aria-label="Admin pages">
+            <button role="tab" aria-selected={page === 'people'} onClick={() => setPage('people')}>People</button>
+            <button role="tab" aria-selected={page === 'team'} onClick={() => setPage('team')}>Admin team</button>
+          </nav>
+          {page === 'people' ? <People service={service} me={me} /> : <Team service={service} me={me} />}
+        </>
       ) : (
         <p>You are a content admin. Food and exercise pages come next.</p>
       )}
     </main>
   )
+}
+
+/** The tab as the app opens it: loads the admin code, then shows the pages. */
+export function AdminTab({ access, me, level }: { access: AdminAccess; me: string; level: AdminLevel }) {
+  const [service, setService] = useState<AdminService | null>(null)
+  useEffect(() => {
+    void access.load().then(setService)
+  }, [access])
+  return service ? <Admin service={service} me={me} level={level} /> : <main className="log admin"><p className="muted">Loading…</p></main>
 }
