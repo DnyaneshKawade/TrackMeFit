@@ -18,7 +18,8 @@ import { INGREDIENTS_REGIONAL2 } from './extra-ingredients/regional2'
 
 export type ValueSource =
   | { kind: 'usda'; description: string }
-  | { kind: 'label'; note: string }
+  /** From a packet label. Until `per100g` is filled in, dishes using it wait. */
+  | { kind: 'label'; note: string; per100g?: { kcal: number; proteinG: number; carbG: number; fatG: number }; from?: string }
   | { kind: 'fixed'; per100g: { kcal: number; proteinG: number; carbG: number; fatG: number } }
 
 export interface Ingredient {
@@ -53,6 +54,8 @@ const list: (Omit<Ingredient, 'id'> & { key: string })[] = [
   { key: 'oil', name: 'Cooking oil', aliases: ['tel', 'refined oil', 'mustard oil', 'sunflower oil'], values: usda('Oil, soybean, salad or cooking') },
 
   // Dairy and protein
+  { key: 'low-fat-paneer', name: 'Paneer, low fat', aliases: ['low fat paneer', 'high protein paneer'],
+    values: { kind: 'label', note: 'Amul High Protein Paneer label.', from: 'https://www.amul.com/products/amul-HP-tin-paneer-info.php', per100g: { kcal: 170, proteinG: 25, carbG: 4, fatG: 6 } } },
   { key: 'paneer', name: 'Paneer', aliases: ['cottage cheese'], values: { kind: 'label', note: 'Not in USDA. Take values from a common Indian paneer packet label.' } },
   { key: 'milk', name: 'Milk, whole (full cream)', aliases: ['doodh', 'full cream milk'], values: usda('Milk, whole, 3.25% milkfat, with added vitamin D') },
   { key: 'curd', name: 'Curd (dahi), whole milk', aliases: ['dahi', 'yogurt'], values: usda('Yogurt, plain, whole milk') },

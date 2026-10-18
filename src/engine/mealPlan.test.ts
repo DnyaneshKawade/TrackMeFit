@@ -47,7 +47,7 @@ describe('meal plan (T-058)', () => {
     const lots = buildMealPlan({ ...asha, base: [...asha.base, { foodId: 'tmf:ing:rice', grams: 500 }, { foodId: 'tmf:ing:soya-chunks', grams: 200 }] })
     expect(dayGrams(lots, 'tmf:ing:rice')).toBeLessThanOrEqual(150)
     expect(dayGrams(lots, 'tmf:ing:soya-chunks')).toBeLessThanOrEqual(50)
-    const short = buildMealPlan({ ...asha, picks: picks('curd'), weightKg: 120, targets: { kcal: 3600, proteinG: 260, fatG: 100, carbG: 450 } })
+    const short = buildMealPlan({ ...asha, picks: picks('curd'), weightKg: 120, targets: { kcal: 3600, proteinG: 300, fatG: 100, carbG: 450 } })
     expect(short.notes.some((n) => /is kept to \d+ g .* a day. That is a fair amount for one food./.test(n))).toBe(true)
   })
 
@@ -336,5 +336,40 @@ describe('clean meal plan (T-068b)', () => {
     const swapped = items(veg).filter((i) => i.reason.includes('is swapped for'))
     expect(swapped.length).toBeGreaterThan(0)
     for (const i of swapped) expect(i.grams, i.name).toBeGreaterThanOrEqual(food(i.foodId).minG ?? 0)
+  })
+})
+
+describe('new plan foods (T-068a2)', () => {
+  const food = (id: string) => PLAN_FOODS_BY_ID.get(id)!
+  const NEW = ['tmf:ing:besan', 'tmf:ing:sattu', 'usda:170903', 'usda:171269', 'usda:172195', 'tmf:ing:low-fat-paneer']
+
+  it('1. besan, sattu, hung curd, skimmed milk, skimmed milk powder and low-fat paneer are plan foods with a protein pick', () => {
+    for (const id of NEW) {
+      expect(PLAN_FOODS_BY_ID.has(id), id).toBe(true)
+      expect(PROTEIN_PICKS.some((p) => p.foods.includes(id)), id).toBe(true)
+    }
+  })
+
+  it('2. picked new foods are used in the plan', () => {
+    const lean = buildMealPlan({ ...asha, picks: picks('low-fat-paneer', 'low-fat-dairy', 'besan'), base: [] })
+    const used = new Set(items(lean).map((i) => i.foodId))
+    expect(NEW.filter((id) => used.has(id)).length).toBeGreaterThanOrEqual(3)
+    expect(items(lean).every((i) => !i.reason.startsWith('Added because your picks'))).toBe(true)
+  })
+
+  it('3. foods of one kind are not put in one meal together', () => {
+    const big = buildMealPlan({ ...asha, picks: picks('curd'), weightKg: 120, targets: { kcal: 3600, proteinG: 260, fatG: 100, carbG: 450 } })
+    for (const m of big.meals) {
+      const kinds = m.items.map((i) => food(i.foodId).kind).filter(Boolean)
+      expect(new Set(kinds).size, m.name).toBe(kinds.length)
+    }
+  })
+
+  it('4. hints use chilla, katori, glass and tbsp', () => {
+    expect(amountHint(food('tmf:ing:besan'), 60)).toBe('about 2 chilla')
+    expect(amountHint(food('usda:170903'), 100)).toBe('about 1 katori')
+    expect(amountHint(food('usda:171269'), 200)).toBe('about 1 glass')
+    expect(amountHint(food('usda:172195'), 20)).toBe('about 2 tbsp')
+    expect(amountHint(food('tmf:ing:sattu'), 30)).toBe('about 1 glass of drink')
   })
 })

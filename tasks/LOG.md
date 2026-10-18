@@ -2,6 +2,18 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-18: New plan foods (T-068a2)
+
+- Added besan, sattu, hung curd, skimmed milk, skimmed milk powder and low-fat paneer to the meal plan.
+- New protein picks: low-fat paneer, hung curd and skimmed milk, besan and sattu.
+- Low-fat paneer uses the Amul High Protein Paneer label from amul.com: 170 kcal, 25 g protein, 4 g carbs, 6 g fat.
+- Ingredients can now carry label values directly, marked as a label source.
+- No sattu label was found online. It uses USDA raw chickpeas until DK sends a pack photo.
+- Hung curd uses USDA low-fat Greek yogurt.
+- Foods of one kind (milk and skimmed milk) are not added to one meal together.
+- Tests: 4 new in `src/engine/mealPlan.test.ts`, 1 new in `src/food/indian/resolve.test.ts`, 1 updated in `src/profile/planFoods.test.ts`.
+- Open: check the Amul pack by hand; a sattu label photo.
+
 ## 2026-10-17: Picks first, then other foods (T-068e)
 
 - DK: use the person's picks first; if they are not enough, use any other food.

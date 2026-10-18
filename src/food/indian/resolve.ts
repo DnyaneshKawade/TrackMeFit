@@ -78,8 +78,8 @@ export function resolveIngredients(
       const row = byDescription.get(v.description)
       if (row) foods.set(ing.id, { ...base, per100g: row.per100g, source: 'usda', sourceId: row.fdcId })
       else unresolved.push({ id: ing.id, reason: `No USDA record named "${v.description}"` })
-    } else if (labels[ing.id]) {
-      foods.set(ing.id, { ...base, per100g: labels[ing.id], source: 'trackMeFit', sourceId: 'label' })
+    } else if (labels[ing.id] ?? v.per100g) {
+      foods.set(ing.id, { ...base, per100g: labels[ing.id] ?? v.per100g!, source: 'trackMeFit', sourceId: 'label' })
     } else {
       unresolved.push({ id: ing.id, reason: v.note })
     }
