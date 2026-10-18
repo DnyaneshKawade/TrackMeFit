@@ -32,8 +32,8 @@ const Progress = lazy(() => import('./progress/Progress').then((m) => ({ default
 const Clients = lazy(() => import('./coach/Clients').then((m) => ({ default: m.Clients })))
 const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ default: m.Onboarding })))
 // Only admins open the Admin tab (T-042a1).
-const Admin = lazy(() => import('./admin/Admin').then((m) => ({ default: m.Admin })))
-import { supabaseAdmin, type AdminLevel, type AdminService } from './admin/service'
+const AdminTab = lazy(() => import('./admin/Admin').then((m) => ({ default: m.AdminTab })))
+import { supabaseAdminAccess, type AdminAccess, type AdminLevel } from './admin/service'
 import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
 import type { ProgressStore } from './progress/types'
 import { memoryCoachStore, supabaseCoachStore, type CoachStore } from './coach/store'
@@ -95,7 +95,7 @@ export function AppShell({
   /** Food search; the bundled list unless the database is set up. */
   loadFoods?: () => Promise<FoodFinder>
   /** Admin access (T-042a1); null where there is no database. */
-  adminFor?: (account: Account) => AdminService | null
+  adminFor?: (account: Account) => AdminAccess | null
 }) {
   const [account, setAccount] = useState<Account | null | undefined>(undefined)
   const store = useMemo(() => (account ? logStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -121,7 +121,7 @@ export function AppShell({
   const [adminLevel, setAdminLevel] = useState<AdminLevel | null>(null)
   useEffect(() => {
     setAdminLevel(null)
-    void admin?.myLevel().then(setAdminLevel, () => setAdminLevel(null))
+    void admin?.level().then(setAdminLevel, () => setAdminLevel(null))
   }, [admin])
   const targets = useMemo(() => (account ? targetStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const profiles = useMemo(() => (account ? profileStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -302,7 +302,7 @@ export function AppShell({
       )}
       <Suspense fallback={<main className="log">Loading…</main>}>
         {tab === 'training' && <Workouts store={workouts!} exercises={exerciseStore} answers={profile ?? undefined} userId={account.id} />}
-        {tab === 'admin' && admin && adminLevel && <Admin service={admin} me={account.id} level={adminLevel} />}
+        {tab === 'admin' && admin && adminLevel && <AdminTab access={admin} me={account.id} level={adminLevel} />}
         {tab === 'clients' && coaching && <Clients store={coaching} storesFor={clientStoresFor} coachId={account.id} chat={chat} templates={templates} />}
         {tab === 'progress' && (
           <Progress
@@ -362,7 +362,7 @@ export default function App() {
       foodStoreFor={(a) => supabaseCustomFoodStore(sb!, a.id)}
       mealPlanStoreFor={(a) => supabaseMealPlanStore(sb!, a.id)}
       loadFoods={loadFoods}
-      adminFor={() => supabaseAdmin(sb!)}
+      adminFor={() => supabaseAdminAccess(sb!)}
     />
   )
 }
