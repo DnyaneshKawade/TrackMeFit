@@ -31,6 +31,9 @@ const Workouts = lazy(() => import('./training/Workouts').then((m) => ({ default
 const Progress = lazy(() => import('./progress/Progress').then((m) => ({ default: m.Progress })))
 const Clients = lazy(() => import('./coach/Clients').then((m) => ({ default: m.Clients })))
 const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ default: m.Onboarding })))
+// Only admins open the Admin tab (T-042a1).
+const Admin = lazy(() => import('./admin/Admin').then((m) => ({ default: m.Admin })))
+import { supabaseAdmin, type AdminLevel, type AdminService } from './admin/service'
 import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
 import type { ProgressStore } from './progress/types'
 import { memoryCoachStore, supabaseCoachStore, type CoachStore } from './coach/store'
@@ -65,6 +68,7 @@ export function AppShell({
   foodStoreFor = () => memoryCustomFoodStore(),
   mealPlanStoreFor = () => memoryMealPlanStore(),
   loadFoods = loadBundledFoods,
+  adminFor = () => null,
 }: {
   auth: AuthService | null
   logStoreFor?: (account: Account) => LogStore
@@ -90,6 +94,8 @@ export function AppShell({
   mealPlanStoreFor?: (account: Account) => MealPlanStore
   /** Food search; the bundled list unless the database is set up. */
   loadFoods?: () => Promise<FoodFinder>
+  /** Admin access (T-042a1); null where there is no database. */
+  adminFor?: (account: Account) => AdminService | null
 }) {
   const [account, setAccount] = useState<Account | null | undefined>(undefined)
   const store = useMemo(() => (account ? logStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -110,7 +116,13 @@ export function AppShell({
       document.removeEventListener('visibilitychange', onVisible)
     }
   }, [store, workouts])
-  const [tab, setTab] = useState<'food' | 'training' | 'progress' | 'clients'>('food')
+  const [tab, setTab] = useState<'food' | 'training' | 'progress' | 'clients' | 'admin'>('food')
+  const admin = useMemo(() => (account ? adminFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const [adminLevel, setAdminLevel] = useState<AdminLevel | null>(null)
+  useEffect(() => {
+    setAdminLevel(null)
+    void admin?.myLevel().then(setAdminLevel, () => setAdminLevel(null))
+  }, [admin])
   const targets = useMemo(() => (account ? targetStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const profiles = useMemo(() => (account ? profileStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const progress = useMemo(() => (account ? progressStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -271,6 +283,9 @@ export function AppShell({
         {account.role === 'coach' && (
           <button role="tab" aria-selected={tab === 'clients'} onClick={() => setTab('clients')}>Clients</button>
         )}
+        {adminLevel && (
+          <button role="tab" aria-selected={tab === 'admin'} onClick={() => setTab('admin')}>Admin</button>
+        )}
       </nav>
       {tab === 'food' && (
         <FoodLog
@@ -287,6 +302,7 @@ export function AppShell({
       )}
       <Suspense fallback={<main className="log">Loading…</main>}>
         {tab === 'training' && <Workouts store={workouts!} exercises={exerciseStore} answers={profile ?? undefined} userId={account.id} />}
+        {tab === 'admin' && admin && adminLevel && <Admin service={admin} me={account.id} level={adminLevel} />}
         {tab === 'clients' && coaching && <Clients store={coaching} storesFor={clientStoresFor} coachId={account.id} chat={chat} templates={templates} />}
         {tab === 'progress' && (
           <Progress
@@ -346,6 +362,7 @@ export default function App() {
       foodStoreFor={(a) => supabaseCustomFoodStore(sb!, a.id)}
       mealPlanStoreFor={(a) => supabaseMealPlanStore(sb!, a.id)}
       loadFoods={loadFoods}
+      adminFor={() => supabaseAdmin(sb!)}
     />
   )
 }

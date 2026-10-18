@@ -2,6 +2,18 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-18: Admin access (T-042a1)
+
+- New migration `20261105000000_admin_access.sql`: `user_roles` (content, owner), `is_admin()`, `admin_log`, and team functions.
+- Every admin rule needs the second step (a code app, Supabase TOTP). A stolen password alone does nothing.
+- Every admin action writes one log row with a reason. Triggers stop anyone changing or deleting the log.
+- There must always be one owner, so nobody locks everyone out.
+- The Admin tab shows only for admins. It sets up the code app, then asks for a code each sign-in.
+- Owners get the Admin team page: add, change and remove admins.
+- DK adds the first owner once in the SQL editor (line at the top of the migration).
+- Tests: 7 in `src/db/admin.test.ts`, 5 in `src/admin/Admin.test.tsx`.
+- Next: People page and the account Edge Function (T-042a2).
+
 ## 2026-10-18: New plan foods (T-068a2)
 
 - Added besan, sattu, hung curd, skimmed milk, skimmed milk powder and low-fat paneer to the meal plan.
