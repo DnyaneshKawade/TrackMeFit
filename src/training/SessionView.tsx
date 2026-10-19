@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { describePlates, platesFor } from '../engine/plates'
 import { newRecord, type StrengthSession } from '../engine/strength'
 import { targetRir } from '../engine/training'
+import { warmupSets } from '../engine/warmup'
 import { exerciseById, type Exercise } from './exercises'
 import { ExercisePicker, type ExerciseLibrary } from './ExercisePicker'
 import { SyncNote } from '../sync/SyncNote'
@@ -154,6 +155,7 @@ export function SessionView({
               exercise={exercise}
               plan={planned.find((p) => p.exerciseId === exercise.id)}
               block={block}
+              warm={ids.slice(0, ids.indexOf(exercise.id)).some((id) => exerciseById.get(id)?.primary === exercise.primary)}
               current={now === exercise.id}
               superset={
                 next
@@ -200,6 +202,7 @@ function ExerciseLog({
   exercise,
   plan,
   block,
+  warm,
   current,
   superset,
   onChange,
@@ -210,6 +213,8 @@ function ExerciseLog({
   exercise: Exercise
   plan?: PlanExercise
   block?: { week: number; hardWeeks: number }
+  /** An earlier exercise today trains the same muscle (T-082c). */
+  warm?: boolean
   /** The exercise to do now in a superset. */
   current?: boolean
   /** Link with the next exercise; absent for the last one. */
@@ -274,6 +279,13 @@ function ExerciseLog({
 
   const { pending } = useSync(store.sync)
   const done = session.sets.filter((s) => s.exerciseId === exercise.id).sort((a, b) => a.setIndex - b.setIndex)
+  // Warm-ups build to the suggested weight, or last time's first working set (T-082c).
+  const lastSet = history ? workingSets(history[0]?.sets ?? [])[0] : undefined
+  const working = suggestion ? { weight: suggestion.weight, reps: suggestion.targetReps } : lastSet ? { weight: lastSet.weightKg, reps: lastSet.reps } : null
+  const warmup =
+    working && workingSets(done).length === 0
+      ? warmupSets({ workingKg: working.weight, workingReps: working.reps, equipment: exercise.equipment, isolation: exercise.isolation, warm: !!warm, increment: exercise.increment })
+      : null
 
   const log = async () => {
     const w = Number(weight.replace(',', '.'))
@@ -291,6 +303,11 @@ function ExerciseLog({
       const beat = past && newRecord(past, done, saved)
       setRecord(beat ? { setId: saved.id, text: beat.text } : null)
       // Weight and reps stay for the next set; the tag and note were for this one.
+      // After a warm-up, the working weight comes back.
+      if (tag === 'warmup' && working) {
+        setWeight(String(working.weight))
+        setReps(String(working.reps))
+      }
       setTag(null)
       setNote(null)
       onLogged()
@@ -342,6 +359,25 @@ function ExerciseLog({
         <p className="suggest">
           Try {suggestion.weight} kg × {suggestion.targetReps}. <span className="muted">{suggestion.why}</span>
         </p>
+      )}
+      {warmup && warmup.sets.length > 0 && (
+        <div className="warmups">
+          <p className="muted">Warm-up first. {warmup.why}</p>
+          {warmup.sets.map((w, i) => (
+            <button
+              key={i}
+              className="chip"
+              aria-label={`Warm-up ${i + 1} for ${exercise.name}: ${w.weight} kg × ${w.reps}`}
+              onClick={() => {
+                setWeight(String(w.weight))
+                setReps(String(w.reps))
+                setTag('warmup')
+              }}
+            >
+              {w.weight} kg × {w.reps}
+            </button>
+          ))}
+        </div>
       )}
       <ol className="sets">
         {done.map((s, i) => (
