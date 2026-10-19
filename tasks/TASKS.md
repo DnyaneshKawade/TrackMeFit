@@ -34,6 +34,25 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-042a3b | Email to the coach at each approval decision; needs an email service and its key (e.g. Resend), sent from an Edge Function | Function test: one email per decision, key never in the app |
 | T-082n | Light week choice: week-1 weights, or the same weight with 3 reps left (4.9) | Engine tests |
 | T-083 | Stuck at the calorie floor: a card with checks (log everything, walk more, then see a doctor) instead of a lower number; optional diet break of 1-2 weeks at maintenance after 8-12 weeks of cutting, accepted by the user | Engine tests |
+| T-088 | Fix the coach-link rule: a client can only end a link, never open an ended one again (today the database lets them; changing the coach is already blocked). Study: `trackmefit-notes/user-access-study.md` | `src/db/coach.test.ts`: reopen refused, end still works |
+| T-085 | Fix "Forgot password": the email link opens "Choose a new password", the new password is saved, then the app opens (today the link only signs in) | `src/auth/SignIn.test.tsx`: recovery shows the screen; weak password refused; save calls update |
+| T-087 | Ask before sharing with a coach: after the code, show the coach's name and everything they will see (health answers too), then "Share with Kiran"; the date of the yes is saved | `src/coach/YourCoach.test.tsx` (nothing shared until yes); `src/db/coach.test.ts` |
+| T-086 | One age rule, 18 and over (setup allows 13 today): everyone gives a birth date once, coaches and Google sign-ups too; under 18 can't go on | `src/profile/profile.test.ts`; `src/App.test.tsx`; `src/db/rls.test.ts` |
+| T-089 | Privacy page: a real contact email and the person who answers, how to complain to the Data Protection Board, how to take back consent, what a coach sees (needs DK's email and name) | Privacy page test; `src/words.test.ts` |
+| T-090 | "Sign out" ends this phone only; "Sign out on all devices" on the Account page for a lost phone | `src/App.test.tsx`; `src/account/Account.test.tsx` |
+| T-091 | Sign-in and security on the Account page: your email and how you sign in, change password, change email, Google users can add a password | `src/account/Account.test.tsx` |
+| T-092 | One tidy Account page: Your details, Sign-in and security, Your coach, Your data and privacy, Delete account, each showing what it is set to now | `src/account/Account.test.tsx`; `src/words.test.ts` |
+| T-094 | Tell the other side when a coach link ends, with who ended it and when | `src/coach/YourCoach.test.tsx`, `src/coach/Clients.test.tsx`; `src/db/coach.test.ts` |
+| T-093 | Approved coaches can change their name, phone, city, years, link and certificates | `src/coach/CoachStatus.test.tsx`; `src/db/coachApproval.test.ts` |
+| T-095 | Coach codes list: open codes, when they end, cancel one, who used one | `src/coach/Clients.test.tsx`; `src/db/coach.test.ts` |
+| T-096 | Choose what your coach sees: switches for photos and health answers | `src/db/coach.test.ts` (RLS hides them when off); `src/coach/ClientView.test.tsx` |
+| T-099 | First steps for a new coach: your details, we check you, invite a client | `src/coach/CoachStatus.test.tsx` |
+| T-103 | "I want to coach" on the Account page sends a request to the owner, so nobody makes a second account | `src/account/Account.test.tsx`; `src/admin/Requests.test.tsx` |
+| T-098 | Public page on how to delete your account without the app (for the Play Store) | Page build test |
+| T-097 | Support sign-ins listed in "Download my data" (date and reason); no alert, so DK's View as decision stays. Needs DK's yes | `src/db/dataRequests.test.ts` |
+| T-101 | Units and look: kg or lb for gym weights, and light or dark | Unit tests (plates in lb); `src/App.test.tsx` |
+| T-100 | Optional reminders (log food, weigh in, workout day, coach reply), a switch for each and a quiet time | Engine, database and Edge Function tests |
+| T-102 | Optional second sign-in step with an authenticator app | RLS test; set-up component test |
 | T-082g | RP-style soreness timing and an optional pump question; new set-change table (4.6) | Engine tests, migration test |
 | T-082h | Muscle priority: Grow more, Grow or Keep, in the plan editor and engine (4.7) | Engine and screen tests |
 | T-082j | Beginner start: add weight each session on big lifts, then switch to rep ranges (4.3) | Engine tests |

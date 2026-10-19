@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Account and access study
+
+- Studied sign-in, settings, coach sharing and privacy against Supabase docs, the DPDP Act and Rules, and other apps.
+- Found 4 fixes: "Forgot password" never sets a new password, setup allows age 13 against an 18+ policy, coach sharing has no clear yes, and a client can reopen an ended coach link.
+- Added T-085 to T-103 (except T-104, merged into T-091) to the to-do list, fixes first.
+- Study: `trackmefit-notes/user-access-study.md` (project files).
+
 ## 2026-10-19: Your details page (T-084)
 
 - "Your details" now opens a page with the sign-up answers, part by part.
