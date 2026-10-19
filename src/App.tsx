@@ -32,6 +32,7 @@ const Progress = lazy(() => import('./progress/Progress').then((m) => ({ default
 const Clients = lazy(() => import('./coach/Clients').then((m) => ({ default: m.Clients })))
 const CoachHome = lazy(() => import('./coach/CoachStatus').then((m) => ({ default: m.CoachHome })))
 const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ default: m.Onboarding })))
+const ProfilePage = lazy(() => import('./profile/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 // Only admins open the Admin tab (T-042a1).
 const AdminTab = lazy(() => import('./admin/Admin').then((m) => ({ default: m.AdminTab })))
 // Download, change requests and delete (T-042a5), opened from the top bar.
@@ -189,8 +190,10 @@ export function AppShell({
         : undefined,
     [profile, progress, store, account],
   )
-  // Set while the person changes their sign-up answers (T-070).
-  const [editing, setEditing] = useState<{ weightKg: number | null } | null>(null)
+  // Set while the person changes their sign-up answers (T-070), from the
+  // "Your details" page (T-084), which stays open while `details` is set.
+  const [editing, setEditing] = useState<{ weightKg: number | null; step?: number } | null>(null)
+  const [details, setDetails] = useState<{ weightKg: number | null } | null>(null)
 
   useEffect(() => {
     setProfile(undefined)
@@ -255,7 +258,7 @@ export function AppShell({
       />
     </Suspense>
   )
-  const canEdit = !!profile && account.role === 'user' && isOnboarded(profile) && !editing
+  const canEdit = !!profile && account.role === 'user' && isOnboarded(profile) && !editing && !details
   const topbar = (
     <>
       {viewBar}
@@ -271,7 +274,7 @@ export function AppShell({
           {account.role === 'coach' ? ' (coach)' : ''}
         </span>
         {canEdit && (
-          <button onClick={() => void latestWeight().then((weightKg) => setEditing({ weightKg }), () => setEditing({ weightKg: null }))}>
+          <button onClick={() => void latestWeight().then((weightKg) => setDetails({ weightKg }), () => setDetails({ weightKg: null }))}>
             Your details
           </button>
         )}
@@ -333,6 +336,7 @@ export function AppShell({
               if (mealPlan && mealPlans) await mealPlans.save(mealPlan.plan, mealPlan.picks).catch(() => null)
               setProfile(p)
               setEditing(null)
+              if (details) setDetails({ weightKg })
             }}
             loadFoods={loadFoods}
             onSkip={async () => {
@@ -341,6 +345,23 @@ export function AppShell({
               await profiles!.save(p)
               setProfile(p)
             }}
+          />
+        </Suspense>
+      </>
+    )
+  }
+
+  if (profile && details) {
+    return (
+      <>
+        {topbar}
+        <Suspense fallback={<main className="auth">Loading…</main>}>
+          <ProfilePage
+            profile={profile}
+            weightKg={details.weightKg}
+            today={localDate()}
+            onChange={(step) => setEditing({ weightKg: details.weightKg, step })}
+            onBack={() => setDetails(null)}
           />
         </Suspense>
       </>

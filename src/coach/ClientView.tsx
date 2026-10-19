@@ -15,6 +15,7 @@ import type { Plan, SessionSummary, WorkoutStore } from '../training/types'
 import type { FoodFinder } from '../food/finder'
 import type { MealPlanStore } from '../profile/mealPlanStore'
 import type { ProfileStore } from '../profile/types'
+import { AboutClient } from './AboutClient'
 import { Chat } from './Chat'
 import { ClientMealPlan } from './ClientMealPlan'
 import type { ChatStore } from './chat'
@@ -169,6 +170,8 @@ export function ClientView({
       )}
 
       {chat && <Chat store={chat} linkId={client.linkId} name={first} />}
+
+      {stores.profile && <AboutClient profile={stores.profile} weightKg={weighIns?.length ? weighIns.reduce((a, b) => (b.date > a.date ? b : a)).kg : null} first={first} today={today} />}
 
       <ClientCheckIns store={stores.checkIns} weighIns={weighIns} first={first} />
 

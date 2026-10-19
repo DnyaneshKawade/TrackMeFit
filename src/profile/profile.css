@@ -66,3 +66,11 @@
 .how-plan p { margin: 4px 0; font-size: 15px; }
 .how-plan .choice { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
 @media (prefers-color-scheme: dark) { .how-plan { border-color: #2c3734; } }
+
+/* Your details and About this client (T-084) */
+.profile-part { border: 1px solid var(--border, #ddd); border-radius: 8px; padding: 0.75rem; margin: 0.75rem 0; }
+.profile-part h3 { margin: 0 0 0.5rem; }
+.profile-part dl { margin: 0; }
+.profile-part dl > div { display: flex; gap: 0.5rem; padding: 0.15rem 0; }
+.profile-part dt { flex: 0 0 9rem; color: var(--muted, #666); }
+.profile-part dd { margin: 0; }
