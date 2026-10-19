@@ -24,6 +24,7 @@ describe('daily targets on the food log', () => {
     const targets = memoryTargetStore('me')
     setup(targets)
     fireEvent.click(await screen.findByRole('button', { name: 'Set your daily targets' }))
+    await screen.findByLabelText('Calories')
     type('Calories', '2000')
     type('Protein', '120')
     type('Fat', '60')
@@ -41,6 +42,7 @@ describe('daily targets on the food log', () => {
     const targets = { ...memoryTargetStore(), save: vi.fn() }
     setup(targets)
     fireEvent.click(await screen.findByRole('button', { name: 'Set your daily targets' }))
+    await screen.findByLabelText('Calories')
     type('Calories', '500')
     fireEvent.click(screen.getByRole('button', { name: 'Save targets' }))
     expect(await screen.findByText('Calories must be between 800 and 6000.')).toBeTruthy()
@@ -51,6 +53,7 @@ describe('daily targets on the food log', () => {
   it('warns when macros don’t match calories but still allows saving', async () => {
     setup(memoryTargetStore())
     fireEvent.click(await screen.findByRole('button', { name: 'Set your daily targets' }))
+    await screen.findByLabelText('Calories')
     type('Calories', '1500')
     type('Protein', '150')
     type('Carbs', '250')
@@ -68,6 +71,7 @@ describe('daily targets on the food log', () => {
     expect(await screen.findByText(/set by your coach/)).toBeTruthy()
     expect(screen.getByText('Protein 85 g left')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Edit targets' }))
+    await screen.findByLabelText('Calories')
     expect((screen.getByLabelText('Calories') as HTMLInputElement).value).toBe('1200')
     type('Calories', '400')
     fireEvent.click(screen.getByRole('button', { name: 'Close' }))

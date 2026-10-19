@@ -1,69 +1,81 @@
-/* The Calm Saffron look (spec T-101b). Every colour is a token, so light and
+/* The Calm Ocean look (spec T-101b). Every colour is a token, so light and
    dark only change the tokens. data-theme on <html> wins over the phone setting. */
 :root {
   --font: 'DM Sans Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --bg: #fbf8f4;
+  --bg: #f5f6f8;
   --card: #ffffff;
-  --ink: #241a10;
-  --muted: #645646;
-  --line: #eee5da;
-  --border: #eee5da;
-  --field-line: #d9ccbc;
-  --soft: #f7f0e7;
-  --tint: #fbeedf;
-  --p: #a14a0c;
-  --pv: #a14a0c;
-  --p-ink: #6e3208;
+  --ink: #0f1a2a;
+  --muted: #4a5a6e;
+  --line: #e1e7ef;
+  --border: #e1e7ef;
+  --field-line: #c9d3e0;
+  --soft: #eff3f8;
+  --tint: #e4edf8;
+  --p: #1f5fad;
+  --pv: #1f5fad;
+  --p-ink: #173f73;
   --on-p: #ffffff;
-  --chart-muted: #c8b8a6;
+  --chart-muted: #9db0c8;
   --danger: #b42318;
   --warn-bg: #fff6e0;
   --warn-line: #f0d78a;
   --warn-ink: #7a4f00;
   --flag: #9a3412;
+  --acc: #b45309;
+  --acc-tint: #fdf3e7;
+  --acc-ink: #7a3a06;
+  --shadow: 0 1px 2px rgb(15 26 42 / 0.05);
   color-scheme: light;
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
 }
 :root[data-theme='dark'] {
-  --bg: #18130e;
-  --card: #221b14;
-  --ink: #f5ece2;
-  --muted: #c4b3a0;
-  --line: #3a2f24;
-  --border: #3a2f24;
-  --field-line: #4d3f31;
-  --soft: #2b231a;
-  --tint: #3a2815;
-  --pv: #f2b36b;
-  --p-ink: #f7c994;
-  --chart-muted: #6e5d4c;
+  --bg: #0d131b;
+  --card: #151e2a;
+  --ink: #e6edf6;
+  --muted: #9daec4;
+  --line: #243142;
+  --border: #243142;
+  --field-line: #33445a;
+  --soft: #1b2636;
+  --tint: #15263d;
+  --pv: #7fb0f0;
+  --p-ink: #a9c9f3;
+  --chart-muted: #4a5d78;
   --danger: #f97066;
   --warn-bg: #3a2e12;
   --warn-line: #8a6420;
   --warn-ink: #ffd88a;
   --flag: #fdba74;
+  --acc: #f4b54a;
+  --acc-tint: #2e2412;
+  --acc-ink: #f7cb7a;
+  --shadow: none;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #18130e;
-    --card: #221b14;
-    --ink: #f5ece2;
-    --muted: #c4b3a0;
-    --line: #3a2f24;
-    --border: #3a2f24;
-    --field-line: #4d3f31;
-    --soft: #2b231a;
-    --tint: #3a2815;
-    --pv: #f2b36b;
-    --p-ink: #f7c994;
-    --chart-muted: #6e5d4c;
+    --bg: #0d131b;
+    --card: #151e2a;
+    --ink: #e6edf6;
+    --muted: #9daec4;
+    --line: #243142;
+    --border: #243142;
+    --field-line: #33445a;
+    --soft: #1b2636;
+    --tint: #15263d;
+    --pv: #7fb0f0;
+    --p-ink: #a9c9f3;
+    --chart-muted: #4a5d78;
     --danger: #f97066;
     --warn-bg: #3a2e12;
     --warn-line: #8a6420;
     --warn-ink: #ffd88a;
     --flag: #fdba74;
+    --acc: #f4b54a;
+    --acc-tint: #2e2412;
+    --acc-ink: #f7cb7a;
+    --shadow: none;
     color-scheme: dark;
   }
 }
@@ -79,3 +91,11 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 .tabs { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 520px; margin: 12px auto 0; padding: 0 16px; gap: 6px; font-family: var(--font); }
 .tabs button { font: inherit; font-weight: 600; padding: 10px; border-radius: 12px; border: 0; background: var(--soft); color: var(--muted); cursor: pointer; min-height: 44px; }
 .tabs button[aria-selected='true'] { background: var(--p); color: var(--on-p); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Bottom tabs (T-101c): the main places, always one thumb away. */
+.bottom-tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; justify-content: space-around; gap: 4px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--line); font-family: var(--font); }
+.bottom-tabs button { flex: 1; max-width: 120px; min-height: 52px; display: grid; justify-items: center; align-content: center; gap: 2px; border: 0; border-radius: 12px; background: none; color: var(--muted); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; }
+.bottom-tabs button svg { width: 24px; height: 24px; }
+.bottom-tabs button[aria-selected='true'] { color: var(--pv); font-weight: 700; }
+body:has(.bottom-tabs) { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }

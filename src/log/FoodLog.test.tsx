@@ -386,3 +386,18 @@ describe('offline logging (T-027)', () => {
     expect(await inner.listDay(TODAY)).toHaveLength(1)
   })
 })
+
+describe('new look on the Food tab (T-101c)', () => {
+  it('3. shows how many days have food logged this week', async () => {
+    const at = (id: string, loggedOn: string) => ({ id, loggedOn, meal: 'lunch' as const, foodId: 'x', foodName: 'Roti', grams: 40, kcal: 120, proteinG: 4, carbG: 23, fatG: 1, createdAt: loggedOn })
+    const store = memoryLogStore([at('a', '2026-10-11'), at('b', TODAY), at('c', TODAY)])
+    setup(store)
+    expect((await screen.findByRole('status', { name: 'This week' })).textContent).toBe('1 of 7 days logged this week.')
+  })
+
+  it('4. says nothing about the week before any food is logged', async () => {
+    setup()
+    await screen.findByRole('region', { name: 'Breakfast' })
+    expect(screen.queryByRole('status', { name: 'This week' })).toBeNull()
+  })
+})

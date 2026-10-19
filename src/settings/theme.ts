@@ -5,7 +5,7 @@ export type ThemeChoice = 'system' | 'light' | 'dark'
 
 const KEY = 'tmf-theme'
 /** The top bar colour on Android, for each look. */
-const BAR = { light: '#fbf8f4', dark: '#18130e' }
+const BAR = { light: '#f5f6f8', dark: '#0d131b' }
 
 export function readTheme(storage: Pick<Storage, 'getItem'> | undefined = globalThis.localStorage): ThemeChoice {
   try {

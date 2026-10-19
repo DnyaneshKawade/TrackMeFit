@@ -2,7 +2,6 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react
 import { withMine, type FoodFinder } from '../food/finder'
 import { memoryCustomFoodStore, type CustomFood, type CustomFoodStore, type NewCustomFood } from '../food/custom'
 import { AddFood } from './AddFood'
-import { TargetsForm } from '../targets/TargetsForm'
 import { remaining, type DietTarget, type TargetStore, type TargetValues } from '../targets/types'
 import { localDate, MEALS, shiftDate, totals, type LogEntry, type LogStore, type Meal, type NewLogEntry } from './types'
 import { noAutoMealPlan, type DietPref } from '../profile/types'
@@ -13,10 +12,12 @@ import { useSync } from '../sync/useSync'
 import { excludedTags, hasNonvegOff } from '../profile/dietRules'
 import { dayExcluded, nonvegWeekday, vegDayReason, type DayChoice } from '../profile/nonvegDays'
 import { EntryRow, MealSection } from './MealSection'
+import { daysLogged, weekStart } from './week'
 import './log.css'
 
 const TodayPlan = lazy(() => import('./TodayPlan'))
 const PlanEditor = lazy(() => import('./PlanEditor'))
+const TargetsForm = lazy(() => import('../targets/TargetsForm').then((m) => ({ default: m.TargetsForm })))
 const noWeight = () => Promise.resolve(null)
 
 /** The person's diet answers, for non-veg-free days and the meal plan. */
@@ -222,6 +223,14 @@ export function FoodLog({
     void load()
   }, [load])
 
+  // Days logged earlier this week, for the kind weekly count. Optional: no count if it fails.
+  const [earlier, setEarlier] = useState<string[] | null>(null)
+  useEffect(() => {
+    const from = weekStart(today)
+    if (!store.listRange || from >= today) return setEarlier([])
+    store.listRange(from, shiftDate(today, -1)).then((es) => setEarlier(es.map((e) => e.loggedOn)), () => setEarlier(null))
+  }, [store, today])
+
   /** Loads food search, recent foods and the person's own foods. */
   const prepareSearch = () => {
     if (!index) void loadFoods().then(setIndex)
@@ -281,7 +290,9 @@ export function FoodLog({
   if (editingTargets) {
     return (
       <main className="log">
-        <TargetsForm initial={target ?? null} onSave={saveTargets} onCancel={() => setEditingTargets(false)} />
+        <Suspense fallback={<p className="muted">Loading…</p>}>
+          <TargetsForm initial={target ?? null} onSave={saveTargets} onCancel={() => setEditingTargets(false)} />
+        </Suspense>
       </main>
     )
   }
@@ -329,6 +340,7 @@ export function FoodLog({
   }
 
   const day = totals(entries ?? [])
+  const week = earlier && date === today && entries ? daysLogged(earlier, today, entries.length > 0) : 0
   const plainMeals = MEALS.map((meal) => {
     const items = (entries ?? []).filter((e) => e.meal === meal)
     return (
@@ -347,7 +359,8 @@ export function FoodLog({
         <button aria-label="Next day" disabled={date >= today} onClick={() => setDate(shiftDate(date, 1))}>›</button>
       </nav>
 
-      <dl className="macros day-total" aria-label="Day total">
+      {/* With targets, the ring card shows the day, so the totals are for screen readers only. */}
+      <dl className="macros day-total" data-quiet={targets && target ? '' : undefined} aria-label="Day total">
         <div><dt>Calories</dt><dd>{day.kcal}</dd></div>
         <div><dt>Protein</dt><dd>{day.proteinG} g</dd></div>
         <div><dt>Carbs</dt><dd>{day.carbG} g</dd></div>
@@ -355,6 +368,11 @@ export function FoodLog({
       </dl>
 
       {targets && target && <LeftToday target={target} eaten={day} byCoach={!!userId && target.setBy !== userId} onEdit={() => setEditingTargets(true)} />}
+      {week > 0 && (
+        <p className="week" role="status" aria-label="This week">
+          <strong>{week} of 7 days</strong> logged this week.
+        </p>
+      )}
       {offer && (
         <p className="info" role="status" aria-label="Next step">
           {offer.message}{' '}
@@ -434,20 +452,43 @@ function LeftToday({
 }) {
   const left = remaining(target, eaten)
   const amount = (n: number, unit: string) => (n >= 0 ? `${n}${unit} left` : `${-n}${unit} over`)
+  const bars: [string, keyof TargetValues][] = [
+    ['Protein', 'proteinG'],
+    ['Carbs', 'carbG'],
+    ['Fat', 'fatG'],
+  ]
   return (
     <section className="left" aria-label="Left for the day">
-      <header>
-        <span className={left.kcal < 0 ? 'big over' : 'big'}>{amount(left.kcal, ' kcal')}</span>
-        <button className="link" onClick={onEdit}>Edit targets</button>
-      </header>
-      <span className="muted">
-        of {target.kcal} kcal{byCoach ? ' · set by your coach' : ''}
-      </span>
-      <div className="bars">
-        <span>Protein {amount(left.proteinG, ' g')}</span>
-        <span>Carbs {amount(left.carbG, ' g')}</span>
-        <span>Fat {amount(left.fatG, ' g')}</span>
+      <div className="ring">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle className="ring-track" cx="60" cy="60" r="52" />
+          <circle className="ring-fill" cx="60" cy="60" r="52" pathLength="100" strokeDasharray={`${share(eaten.kcal, target.kcal)} 100`} />
+        </svg>
+        <span className="ring-text">
+          <strong aria-hidden="true">{Math.abs(left.kcal)}</strong>
+          <span aria-hidden="true">{left.kcal < 0 ? 'kcal over' : 'kcal left'}</span>
+          <span className="sr-only">{amount(left.kcal, ' kcal')}</span>
+        </span>
       </div>
+      <div className="bars">
+        {bars.map(([name, key]) => (
+          <div key={key}>
+            <span>{name} {amount(left[key], ' g')}</span>
+            <span className="bar" aria-hidden="true">
+              <span style={{ width: `${share(eaten[key], target[key])}%` }} />
+            </span>
+          </div>
+        ))}
+      </div>
+      <footer>
+        <span className="muted">
+          of {target.kcal} kcal{byCoach ? ' · set by your coach' : ''}
+        </span>
+        <button className="link" onClick={onEdit}>Edit targets</button>
+      </footer>
     </section>
   )
 }
+
+/** How much of a target is eaten, as 0 to 100. */
+const share = (eaten: number, target: number) => (target > 0 ? Math.min(100, Math.max(0, (eaten / target) * 100)) : 0)
