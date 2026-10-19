@@ -84,9 +84,12 @@ input, select, textarea { background: var(--card); color: var(--ink); }
 button { color: inherit; }
 h1, h2, h3 { letter-spacing: -0.01em; }
 
-.topbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--card); font-family: var(--font); }
-.topbar-brand { color: var(--pv); margin-right: auto; }
-.topbar button { background: none; border: 0; color: var(--pv); font: inherit; cursor: pointer; min-height: 44px; }
+/* Top of the app (T-101d): the day, a greeting, and a round picture that opens Me. */
+.topbar { display: flex; align-items: center; gap: 12px; max-width: 520px; margin: 0 auto; padding: 16px 20px 4px; box-sizing: border-box; font-family: var(--font); }
+.topbar-hello { display: grid; gap: 2px; margin-right: auto; min-width: 0; }
+.topbar-hello span { font-size: 14px; color: var(--muted); }
+.topbar-hello strong { font-size: 26px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.2; overflow-wrap: anywhere; }
+.topbar .avatar { flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--tint); color: var(--p-ink); font: inherit; font-size: 18px; font-weight: 700; cursor: pointer; }
 
 .tabs { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 520px; margin: 12px auto 0; padding: 0 16px; gap: 6px; font-family: var(--font); }
 .tabs button { font: inherit; font-weight: 600; padding: 10px; border-radius: 12px; border: 0; background: var(--soft); color: var(--muted); cursor: pointer; min-height: 44px; }
@@ -99,3 +102,27 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 .bottom-tabs button svg { width: 24px; height: 24px; }
 .bottom-tabs button[aria-selected='true'] { color: var(--pv); font-weight: 700; }
 body:has(.bottom-tabs) { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+
+/* Shared parts for every page (T-101d), so no page falls back to plain browser looks. */
+.log, .profile-page, .onboarding { box-sizing: border-box; max-width: 520px; margin: 0 auto; padding: 12px 20px 24px; font-family: var(--font); color: var(--ink); }
+.log > h2, .profile-page > h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; margin: 8px 0 4px; }
+.muted { color: var(--muted); }
+.error { color: var(--danger); }
+.link { background: none; border: 0; color: var(--pv); font: inherit; font-weight: 600; cursor: pointer; padding: 6px 8px; min-height: 36px; border-radius: 10px; }
+.link:hover { background: var(--soft); }
+.link.back { display: inline-flex; align-items: center; gap: 4px; padding-left: 0; margin-left: -2px; }
+.link.back::before { content: '‹'; font-size: 22px; line-height: 1; }
+.card, .account > section, .progress > section, .progress > form, .progress > .weight-chart, .clients > section, .profile-part, .today-plan {
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin: 12px 0; box-shadow: var(--shadow);
+}
+.account > section > h3:first-child, .progress > section > h3:first-child, .clients > section > h3:first-child, .profile-part > h3:first-child { margin-top: 0; }
+.account section section { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 4px; }
+.account > section > :last-child, .progress > section > :last-child, .profile-part > :last-child { margin-bottom: 0; }
+.secondary { width: 100%; font: inherit; font-weight: 600; padding: 12px; border-radius: 12px; border: 1px solid var(--field-line); background: var(--card); color: var(--pv); cursor: pointer; }
+.me-name { margin: 0 0 4px; color: var(--muted); }
+.primary, .secondary { box-sizing: border-box; }
+.records { margin-top: 8px; }
+a { color: var(--pv); }
+details.coach-own, details.about-client { box-sizing: border-box; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px 16px; margin: 12px auto; box-shadow: var(--shadow); }
+details.coach-own { max-width: 480px; margin: 12px 20px; }
+details > summary { font-weight: 600; cursor: pointer; min-height: 28px; }

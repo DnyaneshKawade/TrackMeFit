@@ -1,7 +1,7 @@
 // One meal on the Food tab and the food logged in it. Shared by the plain
 // day and the day with a meal plan (T-063), which adds planned items.
 
-import type { ReactNode } from 'react'
+import { Children, type ReactNode } from 'react'
 import { amountLabel, MEAL_NAMES, totals, type LogEntry, type Meal } from './types'
 
 export function MealSection({ meal, entries, tick, onAdd, children }: { meal: Meal; entries: LogEntry[]; tick?: ReactNode; onAdd: () => void; children: ReactNode }) {
@@ -12,13 +12,18 @@ export function MealSection({ meal, entries, tick, onAdd, children }: { meal: Me
           {tick}
           {MEAL_NAMES[meal]}
         </h3>
-        <span className="muted">{totals(entries).kcal} kcal</span>
+        <span className="meal-kcal">{totals(entries).kcal} kcal</span>
+        <button className="meal-add" aria-label={`Add food to ${MEAL_NAMES[meal]}`} onClick={onAdd}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+        </button>
       </header>
-      <ul>{children}</ul>
-      <button className="add" onClick={onAdd}>+ Add food</button>
+      {entries.length === 0 && !hasRows(children) ? <p className="muted">Not added yet</p> : <ul>{children}</ul>}
     </section>
   )
 }
+
+/** Planned rows count as content even before anything is logged. */
+const hasRows = (children: ReactNode) => Children.toArray(children).length > 0
 
 /** What a logged entry shows: amount, calories and macros. */
 export function EntryInfo({ entry: e, pending }: { entry: LogEntry; pending: boolean }) {

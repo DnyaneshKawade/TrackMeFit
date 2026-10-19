@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: T-101d new look on every screen
+
+- The top of each page shows the date and a greeting, with a round picture that opens Me.
+- Tabs are now Today, Workouts, Progress and Me. Me holds Your details, the account parts and Sign out.
+- Meals sit in one card, and a floating Add food button picks the meal by the time.
+- Your details, Me, Progress and Clients use cards. No database change.
+- The food search now loads when first opened, so the first load stays under 140 KB.
+
 ## 2026-10-19: T-101c new look, part 2 (screen layouts)
 - Colours: Ocean blue on a Pearl grey page, as DK picked. Saffron is gone. The icon is blue too.
 - Main tabs moved to the bottom, with icons.

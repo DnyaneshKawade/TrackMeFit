@@ -1,11 +1,10 @@
-.log { max-width: 520px; margin: 0 auto; padding: 16px; font-family: var(--font); color: var(--ink); }
 .log .muted { color: var(--muted); font-size: 14px; }
 .log .error { color: var(--danger); }
-.log .link { background: none; border: 0; color: var(--pv); font: inherit; cursor: pointer; padding: 4px 8px; }
 
-.day-nav { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; text-align: center; }
-.day-nav h2 { margin: 0; font-size: 20px; }
-.day-nav button { height: 44px; border: 0; background: var(--soft); border-radius: 12px; font-size: 22px; cursor: pointer; }
+.day-nav { display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; text-align: center; margin: 0 0 8px; }
+.day-nav h2 { margin: 0; font-size: 16px; font-weight: 600; color: var(--muted); }
+.day-nav button { height: 40px; border: 0; background: none; color: var(--pv); border-radius: 12px; font-size: 24px; cursor: pointer; }
+.day-nav button:hover { background: var(--soft); }
 .day-nav button:disabled { opacity: 0.35; }
 
 .macros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0; }
@@ -13,13 +12,26 @@
 .macros dt { font-size: 12px; color: var(--muted); }
 .macros dd { margin: 2px 0 0; font-weight: 700; font-size: 18px; }
 
-.meal { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; margin: 12px 0; box-shadow: var(--shadow); }
-.meal header { display: flex; justify-content: space-between; align-items: baseline; }
-.meal h3 { margin: 0; font-size: 17px; }
-.meal ul { list-style: none; padding: 0; margin: 8px 0; }
-.meal li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; gap: 8px; }
-.meal li > div { display: grid; gap: 2px; }
-.meal .add { background: none; border: 1.5px dashed var(--field-line); border-radius: 10px; width: 100%; padding: 10px; font: inherit; color: var(--pv); font-weight: 600; cursor: pointer; }
+/* Meals sit in one card, one row each, like the design board (T-101d). */
+.meals h2 { font-size: 17px; font-weight: 600; margin: 20px 0 8px; }
+.meals { margin-bottom: 72px; }
+.meals > .meal, .today-plan ~ .meal { background: var(--card); border: 1px solid var(--line); border-bottom-width: 0; padding: 14px 16px; margin: 0; }
+.meals > .meal:first-of-type { border-radius: 16px 16px 0 0; }
+.meals > .meal:last-of-type { border-radius: 0 0 16px 16px; border-bottom-width: 1px; }
+.today-plan ~ .meal { border-bottom-width: 1px; border-radius: 16px; margin: 8px 0; }
+.meal header { display: flex; align-items: center; gap: 8px; }
+.meal header h3.tick { margin: 0 auto 0 0; font-size: 16px; font-weight: 600; }
+.meal-kcal { font-size: 15px; font-weight: 600; }
+.meal-add { flex: none; display: grid; place-items: center; width: 36px; height: 36px; margin-right: -6px; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+.meal-add:hover { background: var(--soft); color: var(--pv); }
+.meal-add svg, .fab svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.meal > .muted { margin: 2px 0 0; font-size: 14px; }
+.meal ul { list-style: none; padding: 0; margin: 4px 0 0; }
+.meal li { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; gap: 8px; font-size: 14px; }
+.meal li > div { display: grid; gap: 0; }
+.meal li > div > .muted { font-size: 13px; }
+.meal li .link { min-height: 32px; padding: 4px 8px; color: var(--muted); }
+.fab { position: fixed; right: max(20px, calc(50% - 240px)); bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 15; display: flex; align-items: center; gap: 8px; height: 56px; padding: 0 22px; border: 0; border-radius: 28px; background: var(--p); color: var(--on-p); font: inherit; font-size: 16px; font-weight: 600; box-shadow: 0 6px 18px rgb(0 0 0 / 0.22); cursor: pointer; }
 
 .sheet-head { display: flex; justify-content: space-between; align-items: center; }
 .sheet-head h2 { margin: 0; font-size: 20px; }
@@ -52,8 +64,9 @@
 .left .bars > div:nth-child(2) .bar span { background: var(--chart-muted); }
 .left .bars > div:nth-child(3) .bar span { background: var(--acc); }
 .left footer { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; }
-.week { padding: 12px 16px; margin: 0 0 12px; border-radius: 12px; background: var(--tint); font-size: 15px; }
-.set-targets { width: 100%; font: inherit; font-weight: 600; padding: 12px; border-radius: 12px; border: 1.5px solid var(--pv); color: var(--pv); background: none; cursor: pointer; margin-bottom: 12px; }
+.week { display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin: 0 0 12px; border-radius: 12px; background: var(--tint); color: var(--p-ink); font-size: 15px; }
+.week svg { flex: none; width: 22px; height: 22px; fill: none; stroke: var(--pv); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.set-targets { width: 100%; font: inherit; font-weight: 600; padding: 12px; border-radius: 12px; border: 1px solid var(--line); color: var(--pv); background: var(--card); box-shadow: var(--shadow); cursor: pointer; margin-bottom: 12px; }
 .targets .target-field { display: grid; gap: 4px; margin: 12px 0; font-weight: 600; }
 .targets .target-input { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
 .targets input { font: inherit; padding: 12px; border: 1.5px solid var(--field-line); border-radius: 10px; min-width: 0; }

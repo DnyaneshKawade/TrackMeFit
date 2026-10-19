@@ -1,7 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
 import { withMine, type FoodFinder } from '../food/finder'
 import { memoryCustomFoodStore, type CustomFood, type CustomFoodStore, type NewCustomFood } from '../food/custom'
-import { AddFood } from './AddFood'
 import { remaining, type DietTarget, type TargetStore, type TargetValues } from '../targets/types'
 import { localDate, MEALS, shiftDate, totals, type LogEntry, type LogStore, type Meal, type NewLogEntry } from './types'
 import { noAutoMealPlan, type DietPref } from '../profile/types'
@@ -12,9 +11,11 @@ import { useSync } from '../sync/useSync'
 import { excludedTags, hasNonvegOff } from '../profile/dietRules'
 import { dayExcluded, nonvegWeekday, vegDayReason, type DayChoice } from '../profile/nonvegDays'
 import { EntryRow, MealSection } from './MealSection'
-import { daysLogged, weekStart } from './week'
+import { daysLogged, mealNow, weekStart } from './week'
 import './log.css'
 
+// The food search loads when first opened, to keep the first load small.
+const AddFood = lazy(() => import('./AddFood').then((m) => ({ default: m.AddFood })))
 const TodayPlan = lazy(() => import('./TodayPlan'))
 const PlanEditor = lazy(() => import('./PlanEditor'))
 const TargetsForm = lazy(() => import('../targets/TargetsForm').then((m) => ({ default: m.TargetsForm })))
@@ -323,18 +324,20 @@ export function FoodLog({
   if (adding) {
     return (
       <main className="log">
-        <AddFood
-          meal={adding}
-          date={date}
-          index={allFoods}
-          recent={recent}
-          myFoods={myFoods ?? []}
-          onAdd={add}
-          onCreate={createFood}
-          onRemoveFood={removeFood}
-          onClose={() => setAdding(null)}
-          nonvegOff={nonvegNote}
-        />
+        <Suspense fallback={<p className="muted">Loading…</p>}>
+          <AddFood
+            meal={adding}
+            date={date}
+            index={allFoods}
+            recent={recent}
+            myFoods={myFoods ?? []}
+            onAdd={add}
+            onCreate={createFood}
+            onRemoveFood={removeFood}
+            onClose={() => setAdding(null)}
+            nonvegOff={nonvegNote}
+          />
+        </Suspense>
       </main>
     )
   }
@@ -370,7 +373,8 @@ export function FoodLog({
       {targets && target && <LeftToday target={target} eaten={day} byCoach={!!userId && target.setBy !== userId} onEdit={() => setEditingTargets(true)} />}
       {week > 0 && (
         <p className="week" role="status" aria-label="This week">
-          <strong>{week} of 7 days</strong> logged this week.
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l4 4L19 6" /></svg>
+          <span><strong>{week} of 7 days</strong> logged this week.</span>
         </p>
       )}
       {offer && (
@@ -433,8 +437,17 @@ export function FoodLog({
             />
           </Suspense>
         ) : (
-          plainMeals
+          <div className="meals">
+            <h2>Meals</h2>
+            {plainMeals}
+          </div>
         ))}
+      {entries && date === today && (
+        <button className="fab" onClick={() => openAdd(mealNow(new Date()))}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          Add food
+        </button>
+      )}
     </main>
   )
 }

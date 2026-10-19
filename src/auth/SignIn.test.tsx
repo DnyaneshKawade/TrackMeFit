@@ -149,7 +149,8 @@ describe('Google sign-up picks a role (T-066)', () => {
     click('Continue')
     await waitFor(() => expect(auth.chooseRole).toHaveBeenCalledWith('coach'))
     expect(await screen.findByRole('tab', { name: 'Clients' })).toBeTruthy()
-    expect(screen.getByText('Meera Shah (coach)')).toBeTruthy()
+    click('Open Me')
+    expect(await screen.findByText('Meera Shah (coach)')).toBeTruthy()
   })
 
   it('3. "Tracking my own fitness" goes on to the first-run questions; a failed save says so', async () => {
@@ -169,7 +170,8 @@ describe('Google sign-up picks a role (T-066)', () => {
 
   it('4. accounts that already have a role never see the question', async () => {
     render(<AppShell auth={fakeAuth({ current: vi.fn().mockResolvedValue({ ...google, roleChosen: undefined }) })} />)
-    await waitFor(() => expect(screen.getByText(/Meera Shah/)).toBeTruthy())
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Me' }))
+    expect(await screen.findByText(/Meera Shah/)).toBeTruthy()
     expect(screen.queryByText(/One question first/)).toBeNull()
   })
 })
@@ -186,7 +188,9 @@ describe('app shell', () => {
     expect(await screen.findByRole('tab', { name: 'Sign in' })).toBeTruthy()
     unmount()
     render(<AppShell auth={fakeAuth({ current: vi.fn().mockResolvedValue(coach) })} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Me' }))
     expect((await screen.findByText(/Coach K/)).textContent).toBe('Coach K (coach)')
+    fireEvent.click(screen.getByRole('tab', { name: 'Today' }))
     expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
   })
 

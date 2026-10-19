@@ -242,7 +242,7 @@ export function Workouts({
         ))}
       </ul>
       <button className="primary" onClick={() => setView({ kind: 'start' })}>Start a workout</button>
-      <button className="add" onClick={() => setView({ kind: 'records' })}>Records and progress</button>
+      <button className="secondary records" onClick={() => setView({ kind: 'records' })}>Records and progress</button>
 
       <h2 className="plans-head">My plans</h2>
       {plans === null && <p className="muted">Loading…</p>}
