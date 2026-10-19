@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Ended coach links stay ended (T-088)
+
+- A client could set an ended coach link back to active, with no code. Now a trigger refuses it.
+- Joining again with a new code still works. Ending still works.
+- Migration: `20261111000000_client_ends_only.sql`.
+- Tests: 1 in `src/db/coach.test.ts`.
+
 ## 2026-10-19: Account and access study
 
 - Studied sign-in, settings, coach sharing and privacy against Supabase docs, the DPDP Act and Rules, and other apps.
