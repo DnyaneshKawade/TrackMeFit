@@ -7,6 +7,7 @@ import { memoryProfileStore } from './profile/stores'
 import type { ProfileInfo } from './profile/types'
 import { memoryTargetStore } from './targets/stores'
 import { memoryProgressStore } from './progress/stores'
+import { memoryFamilyStore } from './family/family'
 
 afterEach(cleanup)
 
@@ -35,6 +36,11 @@ const done: Partial<ProfileInfo> = {
 }
 const type = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } })
 const click = (name: string) => fireEvent.click(screen.getByRole('button', { name }))
+/** The age question everyone answers once (T-086). */
+const answerAge = async (date = '1995-06-15') => {
+  fireEvent.change(await screen.findByLabelText('Date of birth'), { target: { value: date } })
+  click('Continue')
+}
 const pick = (group: string, option: string) =>
   fireEvent.click(within(screen.getByRole('group', { name: group })).getByRole('button', { name: option }))
 
@@ -45,6 +51,7 @@ describe('first run', () => {
     const targets = memoryTargetStore('u1')
     render(<AppShell auth={auth(user)} profileStoreFor={() => profiles} progressStoreFor={() => progress} targetStoreFor={() => targets} />)
 
+    await answerAge()
     expect(await screen.findByRole('heading', { name: 'About you' })).toBeTruthy()
     expect((screen.getByLabelText('Your name') as HTMLInputElement).value).toBe('Asha')
     pick('Sex', 'Female')
@@ -81,6 +88,7 @@ describe('first run', () => {
   it('remembers a skip so onboarding doesn’t come back', async () => {
     const profiles = memoryProfileStore()
     const { unmount } = render(<AppShell auth={auth(user)} profileStoreFor={() => profiles} />)
+    await answerAge()
     fireEvent.click(await screen.findByRole('button', { name: 'Skip setup and start logging' }))
     expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
     unmount()
@@ -187,5 +195,40 @@ describe('your details (T-070)', () => {
     click('Cancel')
     expect((await screen.findByRole('region', { name: 'About you' })).textContent).toContain('Height160 cm')
     expect((await profiles.get()).heightCm).toBe(160)
+  })
+})
+
+describe('one age rule (T-086)', () => {
+  it('1. everyone answers the age once, coaches too; under 13 can’t go on', async () => {
+    const profiles = memoryProfileStore()
+    render(<AppShell auth={auth({ ...user, role: 'coach' })} profileStoreFor={() => profiles} />)
+    await screen.findByRole('form', { name: 'Your age' })
+    // Under 13 can't go on.
+    await answerAge('2020-01-01')
+    expect((await screen.findByRole('alert')).textContent).toBe('Track Me Fit is for people 13 and older.')
+    await answerAge('1990-03-01')
+    await screen.findByRole('tab', { name: 'Clients' })
+    expect((await profiles.get()).birthDate).toBe('1990-03-01')
+  })
+
+  it('2. a teen waits for a parent, shows a code, and goes in once the parent says yes', async () => {
+    const family = memoryFamilyStore()
+    const profiles = memoryProfileStore({ ...done, birthDate: '2011-01-01' })
+    render(<AppShell auth={auth(user)} profileStoreFor={() => profiles} familyFor={() => family} />)
+    expect(await screen.findByRole('heading', { name: 'Ask a parent to say yes' })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Breakfast' })).toBeNull()
+    click('Show my code')
+    expect(await screen.findByText('ABCD-1234')).toBeTruthy()
+    click('My parent said yes')
+    expect((await screen.findByRole('status')).textContent).toBe('Your parent hasn’t said yes yet.')
+    await family.sayYes('abcd-1234')
+    click('My parent said yes')
+    expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
+  })
+
+  it('3. a Google teen is not offered the coach role', async () => {
+    render(<AppShell auth={auth({ ...user, roleChosen: false })} profileStoreFor={() => memoryProfileStore({ birthDate: '2010-05-05' })} familyFor={() => memoryFamilyStore()} />)
+    await screen.findByText('Coaches must be 18 or older.')
+    expect(screen.queryByText('A coach')).toBeNull()
   })
 })

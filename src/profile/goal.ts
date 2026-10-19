@@ -101,9 +101,14 @@ export function maxLossRate(bmiValue: number): number {
 /** BMI to one decimal, as the screen shows it, so the rules match what people read. */
 const shownBmi = (weightKg: number, heightCm: number) => Math.round(bmi(weightKg, heightCm) * 10) / 10
 
+/** Under 18 the body is still growing, so the app never suggests eating
+ * less (T-086; AAP 2016 on teens and weight). */
+const TEEN_NO_LOSS = 'You are still growing, so we don’t suggest eating less. Eat what you burn and stay active.'
+
 /** Why losing weight isn't offered for this body, or null when it is (T-071). */
 export function noLossReason(body: PaceBody | undefined): string | null {
   if (!body) return null
+  if (body.ageYears < 18) return TEEN_NO_LOSS
   const value = shownBmi(body.weightKg, body.heightCm)
   if (value < DOCTOR_FIRST_BMI) return 'Your weight is very low for your height. Please see a doctor before you change what you eat.'
   if (value < 18.5) return 'You are already underweight, so losing weight isn’t safe. Try “Build muscle and gain weight” or “Stay as I am”.'
@@ -316,8 +321,10 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
   const asked = p.goal === 'lose' || p.goal === 'gain' ? (p.goalRate ?? 0) : p.goal === 'recomp' ? -0.0025 : 0
   // A saved pace is kept within today's safe limits: no loss when
   // underweight, and no faster loss than the body allows (T-071).
-  const rate = asked < 0 ? (bmiValue < 18.5 ? 0 : Math.max(asked, -maxLossRate(bmiValue))) : asked
-  if (asked < 0 && rate === 0) reasons.push('You are underweight, so we don’t suggest eating less. Calories are set to keep your weight steady.')
+  const teen = ageOn(p.birthDate!, today) < 18
+  const rate = asked < 0 ? (bmiValue < 18.5 || teen ? 0 : Math.max(asked, -maxLossRate(bmiValue))) : asked
+  if (asked < 0 && teen) reasons.push(TEEN_NO_LOSS)
+  else if (asked < 0 && rate === 0) reasons.push('You are underweight, so we don’t suggest eating less. Calories are set to keep your weight steady.')
   // Losing: start at the burn and step down each week (T-067a).
   const steps = rate < 0 ? calorieSteps({ burn: tdee, weightKg, rate, sex: p.sex!, usualKcal: p.currentDiet?.kcal ?? null }) : null
   const kcal = steps ? steps.steps[0] : calorieTarget({ tdee, weightKg, rate, sex: p.sex! })

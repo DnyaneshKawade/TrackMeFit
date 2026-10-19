@@ -426,3 +426,17 @@ describe('protein, carbs, fat and fibre in the plan (T-068c)', () => {
     expect(step.values.proteinG).toBe(90)
   })
 })
+
+describe('one age rule (T-086)', () => {
+  it('5. under 18, the app suggests no calorie cut, with a reason', () => {
+    const teen = { ...asha, birthDate: '2010-01-01' }
+    expect(paceOptions('lose', 'beginner', {}, { weightKg: 70, heightCm: 160, ageYears: 16 })).toEqual([])
+    expect(noLossReason({ weightKg: 70, heightCm: 160, ageYears: 16 })).toBe('You are still growing, so we don’t suggest eating less. Eat what you burn and stay active.')
+    const plan = buildPlan(teen, 70, TODAY)
+    expect(plan.steps).toBeNull()
+    expect(plan.reasons[0]).toMatch(/still growing/)
+    expect(plan.suggested!.kcal).toBe(buildPlan({ ...teen, goal: 'maintain', goalRate: 0 }, 70, TODAY).suggested!.kcal)
+    // Recomp, which also eats a little less, is held at the burn too.
+    expect(buildPlan({ ...teen, goal: 'recomp' }, 70, TODAY).steps).toBeNull()
+  })
+})

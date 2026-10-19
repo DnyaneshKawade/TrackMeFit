@@ -27,7 +27,7 @@ describe('admin tab (T-042a1)', () => {
       current: vi.fn().mockResolvedValue(account),
       onChange: vi.fn().mockReturnValue(() => {}),
     }
-    const profiles = memoryProfileStore({ onboardedAt: '2026-10-12T10:00:00Z' })
+    const profiles = memoryProfileStore({ birthDate: '1990-01-01', onboardedAt: '2026-10-12T10:00:00Z' })
     const { unmount } = render(<AppShell auth={auth} profileStoreFor={() => profiles} adminFor={() => readyAccess(memoryAdmin({ me: 'dk', level: null }))} />)
     await screen.findByRole('tab', { name: 'Food' })
     expect(screen.queryByRole('tab', { name: 'Admin' })).toBeNull()

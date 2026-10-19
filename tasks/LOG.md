@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: T-086 one age rule, with a parent's yes
+- Everyone answers their date of birth once, before anything else. Under 13 can't go on.
+- From 13 to 17, a teen shows a code. A parent types it under Account, with their own adult account, and says yes. They can take it back.
+- Until a parent says yes, the database refuses a teen's new data. Teens can't link to a coach. Coaches must be 18.
+- Under 18, the engine never suggests eating less.
+- Migration: `20261114000000_age_rule.sql` (DK runs it before merging).
+- Tests: `src/db/ageRule.test.ts` (4), `src/App.test.tsx` (3), `src/family/FamilyPart.test.tsx` (2), `src/profile/profile.test.ts` (1).
+
 ## 2026-10-19: T-099 first steps for a new coach
 - A new coach sees three steps: fill in your details, we check you, invite a client.
 - Each is marked Done, Now or Next, and says what it means for clients.

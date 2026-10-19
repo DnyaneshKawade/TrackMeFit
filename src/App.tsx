@@ -21,7 +21,7 @@ import { memoryCustomFoodStore, supabaseCustomFoodStore, type CustomFoodStore } 
 import { localDate, shiftDate } from './log/types'
 import { memoryProfileStore, supabaseProfileStore } from './profile/stores'
 import { memoryMealPlanStore, supabaseMealPlanStore, type MealPlanStore } from './profile/mealPlanStore'
-import { isOnboarded, type ProfileInfo, type ProfileStore } from './profile/types'
+import { ageOn, isOnboarded, type ProfileInfo, type ProfileStore } from './profile/types'
 
 // First-run questions are seen once, so they load only when needed.
 // Training and Progress load when their tab is first opened, to keep the first load small.
@@ -34,6 +34,9 @@ const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ defa
 // Signed-in visits never need the sign-in screen, so it loads only when shown.
 const SignIn = lazy(() => import('./auth/SignIn').then((m) => ({ default: m.SignIn })))
 const RoleStep = lazy(() => import('./auth/RoleStep').then((m) => ({ default: m.RoleStep })))
+// Asked once of everyone, and shown to teens until a parent says yes (T-086).
+const AgeStep = lazy(() => import('./family/AgeStep').then((m) => ({ default: m.AgeStep })))
+const ParentStep = lazy(() => import('./family/ParentStep').then((m) => ({ default: m.ParentStep })))
 const NewPassword = lazy(() => import('./auth/NewPassword').then((m) => ({ default: m.NewPassword })))
 const ProfilePage = lazy(() => import('./profile/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 // Only admins open the Admin tab (T-042a1).
@@ -51,6 +54,7 @@ import { memoryApprovalStore, supabaseApprovalStore, type CoachApprovalStore } f
 import type { ClientStores } from './coach/ClientView'
 import { memoryPhotoStore, supabasePhotoStore, type PhotoStore } from './progress/photoStore'
 import type { DataStore } from './account/data'
+import { memoryFamilyStore, supabaseFamilyStore, type FamilyStore } from './family/family'
 
 // The bundled food list, downloaded only when the database can't answer.
 const loadBundledFoods = (): Promise<FoodFinder> => import('./food/catalogueData').then((m) => localFinder(m.searchIndex))
@@ -61,7 +65,8 @@ export function AppShell({
   targetStoreFor = (a) => memoryTargetStore(a.id),
   workoutStoreFor = () => memoryWorkoutStore(),
   exerciseStoreFor = () => memoryExerciseStore(),
-  profileStoreFor = () => memoryProfileStore(),
+  // Stand-ins answer the age question as an adult, so other screens can be tried (T-086).
+  profileStoreFor = () => memoryProfileStore({ birthDate: '1995-06-15' }),
   progressStoreFor = () => memoryProgressStore(),
   photoStoreFor = () => memoryPhotoStore(),
   coachStoreFor = () => memoryCoachStore(),
@@ -84,6 +89,7 @@ export function AppShell({
   approvalFor = () => memoryApprovalStore(),
   viewing = null,
   dataFor = () => () => import('./account/data').then((m) => m.memoryDataStore()),
+  familyFor = () => memoryFamilyStore({ parent: 'Meena' }),
 }: {
   auth: AuthService | null
   logStoreFor?: (account: Account) => LogStore
@@ -117,6 +123,8 @@ export function AppShell({
   viewing?: Viewing | null
   /** The person's own data: download, requests and delete (T-042a5). Loaded when the page opens. */
   dataFor?: (account: Account) => () => Promise<DataStore>
+  /** A teen's parent, or an adult's children (T-086). */
+  familyFor?: (account: Account) => FamilyStore
 }) {
   const [account, setAccount] = useState<Account | null | undefined>(undefined)
   const store = useMemo(() => (account ? logStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -159,6 +167,7 @@ export function AppShell({
   const photos = useMemo(() => (account ? photoStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const checkIns = useMemo(() => (account ? checkInStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const chat = useMemo(() => (account ? chatStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const family = useMemo(() => (account ? familyFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const myData = useMemo(() => (account ? dataFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const approval = useMemo(() => (account?.role === 'coach' ? approvalFor(account) : undefined), [account?.id, account?.role]) // eslint-disable-line react-hooks/exhaustive-deps
   const templates = useMemo(() => (account?.role === 'coach' ? templateStoreFor(account) : undefined), [account?.id, account?.role]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -174,6 +183,21 @@ export function AppShell({
   const mealPlans = useMemo(() => (account ? mealPlanStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   // undefined while loading; null when it couldn't be loaded (the app still works).
   const [profile, setProfile] = useState<ProfileInfo | null | undefined>(undefined)
+  // Under 18, a parent says yes first (T-086). undefined while checking.
+  const teen = !!profile?.birthDate && ageOn(profile.birthDate, localDate()) < 18
+  const [parentOk, setParentOk] = useState<boolean | undefined>(undefined)
+  useEffect(() => {
+    setParentOk(undefined)
+    if (!teen || !family) return
+    let live = true
+    family.myParent().then(
+      (p) => live && setParentOk(!!p),
+      () => live && setParentOk(false),
+    )
+    return () => {
+      live = false
+    }
+  }, [teen, family])
   // The next weekly calorie step, offered on the Food tab (T-067a).
   const nextStep = useMemo(
     () =>
@@ -255,11 +279,29 @@ export function AppShell({
       </Suspense>
     )
   }
+  if (profile === undefined) return <main className="auth">Loading…</main>
+  // Everyone gives a birth date once; support viewing as someone isn't held up.
+  if (profile && !profile.birthDate && !view) {
+    return (
+      <Suspense fallback={<main className="auth">Loading…</main>}>
+        <AgeStep
+          today={localDate()}
+          onSave={async (birthDate) => {
+            const p = { ...profile, birthDate }
+            await profiles!.save(p)
+            setProfile(p)
+          }}
+          onSignOut={() => void auth.signOut()}
+        />
+      </Suspense>
+    )
+  }
   if (account.roleChosen === false) {
     return (
       <Suspense fallback={<main className="auth">Loading…</main>}>
         <RoleStep
           name={account.name}
+          canCoach={!teen}
           onChoose={async (role) => {
             await auth.chooseRole(role)
             setAccount({ ...account, role, roleChosen: true })
@@ -268,7 +310,14 @@ export function AppShell({
       </Suspense>
     )
   }
-  if (profile === undefined) return <main className="auth">Loading…</main>
+  if (teen && parentOk !== true && !view) {
+    if (parentOk === undefined) return <main className="auth">Loading…</main>
+    return (
+      <Suspense fallback={<main className="auth">Loading…</main>}>
+        <ParentStep store={family!} onDone={() => setParentOk(true)} onSignOut={() => void auth.signOut()} />
+      </Suspense>
+    )
+  }
 
   const viewBar = view && (
     <Suspense fallback={null}>
@@ -351,7 +400,8 @@ export function AppShell({
                   }
                 : undefined
             }
-            coach={account.role === 'user' ? coaching : undefined}
+            coach={account.role === 'user' && !teen ? coaching : undefined}
+            family={family && { store: family, teen }}
             onCoach={() => setTab('progress')}
             onSignOutAll={async () => {
               await auth.signOut('all')
@@ -519,6 +569,7 @@ export default function App() {
       approvalFor={(a) => supabaseApprovalStore(sb!, a.id)}
       viewing={viewing}
       dataFor={(a) => () => import('./account/data').then((m) => m.supabaseDataStore(sb!, a.id))}
+      familyFor={() => supabaseFamilyStore(sb!)}
     />
   )
 }

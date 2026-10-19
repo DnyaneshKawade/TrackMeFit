@@ -86,7 +86,13 @@ export const SECTIONS: Section[] = [
   },
   {
     heading: 'Age',
-    lines: ['Track Me Fit is for people aged 18 and over.'],
+    lines: [
+      'Track Me Fit is for people aged 13 and over.',
+      'Under 18, a parent says yes first, with their own account.',
+      'The parent can take back their yes at any time.',
+      'Under 18, you can’t have a coach. The app won’t ask you to eat less.',
+      'Coaches must be 18 or older.',
+    ],
   },
   {
     heading: 'Changes to this page',
