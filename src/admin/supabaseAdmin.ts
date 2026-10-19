@@ -159,9 +159,11 @@ export function supabaseAdmin(sb: SupabaseClient): AdminService {
         createdAt: r.created_at as string,
         closedAt: (r.closed_at as string | null) ?? null,
         daysLeft: r.days_left as number,
+        kind: (r.kind as 'change' | 'coach') ?? 'change',
       }))
     },
     closeRequest: (id, answer) => run('admin_close_request', { request: id, answer_text: answer }),
+    makeCoach: (id, answer) => run('admin_make_coach', { request: id, answer_text: answer }),
     setCoachApproval: (on, reason) => run('admin_set_switch', { switch_key: 'coach approval', turn_on: on, why: reason }),
   }
 }

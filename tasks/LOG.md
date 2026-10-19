@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: T-103 "I want to coach"
+- Adults who aren't coaches see "Coach other people" on the Account page and can ask once.
+- The owner sees "Wants to coach" under Requests. "Make coach" makes them a coach, answers and logs it.
+- Someone with a coach must end that link first. The new coach goes through the usual check.
+- Migration: `20261115000000_coach_requests.sql` (DK runs it before merging, after #101's).
+- Tests: `src/db/coachRequests.test.ts` (3), `src/account/Account.test.tsx` (2), `src/admin/Requests.test.tsx` (1).
+
 ## 2026-10-19: T-086 one age rule, with a parent's yes
 - Everyone answers their date of birth once, before anything else. Under 13 can't go on.
 - From 13 to 17, a teen shows a code. A parent types it under Account, with their own adult account, and says yes. They can take it back.

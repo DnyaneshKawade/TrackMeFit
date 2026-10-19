@@ -11,6 +11,8 @@ export interface DataRequest {
   answer: string
   createdAt: string
   closedAt: string | null
+  /** "coach" asks to become a coach (T-103); "change" fixes data. */
+  kind: 'change' | 'coach'
 }
 
 export interface DataStore {
@@ -19,6 +21,8 @@ export interface DataStore {
   /** This person's requests, newest first. */
   requests(): Promise<DataRequest[]>
   ask(note: string): Promise<void>
+  /** Asks the owner to make this account a coach (T-103). */
+  askToCoach(note: string): Promise<void>
   /** Deletes the account and all its data, then ends the sign-in here. */
   deleteMe(): Promise<void>
 }
@@ -44,6 +48,7 @@ export function dataError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String((e as { message?: unknown })?.message ?? e)
   if (/remove them as admin first/.test(msg)) return 'You are an admin. Ask another owner to remove you as admin first.'
   if (/not signed in/.test(msg)) return 'Please sign in again.'
+  if (/duplicate key/.test(msg)) return 'We already have your request.'
   if (/violates check constraint/.test(msg)) return 'Please write what is wrong, in 1,000 letters or less.'
   if (/network|fetch/i.test(msg)) return 'No internet connection. Check it and try again.'
   return 'Something went wrong. Please try again.'
@@ -58,7 +63,11 @@ export function memoryDataStore(opts: { data?: Record<string, unknown>; requests
     requests: async () => [...requests].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     async ask(note: string) {
       if (!note.trim() || note.length > 1000) throw new Error('violates check constraint')
-      requests.push({ id: `r${requests.length + 1}`, note: note.trim(), status: 'open', answer: '', createdAt: new Date().toISOString(), closedAt: null })
+      requests.push({ id: `r${requests.length + 1}`, note: note.trim(), status: 'open', answer: '', createdAt: new Date().toISOString(), closedAt: null, kind: 'change' })
+    },
+    async askToCoach(note: string) {
+      if (requests.some((r) => r.kind === 'coach' && r.status === 'open')) throw new Error('duplicate key')
+      requests.push({ id: `r${requests.length + 1}`, note: note.trim(), status: 'open', answer: '', createdAt: new Date().toISOString(), closedAt: null, kind: 'coach' })
     },
     async deleteMe() {
       if (opts.refuseDelete) throw new Error(opts.refuseDelete)
@@ -95,15 +104,19 @@ export function supabaseDataStore(sb: SupabaseClient, userId: string): DataStore
     async requests() {
       const { data, error } = await sb
         .from('data_requests')
-        .select('id, note, status, answer, created_at, closed_at')
+        .select('id, note, status, answer, created_at, closed_at, kind')
         .eq('person_id', userId)
         .order('created_at', { ascending: false })
         .limit(50)
       if (error) throw error
-      return (data ?? []).map((r) => ({ id: r.id, note: r.note, status: r.status, answer: r.answer, createdAt: r.created_at, closedAt: r.closed_at }))
+      return (data ?? []).map((r) => ({ id: r.id, note: r.note, status: r.status, answer: r.answer, createdAt: r.created_at, closedAt: r.closed_at, kind: r.kind }))
     },
     async ask(note) {
       const { error } = await sb.from('data_requests').insert({ note: note.trim() })
+      if (error) throw error
+    },
+    async askToCoach(note) {
+      const { error } = await sb.from('data_requests').insert({ note: note.trim(), kind: 'coach' })
       if (error) throw error
     },
     async deleteMe() {

@@ -14,3 +14,4 @@
 .admin .coach-details dd { margin: 0; overflow-wrap: anywhere; }
 .admin .certs { list-style: none; padding: 0; display: grid; gap: 12px; }
 .admin .certs img { display: block; max-width: 100%; height: auto; border-radius: 8px; }
+.admin-team .tag { margin-left: 8px; font-size: 0.85em; padding: 0 6px; border-radius: 8px; background: #fff7e0; border: 1px solid #f0d78a; }

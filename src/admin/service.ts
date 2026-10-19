@@ -84,6 +84,8 @@ export interface RequestRow {
   closedAt: string | null
   /** Days left to answer, out of 90. */
   daysLeft: number
+  /** "coach" asks to become a coach (T-103). */
+  kind: 'change' | 'coach'
 }
 
 /** Requests shown per page. */
@@ -129,6 +131,8 @@ export interface AdminService {
   requests(status: 'open' | 'closed', after?: RequestRow): Promise<RequestRow[]>
   /** Closes a request. The person sees the answer; the log saves it. */
   closeRequest(id: string, answer: string): Promise<void>
+  /** Makes the person a coach and closes their request (T-103). */
+  makeCoach(id: string, answer: string): Promise<void>
 }
 
 /** Database errors in plain words. */
@@ -144,6 +148,7 @@ export function adminError(e: unknown): string {
   if (/no coach link/.test(msg)) return 'They have no coach now.'
   if (/coach has clients/.test(msg)) return 'End their client links first.'
   if (/already this role/.test(msg)) return 'They already have this role.'
+  if (/they have a coach/.test(msg)) return 'They have a coach now. Their link must end first.'
   if (/admins cannot be viewed/.test(msg)) return "Admins can't be viewed."
   if (/email not confirmed/.test(msg)) return 'They must confirm their email first.'
   if (/decision not valid/.test(msg)) return 'That step does not fit their status now.'
@@ -229,6 +234,13 @@ export function memoryAdmin(opts: {
       if (!r || r.status !== 'open') throw new Error('request not open')
       Object.assign(r, { status: 'closed', answer: answer.trim(), closedAt: '2026-10-18T12:00:00Z' })
       log.push(`close request ${r.personId} ${answer}`)
+    },
+    async makeCoach(id, answer) {
+      need(answer)
+      const r = requests.get(id)
+      if (!r || r.status !== 'open' || r.kind !== 'coach') throw new Error('request not open')
+      Object.assign(r, { status: 'closed', answer: answer.trim(), closedAt: '2026-10-18T12:00:00Z' })
+      log.push(`change role ${r.personId} ${answer}`)
     },
     async coaches(group, after) {
       need('x')
