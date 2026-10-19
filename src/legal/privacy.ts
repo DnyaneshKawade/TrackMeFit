@@ -80,6 +80,7 @@ export const SECTIONS: Section[] = [
       '- Download my data: get one file with all of it.',
       '- Ask for a change: tell us what is wrong. We answer within 90 days.',
       '- Delete my account: this removes your account, data and photos.',
+      'Without the app, see the page on deleting your account at /delete-account.html.',
       'You can also fix most things yourself in the app.',
     ],
   },

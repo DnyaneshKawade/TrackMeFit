@@ -47,6 +47,7 @@ describe('hosting', () => {
 
   it('sends app paths to the app but leaves built files and icons alone', () => {
     expect(rewrite.test('/privacy.html')).toBe(false)
+    expect(rewrite.test('/delete-account.html')).toBe(false)
     expect(rewrite.test('/')).toBe(true)
     expect(rewrite.test('/training')).toBe(true)
     expect(rewrite.test('/assets/index-abc.js')).toBe(false)
@@ -90,6 +91,7 @@ describe('service worker pages (T-077)', () => {
 
   it('3. the privacy page keeps its own copy, so the app page is not replaced', async () => {
     expect(await navigate('/privacy.html')).toEqual(['/privacy.html'])
+    expect(await navigate('/delete-account.html')).toEqual(['/delete-account.html'])
     expect(await navigate('/')).toEqual(['/'])
     expect(await navigate('/training')).toEqual(['/'])
   })
