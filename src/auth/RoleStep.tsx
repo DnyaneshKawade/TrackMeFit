@@ -41,7 +41,7 @@ export function RoleStep({ name, onChoose, canCoach = true }: { name: string; on
         )}
       </fieldset>
       {!canCoach && <p className="auth-hint">Coaches must be 18 or older.</p>}
-      <p className="auth-hint">You can’t change this later.</p>
+      <p className="auth-hint">Want to coach later? Ask us on the Account page.</p>
       {error && <p className="auth-error" role="alert">{error}</p>}
       <button className="auth-primary" disabled={busy} onClick={() => void save()}>Continue</button>
     </main>

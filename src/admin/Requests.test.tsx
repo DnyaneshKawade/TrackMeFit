@@ -17,6 +17,7 @@ const request = (id: string, over: Partial<RequestRow> = {}): RequestRow => ({
   createdAt: '2026-10-15T10:00:00Z',
   closedAt: null,
   daysLeft: 87,
+  kind: 'change',
   ...over,
 })
 
@@ -55,5 +56,27 @@ describe('Requests page (T-042a5)', () => {
   it('6. only owners with the second step see requests', async () => {
     render(<Requests service={memoryAdmin({ me: 'x', level: 'content', step: 'on', requests: [request('a')] })} />)
     expect((await screen.findByRole('alert')).textContent).toBe('Only owners who used the second step can do this.')
+  })
+})
+
+describe('"I want to coach" (T-103)', () => {
+  it('2. a coach request is marked; the owner makes them a coach with an answer', async () => {
+    const service = memoryAdmin({
+      me: 'dk',
+      level: 'owner',
+      step: 'on',
+      requests: [request('k', { name: 'Kiran', note: 'I train friends at my gym', kind: 'coach' }), request('m', { name: 'Meera' })],
+    })
+    render(<Requests service={service} />)
+    const kiran = await screen.findByRole('listitem', { name: 'Request from Kiran' })
+    expect(within(kiran).getByText('Wants to coach')).toBeTruthy()
+    // A change request has no Make coach button.
+    expect(within(screen.getByRole('listitem', { name: 'Request from Meera' })).queryByRole('button', { name: 'Make Meera a coach' })).toBeNull()
+    fireEvent.click(within(kiran).getByRole('button', { name: 'Make Kiran a coach' }))
+    fireEvent.change(screen.getByLabelText('Answer for them'), { target: { value: 'Welcome. Fill in your coach details.' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Make coach' }))
+    expect((await screen.findByRole('status')).textContent).toBe('They are a coach now. We check their details next.')
+    expect(service.log).toEqual(['change role p-k Welcome. Fill in your coach details.'])
+    expect(screen.queryByRole('listitem', { name: 'Request from Kiran' })).toBeNull()
   })
 })

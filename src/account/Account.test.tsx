@@ -31,7 +31,7 @@ describe('Account page (T-042a5)', () => {
   it('5. asks for a change with a note and shows the answer', async () => {
     setup(
       memoryDataStore({
-        requests: [{ id: 'r0', note: 'Lunch on 2 Oct is wrong', status: 'closed', answer: 'Removed it', createdAt: '2026-10-02T10:00:00Z', closedAt: '2026-10-04T10:00:00Z' }],
+        requests: [{ id: 'r0', note: 'Lunch on 2 Oct is wrong', status: 'closed', answer: 'Removed it', createdAt: '2026-10-02T10:00:00Z', closedAt: '2026-10-04T10:00:00Z', kind: 'change' }],
       }),
     )
     const list = await screen.findByRole('list', { name: 'My requests' })
@@ -119,5 +119,24 @@ describe('one tidy Account page (T-092)', () => {
     render(<Account store={memoryDataStore()} onBack={() => {}} onDeleted={() => {}} coach={memoryCoachStore()} onCoach={() => {}} />)
     expect(await screen.findByText('You have no coach. Nobody else sees your data.')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Join a coach' })).toBeTruthy()
+  })
+})
+
+describe('"I want to coach" (T-103)', () => {
+  it('1. an adult asks once from the Account page, then sees the request is waiting', async () => {
+    const store = memoryDataStore()
+    render(<Account store={store} onBack={() => {}} onDeleted={() => {}} canCoach />)
+    fireEvent.click(await screen.findByRole('button', { name: 'I want to coach' }))
+    expect(screen.getByText('You keep this account. Your own log stays yours.')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Tell us about your coaching (if you like)'), { target: { value: 'I train friends at my gym' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send my request' }))
+    expect((await screen.findByRole('region', { name: 'Coach other people' })).textContent).toMatch(/We have your request from .+\. We will answer here\./)
+    expect((await store.requests()).map((r) => [r.kind, r.note])).toEqual([['coach', 'I train friends at my gym']])
+    expect(screen.queryByRole('button', { name: 'I want to coach' })).toBeNull()
+  })
+
+  it('1. coaches and teens don’t see it', () => {
+    setup()
+    expect(screen.queryByRole('region', { name: 'Coach other people' })).toBeNull()
   })
 })

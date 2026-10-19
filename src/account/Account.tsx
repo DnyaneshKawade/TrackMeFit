@@ -97,6 +97,65 @@ function AskForChange({ store }: { store: DataStore }) {
   )
 }
 
+/** "I want to coach" (T-103): asks the owner to make this account a coach,
+ * so nobody signs up twice. The answer shows here. */
+function CoachAsk({ store }: { store: DataStore }) {
+  const [asked, setAsked] = useState<DataRequest | null | undefined>(undefined)
+  const [open, setOpen] = useState(false)
+  const [note, setNote] = useState('')
+  const [error, setError] = useState('')
+  const load = () =>
+    store.requests().then(
+      (list) => setAsked(list.find((r) => r.kind === 'coach') ?? null),
+      () => setAsked(null),
+    )
+  useEffect(() => {
+    void load()
+  }, [store]) // eslint-disable-line react-hooks/exhaustive-deps
+  if (asked === undefined) return null
+  return (
+    <section aria-label="Coach other people">
+      <h3>Coach other people</h3>
+      {asked?.status === 'open' ? (
+        <p>We have your request from {day(asked.createdAt)}. We will answer here.</p>
+      ) : open ? (
+        <form
+          aria-label="Ask to coach"
+          onSubmit={async (e) => {
+            e.preventDefault()
+            setError('')
+            try {
+              await store.askToCoach(note.trim() || 'I want to coach.')
+              setOpen(false)
+              await load()
+            } catch (err) {
+              setError(dataError(err))
+            }
+          }}
+        >
+          <p>We check every coach before they take clients.</p>
+          <p className="muted">You keep this account. Your own log stays yours.</p>
+          <label>
+            Tell us about your coaching (if you like)
+            <textarea value={note} maxLength={1000} onChange={(e) => setNote(e.target.value)} />
+          </label>
+          {error && <p className="error" role="alert">{error}</p>}
+          <span className="actions">
+            <button className="primary">Send my request</button>
+            <button type="button" className="link" onClick={() => setOpen(false)}>Cancel</button>
+          </span>
+        </form>
+      ) : (
+        <>
+          {asked?.answer && <p>Our answer: {asked.answer}</p>}
+          <p>Do you want to coach others? Ask us here. You don’t need a new account.</p>
+          <button className="link" onClick={() => setOpen(true)}>I want to coach</button>
+        </>
+      )}
+    </section>
+  )
+}
+
 function SignOutAll({ onSignOutAll }: { onSignOutAll: () => Promise<void> }) {
   const [asking, setAsking] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -223,6 +282,7 @@ export function Account({
   coach,
   onCoach,
   family,
+  canCoach,
   save = saveFile,
 }: {
   store: DataStore
@@ -241,6 +301,8 @@ export function Account({
   onCoach?: () => void
   /** A teen's parent, or an adult's children (T-086). */
   family?: { store: FamilyStore; teen: boolean }
+  /** Adults who aren't coaches can ask to become one (T-103). */
+  canCoach?: boolean
   save?: (name: string, text: string) => void
 }) {
   return (
@@ -257,6 +319,7 @@ export function Account({
       {security && <Security {...security} />}
       {onSignOutAll && <SignOutAll onSignOutAll={onSignOutAll} />}
       {coach && <CoachPart coach={coach} onOpen={onCoach} />}
+      {canCoach && <CoachAsk store={store} />}
       {family && <FamilyPart store={family.store} teen={family.teen} />}
       <section aria-label="Your data and privacy">
         <h3>Your data and privacy</h3>
@@ -285,6 +348,7 @@ export function AccountTab({
   coach?: CoachStore
   onCoach?: () => void
   family?: { store: FamilyStore; teen: boolean }
+  canCoach?: boolean
 }) {
   const [store, setStore] = useState<DataStore | null>(null)
   useEffect(() => {

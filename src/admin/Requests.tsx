@@ -14,6 +14,8 @@ export function Requests({ service }: { service: AdminService }) {
   const [rows, setRows] = useState<RequestRow[] | null>(null)
   const [more, setMore] = useState(false)
   const [closing, setClosing] = useState<string | null>(null)
+  // A coach request being said yes to (T-103).
+  const [making, setMaking] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [done, setDone] = useState('')
 
@@ -45,10 +47,23 @@ export function Requests({ service }: { service: AdminService }) {
     }
   }
 
+  const makeCoach = async (id: string, answer: string) => {
+    setError('')
+    setDone('')
+    try {
+      await service.makeCoach(id, answer)
+      setMaking(null)
+      setDone('They are a coach now. We check their details next.')
+      await load(status)
+    } catch (e) {
+      setError(adminError(e))
+    }
+  }
+
   return (
     <section aria-label="Requests">
       <h3>Requests</h3>
-      <p className="muted">People ask here to fix their data. Answer within 90 days.</p>
+      <p className="muted">People ask here to fix their data, or to coach. Answer within 90 days.</p>
       <nav className="tabs" role="tablist" aria-label="Request lists">
         <button role="tab" aria-selected={status === 'open'} onClick={() => setStatus('open')}>Open</button>
         <button role="tab" aria-selected={status === 'closed'} onClick={() => setStatus('closed')}>Closed</button>
@@ -66,6 +81,7 @@ export function Requests({ service }: { service: AdminService }) {
             <li key={r.id} aria-label={`Request from ${nameOf(r)}`}>
               <div>
                 <strong>{nameOf(r)}</strong>
+                {r.kind === 'coach' && <span className="tag">Wants to coach</span>}
                 <div className="muted">{r.email}</div>
                 <p>{r.note}</p>
                 <div className="muted">
@@ -75,7 +91,15 @@ export function Requests({ service }: { service: AdminService }) {
                 {r.answer && <p>Your answer: {r.answer}</p>}
               </div>
               {r.status === 'open' &&
-                (closing === r.id ? (
+                (making === r.id ? (
+                  <ReasonForm
+                    question={`Make ${nameOf(r)} a coach?`}
+                    button="Make coach"
+                    label="Answer for them"
+                    onCancel={() => setMaking(null)}
+                    onSave={(answer) => void makeCoach(r.id, answer)}
+                  />
+                ) : closing === r.id ? (
                   <ReasonForm
                     question={`Close the request from ${nameOf(r)}?`}
                     button="Close"
@@ -85,6 +109,9 @@ export function Requests({ service }: { service: AdminService }) {
                   />
                 ) : (
                   <span className="actions">
+                    {r.kind === 'coach' && (
+                      <button className="link" aria-label={`Make ${nameOf(r)} a coach`} onClick={() => setMaking(r.id)}>Make coach</button>
+                    )}
                     <button className="link" aria-label={`Answer ${nameOf(r)}`} onClick={() => setClosing(r.id)}>Answer and close</button>
                   </span>
                 ))}

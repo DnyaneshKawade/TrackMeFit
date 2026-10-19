@@ -402,6 +402,7 @@ export function AppShell({
             }
             coach={account.role === 'user' && !teen ? coaching : undefined}
             family={family && { store: family, teen }}
+            canCoach={account.role === 'user' && !teen}
             onCoach={() => setTab('progress')}
             onSignOutAll={async () => {
               await auth.signOut('all')
