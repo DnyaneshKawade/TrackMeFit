@@ -3,11 +3,14 @@
 // signed out.
 
 /** Change this date whenever the words below change. */
-export const UPDATED = '18 October 2026'
+export const UPDATED = '19 October 2026'
 
-/** An email people can write to. Empty until DK picks one; the page then
- * points to "Ask for a change" only. */
-export const CONTACT_EMAIL = ''
+/** The email people can write to (T-089). Empty would point to "Ask for a
+ * change" only. */
+export const CONTACT_EMAIL = 'trackmefit5@gmail.com'
+
+/** Who answers questions and complaints about data (T-089). */
+export const CONTACT_NAME = 'Track Me Fit'
 
 export interface Section {
   heading: string
@@ -27,7 +30,7 @@ export const SECTIONS: Section[] = [
   {
     heading: 'What we keep',
     lines: [
-      '- Your account: name, email, and phone if you add it.',
+      '- Your account: name and email. Coaches also give a phone number.',
       '- Your details: birth date, height, sex, goal and food habits.',
       '- What you log: food, weight, body size, workouts and check-ins.',
       '- Progress photos and coach certificates you add.',
@@ -49,9 +52,13 @@ export const SECTIONS: Section[] = [
     heading: 'Who can see it',
     lines: [
       '- You.',
-      '- Your coach, only while you are linked to them.',
+      '- Your coach, only while you share with them.',
       '- Our support team, to fix a problem you tell us about.',
-      'You can end a coach link at any time.',
+      'A coach sees your food log, targets, workouts and plans.',
+      'They also see your weight, body size, photos and signup answers.',
+      'They see your check-ins and messages too.',
+      'They can change your targets, meal plan and workout plans.',
+      'You say yes before a coach sees anything.',
       'Support may sign in as you to see the problem.',
       'Each time is saved in a log with the reason.',
       'Photos are private. Only you and your coach can open them.',
@@ -74,6 +81,15 @@ export const SECTIONS: Section[] = [
       '- Ask for a change: tell us what is wrong. We answer within 90 days.',
       '- Delete my account: this removes your account, data and photos.',
       'You can also fix most things yourself in the app.',
+    ],
+  },
+  {
+    heading: 'Taking back your yes',
+    lines: [
+      'You can take back your yes at any time.',
+      '- Stop sharing with your coach under Your coach. They can no longer see your data.',
+      '- Delete your account to stop everything.',
+      'Taking it back does not change what was done before.',
     ],
   },
   {
@@ -101,10 +117,11 @@ export const SECTIONS: Section[] = [
 ]
 
 /** How to reach us, with the email once there is one. */
-export function contactLines(email = CONTACT_EMAIL): string[] {
+export function contactLines(email = CONTACT_EMAIL, name = CONTACT_NAME): string[] {
   return [
     'Use "Ask for a change" on the Account page in the app.',
-    ...(email ? [`Or email us at ${email}.`] : []),
+    ...(email ? [`Or email us at ${email}.`, `${name} answers every question and complaint about your data.`] : []),
     'We answer within 90 days, as India\'s data law asks.',
+    'Not happy with our answer? You can complain to the Data Protection Board of India.',
   ]
 }
