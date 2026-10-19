@@ -10,6 +10,8 @@ export interface Account {
   role: Role
   /** False only for a new Google account that hasn't picked "For myself" or "I'm a coach" yet (T-066). */
   roleChosen?: boolean
+  /** How they sign in: a password, or Google only (T-091). */
+  signInWith?: 'email' | 'google'
 }
 
 export type Unsubscribe = () => void
@@ -26,6 +28,10 @@ export interface AuthService {
   updatePassword?(password: string): Promise<void>
   /** Calls back once when the person opened a "Forgot password" email link (T-085). */
   onRecovery?(cb: () => void): Unsubscribe
+  /** Checks the old password, then saves the new one (T-091). */
+  changePassword?(oldPassword: string, newPassword: string): Promise<void>
+  /** Sends a link to the old and the new email; the change counts once both are opened (T-091). */
+  changeEmail?(email: string): Promise<void>
   /** Signs out this device only, or every device with 'all' (T-090). */
   signOut(where?: 'all'): Promise<void>
   current(): Promise<Account | null>
@@ -35,7 +41,9 @@ export interface AuthService {
 /** Turns errors from the sign-in service into plain words. */
 export function friendlyAuthError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e)
+  if (/old password wrong/i.test(msg)) return 'Your old password is wrong.'
   if (/invalid login credentials/i.test(msg)) return 'Email or password is wrong.'
+  if (/same.*password|different from the old/i.test(msg)) return 'Pick a password you have not used here before.'
   if (/already registered|already been registered|user already exists/i.test(msg)) return 'This email already has an account. Sign in instead.'
   if (/email not confirmed/i.test(msg)) return 'Please confirm your email first. Check your inbox for our link.'
   if (/email rate limit|over_email_send_rate_limit/i.test(msg)) return 'We’ve sent too many emails this hour. Please try again later, or use Google.'

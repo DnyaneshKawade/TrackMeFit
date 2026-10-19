@@ -10,7 +10,7 @@ export const SHARED_TEXT =
   'Your coach can see your food, workouts, weight, measurements and photos. They see your signup answers, health answers too. They can also set your targets and plans.'
 
 /** Everything a coach sees, shown before the person says yes (T-087). */
-export const SHARE_LIST = [
+const SHARE_LIST = [
   'Your food log and daily targets',
   'Your workouts and workout plans',
   'Your weight, measurements and photos',

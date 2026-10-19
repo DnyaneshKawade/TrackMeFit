@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Sign-in and security (T-091)
+
+- The Account page shows your email and how you sign in.
+- Change your password: type the old one first. Change your email: we send a link to both.
+- Google users see a note to change their password with Google.
+- The sign-in screen now loads only when shown, so the main file stays under 140 KB.
+- Tests: 3 in `src/account/Security.test.tsx`.
+
 ## 2026-10-19: Sign out on all devices (T-090)
 
 - "Sign out" now signs out this phone only. Before, it signed out every device.
