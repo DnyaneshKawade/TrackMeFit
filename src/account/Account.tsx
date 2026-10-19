@@ -93,6 +93,43 @@ function AskForChange({ store }: { store: DataStore }) {
   )
 }
 
+function SignOutAll({ onSignOutAll }: { onSignOutAll: () => Promise<void> }) {
+  const [asking, setAsking] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  return (
+    <section aria-label="Sign out on all devices">
+      <h3>Sign out on all devices</h3>
+      <p>Lost your phone? This signs you out everywhere, this phone too.</p>
+      {!asking ? (
+        <button className="link" onClick={() => setAsking(true)}>Sign out on all devices</button>
+      ) : (
+        <span className="actions">
+          <span>Sign out everywhere?</span>
+          <button
+            className="primary"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true)
+              setError('')
+              try {
+                await onSignOutAll()
+              } catch {
+                setError('Couldn’t sign out. Check your connection.')
+                setBusy(false)
+              }
+            }}
+          >
+            Yes, sign out
+          </button>
+          <button className="link" disabled={busy} onClick={() => setAsking(false)}>Cancel</button>
+        </span>
+      )}
+      {error && <p className="error" role="alert">{error}</p>}
+    </section>
+  )
+}
+
 function DeleteAccount({ store, onDeleted }: { store: DataStore; onDeleted: () => void }) {
   const [asking, setAsking] = useState(false)
   const [typed, setTyped] = useState('')
@@ -150,12 +187,15 @@ export function Account({
   store,
   onBack,
   onDeleted,
+  onSignOutAll,
   save = saveFile,
 }: {
   store: DataStore
   onBack: () => void
   /** Clears what this device keeps once the account is gone. */
   onDeleted: () => void
+  /** Signs out on every device, this one too (T-090). */
+  onSignOutAll?: () => Promise<void>
   save?: (name: string, text: string) => void
 }) {
   return (
@@ -167,13 +207,22 @@ export function Account({
       </p>
       <Download store={store} save={save} />
       <AskForChange store={store} />
+      {onSignOutAll && <SignOutAll onSignOutAll={onSignOutAll} />}
       <DeleteAccount store={store} onDeleted={onDeleted} />
     </main>
   )
 }
 
 /** The page as the app opens it: loads the data code, then shows the page. */
-export function AccountTab({ load, ...rest }: { load: () => Promise<DataStore>; onBack: () => void; onDeleted: () => void }) {
+export function AccountTab({
+  load,
+  ...rest
+}: {
+  load: () => Promise<DataStore>
+  onBack: () => void
+  onDeleted: () => void
+  onSignOutAll?: () => Promise<void>
+}) {
   const [store, setStore] = useState<DataStore | null>(null)
   useEffect(() => {
     void load().then(setStore)

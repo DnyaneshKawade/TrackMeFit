@@ -330,6 +330,12 @@ export function AppShell({
               setTab('food')
               void auth.signOut().catch(() => null)
             }}
+            onSignOutAll={async () => {
+              await auth.signOut('all')
+              store?.sync?.clearCache()
+              workouts?.sync?.clearCache()
+              setTab('food')
+            }}
           />
         </Suspense>
       </>

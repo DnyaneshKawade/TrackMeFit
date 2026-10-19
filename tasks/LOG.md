@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Sign out on all devices (T-090)
+
+- "Sign out" now signs out this phone only. Before, it signed out every device.
+- The Account page has "Sign out on all devices", for a lost phone. It asks first.
+- Tests: 2 in `src/account/Account.test.tsx`, 1 updated in `src/App.test.tsx`.
+
 ## 2026-10-19: Choose a new password (T-085)
 
 - The "Forgot password" link now opens "Choose a new password". Before, it only signed the person in.

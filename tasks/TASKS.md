@@ -37,7 +37,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-087 | Ask before sharing with a coach: after the code, show the coach's name and everything they will see (health answers too), then "Share with Kiran"; the date of the yes is saved | `src/coach/YourCoach.test.tsx` (nothing shared until yes); `src/db/coach.test.ts` |
 | T-086 | One age rule, 18 and over (setup allows 13 today): everyone gives a birth date once, coaches and Google sign-ups too; under 18 can't go on | `src/profile/profile.test.ts`; `src/App.test.tsx`; `src/db/rls.test.ts` |
 | T-089 | Privacy page: a real contact email and the person who answers, how to complain to the Data Protection Board, how to take back consent, what a coach sees (needs DK's email and name) | Privacy page test; `src/words.test.ts` |
-| T-090 | "Sign out" ends this phone only; "Sign out on all devices" on the Account page for a lost phone | `src/App.test.tsx`; `src/account/Account.test.tsx` |
 | T-091 | Sign-in and security on the Account page: your email and how you sign in, change password, change email, Google users can add a password | `src/account/Account.test.tsx` |
 | T-092 | One tidy Account page: Your details, Sign-in and security, Your coach, Your data and privacy, Delete account, each showing what it is set to now | `src/account/Account.test.tsx`; `src/words.test.ts` |
 | T-094 | Tell the other side when a coach link ends, with who ended it and when | `src/coach/YourCoach.test.tsx`, `src/coach/Clients.test.tsx`; `src/db/coach.test.ts` |
@@ -79,6 +78,8 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 ## Done
 
 | ID | Task | Tests |
+|---|---|---|
+| T-090 | "Sign out" signs out this phone only; "Sign out on all devices" on the Account page, after a confirm, for a lost phone | `src/App.test.tsx` (1 updated), `src/account/Account.test.tsx` (2) |
 | T-085 | "Forgot password" now works: the email link opens "Choose a new password", which saves it, then opens the app | `src/auth/newPassword.test.tsx` (3) |
 | T-088 | An ended coach link stays ended: a client (or coach) can no longer set it back to active; only a new code starts it again | `src/db/coach.test.ts` (1) |
 | T-084 | Your details page: sign-up answers by part with a Change button each, and "Suggest targets and meals" any time; coaches see "About this client", read only | `src/profile/summary.test.ts` (2), `src/App.test.tsx` (1 new, 3 updated), `src/coach/ClientView.test.tsx` (2) |

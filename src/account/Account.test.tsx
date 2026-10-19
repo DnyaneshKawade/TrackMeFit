@@ -66,3 +66,25 @@ describe('Account page (T-042a5)', () => {
     expect(deleted()).toBe(0)
   })
 })
+
+describe('sign out on all devices (T-090)', () => {
+  it('1. signs out everywhere only after a confirm; Cancel does nothing', async () => {
+    let calls = 0
+    render(<Account store={memoryDataStore()} onBack={() => {}} onDeleted={() => {}} onSignOutAll={async () => void calls++} />)
+    const part = screen.getByRole('region', { name: 'Sign out on all devices' })
+    fireEvent.click(within(part).getByRole('button', { name: 'Sign out on all devices' }))
+    fireEvent.click(within(part).getByRole('button', { name: 'Cancel' }))
+    expect(calls).toBe(0)
+    fireEvent.click(within(part).getByRole('button', { name: 'Sign out on all devices' }))
+    expect(within(part).getByText('Sign out everywhere?')).toBeTruthy()
+    fireEvent.click(within(part).getByRole('button', { name: 'Yes, sign out' }))
+    await waitFor(() => expect(calls).toBe(1))
+  })
+
+  it('2. says so when it fails', async () => {
+    render(<Account store={memoryDataStore()} onBack={() => {}} onDeleted={() => {}} onSignOutAll={() => Promise.reject(new Error('offline'))} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out on all devices' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, sign out' }))
+    expect((await screen.findByRole('alert')).textContent).toBe('Couldn’t sign out. Check your connection.')
+  })
+})

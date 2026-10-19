@@ -26,7 +26,8 @@ export interface AuthService {
   updatePassword?(password: string): Promise<void>
   /** Calls back once when the person opened a "Forgot password" email link (T-085). */
   onRecovery?(cb: () => void): Unsubscribe
-  signOut(): Promise<void>
+  /** Signs out this device only, or every device with 'all' (T-090). */
+  signOut(where?: 'all'): Promise<void>
   current(): Promise<Account | null>
   onChange(cb: (account: Account | null) => void): Unsubscribe
 }
