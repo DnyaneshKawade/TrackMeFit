@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import { TabIcon } from './TabIcon'
+import { dayLine, greeting, initial } from './greeting'
 import { memoryChatStore, supabaseChatStore, type ChatStore } from './coach/chat'
 import { memoryCheckInStore, supabaseCheckInStore, type CheckInStore } from './coach/checkIns'
 import { createSupabaseAuth, supabaseFromEnv } from './auth/supabaseAuth'
@@ -338,7 +339,28 @@ export function AppShell({
     </Suspense>
   )
   const canEditDetails = !!profile && account.role === 'user' && isOnboarded(profile)
-  const canEdit = canEditDetails && !editing && !details
+  const now = new Date()
+  /** A tab closes Your details too. */
+  const go = (t: typeof tab) => {
+    setDetails(null)
+    setTab(t)
+  }
+  const tabs = (
+    <nav className="bottom-tabs" role="tablist" aria-label="Main">
+      <button role="tab" aria-selected={tab === 'food'} onClick={() => go('food')}><TabIcon name="food" />Today</button>
+      <button role="tab" aria-selected={tab === 'training'} onClick={() => go('training')}><TabIcon name="training" />Workouts</button>
+      <button role="tab" aria-selected={tab === 'progress'} onClick={() => go('progress')}><TabIcon name="progress" />Progress</button>
+      {account.role === 'coach' && (
+        <button role="tab" aria-selected={tab === 'clients'} onClick={() => go('clients')}><TabIcon name="clients" />Clients</button>
+      )}
+      {adminLevel && (
+        <button role="tab" aria-selected={tab === 'admin'} onClick={() => go('admin')}><TabIcon name="admin" />Admin</button>
+      )}
+      {myData && !view && (
+        <button role="tab" aria-selected={tab === 'account'} onClick={() => go('account')}><TabIcon name="me" />Me</button>
+      )}
+    </nav>
+  )
   const topbar = (
     <>
       {viewBar}
@@ -348,40 +370,56 @@ export function AppShell({
         </p>
       )}
       <header className="topbar">
-        <strong className="topbar-brand">Track Me Fit</strong>
-        <span>
-          {account.name || account.email}
-          {account.role === 'coach' ? ' (coach)' : ''}
-        </span>
-        {canEdit && (
-          <button onClick={() => void latestWeight().then((weightKg) => setDetails({ weightKg }), () => setDetails({ weightKg: null }))}>
-            Your details
-          </button>
-        )}
-        {!view && tab !== 'account' && <button onClick={() => setTab('account')}>Account</button>}
-        {!view && (
+        <div className="topbar-hello">
+          <span>
+            {dayLine(now)}
+            {account.role === 'coach' ? ' · Coach' : ''}
+          </span>
+          <strong>{greeting(now, account.name)}</strong>
+        </div>
+        {myData && !view && (
           <button
+            className="avatar"
+            aria-label="Open Me"
             onClick={() => {
-              store?.sync?.clearCache()
-              workouts?.sync?.clearCache()
-              void auth.signOut()
+              setDetails(null)
+              setEditing(null)
+              setTab('account')
             }}
           >
-            Sign out
+            {initial(account.name || account.email)}
           </button>
         )}
       </header>
     </>
   )
 
-  if (tab === 'account' && myData && !view) {
+  if (profile && details && !editing) {
     return (
       <>
         {topbar}
+        {tabs}
+        <Suspense fallback={<main className="auth">Loading…</main>}>
+          <ProfilePage
+            profile={profile}
+            weightKg={details.weightKg}
+            today={localDate()}
+            onChange={(step) => setEditing({ weightKg: details.weightKg, step })}
+            onBack={() => setDetails(null)}
+          />
+        </Suspense>
+      </>
+    )
+  }
+
+  if (tab === 'account' && myData && !view && !editing) {
+    return (
+      <>
+        {topbar}
+        {tabs}
         <Suspense fallback={<main className="log">Loading…</main>}>
           <AccountPage
             load={myData}
-            onBack={() => setTab('food')}
             onDeleted={() => {
               store?.sync?.clearCache()
               workouts?.sync?.clearCache()
@@ -399,7 +437,6 @@ export function AppShell({
             onDetails={
               canEditDetails
                 ? () => {
-                    setTab('food')
                     void latestWeight().then((weightKg) => setDetails({ weightKg }), () => setDetails({ weightKg: null }))
                   }
                 : undefined
@@ -420,6 +457,12 @@ export function AppShell({
                 : undefined
             }
             onCoach={() => setTab('progress')}
+            who={`${account.name || account.email}${account.role === 'coach' ? ' (coach)' : ''}`}
+            onSignOut={() => {
+              store?.sync?.clearCache()
+              workouts?.sync?.clearCache()
+              void auth.signOut()
+            }}
             onSignOutAll={async () => {
               await auth.signOut('all')
               store?.sync?.clearCache()
@@ -469,37 +512,10 @@ export function AppShell({
     )
   }
 
-  if (profile && details) {
-    return (
-      <>
-        {topbar}
-        <Suspense fallback={<main className="auth">Loading…</main>}>
-          <ProfilePage
-            profile={profile}
-            weightKg={details.weightKg}
-            today={localDate()}
-            onChange={(step) => setEditing({ weightKg: details.weightKg, step })}
-            onBack={() => setDetails(null)}
-          />
-        </Suspense>
-      </>
-    )
-  }
-
   return (
     <>
       {topbar}
-      <nav className="bottom-tabs" role="tablist" aria-label="Main">
-        <button role="tab" aria-selected={tab === 'food'} onClick={() => setTab('food')}><TabIcon name="food" />Food</button>
-        <button role="tab" aria-selected={tab === 'training'} onClick={() => setTab('training')}><TabIcon name="training" />Training</button>
-        <button role="tab" aria-selected={tab === 'progress'} onClick={() => setTab('progress')}><TabIcon name="progress" />Progress</button>
-        {account.role === 'coach' && (
-          <button role="tab" aria-selected={tab === 'clients'} onClick={() => setTab('clients')}><TabIcon name="clients" />Clients</button>
-        )}
-        {adminLevel && (
-          <button role="tab" aria-selected={tab === 'admin'} onClick={() => setTab('admin')}><TabIcon name="admin" />Admin</button>
-        )}
-      </nav>
+      {tabs}
       {tab === 'food' && (
         <FoodLog
           store={store!}

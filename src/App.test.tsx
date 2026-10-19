@@ -106,7 +106,8 @@ describe('first run', () => {
     const a = auth(user)
     render(<AppShell auth={a} />)
     await screen.findByRole('heading', { name: 'About you' })
-    click('Sign out')
+    click('Open Me')
+    fireEvent.click(await screen.findByRole('button', { name: 'Sign out' }))
     // This phone only (T-090).
     expect(a.signOut).toHaveBeenCalledWith()
   })
@@ -129,7 +130,8 @@ describe('your details (T-070)', () => {
 
   it('1. opens the sign-up answers filled in, and saves a change without new targets or a new weigh-in', async () => {
     const { profiles, progress, targets } = start()
-    fireEvent.click(await screen.findByRole('button', { name: 'Your details' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Me' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'See and change your details' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Change About you' }))
     expect(await screen.findByRole('heading', { name: 'About you' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Skip setup and start logging' })).toBeNull()
@@ -145,7 +147,7 @@ describe('your details (T-070)', () => {
     const about = await screen.findByRole('region', { name: 'About you' })
     expect(about.textContent).toContain('Height165 cm')
     click('Back')
-    expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Me' })).toBeTruthy()
     const p = await profiles.get()
     expect(p.heightCm).toBe(165)
     expect(p.onboardedAt).toBe('2026-10-12T10:00:00Z')
@@ -155,7 +157,8 @@ describe('your details (T-070)', () => {
 
   it('2. a new goal offers new targets that only count when accepted, and a new weight is a weigh-in', async () => {
     const { profiles, progress, targets } = start()
-    fireEvent.click(await screen.findByRole('button', { name: 'Your details' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Me' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'See and change your details' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Change About you' }))
     await screen.findByRole('heading', { name: 'About you' })
     type('Weight today (kg)', '68')
@@ -176,7 +179,8 @@ describe('your details (T-070)', () => {
 
   it('4. the details page shows each part with a Change button, and new suggestions open the plan step (T-084)', async () => {
     start()
-    fireEvent.click(await screen.findByRole('button', { name: 'Your details' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Me' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'See and change your details' }))
     expect(await screen.findByRole('heading', { name: 'Your details' })).toBeTruthy()
     for (const part of ['About you', 'Health check', 'Training', 'Your goal', 'Food habits', 'Your usual day'])
       expect(screen.getByRole('button', { name: `Change ${part}` })).toBeTruthy()
@@ -188,7 +192,8 @@ describe('your details (T-070)', () => {
 
   it('3. cancel changes nothing', async () => {
     const { profiles } = start()
-    fireEvent.click(await screen.findByRole('button', { name: 'Your details' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Me' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'See and change your details' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Change About you' }))
     await screen.findByRole('heading', { name: 'About you' })
     type('Height (cm)', '180')

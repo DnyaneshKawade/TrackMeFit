@@ -19,8 +19,8 @@ export function ProfilePage({
   onBack: () => void
 }) {
   return (
-    <main className="profile-page">
-      <button className="link" onClick={onBack}>Back</button>
+    <main className="log profile-page">
+      <button className="link back" onClick={onBack}>Back</button>
       <h2>Your details</h2>
       <p className="muted">These are your sign-up answers. Change any part at any time.</p>
       <ProfileSummary profile={profile} weightKg={weightKg} today={today} onChange={onChange} />

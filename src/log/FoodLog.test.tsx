@@ -42,8 +42,8 @@ function setup(store: LogStore = memoryLogStore()) {
 
 async function addFood(meal: string, query: string, pick: string) {
   const section = await screen.findByRole('region', { name: meal })
-  fireEvent.click(within(section).getByRole('button', { name: '+ Add food' }))
-  fireEvent.change(screen.getByLabelText('Search foods'), { target: { value: query } })
+  fireEvent.click(within(section).getByRole('button', { name: /^Add food to/ }))
+  fireEvent.change(await screen.findByLabelText('Search foods'), { target: { value: query } })
   fireEvent.click(await screen.findByRole('button', { name: new RegExp(pick) }))
 }
 
@@ -123,7 +123,7 @@ describe('food log', () => {
 describe('faster logging', () => {
   const openAdd = async (meal: string) => {
     const section = await screen.findByRole('region', { name: meal })
-    fireEvent.click(within(section).getByRole('button', { name: '+ Add food' }))
+    fireEvent.click(within(section).getByRole('button', { name: /^Add food to/ }))
   }
   const type = (label: string, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } })
 
@@ -193,7 +193,7 @@ describe('faster logging', () => {
     expect(within(snacks).getByText(/25 g · 120 kcal/)).toBeTruthy()
     expect((await foods.list())[0]).toMatchObject({ name: 'chikki', per100g: { kcal: 480, proteinG: 12, carbG: 60, fatG: 22 } })
 
-    fireEvent.click(within(snacks).getByRole('button', { name: '+ Add food' }))
+    fireEvent.click(within(snacks).getByRole('button', { name: /^Add food to/ }))
     type('Search foods', 'chik')
     expect(await screen.findByText(/480 kcal per 100 g · My food/)).toBeTruthy()
   })

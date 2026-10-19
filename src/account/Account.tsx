@@ -344,6 +344,8 @@ export function Account({
   store,
   onBack,
   onDeleted,
+  who,
+  onSignOut,
   onSignOutAll,
   security,
   onDetails,
@@ -355,7 +357,12 @@ export function Account({
   save = saveFile,
 }: {
   store: DataStore
-  onBack: () => void
+  /** Absent on the Me tab, which needs no Back (T-101d). */
+  onBack?: () => void
+  /** Signs out on this phone (T-101d). */
+  onSignOut?: () => void
+  /** The name shown at the top of the Me tab, with "(coach)" for coaches. */
+  who?: string
   /** Clears what this device keeps once the account is gone. */
   onDeleted: () => void
   /** Signs out on every device, this one too (T-090). */
@@ -378,8 +385,9 @@ export function Account({
 }) {
   return (
     <main className="log account">
-      <button className="link" onClick={onBack}>Back</button>
-      <h2>Your account and data</h2>
+      {onBack && <button className="link back" onClick={onBack}>Back</button>}
+      <h2>Me</h2>
+      {who && <p className="me-name">{who}</p>}
       {onDetails && (
         <section aria-label="Your details">
           <h3>Your details</h3>
@@ -402,6 +410,11 @@ export function Account({
         <Download store={store} save={save} />
         <AskForChange store={store} />
       </section>
+      {onSignOut && (
+        <section aria-label="Sign out">
+          <button className="secondary" onClick={onSignOut}>Sign out</button>
+        </section>
+      )}
       <DeleteAccount store={store} onDeleted={onDeleted} />
     </main>
   )
@@ -413,7 +426,9 @@ export function AccountTab({
   ...rest
 }: {
   load: () => Promise<DataStore>
-  onBack: () => void
+  onBack?: () => void
+  onSignOut?: () => void
+  who?: string
   onDeleted: () => void
   onSignOutAll?: () => Promise<void>
   security?: SecurityProps

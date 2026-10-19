@@ -29,7 +29,7 @@ describe('admin tab (T-042a1)', () => {
     }
     const profiles = memoryProfileStore({ birthDate: '1990-01-01', onboardedAt: '2026-10-12T10:00:00Z' })
     const { unmount } = render(<AppShell auth={auth} profileStoreFor={() => profiles} adminFor={() => readyAccess(memoryAdmin({ me: 'dk', level: null }))} />)
-    await screen.findByRole('tab', { name: 'Food' })
+    await screen.findByRole('tab', { name: 'Today' })
     expect(screen.queryByRole('tab', { name: 'Admin' })).toBeNull()
     unmount()
     render(<AppShell auth={auth} profileStoreFor={() => profiles} adminFor={() => readyAccess(memoryAdmin({ me: 'dk', level: 'owner' }))} />)
