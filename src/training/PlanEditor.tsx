@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { exerciseById } from './exercises'
+import { weeklyVolume } from '../engine/volume'
+import { exerciseById, MUSCLE_NAMES } from './exercises'
+import { weeklySets } from './progression'
 import { ExercisePicker, type ExerciseLibrary } from './ExercisePicker'
 import { checkPlan, MAX_DAYS, nextDayIndex, type Plan, type PlanExercise } from './types'
 
@@ -108,6 +110,8 @@ export function PlanEditor({
         </button>
       )}
 
+      <WeeklySets plan={plan} />
+
       {problems.length > 0 && (
         <ul className="error" role="alert">
           {problems.map((p) => <li key={p}>{p}</li>)}
@@ -115,6 +119,27 @@ export function PlanEditor({
       )}
       <button className="primary" disabled={busy} onClick={save}>Save plan</button>
       {onDelete && <button className="link danger" onClick={() => void onDelete()}>Delete plan</button>}
+    </section>
+  )
+}
+
+/** Each muscle's sets a week in this plan, against its limits (T-082d). */
+function WeeklySets({ plan }: { plan: Plan }) {
+  const rows = weeklyVolume(weeklySets(plan))
+  if (!rows.length) return null
+  return (
+    <section className="week-sets" aria-label="Sets each week">
+      <h3>Sets each week</h3>
+      <p className="muted">Helper muscles count as half a set.</p>
+      <ul>
+        {rows.map((r) => (
+          <li key={r.muscle} className={`band-${r.band}`}>
+            <span>{MUSCLE_NAMES[r.muscle]}</span>
+            <strong>{r.sets} sets</strong>
+            <small>{r.why}</small>
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }

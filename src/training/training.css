@@ -115,3 +115,11 @@
 .warmups { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
 .warmups p { flex-basis: 100%; margin: 0; font-size: 13px; }
 .warmups .chip { padding: 6px 10px; font-size: 13px; }
+.week-sets { margin: 12px 0; }
+.week-sets h3 { margin: 0 0 2px; font-size: 15px; }
+.week-sets ul { list-style: none; padding: 0; margin: 6px 0 0; }
+.week-sets li { display: grid; grid-template-columns: 1fr auto; gap: 0 8px; padding: 6px 0 6px 10px; border-left: 4px solid #cdd6d2; margin-bottom: 4px; }
+.week-sets li small { grid-column: 1 / -1; color: #5b6763; }
+.week-sets .band-good { border-left-color: #0f7a5c; }
+.week-sets .band-high { border-left-color: #c98a00; }
+.week-sets .band-max { border-left-color: #c0392b; }

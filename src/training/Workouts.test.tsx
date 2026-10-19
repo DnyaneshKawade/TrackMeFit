@@ -50,6 +50,22 @@ describe('workout plans', () => {
     expect(saved.days[0]).toMatchObject({ name: 'Day A', exercises: [{ exerciseId: 'back-squat', sets: 4, repMin: 6, repMax: 10 }] })
   })
 
+  it('4. the plan shows each muscle’s sets a week against its limits, and updates as sets change (T-082d)', async () => {
+    render(<Workouts store={memoryWorkoutStore()} today={TODAY} />)
+    fireEvent.click(await screen.findByRole('button', { name: '+ New plan' }))
+    expect(screen.queryByRole('region', { name: 'Sets each week' })).toBeNull()
+    click('+ Add exercise')
+    type('Search exercises', 'squat')
+    click(/^Back squat/)
+    type('Back squat sets', '4')
+    const week = screen.getByRole('region', { name: 'Sets each week' })
+    const quads = within(week).getByText('Quads').closest('li')!
+    expect(quads.textContent).toBe('Quads4 setsLow. Aim for 8 to 18 sets.')
+    expect(within(week).getByText('Glutes').closest('li')!.textContent).toBe('Glutes2 setsGood amount.')
+    type('Back squat sets', '10')
+    expect(within(week).getByText('Quads').closest('li')!.textContent).toBe('Quads10 setsGood amount.')
+  })
+
   it('lists what is wrong instead of saving an incomplete plan', async () => {
     render(<Workouts store={memoryWorkoutStore()} today={TODAY} />)
     fireEvent.click(await screen.findByRole('button', { name: '+ New plan' }))
