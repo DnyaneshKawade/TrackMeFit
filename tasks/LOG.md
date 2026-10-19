@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Weekly sets per muscle (T-082d)
+
+- The plan editor shows "Sets each week": each trained muscle with its sets, most first.
+- Each muscle reads low, good, high or too many, against the engine's limits, with the range to aim for.
+- Helper muscles count as half a set. The list changes as you change sets.
+- Tests: 3 in `src/engine/volume.test.ts`, 1 in `src/training/Workouts.test.tsx`.
+
 ## 2026-10-19: Warm-up sets (T-082c)
 
 - Each exercise shows warm-up sets before the first working set, as buttons.
