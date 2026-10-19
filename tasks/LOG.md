@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: T-105 age asked in About you
+
+- New people no longer see the "One question first" page. "About you" asks the date of birth and saves it on Next.
+- "Skip setup" asks for the date of birth first. Coaches still see the short age page.
+- Only under-18s see the parent page, now with five short steps that name the Me tab.
+- No database change. Tests: `src/profile/Onboarding.test.tsx` (2), `src/App.test.tsx` (1 new).
+
 ## 2026-10-19: T-101d new look on every screen
 
 - The top of each page shows the date and a greeting, with a round picture that opens Me.
