@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
+import { TabIcon } from './TabIcon'
 import { memoryChatStore, supabaseChatStore, type ChatStore } from './coach/chat'
 import { memoryCheckInStore, supabaseCheckInStore, type CheckInStore } from './coach/checkIns'
 import { createSupabaseAuth, supabaseFromEnv } from './auth/supabaseAuth'
@@ -488,15 +489,15 @@ export function AppShell({
   return (
     <>
       {topbar}
-      <nav className="tabs" role="tablist">
-        <button role="tab" aria-selected={tab === 'food'} onClick={() => setTab('food')}>Food</button>
-        <button role="tab" aria-selected={tab === 'training'} onClick={() => setTab('training')}>Training</button>
-        <button role="tab" aria-selected={tab === 'progress'} onClick={() => setTab('progress')}>Progress</button>
+      <nav className="bottom-tabs" role="tablist" aria-label="Main">
+        <button role="tab" aria-selected={tab === 'food'} onClick={() => setTab('food')}><TabIcon name="food" />Food</button>
+        <button role="tab" aria-selected={tab === 'training'} onClick={() => setTab('training')}><TabIcon name="training" />Training</button>
+        <button role="tab" aria-selected={tab === 'progress'} onClick={() => setTab('progress')}><TabIcon name="progress" />Progress</button>
         {account.role === 'coach' && (
-          <button role="tab" aria-selected={tab === 'clients'} onClick={() => setTab('clients')}>Clients</button>
+          <button role="tab" aria-selected={tab === 'clients'} onClick={() => setTab('clients')}><TabIcon name="clients" />Clients</button>
         )}
         {adminLevel && (
-          <button role="tab" aria-selected={tab === 'admin'} onClick={() => setTab('admin')}>Admin</button>
+          <button role="tab" aria-selected={tab === 'admin'} onClick={() => setTab('admin')}><TabIcon name="admin" />Admin</button>
         )}
       </nav>
       {tab === 'food' && (

@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: T-101c new look, part 2 (screen layouts)
+- Colours: Ocean blue on a Pearl grey page, as DK picked. Saffron is gone. The icon is blue too.
+- Main tabs moved to the bottom, with icons.
+- Food: "Left for the day" is now a calorie ring with bars for protein, carbs and fat. Going over is plain words, not red.
+- Food: "X of 7 days logged this week." shows once food is logged. The week starts on Monday.
+- Meals, exercises, plans and the weight trend sit on cards. The rest timer uses the accent colour.
+- No migration. Spec: [T-101c](../specs/T-101c-layouts.md).
+- Tests: `src/log/week.test.ts` (2), `src/log/FoodLog.test.tsx` (2).
+
 ## 2026-10-19: T-101b Calm Saffron look, light or dark
 - DK picked Calm Clinic in Saffron from the sample designs.
 - Every colour is now a token in `src/index.css`, with light and dark sets. The per-file dark rules are gone.
