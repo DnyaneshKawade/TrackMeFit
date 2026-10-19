@@ -23,3 +23,20 @@ describe('privacy page (T-077)', () => {
     expect(privacyPage('<b>@x')).toContain('&lt;b&gt;@x')
   })
 })
+
+describe('privacy contact and rights (T-089)', () => {
+  it('1. shows the email and who answers, and how to complain to the Data Protection Board', () => {
+    const html = privacyPage()
+    expect(html).toContain('<p>Or email us at trackmefit5@gmail.com.</p>')
+    expect(html).toContain('Track Me Fit answers every question and complaint about your data.')
+    expect(html).toContain('Data Protection Board of India')
+  })
+
+  it('2. says how to take back consent and what a coach sees', () => {
+    const html = privacyPage()
+    expect(html).toContain('<h2>Taking back your yes</h2>')
+    expect(html).toContain('Stop sharing with your coach under Your coach.')
+    expect(html).toContain('A coach sees your food log, targets, workouts and plans.')
+    expect(html).toContain('You say yes before a coach sees anything.')
+  })
+})
