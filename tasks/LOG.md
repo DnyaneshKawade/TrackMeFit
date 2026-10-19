@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-18: Weight steps from reps left (T-082b)
+
+- The next weight now uses the reps left you log, not just the reps you did.
+- 2 or more reps left above the week's aim: the weight goes up now, and the reason says why.
+- Fewer reps left than the aim: same weight and reps next time.
+- With no reps left logged, nothing changes. With no plan, the aim is 2.
+- Tests: 5 in `src/engine/repsLeft.test.ts`.
+
 ## 2026-10-18: Four more muscles (T-082a)
 
 - Research for T-082 is in `trackmefit-notes/training-research.md`: RP Strength, other apps and the studies. It split T-082 into T-082a to T-082m.

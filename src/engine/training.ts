@@ -162,6 +162,10 @@ export interface LoadInput {
   increment: number
   /** Sessions in a row (including this one) with a set below the rep range. */
   missStreak: number
+  /** Reps left logged on the same sets as `repsDone`; null when not logged (T-082b). */
+  rirDone?: (number | null)[]
+  /** Reps left the plan aimed for this week (T-082b). */
+  targetRir?: number
 }
 
 export interface LoadDecision {
@@ -172,8 +176,13 @@ export interface LoadDecision {
 
 const MAX_JUMP_FRACTION = 0.1
 
+/** People guess reps left about 1 off, so only a gap of 2 or more counts. */
+const RIR_GAP = 2
+
 /** Double progression. Hit the top of the range on every set: add weight, or
- * reps if the next jump is too big. Missed the bottom twice: drop 5-10%. */
+ * reps if the next jump is too big. Missed the bottom twice: drop 5-10%.
+ * Inside the range, logged reps left decide too (T-082b): 2 or more above the
+ * target adds weight now; below the target keeps weight and reps. */
 export function nextLoad(i: LoadInput): LoadDecision {
   const [lo, hi] = i.repRange
   const topOfRange = i.repsDone.length > 0 && i.repsDone.every((r) => r >= hi)
@@ -188,6 +197,22 @@ export function nextLoad(i: LoadInput): LoadDecision {
     return { weight: dropped, targetReps: lo, why: 'Missed the target twice, so the weight comes down a little.' }
   }
   const best = Math.max(0, ...i.repsDone)
+  const logged = (i.rirDone ?? []).filter((r): r is number => r !== null)
+  const inRange = i.repsDone.length > 0 && i.repsDone.every((r) => r >= lo)
+  if (inRange && logged.length && i.targetRir !== undefined) {
+    const left = Math.round(logged.reduce((a, b) => a + b, 0) / logged.length)
+    const smallJump = i.weight === 0 || i.increment / i.weight <= MAX_JUMP_FRACTION
+    if (left >= i.targetRir + RIR_GAP && smallJump) {
+      return {
+        weight: i.weight + i.increment,
+        targetReps: lo,
+        why: `You had ${left} reps left, but the aim was ${i.targetRir}. So the weight goes up.`,
+      }
+    }
+    if (left < i.targetRir) {
+      return { weight: i.weight, targetReps: Math.min(hi, best), why: 'You went closer to failure than planned. So keep the same weight and reps.' }
+    }
+  }
   return { weight: i.weight, targetReps: Math.min(hi, best + 1), why: 'Same weight; aim for one more rep.' }
 }
 

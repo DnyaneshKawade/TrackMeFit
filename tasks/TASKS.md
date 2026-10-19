@@ -32,7 +32,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-018c | Food logging extras: barcode scan (free for everyone, Open Food Facts kept separate under the ODbL), batch-cooked weighing | Component tests for each |
 | T-067 / T-068 later | Parked until users ask (DK, 17 Oct 2026): diet break, SCOFF check, doctor ticks, after the goal, weigh-in habit, plan from logs, gain check, protein choices question | — |
 | T-042a3b | Email to the coach at each approval decision; needs an email service and its key (e.g. Resend), sent from an Edge Function | Function test: one email per decision, key never in the app |
-| T-082b | Weight steps use the reps you had left, not just the reps you did (research 4.2) | Engine tests, each with its reason |
 | T-082c | Warm-up sets worked out from the first set, using the plate math (4.4) | Engine and screen tests |
 | T-082d | Weekly sets per muscle shown against the low and high limits (4.10) | Screen tests |
 | T-082e | Plateau check: three sessions with no new best gives three choices (4.5) | Engine tests |
@@ -66,6 +65,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 ## Done
 
 | ID | Task | Tests |
+| T-082b | Weight steps use the reps you had left: 2 or more above the aim adds weight now; closer to failure than planned keeps weight and reps | `src/engine/repsLeft.test.ts` (5) |
 | T-082a | Four more muscles: front delts, forearms, inner thighs, neck. Front raises count for front delts, presses give them half sets, 30 new moves (research in trackmefit-notes/training-research.md) | `src/training/moreMuscles.test.ts` (4), `src/db/moreMuscles.test.ts` (1), `src/training/exerciseLibrary.test.ts` (4) |
 | T-081 | Exercise library: 409 gym exercises (was 71). Machines, cables, free weights, Smith, kettlebell and body weight, with main and helper muscles and other names people search for (DK, 18 Oct 2026) | `src/training/exerciseLibrary.test.ts` (4) |
 |---|---|---|
