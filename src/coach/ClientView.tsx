@@ -21,7 +21,7 @@ import { ClientMealPlan } from './ClientMealPlan'
 import type { ChatStore } from './chat'
 import { ClientCheckIns } from './CheckIn'
 import type { CheckInStore } from './checkIns'
-import type { ClientRow } from './store'
+import type { ClientRow, Shares } from './store'
 import { copyTemplate, joinText, startForWeek } from './templates'
 
 /** A client's data as their coach sees it; row-level security allows the reads and target changes. */
@@ -38,6 +38,8 @@ export interface ClientStores {
   /** The meal plan the coach can change, and the profile for food rules (T-078). */
   mealPlans?: MealPlanStore
   profile?: ProfileStore
+  /** What the client shares beyond the basics (T-096). Without it, everything shows. */
+  shares?: () => Promise<Shares>
 }
 
 const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
@@ -82,6 +84,7 @@ export function ClientView({
   const [added, setAdded] = useState<string | null>(null)
   // The client's own exercise ids; the coach's own can't be copied to them.
   const [clientOwn, setClientOwn] = useState<Set<string>>(new Set())
+  const [shares, setShares] = useState<Shares | null>(null)
 
   useEffect(() => {
     const failed = () => setError('Couldn’t load all of this client’s data. Check your connection.')
@@ -89,6 +92,9 @@ export function ClientView({
     stores.progress.weighIns().then(setWeighIns, () => (setWeighIns([]), failed()))
     stores.workouts.summaries(shiftDate(today, -27), today).then(setWorkouts, () => (setWorkouts([]), failed()))
     stores.workouts.plans().then(setPlans, () => (setPlans([]), failed()))
+    // If this fails, nothing private shows; the database hides it anyway.
+    if (stores.shares) stores.shares().then(setShares, () => setShares({ photos: false, health: false }))
+    else setShares({ photos: true, health: true })
   }, [stores, today])
 
   // The client's own exercises are known while this page is open, so plans
@@ -171,7 +177,15 @@ export function ClientView({
 
       {chat && <Chat store={chat} linkId={client.linkId} name={first} />}
 
-      {stores.profile && <AboutClient profile={stores.profile} weightKg={weighIns?.length ? weighIns.reduce((a, b) => (b.date > a.date ? b : a)).kg : null} first={first} today={today} />}
+      {stores.profile && shares && (
+        <AboutClient
+          profile={stores.profile}
+          weightKg={weighIns?.length ? weighIns.reduce((a, b) => (b.date > a.date ? b : a)).kg : null}
+          first={first}
+          today={today}
+          healthShared={shares.health}
+        />
+      )}
 
       <ClientCheckIns store={stores.checkIns} weighIns={weighIns} first={first} />
 
@@ -310,7 +324,16 @@ export function ClientView({
         {added && <p className="muted" role="status">{added}</p>}
       </section>
 
-      <Photos store={stores.photos} today={today} readOnly />
+      {shares?.photos ? (
+        <Photos store={stores.photos} today={today} readOnly />
+      ) : (
+        shares && (
+          <section aria-label="Progress photos" className="photos">
+            <h3>Progress photos</h3>
+            <p className="muted">Not shared. {first} can share photos from their Progress page.</p>
+          </section>
+        )
+      )}
     </main>
   )
 }

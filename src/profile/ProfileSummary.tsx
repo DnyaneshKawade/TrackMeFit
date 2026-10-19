@@ -10,16 +10,19 @@ export function ProfileSummary({
   weightKg,
   today,
   onChange,
+  healthShared = true,
 }: {
   profile: ProfileInfo
   weightKg: number | null
   today: string
   /** Opens the signup step to change it; absent for a coach. */
   onChange?: (step: number) => void
+  /** False when the client keeps health answers from their coach (T-096). */
+  healthShared?: boolean
 }) {
   return (
     <>
-      {summaryRows(profile, weightKg, today).map((rows, step) => (
+      {summaryRows(profile, weightKg, today, healthShared).map((rows, step) => (
         <section key={step} className="profile-part" aria-label={STEPS[step]}>
           <h3>{STEPS[step]}</h3>
           <dl>

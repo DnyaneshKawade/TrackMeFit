@@ -4,7 +4,7 @@ import { amountFor } from '../food/types'
 import { ALL_DIET_ITEMS, PORTION_GRAMS, checkCustom, describeDiet, estimateDiet, extraFromFood } from './currentDiet'
 import { bmiResult, buildPlan, checkEventDate, checkTargetWeight, eventNote, goalTimeline, maxLossRate, nextStep, noLossReason, paceOptions, recommendedPace, waistNote, type PaceBody } from './goal'
 import { steadySwitch } from './steady'
-import { fromRow, memoryProfileStore, toRow } from './stores'
+import { fromRow, memoryProfileStore, toHealthRow, toRow } from './stores'
 import { EMPTY_PROFILE, ageOn, bodySize, checkAboutYou, healthNotes, isOnboarded, questionsFor, type ProfileInfo } from './types'
 import type { DietTarget } from '../targets/types'
 
@@ -67,10 +67,14 @@ describe('profile basics', () => {
 
   it('maps database rows both ways', () => {
     const row = toRow({ ...asha, fullName: ' Asha ', otherHealth: ' asthma ' })
-    expect(row).toMatchObject({ full_name: 'Asha', goal_rate: -0.005, target_weight_kg: 60, equipment: 'gym', other_health: 'asthma' })
-    expect(
-      fromRow({ ...row, height_cm: '160.0', goal_rate: '-0.005', medical: null, allergies: null, fasting: null, food_rules: null, other_health: null }),
-    ).toEqual({ ...asha, medical: {} })
+    expect(row).toMatchObject({ full_name: 'Asha', goal_rate: -0.005, target_weight_kg: 60, equipment: 'gym' })
+    expect(toHealthRow({ ...asha, otherHealth: ' asthma ' })).toEqual({ medical: asha.medical, other_health: 'asthma' })
+    expect(fromRow({ ...row, height_cm: '160.0', goal_rate: '-0.005', allergies: null, fasting: null, food_rules: null })).toEqual({
+      ...asha,
+      medical: {},
+      otherHealth: '',
+    })
+    expect(fromRow(row, { medical: { diabetes: true }, other_health: 'asthma' })).toMatchObject({ medical: { diabetes: true }, otherHealth: 'asthma' })
   })
 
   it('keeps the saved profile in the memory store', async () => {

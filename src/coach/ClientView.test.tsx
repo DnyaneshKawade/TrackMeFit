@@ -277,3 +277,27 @@ describe('program templates (T-026g)', () => {
     expect(copy.days[0].exercises.map((e) => e.exerciseId)).toEqual(['bench-press'])
   })
 })
+
+describe('choose what your coach sees (T-096)', () => {
+  const answers = memoryProfileStore({ fullName: 'Asha Rao', sex: 'female', onboardedAt: '2026-10-01T00:00:00Z', medical: { diabetes: true } })
+
+  it('4. photos and health answers the client keeps private say "Not shared"', async () => {
+    setup({ profile: answers, shares: async () => ({ photos: false, health: false }) })
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Asha Rao' }))
+    const photos = await screen.findByRole('region', { name: 'Progress photos' })
+    expect(within(photos).getByText('Not shared. Asha can share photos from their Progress page.')).toBeTruthy()
+    fireEvent.click(await screen.findByText('About Asha'))
+    const health = await screen.findByRole('region', { name: 'Health check' })
+    expect(within(health).getByText('Not shared')).toBeTruthy()
+  })
+
+  it('5. shared parts show as before', async () => {
+    setup({ profile: answers, shares: async () => ({ photos: true, health: true }) })
+    fireEvent.click(await screen.findByRole('button', { name: 'Open Asha Rao' }))
+    fireEvent.click(await screen.findByText('About Asha'))
+    const health = await screen.findByRole('region', { name: 'Health check' })
+    expect(within(health).queryByText('Not shared')).toBeNull()
+    expect(within(health).getByText(/Diabetes/)).toBeTruthy()
+    expect(screen.queryByText(/Not shared\. Asha/)).toBeNull()
+  })
+})

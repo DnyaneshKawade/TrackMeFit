@@ -1,12 +1,25 @@
 // A client's sign-up answers for their coach, read only (spec T-084).
 // Row-level security already lets a coach read their clients' profiles.
+// Health answers show only when the client shares them (T-096).
 
 import { useEffect, useState } from 'react'
 import { ProfileSummary } from '../profile/ProfileSummary'
 import type { ProfileInfo, ProfileStore } from '../profile/types'
 import '../profile/profile.css'
 
-export function AboutClient({ profile, weightKg, first, today }: { profile: ProfileStore; weightKg: number | null; first: string; today: string }) {
+export function AboutClient({
+  profile,
+  weightKg,
+  first,
+  today,
+  healthShared = true,
+}: {
+  profile: ProfileStore
+  weightKg: number | null
+  first: string
+  today: string
+  healthShared?: boolean
+}) {
   const [info, setInfo] = useState<ProfileInfo | null | undefined>(undefined)
   useEffect(() => {
     let live = true
@@ -30,7 +43,7 @@ export function AboutClient({ profile, weightKg, first, today }: { profile: Prof
       ) : (
         <>
           <p className="muted">{first}’s sign-up answers. Only {first} can change them.</p>
-          <ProfileSummary profile={info} weightKg={weightKg} today={today} />
+          <ProfileSummary profile={info} weightKg={weightKg} today={today} healthShared={healthShared} />
         </>
       )}
     </details>

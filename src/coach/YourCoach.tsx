@@ -4,19 +4,56 @@ import { Chat } from './Chat'
 import type { ChatStore } from './chat'
 import { CheckInCard } from './CheckIn'
 import type { CheckInStore } from './checkIns'
-import type { CoachLink, CoachStore, LinkEnd } from './store'
+import type { CoachLink, CoachStore, LinkEnd, Shares } from './store'
 
 export const SHARED_TEXT =
-  'Your coach can see your food, workouts, weight, measurements and photos. They see your signup answers, health answers too. They can also set your targets and plans.'
+  'Your coach can see your food, workouts, weight and measurements. They see your signup answers too. They can also set your targets and plans.'
 
 /** Everything a coach sees, shown before the person says yes (T-087). */
 const SHARE_LIST = [
   'Your food log and daily targets',
   'Your workouts and workout plans',
-  'Your weight, measurements and photos',
-  'Your signup answers, health answers too',
+  'Your weight and measurements',
+  'Your signup answers',
   'Your weekly check-ins and messages',
 ]
+
+/** Parts the person can turn on for their coach, off at first (T-096). */
+const SHARE_PARTS: [keyof Shares, string][] = [
+  ['photos', 'Progress photos'],
+  ['health', 'Health answers'],
+]
+
+/** Switches for photos and health answers, saved as soon as they change (T-096). */
+function ShareSwitches({ store, coach, onSaved }: { store: CoachStore; coach: CoachLink; onSaved: (s: Shares) => void }) {
+  const shares = coach.shares ?? { photos: false, health: false }
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const flip = async (key: keyof Shares) => {
+    const next = { ...shares, [key]: !shares[key] }
+    setBusy(true)
+    setError('')
+    try {
+      await store.setShares(coach.id, next)
+      onSaved(next)
+    } catch {
+      setError('Couldn’t save this. Check your connection.')
+    }
+    setBusy(false)
+  }
+  return (
+    <fieldset className="share-parts">
+      <legend>Also share with {coach.name}</legend>
+      {SHARE_PARTS.map(([key, label]) => (
+        <label key={key}>
+          <input type="checkbox" checked={shares[key]} disabled={busy} onChange={() => void flip(key)} /> {label}
+        </label>
+      ))}
+      <p className="muted">These stay private until you turn them on. You can turn them off at any time.</p>
+      {error && <p className="error" role="alert">{error}</p>}
+    </fieldset>
+  )
+}
 
 const shortDate = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 
@@ -121,7 +158,10 @@ export function YourCoach({ store, checkIns, chat, today }: { store: CoachStore;
           {coach.paused ? (
             <p className="note">Your coach is paused for now. They can’t see your data or chat. All your data stays yours.</p>
           ) : (
-            <p className="muted">{SHARED_TEXT}</p>
+            <>
+              <p className="muted">{SHARED_TEXT}</p>
+              <ShareSwitches store={store} coach={coach} onSaved={(s) => setCoach({ ...coach, shares: s })} />
+            </>
           )}
           {confirming ? (
             <div className="actions">
@@ -145,6 +185,7 @@ export function YourCoach({ store, checkIns, chat, today }: { store: CoachStore;
               <li key={x}>{x}</li>
             ))}
           </ul>
+          <p className="muted">Your photos and health answers stay private. You can share them after this.</p>
           <p className="muted">They can also change your targets, meal plan and workout plans. You can stop sharing at any time.</p>
           <div className="actions">
             <button className="primary" disabled={busy} onClick={() => void share()}>Share with {asking}</button>

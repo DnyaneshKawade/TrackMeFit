@@ -5,7 +5,7 @@ const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateStrin
 const poseLabel = (pose: Pose) => POSES.find((p) => p.pose === pose)!.label
 
 /** Progress photos (T-022b): add today's front, side or back photo, see them by date, remove one.
- * A coach sees a client's photos read-only (T-026c). */
+ * A coach sees a client's photos read-only (T-026c), when the client shares them (T-096). */
 export function Photos({
   store,
   today,

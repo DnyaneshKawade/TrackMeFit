@@ -19,7 +19,17 @@ export interface CoachLink {
   paused?: boolean
   /** When the client said yes to sharing (T-087); only set for a client's coach. */
   since?: string | null
+  /** What the client shares beyond the basics (T-096); only set for a client's coach. */
+  shares?: Shares
 }
+
+/** Parts a client chooses to share with their coach (T-096). Both start off. */
+export interface Shares {
+  photos: boolean
+  health: boolean
+}
+
+export const NO_SHARES: Shares = { photos: false, health: false }
 
 /** A link that ended in the last 30 days (T-094). */
 export interface LinkEnd {
@@ -51,6 +61,8 @@ export interface CoachStore {
   cancelInvite(code: string): Promise<void>
   /** Ends a link, from either side. */
   end(linkId: string): Promise<void>
+  /** The client turns photos and health answers on or off for their coach (T-096). */
+  setShares(linkId: string, shares: Shares): Promise<void>
   /** Links that ended in the last 30 days, newest first (T-094). */
   recentEnds(): Promise<LinkEnd[]>
   /** Most active clients a coach may have (T-026i). */
@@ -121,7 +133,7 @@ export function memoryCoachStore(
     async join(code) {
       const name = await lookup(code)
       codes.delete(clean(code))
-      coach = { id: `link-${++n}`, personId: `coach-${n}`, name, since: new Date().toISOString() }
+      coach = { id: `link-${++n}`, personId: `coach-${n}`, name, since: new Date().toISOString(), shares: NO_SHARES }
       return name
     },
     async clients() {
@@ -145,6 +157,10 @@ export function memoryCoachStore(
       if (name) ends = [{ linkId: id, name, endedAt: new Date().toISOString(), by: 'me' }, ...ends]
       if (coach?.id === id) coach = null
       clients = clients.filter((c) => c.linkId !== id)
+    },
+    async setShares(id, shares) {
+      if (coach?.id !== id) throw new Error('not your coach')
+      coach = { ...coach, shares: { ...shares } }
     },
     async recentEnds() {
       return [...ends]
@@ -171,18 +187,32 @@ interface SummaryRow {
   last_workout_on: string | null
 }
 
-type LinkRow = { id: string; coach_id: string; consented_at?: string | null; coach: { full_name: string; coach_status?: string } | null }
+type LinkRow = {
+  id: string
+  coach_id: string
+  consented_at?: string | null
+  share_photos?: boolean
+  share_health?: boolean
+  coach: { full_name: string; coach_status?: string } | null
+}
 
 export function supabaseCoachStore(sb: SupabaseClient, userId: string): CoachStore {
   // The coach's name comes with the link in one request.
-  const select = 'id, coach_id, consented_at, coach:profiles!coach_clients_coach_id_fkey(full_name, coach_status)'
+  const select = 'id, coach_id, consented_at, share_photos, share_health, coach:profiles!coach_clients_coach_id_fkey(full_name, coach_status)'
   return {
     async myCoach() {
       const { data, error } = await sb.from('coach_clients').select(select).eq('client_id', userId).eq('status', 'active').limit(1)
       if (error) throw error
       const r = (data as unknown as LinkRow[])[0]
       return r
-        ? { id: r.id, personId: r.coach_id, name: r.coach?.full_name || 'Your coach', paused: !!r.coach?.coach_status && r.coach.coach_status !== 'approved', since: r.consented_at ?? null }
+        ? {
+            id: r.id,
+            personId: r.coach_id,
+            name: r.coach?.full_name || 'Your coach',
+            paused: !!r.coach?.coach_status && r.coach.coach_status !== 'approved',
+            since: r.consented_at ?? null,
+            shares: { photos: !!r.share_photos, health: !!r.share_health },
+          }
         : null
     },
     async lookup(code) {
@@ -255,6 +285,10 @@ export function supabaseCoachStore(sb: SupabaseClient, userId: string): CoachSto
       const { error } = await sb.from('coach_clients').update({ status: 'ended' }).eq('id', id)
       if (error) throw error
     },
+    async setShares(id, shares) {
+      const { error } = await sb.rpc('set_coach_shares', { link: id, photos: shares.photos, health: shares.health })
+      if (error) throw error
+    },
     async recentEnds() {
       const { data, error } = await sb.rpc('recent_link_ends')
       if (error) throw error
@@ -271,4 +305,12 @@ export function supabaseCoachStore(sb: SupabaseClient, userId: string): CoachSto
       return (data as { client_limit: number }).client_limit
     },
   }
+}
+
+/** What a client shares with this coach, read by the coach (T-096). */
+export async function supabaseShares(sb: SupabaseClient, clientId: string): Promise<Shares> {
+  const { data, error } = await sb.from('coach_clients').select('share_photos, share_health').eq('client_id', clientId).eq('status', 'active').limit(1)
+  if (error) throw error
+  const r = (data as { share_photos: boolean; share_health: boolean }[])[0]
+  return r ? { photos: r.share_photos, health: r.share_health } : NO_SHARES
 }

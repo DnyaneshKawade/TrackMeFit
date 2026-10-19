@@ -49,7 +49,7 @@ import { supabaseViewing, type Viewing, type ViewMarker } from './admin/viewing'
 import { supabaseAdminAccess, type AdminAccess, type AdminLevel } from './admin/service'
 import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
 import type { ProgressStore } from './progress/types'
-import { memoryCoachStore, supabaseCoachStore, type CoachStore } from './coach/store'
+import { memoryCoachStore, supabaseCoachStore, supabaseShares, type CoachStore } from './coach/store'
 import { memoryApprovalStore, supabaseApprovalStore, type CoachApprovalStore } from './coach/approval'
 import type { ClientStores } from './coach/ClientView'
 import { memoryPhotoStore, supabasePhotoStore, type PhotoStore } from './progress/photoStore'
@@ -561,6 +561,7 @@ export default function App() {
         checkIns: supabaseCheckInStore(sb!, id),
         mealPlans: supabaseMealPlanStore(sb!, id),
         profile: supabaseProfileStore(sb!, id),
+        shares: () => supabaseShares(sb!, id),
       })}
       checkInStoreFor={(a) => supabaseCheckInStore(sb!, a.id)}
       chatStoreFor={(a) => supabaseChatStore(sb!, a.id)}

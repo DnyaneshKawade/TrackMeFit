@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: T-096 choose what your coach sees
+- Under Your coach, two switches: "Progress photos" and "Health answers". Both start off and save at once.
+- The coach sees "Not shared" for parts the client keeps private. An ended link turns both off.
+- Health answers moved from `profiles` to a new `health_answers` table, so the database hides them from a coach.
+- Migration: `20261116000000_coach_shares.sql` (DK runs it before merging).
+- Tests: `src/db/coachShares.test.ts` (3), `src/coach/ClientView.test.tsx` (2), `src/coach/YourCoach.test.tsx` (1); `src/db/rls.test.ts` and `src/profile/profile.test.ts` updated.
+
 ## 2026-10-19: Google users add a password (T-091b)
 - Account, Sign-in and security: a Google user taps "Add a password". We email a code first, then they type the code and a new password twice.
 - Uses Supabase `reauthenticate()` and `updateUser({ password, nonce })`. A wrong or old code says to ask for a new one.
