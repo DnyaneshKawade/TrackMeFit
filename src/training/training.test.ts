@@ -161,9 +161,9 @@ describe('own exercises and supersets (T-043b)', () => {
   })
 
   it('12. reads own exercises from database rows', () => {
-    expect(customFromRow({ id: 'u1', name: 'Neck curl', primary_muscle: 'traps', equipment: 'machine', isolation: true })).toEqual({
+    expect(customFromRow({ id: 'u1', name: 'Tyre flip', primary_muscle: 'traps', equipment: 'machine', isolation: true })).toEqual({
       id: 'custom:u1',
-      name: 'Neck curl',
+      name: 'Tyre flip',
       primary: 'traps',
       equipment: 'machine',
       isolation: true,
@@ -217,22 +217,22 @@ describe('records data (T-044)', () => {
 
 describe('own exercises (T-043c)', () => {
   it('15. an edited exercise may keep its own name but not take another one', () => {
-    const mine = customExercise('custom:1', { name: 'Neck curl', primary: 'traps', equipment: 'machine', isolation: true })
+    const mine = customExercise('custom:1', { name: 'Tyre flip', primary: 'traps', equipment: 'machine', isolation: true })
     const list = [mine, ...EXERCISES]
-    expect(checkNewExercise('neck curl', list, 'custom:1')).toBeNull()
-    expect(checkNewExercise('Neck curl', list)).toBe('Neck curl is already in the list.')
+    expect(checkNewExercise('tyre flip', list, 'custom:1')).toBeNull()
+    expect(checkNewExercise('Tyre flip', list)).toBe('Tyre flip is already in the list.')
     expect(checkNewExercise('Leg press', list, 'custom:1')).toBe('Leg press is already in the list.')
   })
 
   it('16. a hidden exercise leaves the list and search but is still found by id', () => {
-    const hidden = customExercise('custom:2', { name: 'Neck curl', primary: 'traps', equipment: 'machine', isolation: true, hidden: true })
+    const hidden = customExercise('custom:2', { name: 'Tyre flip', primary: 'traps', equipment: 'machine', isolation: true, hidden: true })
     setCustomExercises([hidden])
     try {
       expect(allExercises().some((e) => e.id === 'custom:2')).toBe(false)
-      expect(searchExercises('neck curl')).toEqual([])
-      expect(exerciseById.get('custom:2')?.name).toBe('Neck curl')
+      expect(searchExercises('tyre flip')).toEqual([])
+      expect(exerciseById.get('custom:2')?.name).toBe('Tyre flip')
       // A hidden name can be used again for a new exercise.
-      expect(checkNewExercise('Neck curl')).toBeNull()
+      expect(checkNewExercise('Tyre flip')).toBeNull()
     } finally {
       setCustomExercises([])
     }
@@ -242,8 +242,8 @@ describe('own exercises (T-043c)', () => {
     expect(customFromRow({ id: 'u', name: 'X', primary_muscle: 'abs', equipment: 'cable', isolation: true, hidden: true })).toMatchObject({ id: 'custom:u', hidden: true })
     expect(customFromRow({ id: 'u', name: 'X', primary_muscle: 'abs', equipment: 'cable', isolation: true, hidden: false })).not.toHaveProperty('hidden')
     const store = memoryExerciseStore()
-    const x = await store.addCustom({ name: 'Neck curl', primary: 'traps', equipment: 'machine', isolation: true })
-    expect(await store.updateCustom(x.id, { name: ' Neck flexion ', primary: 'traps', equipment: 'cable', isolation: true })).toMatchObject({ id: x.id, name: 'Neck flexion', equipment: 'cable' })
+    const x = await store.addCustom({ name: 'Tyre flip', primary: 'traps', equipment: 'machine', isolation: true })
+    expect(await store.updateCustom(x.id, { name: ' Tyre push ', primary: 'traps', equipment: 'cable', isolation: true })).toMatchObject({ id: x.id, name: 'Tyre push', equipment: 'cable' })
     await store.setHidden(x.id, true)
     expect((await store.custom())[0].hidden).toBe(true)
     await store.setHidden(x.id, false)

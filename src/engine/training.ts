@@ -7,6 +7,7 @@
 export type Muscle =
   | 'chest' | 'back' | 'quads' | 'hamstrings' | 'glutes' | 'sideDelts'
   | 'rearDelts' | 'biceps' | 'triceps' | 'calves' | 'abs' | 'traps'
+  | 'frontDelts' | 'forearms' | 'adductors' | 'neck'
 
 export type Experience = 'beginner' | 'intermediate' | 'advanced'
 
@@ -33,6 +34,12 @@ export const LANDMARKS: Record<Muscle, Landmarks> = {
   calves: { mv: 4, mev: 6, mavLow: 8, mavHigh: 16, mrv: 20 },
   abs: { mv: 0, mev: 0, mavLow: 10, mavHigh: 16, mrv: 20 },
   traps: { mv: 0, mev: 0, mavLow: 12, mavHigh: 20, mrv: 26 },
+  // Added in T-082a. Presses and compounds cover most people, so none needs
+  // its own sets. Forearm, inner-thigh and neck numbers are starting guesses.
+  frontDelts: { mv: 0, mev: 0, mavLow: 0, mavHigh: 8, mrv: 12 },
+  forearms: { mv: 0, mev: 0, mavLow: 8, mavHigh: 16, mrv: 24 },
+  adductors: { mv: 0, mev: 0, mavLow: 4, mavHigh: 10, mrv: 16 },
+  neck: { mv: 0, mev: 0, mavLow: 4, mavHigh: 10, mrv: 16 },
 }
 
 const EXPERIENCE_SCALE: Record<Experience, number> = { beginner: 0.6, intermediate: 1, advanced: 1.2 }
