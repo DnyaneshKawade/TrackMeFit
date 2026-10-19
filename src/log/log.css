@@ -126,3 +126,5 @@
 .coach-status label { display: grid; gap: 4px; font-size: 14px; }
 .coach-status input, .coach-status textarea { font: inherit; padding: 8px 10px; border: 1px solid #c9d2cf; border-radius: 8px; }
 .coach-status img { border-radius: 6px; object-fit: cover; }
+.coach-own { margin-top: 24px; }
+.coach-own summary { cursor: pointer; font-weight: 600; padding: 8px 0; }

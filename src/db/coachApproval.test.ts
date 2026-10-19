@@ -201,3 +201,21 @@ describe('coach approval (T-042a3)', () => {
     await setSwitch(false)
   })
 })
+
+describe('coaches change their own details (T-093)', () => {
+  it('2. an Approved coach changes their name and details, and the status stays Approved', async () => {
+    // With the switch off a new coach starts Approved.
+    await setSwitch(false)
+    const id = await t.signUp('k93@example.com', { role: 'coach', full_name: 'Kiran' })
+    const st = () => t.db.query<{ coach_status: string }>('select coach_status from profiles where id = $1', [id]).then((r) => r.rows[0].coach_status)
+    expect(await st()).toBe('approved')
+    await t.as(id, (db) => db.query(`insert into coach_details (phone, city, years) values ('98200 00000', 'Pune', 4)`))
+    await t.as(id, (db) => db.query(`update coach_details set city = 'Mumbai', years = 5`))
+    await t.as(id, (db) => db.query(`update profiles set full_name = 'Kiran Rao' where id = auth.uid()`))
+    const row = await t.as(id, (db) =>
+      db.query<{ city: string; years: number; full_name: string }>('select d.city, d.years, p.full_name from coach_details d join profiles p on p.id = d.coach_id').then((r) => r.rows[0]),
+    )
+    expect(row).toEqual({ city: 'Mumbai', years: 5, full_name: 'Kiran Rao' })
+    expect(await st()).toBe('approved')
+  })
+})

@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Coaches change their own details (T-093)
+
+- Approved coaches now see "Your coach details" under their clients. They can change their name, phone, city, years, link and certificates.
+- Saving keeps the status Approved.
+- Tests: 1 in `src/coach/CoachStatus.test.tsx`, 1 in `src/db/coachApproval.test.ts`.
+
 ## 2026-10-19: Coach codes list (T-095)
 
 - The Clients tab lists codes not used yet, with the day each ends.

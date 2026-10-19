@@ -101,3 +101,20 @@ describe('coach status screens (T-042a3)', () => {
     expect(screen.queryByText(/Your coach account is approved/)).toBeNull()
   })
 })
+
+describe('coaches change their own details (T-093)', () => {
+  it('1. an Approved coach opens their details, changes them and saves; the status stays', async () => {
+    const store = memoryApprovalStore({ status: 'approved', details: { name: 'Kiran', phone: '98200 00000', city: 'Pune', years: 4 } })
+    home(store)
+    expect(await screen.findByText('Client list')).toBeTruthy()
+    fireEvent.click(screen.getByText('Your coach details'))
+    const form = await screen.findByRole('form', { name: 'Your coach details' })
+    expect((within(form).getByLabelText('Name your clients see') as HTMLInputElement).value).toBe('Kiran')
+    type('Name your clients see', 'Kiran Rao', form)
+    type('City', 'Mumbai', form)
+    fireEvent.click(within(form).getByRole('button', { name: 'Save details' }))
+    expect((await screen.findByRole('status')).textContent).toBe('Your details are saved.')
+    expect(await store.details()).toMatchObject({ name: 'Kiran Rao', city: 'Mumbai', years: 4 })
+    expect((await store.standing()).status).toBe('approved')
+  })
+})
