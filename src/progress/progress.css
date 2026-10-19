@@ -61,6 +61,7 @@
 .photos .photo-day img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 8px; background: #eef2f0; }
 
 .your-coach .actions, .clients .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.your-coach .share-ask ul { margin: 8px 0; padding-left: 20px; line-height: 1.6; }
 .clients .invite { margin: 12px 0; padding: 10px 12px; border: 1px solid #0f7a5c; border-radius: 12px; }
 .clients .code { font-size: 20px; letter-spacing: 1px; }
 .client-list { list-style: none; padding: 0; margin: 0; }

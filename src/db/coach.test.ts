@@ -106,6 +106,28 @@ describe('client can only end a link (T-088)', () => {
   })
 })
 
+describe('ask before sharing (T-087)', () => {
+  it('1. the look-up gives the coach’s name only and keeps the code; 2. joining saves the time of the yes', async () => {
+    const zoya = await t.signUp('zoya@example.com')
+    const code = await t.as(coach, newCode)
+    const look = (db: PGlite, c: string) => db.query<Record<string, unknown>>('select * from coach_for_code($1)', [c]).then((r) => r.rows)
+    expect(await t.as(zoya, (db) => look(db, code))).toEqual([{ coach_for_code: 'Coach K' }])
+    await expect(t.as(zoya, (db) => look(db, 'ZZZZZ99999'))).rejects.toThrow(/invite not valid/)
+    await expect(t.as(null, (db) => look(db, code))).rejects.toThrow()
+    await expect(t.as(coach2, (db) => look(db, code))).rejects.toThrow(/invite not valid/)
+    // Looking up shares nothing and leaves the code ready to use.
+    expect(await t.as(zoya, links)).toEqual([])
+    expect(await t.as(coach, (db) => db.query('select 1 from coach_invites where code = $1', [code]).then((r) => r.rows.length))).toBe(1)
+
+    await t.as(zoya, (db) => join(db, code))
+    const when = (db: PGlite) => db.query<{ consented_at: Date | null }>('select consented_at from coach_clients').then((r) => r.rows[0].consented_at)
+    expect(await t.as(zoya, when)).toBeInstanceOf(Date)
+    // Nobody can change it afterwards.
+    await expect(t.as(zoya, (db) => db.query(`update coach_clients set consented_at = now() - interval '9 days'`))).rejects.toThrow(/cannot be changed/)
+    await expect(t.as(coach, (db) => db.query(`update coach_clients set consented_at = null where client_id = $1`, [zoya]))).rejects.toThrow()
+  })
+})
+
 describe('client summaries (T-026b)', () => {
   it('6. sums last week per active client for the coach only, from one request', async () => {
     const t2 = await createTestDb()

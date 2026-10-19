@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Ask before sharing with a coach (T-087)
+
+- Typing a code now shows the coach's name and a list of all they will see, health answers too.
+- Nothing is shared until "Share with ...". Cancel keeps the code for later.
+- The time of the yes is saved and shown as "Sharing since". Nobody can change it.
+- Migration: `20261112000000_coach_consent.sql`.
+- Tests: 2 new and 1 updated in `src/coach/YourCoach.test.tsx`, 1 in `src/db/coach.test.ts`.
+
 ## 2026-10-19: Choose a new password (T-085)
 
 - The "Forgot password" link now opens "Choose a new password". Before, it only signed the person in.

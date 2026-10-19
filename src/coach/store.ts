@@ -17,6 +17,8 @@ export interface CoachLink {
   name: string
   /** The coach is paused by Track Me Fit (T-042a3); only set for a client's coach. */
   paused?: boolean
+  /** When the client said yes to sharing (T-087); only set for a client's coach. */
+  since?: string | null
 }
 
 /** A client in the coach's list, with what the attention rules need (T-026b). */
@@ -25,6 +27,8 @@ export type ClientRow = ClientSummary & { linkId: string }
 export interface CoachStore {
   /** The person's active coach, if any. */
   myCoach(): Promise<CoachLink | null>
+  /** The coach's name for a code, without using the code up (T-087). */
+  lookup(code: string): Promise<string>
   /** Joins the coach whose code this is; returns the coach's name. */
   join(code: string): Promise<string>
   /** A coach's active clients with last week's numbers, in two requests. */
@@ -76,17 +80,22 @@ export function memoryCoachStore(
   let clients = [...(start.clients ?? [])]
   const codes = new Map(Object.entries(start.codes ?? {}))
   let n = 0
+  const clean = (code: string) => code.replace(/[^a-z0-9]/gi, '').toUpperCase()
+  const lookup = async (code: string) => {
+    const name = codes.get(clean(code))
+    if (name === undefined) throw new Error('invite not valid')
+    if (full.has(clean(code))) throw new Error('coach is full')
+    return name
+  }
   return {
     async myCoach() {
       return coach
     },
+    lookup,
     async join(code) {
-      const clean = code.replace(/[^a-z0-9]/gi, '').toUpperCase()
-      const name = codes.get(clean)
-      if (name === undefined) throw new Error('invite not valid')
-      if (full.has(clean)) throw new Error('coach is full')
-      codes.delete(clean)
-      coach = { id: `link-${++n}`, personId: `coach-${n}`, name }
+      const name = await lookup(code)
+      codes.delete(clean(code))
+      coach = { id: `link-${++n}`, personId: `coach-${n}`, name, since: new Date().toISOString() }
       return name
     },
     async clients() {
@@ -123,19 +132,24 @@ interface SummaryRow {
   last_workout_on: string | null
 }
 
-type LinkRow = { id: string; coach_id: string; coach: { full_name: string; coach_status?: string } | null }
+type LinkRow = { id: string; coach_id: string; consented_at?: string | null; coach: { full_name: string; coach_status?: string } | null }
 
 export function supabaseCoachStore(sb: SupabaseClient, userId: string): CoachStore {
   // The coach's name comes with the link in one request.
-  const select = 'id, coach_id, coach:profiles!coach_clients_coach_id_fkey(full_name, coach_status)'
+  const select = 'id, coach_id, consented_at, coach:profiles!coach_clients_coach_id_fkey(full_name, coach_status)'
   return {
     async myCoach() {
       const { data, error } = await sb.from('coach_clients').select(select).eq('client_id', userId).eq('status', 'active').limit(1)
       if (error) throw error
       const r = (data as unknown as LinkRow[])[0]
       return r
-        ? { id: r.id, personId: r.coach_id, name: r.coach?.full_name || 'Your coach', paused: !!r.coach?.coach_status && r.coach.coach_status !== 'approved' }
+        ? { id: r.id, personId: r.coach_id, name: r.coach?.full_name || 'Your coach', paused: !!r.coach?.coach_status && r.coach.coach_status !== 'approved', since: r.consented_at ?? null }
         : null
+    },
+    async lookup(code) {
+      const { data, error } = await sb.rpc('coach_for_code', { invite_code: code })
+      if (error) throw error
+      return (data as string) || 'Your coach'
     },
     async join(code) {
       const { data, error } = await sb.rpc('join_coach', { invite_code: code })
