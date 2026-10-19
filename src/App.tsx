@@ -391,6 +391,8 @@ export function AppShell({
               signInWith: account.signInWith ?? 'email',
               changePassword: auth.changePassword?.bind(auth),
               changeEmail: auth.changeEmail?.bind(auth),
+              sendPasswordCode: auth.sendPasswordCode?.bind(auth),
+              addPassword: auth.addPassword?.bind(auth),
             }}
             onDetails={
               canEditDetails

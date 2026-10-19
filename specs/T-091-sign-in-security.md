@@ -24,7 +24,7 @@ Each one becomes a test with the same words in its name.
 - Supabase's "Secure email change" sends a link to the old and the new
   address. The change counts once both are opened.
 - Google users change their password with Google. Adding a password to a
-  Google account is left for later, as it needs a code sent by email.
+  Google account came later in [T-091b](T-091b-google-password.md).
 
 ## Data and privacy
 - No migration. Passwords never leave Supabase Auth.

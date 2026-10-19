@@ -32,6 +32,10 @@ export interface AuthService {
   changePassword?(oldPassword: string, newPassword: string): Promise<void>
   /** Sends a link to the old and the new email; the change counts once both are opened (T-091). */
   changeEmail?(email: string): Promise<void>
+  /** Emails a code to a Google user before they add a password (T-091b). */
+  sendPasswordCode?(): Promise<void>
+  /** Adds a password with the emailed code (T-091b). */
+  addPassword?(code: string, password: string): Promise<void>
   /** Signs out this device only, or every device with 'all' (T-090). */
   signOut(where?: 'all'): Promise<void>
   current(): Promise<Account | null>
@@ -42,6 +46,7 @@ export interface AuthService {
 export function friendlyAuthError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e)
   if (/old password wrong/i.test(msg)) return 'Your old password is wrong.'
+  if (/nonce|reauthentication/i.test(msg)) return 'This code is wrong or too old. Ask for a new one.'
   if (/invalid login credentials/i.test(msg)) return 'Email or password is wrong.'
   if (/same.*password|different from the old/i.test(msg)) return 'Pick a password you have not used here before.'
   if (/already registered|already been registered|user already exists/i.test(msg)) return 'This email already has an account. Sign in instead.'

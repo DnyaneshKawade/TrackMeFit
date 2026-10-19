@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Google users add a password (T-091b)
+- Account, Sign-in and security: a Google user taps "Add a password". We email a code first, then they type the code and a new password twice.
+- Uses Supabase `reauthenticate()` and `updateUser({ password, nonce })`. A wrong or old code says to ask for a new one.
+- No migration. Spec: [T-091b](../specs/T-091b-google-password.md).
+- Tests: `src/account/Security.test.tsx` "Google users add a password (T-091b)" (3).
+
 ## 2026-10-19: T-098 public page on deleting an account
 - `/delete-account.html` says how to delete in the app, or by email to trackmefit5@gmail.com, and what is removed.
 - The privacy page links to it. It works offline like the privacy page. This is the link Google Play asks for.

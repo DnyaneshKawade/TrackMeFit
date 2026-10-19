@@ -18,3 +18,15 @@ export async function changeEmail(sb: SupabaseClient, email: string): Promise<vo
   const { error } = await sb.auth.updateUser({ email: email.trim() }, { emailRedirectTo: window.location.origin })
   if (error) throw error
 }
+
+// A Google user adds a password (spec T-091b). Supabase emails a code
+// first, so a borrowed phone that is signed in can't add one.
+export async function sendPasswordCode(sb: SupabaseClient): Promise<void> {
+  const { error } = await sb.auth.reauthenticate()
+  if (error) throw error
+}
+
+export async function addPassword(sb: SupabaseClient, code: string, password: string): Promise<void> {
+  const { error } = await sb.auth.updateUser({ password, nonce: code.trim() })
+  if (error) throw error
+}
