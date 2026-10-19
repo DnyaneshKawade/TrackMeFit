@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: training tasks from the RP and FitNotes research
+
+- DK asked for tasks from the two studies. Notes: `trackmefit-notes/rp-app-research.md` and `fitnotes-research.md`.
+- New tasks T-107 to T-121, most useful first. T-107 fixes missed days moving the block week.
+- T-082g and T-082h now follow RP more closely. The block-week item moved from T-046 to T-107.
+- Left out: things we already do better (rest timer, supersets, units, plateau rule, offline logging).
+
 ## 2026-10-19: T-101d new look on every screen
 
 - The top of each page shows the date and a greeting, with a round picture that opens Me.
