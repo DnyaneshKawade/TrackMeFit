@@ -1,7 +1,7 @@
 // Workout plans (days of exercises with sets and rep ranges) and logged
 // sessions, FitNotes style: every set is saved the moment it is logged.
 
-import { nextLoad, type LoadDecision } from '../engine/training'
+import { breakLoad, nextLoad, type LoadDecision } from '../engine/training'
 import type { Exercise } from './exercises'
 import type { Feedback } from './progression'
 import type { Sync } from '../sync/outbox'
@@ -166,16 +166,25 @@ export function describeSets(sets: SetLog[]): string {
   return groups.map((g) => `${g.w} kg × ${g.reps.join(', ')}`).join(' · ')
 }
 
+/** Whole days from one YYYY-MM-DD date to a later one. */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / 86400000)
+}
+
 /** Weight and reps for next time from the last sessions (double progression).
  * Logged reps left are compared with `targetRir`, the aim for this week.
+ * After 10 or more days off before `today`, the start is lighter (T-082f).
  * Null when there is no history or no rep range to aim for. */
-export function suggestNext(all: PastSession[], exercise: Exercise, repRange: [number, number], targetRir?: number): LoadDecision | null {
+export function suggestNext(all: PastSession[], exercise: Exercise, repRange: [number, number], targetRir?: number, today?: string): LoadDecision | null {
   const history = all.map((h) => ({ ...h, sets: workingSets(h.sets) })).filter((h) => h.sets.length)
   const last = history[0]
   if (!last || last.sets.length === 0) return null
   const top = Math.max(...last.sets.map((s) => s.weightKg))
   const topSets = last.sets.filter((s) => s.weightKg === top)
   const repsDone = topSets.map((s) => s.reps)
+  // After 10 or more days off, start lighter instead (T-082f).
+  const back = today ? breakLoad(top, Math.max(...repsDone), repRange, exercise.increment, daysBetween(last.performedOn, today)) : null
+  if (back) return back
   let missStreak = 0
   for (const h of history) {
     if (h.sets.some((s) => s.reps < repRange[0])) missStreak++

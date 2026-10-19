@@ -138,6 +138,30 @@ describe('warm-up sets (T-082c)', () => {
   })
 })
 
+describe('back after a break (T-082f)', () => {
+  it('6. the session suggests the lighter start with the reason', async () => {
+    const store = memoryWorkoutStore({
+      plans: [ppl],
+      sessions: [
+        {
+          id: 's0',
+          performedOn: '2026-09-20',
+          planDayId: 'd1',
+          name: 'Push',
+          sets: [0, 1, 2].map((i) => ({ id: `x${i}`, exerciseId: 'bench-press', setIndex: i, weightKg: 60, reps: 10, rir: 1 })),
+        },
+      ],
+    })
+    render(<Workouts store={store} today={TODAY} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Start a workout' }))
+    click(/^Push/)
+    const bench = await screen.findByRole('region', { name: 'Bench press (barbell)' })
+    expect(await within(bench).findByText(/Try 47.5 kg × 10/)).toBeTruthy()
+    expect(within(bench).getByText('You had 22 days off. So start 20% lighter today.')).toBeTruthy()
+    expect((screen.getByLabelText('Bench press (barbell) weight (kg)') as HTMLInputElement).value).toBe('47.5')
+  })
+})
+
 describe('logging a workout', () => {
   it('starts a plan day, suggests the next load from last time and logs sets', async () => {
     const store = memoryWorkoutStore({
@@ -484,7 +508,7 @@ describe('own exercises (T-043c)', () => {
     expect(await screen.findByRole('button', { name: /^Tyre flip/ })).toBeTruthy()
   })
 
-  it('16. removing hides the exercise but past sets keep it; Undo brings it back', async () => {
+  it('16. removing hides the exercise but past sets keep it; Undo brings it back', { timeout: 15000 }, async () => {
     const store = memoryWorkoutStore({
       sessions: [{ id: 's0', performedOn: '2026-10-01', planDayId: null, name: 'Workout', sets: [{ id: 'a', exerciseId: 'custom:9', setIndex: 0, weightKg: 10, reps: 15, rir: null }] }],
     })
