@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { Clients } from './Clients'
 import { emptyClient, inviteMessage, memoryCoachStore } from './store'
 
@@ -74,5 +74,20 @@ describe('tell the other side when a link ends (T-094)', () => {
       'Asha stopped sharing on 12 Nov.',
       'Your link with Meena ended on 9 Nov.',
     ])
+  })
+})
+
+describe('coach codes list (T-095)', () => {
+  it('1. shows codes not used yet with their end date; Cancel removes one so nobody can use it', async () => {
+    const store = memoryCoachStore({ invites: [{ code: 'ABCDE11111', expiresAt: '2026-10-25T00:00:00Z' }] })
+    render(<Clients store={store} />)
+    const list = await screen.findByRole('list', { name: 'Codes not used yet' })
+    expect(within(list).getByText('ABCDE-11111')).toBeTruthy()
+    expect(within(list).getByText('Works until 25 Oct')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Invite a client' }))
+    await waitFor(() => expect(within(screen.getByRole('list', { name: 'Codes not used yet' })).getAllByRole('listitem')).toHaveLength(2))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel code ABCDE-11111' }))
+    await waitFor(() => expect(screen.queryByText('ABCDE-11111')).toBeNull())
+    expect((await store.invites()).map((i) => i.code)).not.toContain('ABCDE11111')
   })
 })

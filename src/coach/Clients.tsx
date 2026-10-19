@@ -14,8 +14,6 @@ const day = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'n
 
 /** The coach's Clients tab: invite with a code (T-026a), see clients sorted by
  * who needs attention with the reasons (T-026b), end a link. */
-const dayMonth = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
-
 export function Clients({
   store,
   storesFor,
@@ -49,6 +47,9 @@ export function Clients({
   const [editingProgram, setEditingProgram] = useState<Plan | null>(null)
   // Links the client or the app ended in the last 30 days (T-094).
   const [ends, setEnds] = useState<LinkEnd[]>([])
+  // Codes that still work (T-095).
+  const [codes, setCodes] = useState<Invite[]>([])
+  const loadCodes = () => store.invites().then(setCodes, () => undefined)
 
   useEffect(() => {
     store.clients(today).then(
@@ -63,7 +64,8 @@ export function Clients({
   useEffect(() => {
     store.clientLimit().then(setLimit, () => undefined)
     store.recentEnds().then((list) => setEnds(list.filter((e) => e.by !== 'me')), () => undefined)
-  }, [store])
+    void loadCodes()
+  }, [store]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     templates?.plans().then(setPrograms, () => {
@@ -94,6 +96,7 @@ export function Clients({
     setCopied(false)
     try {
       setInvite(await store.createInvite())
+      void loadCodes()
     } catch (err) {
       setError(
         /client limit reached/i.test(String((err as Error)?.message))
@@ -169,6 +172,35 @@ export function Clients({
             </div>
           </div>
         )}
+        {codes.length > 0 && (
+          <div className="open-codes">
+            <h4>Codes not used yet</h4>
+            <ul className="weigh-list" aria-label="Codes not used yet">
+              {codes.map((c) => (
+                <li key={c.code}>
+                  <strong className="code">{showCode(c.code)}</strong>
+                  <span className="muted">Works until {day(c.expiresAt)}</span>
+                  <button
+                    className="link"
+                    aria-label={`Cancel code ${showCode(c.code)}`}
+                    onClick={async () => {
+                      try {
+                        await store.cancelInvite(c.code)
+                        if (invite?.code === c.code) setInvite(null)
+                        await loadCodes()
+                      } catch {
+                        setError('Couldn’t cancel the code. Check your connection.')
+                      }
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="muted">A used code leaves this list. The person then shows under Your clients.</p>
+          </div>
+        )}
       </section>
       {error && <p className="error" role="alert">{error}</p>}
       <section aria-label="Your clients">
@@ -236,8 +268,8 @@ export function Clients({
             {ends.map((e) => (
               <li key={e.linkId}>
                 {e.by === 'them'
-                  ? `${e.name} stopped sharing on ${dayMonth(e.endedAt)}.`
-                  : `Your link with ${e.name} ended on ${dayMonth(e.endedAt)}.`}
+                  ? `${e.name} stopped sharing on ${day(e.endedAt)}.`
+                  : `Your link with ${e.name} ended on ${day(e.endedAt)}.`}
               </li>
             ))}
           </ul>
