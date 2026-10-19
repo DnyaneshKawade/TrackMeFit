@@ -99,7 +99,8 @@ describe('first run', () => {
     render(<AppShell auth={a} />)
     await screen.findByRole('heading', { name: 'About you' })
     click('Sign out')
-    expect(a.signOut).toHaveBeenCalled()
+    // This phone only (T-090).
+    expect(a.signOut).toHaveBeenCalledWith()
   })
 
   it('opens the app anyway if the profile can’t be loaded', async () => {

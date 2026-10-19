@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Sign out on all devices (T-090)
+
+- "Sign out" now signs out this phone only. Before, it signed out every device.
+- The Account page has "Sign out on all devices", for a lost phone. It asks first.
+- Tests: 2 in `src/account/Account.test.tsx`, 1 updated in `src/App.test.tsx`.
+
 ## 2026-10-19: Ask before sharing with a coach (T-087)
 
 - Typing a code now shows the coach's name and a list of all they will see, health answers too.

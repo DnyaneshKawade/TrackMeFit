@@ -68,8 +68,9 @@ export function createSupabaseAuth(sb: SupabaseClient): AuthService {
       })
       return () => data.subscription.unsubscribe()
     },
-    async signOut() {
-      const { error } = await sb.auth.signOut()
+    async signOut(where) {
+      // Supabase signs out everywhere by default; "Sign out" means this phone.
+      const { error } = await sb.auth.signOut({ scope: where === 'all' ? 'global' : 'local' })
       if (error) throw error
     },
     async current() {
