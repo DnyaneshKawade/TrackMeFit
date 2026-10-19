@@ -128,3 +128,8 @@
 .coach-status img { border-radius: 6px; object-fit: cover; }
 .coach-own { margin-top: 24px; }
 .coach-own summary { cursor: pointer; font-weight: 600; padding: 8px 0; }
+.coach-steps ol { padding-left: 20px; }
+.coach-steps li { margin-bottom: 8px; }
+.coach-steps .mark { font-size: 0.85em; padding: 0 6px; border-radius: 8px; background: #eee; }
+.coach-steps li.now .mark { background: #fff7e0; border: 1px solid #f0d78a; }
+.coach-steps li.later { opacity: 0.7; }

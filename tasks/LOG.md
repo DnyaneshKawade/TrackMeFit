@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: T-099 first steps for a new coach
+- A new coach sees three steps: fill in your details, we check you, invite a client.
+- Each is marked Done, Now or Next, and says what it means for clients.
+- An approved coach with no clients sees the steps on the invite step; they go once a client joins.
+- Tests: `src/coach/CoachStatus.test.tsx` "first steps for a new coach (T-099)" (3).
+
 ## 2026-10-19: Coaches change their own details (T-093)
 
 - Approved coaches now see "Your coach details" under their clients. They can change their name, phone, city, years, link and certificates.

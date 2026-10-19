@@ -4,12 +4,26 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { checkPhotoFile, shrinkImage } from '../progress/photoStore'
 import { applyAgainOn, type Certificate, type CoachApprovalStore, type CoachDetails, type CoachStanding } from './approval'
+import { CoachSteps } from './CoachSteps'
 import '../log/log.css'
 
 const day = (d: Date) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 
-function DetailsForm({ store, shrink }: { store: CoachApprovalStore; shrink: (f: Blob) => Promise<Blob> }) {
+/** Name, phone, city and one certificate: what we need to check a coach (T-099). */
+const filledIn = (d: CoachDetails, certs: Certificate[]) => [d.name, d.phone, d.city].every((x) => x.trim()) && certs.length > 0
+
+function DetailsForm({
+  store,
+  shrink,
+  onFilled,
+}: {
+  store: CoachApprovalStore
+  shrink: (f: Blob) => Promise<Blob>
+  /** Told whether the saved details are filled in. */
+  onFilled?: (filled: boolean) => void
+}) {
   const [d, setD] = useState<CoachDetails | null>(null)
+  const [saved, setSaved] = useState<CoachDetails | null>(null)
   const [years, setYears] = useState('')
   const [certs, setCerts] = useState<Certificate[]>([])
   const [certName, setCertName] = useState('')
@@ -21,12 +35,17 @@ function DetailsForm({ store, shrink }: { store: CoachApprovalStore; shrink: (f:
     store.details().then(
       (x) => {
         setD(x)
+        setSaved(x)
         setYears(x.years === null ? '' : String(x.years))
       },
       () => setError('Couldn’t load your details. Check your connection.'),
     )
     store.certificates().then(setCerts, () => undefined)
   }, [store])
+
+  useEffect(() => {
+    if (saved) onFilled?.(filledIn(saved, certs))
+  }, [saved, certs, onFilled])
 
   if (!d) return error ? <p className="error" role="alert">{error}</p> : <p className="muted">Loading…</p>
   const set = (k: keyof CoachDetails) => (e: React.ChangeEvent<HTMLInputElement>) => setD({ ...d, [k]: e.target.value })
@@ -39,6 +58,7 @@ function DetailsForm({ store, shrink }: { store: CoachApprovalStore; shrink: (f:
     if (y !== null && (!Number.isInteger(y) || y < 0 || y > 60)) return setError('Years coaching must be a number from 0 to 60.')
     try {
       await store.saveDetails({ name: d.name, phone: d.phone, city: d.city, years: y, link: d.link })
+      setSaved({ ...d, years: y })
       setMsg('Your details are saved.')
     } catch {
       setError('Couldn’t save. Check your connection.')
@@ -144,6 +164,7 @@ export function CoachHome({
   const [s, setS] = useState<CoachStanding | null>(null)
   const [answer, setAnswer] = useState('')
   const [error, setError] = useState('')
+  const [filled, setFilled] = useState(false)
 
   useEffect(() => {
     store.standing().then(setS, () => setError('Couldn’t load your coach account. Check your connection.'))
@@ -203,6 +224,7 @@ export function CoachHome({
   return (
     <main className="log coach-status">
       <h2>Clients</h2>
+      {(s.status === 'waiting' || s.status === 'needs more') && <CoachSteps states={[filled ? 'done' : 'now', filled ? 'now' : 'later', 'later']} />}
       {s.status === 'waiting' && (
         <section aria-label="Coach status">
           <h3>We’re checking your details</h3>
@@ -245,7 +267,7 @@ export function CoachHome({
         </section>
       )}
       {error && <p className="error" role="alert">{error}</p>}
-      {s.status !== 'paused' && <DetailsForm store={store} shrink={shrink} />}
+      {s.status !== 'paused' && <DetailsForm store={store} shrink={shrink} onFilled={setFilled} />}
     </main>
   )
 }
