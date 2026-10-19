@@ -6,6 +6,7 @@ import type { ChatStore } from './chat'
 import { PlanEditor } from '../training/PlanEditor'
 import type { Plan, WorkoutStore } from '../training/types'
 import { ClientView, type ClientStores } from './ClientView'
+import { CoachSteps } from './CoachSteps'
 import { inviteMessage, showCode, type ClientRow, type CoachStore, type Invite, type LinkEnd } from './store'
 import '../log/log.css'
 import '../progress/progress.css'
@@ -208,7 +209,10 @@ export function Clients({
         {clients === null ? (
           <p className="muted">Loading…</p>
         ) : !clients.length ? (
-          <p className="muted">No clients yet. Send a code to someone you coach.</p>
+          <>
+            <p className="muted">No clients yet. Send a code to someone you coach.</p>
+            <CoachSteps states={['done', 'done', 'now']} />
+          </>
         ) : (
           <>
             <p className="muted">Clients who need you most come first.</p>
