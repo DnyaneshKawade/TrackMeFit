@@ -6,6 +6,8 @@ import { localDate } from '../log/types'
 import { dataError, fileName, saveFile, type DataRequest, type DataStore } from './data'
 import type { CoachStore } from '../coach/store'
 import { Security, type SecurityProps } from './Security'
+import { FamilyPart } from '../family/FamilyPart'
+import type { FamilyStore } from '../family/family'
 import './account.css'
 
 const day = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -220,6 +222,7 @@ export function Account({
   onDetails,
   coach,
   onCoach,
+  family,
   save = saveFile,
 }: {
   store: DataStore
@@ -236,6 +239,8 @@ export function Account({
   coach?: CoachStore
   /** Opens the Progress tab, where joining and stopping happen. */
   onCoach?: () => void
+  /** A teen's parent, or an adult's children (T-086). */
+  family?: { store: FamilyStore; teen: boolean }
   save?: (name: string, text: string) => void
 }) {
   return (
@@ -252,6 +257,7 @@ export function Account({
       {security && <Security {...security} />}
       {onSignOutAll && <SignOutAll onSignOutAll={onSignOutAll} />}
       {coach && <CoachPart coach={coach} onOpen={onCoach} />}
+      {family && <FamilyPart store={family.store} teen={family.teen} />}
       <section aria-label="Your data and privacy">
         <h3>Your data and privacy</h3>
         <p>
@@ -278,6 +284,7 @@ export function AccountTab({
   onDetails?: () => void
   coach?: CoachStore
   onCoach?: () => void
+  family?: { store: FamilyStore; teen: boolean }
 }) {
   const [store, setStore] = useState<DataStore | null>(null)
   useEffect(() => {

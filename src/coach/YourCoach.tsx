@@ -36,7 +36,9 @@ const joinError = (err: unknown) => {
       ? 'This coach has no space for new clients right now. Ask them about it.'
       : /coach not approved/i.test(message)
         ? 'This coach can’t take clients right now.'
-        : 'Couldn’t connect. Check your connection.'
+        : /under 18/i.test(message)
+          ? 'You can link to a coach when you are 18.'
+          : 'Couldn’t connect. Check your connection.'
 }
 
 /** On the Progress tab: join a coach with their code, or stop sharing (T-026a).

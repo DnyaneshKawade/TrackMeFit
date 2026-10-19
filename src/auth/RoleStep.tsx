@@ -4,7 +4,8 @@ import './auth.css'
 
 /** The first screen of a new Google account: who the account is for (T-066).
  * Email sign-ups answer this on the sign-up form instead. */
-export function RoleStep({ name, onChoose }: { name: string; onChoose: (role: Role) => Promise<void> }) {
+/** `canCoach` is false under 18: coaches are 18 or older (T-086). */
+export function RoleStep({ name, onChoose, canCoach = true }: { name: string; onChoose: (role: Role) => Promise<void>; canCoach?: boolean }) {
   const [role, setRole] = useState<Role>('user')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,12 +32,15 @@ export function RoleStep({ name, onChoose }: { name: string; onChoose: (role: Ro
           <strong>Tracking my own fitness</strong>
           <span>Log food and workouts, with or without a coach</span>
         </label>
-        <label className={role === 'coach' ? 'picked' : ''}>
-          <input type="radio" name="role" checked={role === 'coach'} onChange={() => setRole('coach')} />
-          <strong>A coach</strong>
-          <span>Plan and track your clients</span>
-        </label>
+        {canCoach && (
+          <label className={role === 'coach' ? 'picked' : ''}>
+            <input type="radio" name="role" checked={role === 'coach'} onChange={() => setRole('coach')} />
+            <strong>A coach</strong>
+            <span>Plan and track your clients</span>
+          </label>
+        )}
       </fieldset>
+      {!canCoach && <p className="auth-hint">Coaches must be 18 or older.</p>}
       <p className="auth-hint">You can’t change this later.</p>
       {error && <p className="auth-error" role="alert">{error}</p>}
       <button className="auth-primary" disabled={busy} onClick={() => void save()}>Continue</button>
