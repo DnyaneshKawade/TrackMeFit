@@ -58,3 +58,21 @@ describe('clients tab (T-026a)', () => {
     expect(screen.queryByText(/^ABCDE-/)).toBeNull()
   })
 })
+
+describe('tell the other side when a link ends (T-094)', () => {
+  it('2. the coach sees who stopped sharing and when, but not links they ended', async () => {
+    const store = memoryCoachStore({
+      ends: [
+        { linkId: 'l1', name: 'Asha', endedAt: '2026-11-12T06:00:00Z', by: 'them' },
+        { linkId: 'l2', name: 'Ravi', endedAt: '2026-11-10T06:00:00Z', by: 'me' },
+        { linkId: 'l3', name: 'Meena', endedAt: '2026-11-09T06:00:00Z', by: 'app' },
+      ],
+    })
+    render(<Clients store={store} />)
+    const part = await screen.findByRole('region', { name: 'Stopped sharing' })
+    expect(within(part).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      'Asha stopped sharing on 12 Nov.',
+      'Your link with Meena ended on 9 Nov.',
+    ])
+  })
+})

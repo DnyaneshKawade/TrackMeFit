@@ -121,3 +121,20 @@ describe('weekly check-in (T-026e)', () => {
     expect(screen.queryByRole('region', { name: 'Weekly check-in' })).toBeNull()
   })
 })
+
+describe('tell the other side when a link ends (T-094)', () => {
+  it('1. the client sees that the coach ended it, and that the data stays theirs', async () => {
+    const store = memoryCoachStore({ ends: [{ linkId: 'l1', name: 'Kiran Rao', endedAt: '2026-11-12T06:00:00Z', by: 'them' }] })
+    render(<YourCoach store={store} />)
+    expect(await screen.findByText('Kiran Rao ended your coaching on 12 Nov. Your data stays yours.')).toBeTruthy()
+  })
+
+  it('3. a link the person ended themselves shows no note', async () => {
+    const store = memoryCoachStore({ coach: { id: 'l1', personId: 'k1', name: 'Coach K' } })
+    render(<YourCoach store={store} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Stop sharing with your coach' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, stop' }))
+    expect(await screen.findByLabelText('Coach code')).toBeTruthy()
+    expect(screen.queryByText(/ended your coaching/)).toBeNull()
+  })
+})
