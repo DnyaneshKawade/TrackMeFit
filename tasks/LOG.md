@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Warm-up sets (T-082c)
+
+- Each exercise shows warm-up sets before the first working set, as buttons.
+- Big lifts build up: the bar, then 50, 70 and 85% of the working weight, rounded to plates.
+- A muscle already trained today gets one set, or none for a small move.
+- Tapping a warm-up fills the set and tags it. After logging it, the working weight comes back.
+- Tests: 5 in `src/engine/warmup.test.ts`, 1 in `src/training/Workouts.test.tsx`.
+
 ## 2026-10-18: Weight steps from reps left (T-082b)
 
 - The next weight now uses the reps left you log, not just the reps you did.

@@ -112,3 +112,6 @@
 @media (prefers-color-scheme: dark) { .record { color: #4cc49b; } }
 .suggest-plan .reasons { padding-left: 18px; margin: 6px 0 12px; font-size: 14px; }
 .suggest-day h4 { margin: 12px 0 4px; }
+.warmups { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
+.warmups p { flex-basis: 100%; margin: 0; font-size: 13px; }
+.warmups .chip { padding: 6px 10px; font-size: 13px; }

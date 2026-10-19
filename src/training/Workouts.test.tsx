@@ -84,6 +84,44 @@ describe('plans changed by a coach (T-026d)', () => {
   })
 })
 
+describe('warm-up sets (T-082c)', () => {
+  it('6. warm-ups show before the first working set, fill the set as a warm-up, then the working weight comes back', async () => {
+    const store = memoryWorkoutStore({
+      plans: [ppl],
+      sessions: [
+        {
+          id: 's0',
+          performedOn: '2026-10-09',
+          planDayId: 'd1',
+          name: 'Push',
+          sets: [0, 1, 2].map((i) => ({ id: `x${i}`, exerciseId: 'bench-press', setIndex: i, weightKg: 60, reps: 10, rir: 1 })),
+        },
+      ],
+    })
+    render(<Workouts store={store} today={TODAY} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Start a workout' }))
+    click(/^Push/)
+    const bench = await screen.findByRole('region', { name: 'Bench press (barbell)' })
+    await within(bench).findByText(/Try 62.5 kg × 6/)
+    expect(within(bench).getByText(/^Warm-up first\./)).toBeTruthy()
+    const chips = within(bench).getAllByRole('button', { name: /^Warm-up \d for Bench press/ }).map((b) => b.textContent)
+    expect(chips).toEqual(['20 kg × 10', '30 kg × 8', '42.5 kg × 4', '52.5 kg × 2'])
+
+    click('Warm-up 2 for Bench press (barbell): 30 kg × 8')
+    expect((screen.getByLabelText('Bench press (barbell) weight (kg)') as HTMLInputElement).value).toBe('30')
+    expect(within(bench).getByRole('button', { name: 'Warm-up' }).getAttribute('aria-pressed')).toBe('true')
+    click('Log set')
+    expect(await within(bench).findByText('Set 1: 30 kg × 8 · warm-up')).toBeTruthy()
+    expect((screen.getByLabelText('Bench press (barbell) weight (kg)') as HTMLInputElement).value).toBe('62.5')
+    expect((screen.getByLabelText('Bench press (barbell) reps') as HTMLInputElement).value).toBe('6')
+    expect(within(bench).getAllByRole('button', { name: /^Warm-up \d for/ })).toHaveLength(4)
+
+    click('Log set')
+    expect(await within(bench).findByText('Set 2: 62.5 kg × 6')).toBeTruthy()
+    expect(within(bench).queryByRole('button', { name: /^Warm-up \d for/ })).toBeNull()
+  })
+})
+
 describe('logging a workout', () => {
   it('starts a plan day, suggests the next load from last time and logs sets', async () => {
     const store = memoryWorkoutStore({
