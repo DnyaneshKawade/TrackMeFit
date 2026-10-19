@@ -2,10 +2,11 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { CoachHome } from './CoachStatus'
+import { Clients } from './Clients'
 import { YourCoach } from './YourCoach'
 import { memoryApprovalStore } from './approval'
 import { memoryChatStore } from './chat'
-import { memoryCoachStore } from './store'
+import { emptyClient, memoryCoachStore } from './store'
 
 afterEach(cleanup)
 
@@ -116,5 +117,53 @@ describe('coaches change their own details (T-093)', () => {
     expect((await screen.findByRole('status')).textContent).toBe('Your details are saved.')
     expect(await store.details()).toMatchObject({ name: 'Kiran Rao', city: 'Mumbai', years: 4 })
     expect((await store.standing()).status).toBe('approved')
+  })
+})
+
+describe('first steps for a new coach (T-099)', () => {
+  const steps = () =>
+    within(screen.getByRole('region', { name: 'First steps' }))
+      .getAllByRole('listitem')
+      .map((li) => li.querySelector('.mark')!.textContent)
+
+  it('1. a new coach sees three steps; filling in details moves them to the check', async () => {
+    const store = memoryApprovalStore({ status: 'waiting', details: { name: 'Kiran' } })
+    home(store)
+    await screen.findByRole('form', { name: 'Your coach details' })
+    expect(steps()).toEqual(['Now', 'Next', 'Next'])
+    const items = within(screen.getByRole('region', { name: 'First steps' })).getAllByRole('listitem')
+    expect(items[2].textContent).toContain('Then you see their food, workouts, weight and check-ins.')
+    expect(items[0].textContent).toContain('Clients see only your name.')
+
+    type('Phone', '98200 00000')
+    type('City', 'Pune')
+    fireEvent.click(screen.getByRole('button', { name: 'Save details' }))
+    await screen.findByText('Your details are saved.')
+    // A certificate photo is still missing.
+    expect(steps()).toEqual(['Now', 'Next', 'Next'])
+    type('Certificate name', 'ACE')
+    fireEvent.change(screen.getByLabelText('Certificate photo'), { target: { files: [new File(['x'], 'a.jpg', { type: 'image/jpeg' })] } })
+    await screen.findByRole('img', { name: 'ACE' })
+    expect(steps()).toEqual(['Done', 'Now', 'Next'])
+  })
+
+  it('2. an approved coach with no clients is on the invite step; steps leave once they have one', async () => {
+    render(<Clients store={memoryCoachStore()} />)
+    await screen.findByText('No clients yet. Send a code to someone you coach.')
+    expect(steps()).toEqual(['Done', 'Done', 'Now'])
+    cleanup()
+    render(<Clients store={memoryCoachStore({ clients: [emptyClient('l1', 'Asha')] })} />)
+    await screen.findByText('Asha')
+    expect(screen.queryByRole('region', { name: 'First steps' })).toBeNull()
+  })
+
+  it('3. Not approved and Paused coaches see no steps', async () => {
+    home(memoryApprovalStore({ status: 'paused' }))
+    await screen.findByRole('heading', { name: 'Your coach account is paused' })
+    expect(screen.queryByRole('region', { name: 'First steps' })).toBeNull()
+    cleanup()
+    home(memoryApprovalStore({ status: 'not approved', at: '2026-09-01T00:00:00Z' }))
+    await screen.findByRole('heading', { name: 'Your coach account was not approved' })
+    expect(screen.queryByRole('region', { name: 'First steps' })).toBeNull()
   })
 })

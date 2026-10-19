@@ -37,7 +37,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-086 | One age rule, 18 and over (setup allows 13 today): everyone gives a birth date once, coaches and Google sign-ups too; under 18 can't go on | `src/profile/profile.test.ts`; `src/App.test.tsx`; `src/db/rls.test.ts` |
 | T-091b | Google users can add a password, after a code sent to their email (Supabase reauthenticate) | `src/account/Security.test.tsx` |
 | T-096 | Choose what your coach sees: switches for photos and health answers | `src/db/coach.test.ts` (RLS hides them when off); `src/coach/ClientView.test.tsx` |
-| T-099 | First steps for a new coach: your details, we check you, invite a client | `src/coach/CoachStatus.test.tsx` |
 | T-103 | "I want to coach" on the Account page sends a request to the owner, so nobody makes a second account | `src/account/Account.test.tsx`; `src/admin/Requests.test.tsx` |
 | T-098 | Public page on how to delete your account without the app (for the Play Store) | Page build test |
 | T-101 | Units and look: kg or lb for gym weights, and light or dark | Unit tests (plates in lb); `src/App.test.tsx` |
@@ -73,6 +72,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | ID | Task | Tests |
 |---|---|---|
 | T-089 | Privacy page: contact email and who answers, how to complain to the Data Protection Board, how to take back consent, what a coach sees ([spec](../specs/T-089-privacy-contact.md)) | `build/privacyPage.test.ts` "privacy contact and rights (T-089)" (2) |
+| T-099 | First steps for a new coach: your details, we check you, invite a client ([spec](../specs/T-099-coach-first-steps.md)) | `src/coach/CoachStatus.test.tsx` "first steps for a new coach (T-099)" (3) |
 | T-093 | Approved coaches change their own details (name, phone, city, years, link, certificates) under "Your coach details"; the status stays | `src/coach/CoachStatus.test.tsx` (1), `src/db/coachApproval.test.ts` (1) |
 | T-095 | Coach codes list: codes not used yet with their end day, and Cancel; a used code leaves the list and the person shows under Your clients | `src/coach/Clients.test.tsx` (1), `src/db/coach.test.ts` (1) |
 | T-094 | Tell the other side when a coach link ends: the client sees who ended it and that the data stays theirs; the coach sees "Asha stopped sharing"; the database keeps who and when | `src/coach/YourCoach.test.tsx` (2), `src/coach/Clients.test.tsx` (1), `src/db/coach.test.ts` (1) |
