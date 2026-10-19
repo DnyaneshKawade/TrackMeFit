@@ -20,10 +20,6 @@ import {
   ageOn,
   questionsFor,
   type AboutYou,
-  type Activity,
-  type DietPref,
-  type Equipment,
-  type Experience,
   type GoalChoice,
   type ProfileInfo,
 } from './types'
@@ -31,6 +27,7 @@ import '../log/log.css'
 import '../training/training.css'
 import './profile.css'
 import { HowPlanWorks } from './HowPlanWorks'
+import { ACTIVITY, DIETS, EQUIPMENT, EXPERIENCE, GOALS, STEPS } from './labels'
 
 export interface OnboardingResult {
   profile: ProfileInfo
@@ -47,35 +44,6 @@ export { SUGGESTION_NOTE }
 // The meal plan screen and engine download only when the plan step shows.
 const MealPlanStep = lazy(() => import('./MealPlanStep'))
 
-const ACTIVITY: [Activity, string][] = [
-  ['desk', 'Mostly sitting'],
-  ['on_feet', 'On my feet a lot'],
-  ['physical', 'Physical work'],
-]
-const EXPERIENCE: [Experience, string][] = [
-  ['beginner', 'New, or under a year'],
-  ['intermediate', '1 to 3 years'],
-  ['advanced', 'More than 3 years'],
-]
-const EQUIPMENT: [Equipment, string][] = [
-  ['gym', 'A gym'],
-  ['home', 'Home, with dumbbells'],
-  ['none', 'No equipment'],
-]
-const GOALS: [GoalChoice, string][] = [
-  ['lose', 'Lose fat'],
-  ['recomp', 'Lose fat and build muscle'],
-  ['gain', 'Build muscle and gain weight'],
-  ['maintain', 'Stay as I am'],
-]
-const DIETS: [DietPref, string][] = [
-  ['veg', 'Vegetarian'],
-  ['eggetarian', 'Eggetarian'],
-  ['nonveg', 'I eat everything (veg and non-veg)'],
-  ['vegan', 'Vegan'],
-  ['jain', 'Jain'],
-]
-const STEPS = ['About you', 'Health check', 'Training', 'Your goal', 'Food habits', 'Your usual day', 'Your plan']
 
 function Choice<T extends string | number>({
   label,
@@ -151,9 +119,9 @@ export function Onboarding({
   loadFoods?: () => Promise<FoodFinder>
   today?: string
   /** Changing earlier answers: the latest weight fills the weight box. */
-  edit?: { weightKg: number | null }
+  edit?: { weightKg: number | null; step?: number }
 }) {
-  const [step, setStep] = useState(0)
+  const [step, setStep] = useState(edit?.step ?? 0)
   const [about, setAbout] = useState<AboutYou>({
     fullName: initial.fullName,
     sex: initial.sex,

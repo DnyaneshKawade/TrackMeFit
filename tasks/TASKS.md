@@ -62,6 +62,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 ## Done
 
 | ID | Task | Tests |
+| T-084 | Your details page: sign-up answers by part with a Change button each, and "Suggest targets and meals" any time; coaches see "About this client", read only | `src/profile/summary.test.ts` (2), `src/App.test.tsx` (1 new, 3 updated), `src/coach/ClientView.test.tsx` (2) |
 | T-082i | Moves that train the muscle when stretched are tagged; starter plans and swaps prefer them, with a reason | `src/training/stretch.test.ts` (4), `src/training/starterPlan.test.ts` (1) |
 | T-082e | Plateau check: 3 sessions with no new best gives a lighter session, one more set, or a similar exercise, with the reason | `src/engine/plateau.test.ts` (5), `src/training/Workouts.test.tsx` (1) |
 | T-082f | Back after a break: 10, 21 or 43 days off an exercise starts 10, 20 or 30% lighter, with the reason | `src/engine/afterBreak.test.ts` (5), `src/training/Workouts.test.tsx` (1) |

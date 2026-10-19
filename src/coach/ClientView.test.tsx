@@ -15,6 +15,7 @@ import { memoryCheckInStore } from './checkIns'
 import { memoryChatStore, type ChatStore } from './chat'
 import { customExercises, exerciseById, setCustomExercises } from '../training/exercises'
 import type { Plan, WorkoutStore } from '../training/types'
+import { memoryProfileStore } from '../profile/stores'
 
 afterEach(() => {
   cleanup()
@@ -67,6 +68,27 @@ describe('chat on the client page (T-026f)', () => {
     fireEvent.click(screen.getByRole('button', { name: '← All clients' }))
     await screen.findByRole('button', { name: 'Invite a client' })
     expect(screen.queryByText('1 new message')).toBeNull()
+  })
+})
+
+describe('about this client (T-084)', () => {
+  it('3. the coach sees the client’s sign-up answers, read only', async () => {
+    setup({ profile: memoryProfileStore({ fullName: 'Asha Rao', sex: 'female', heightCm: 160, dietPref: 'veg', allergies: ['peanuts'], medical: { thyroid: true }, onboardedAt: '2026-10-01T00:00:00Z' }) })
+    fireEvent.click(await screen.findByRole('button', { name: 'Asha Rao' }))
+    fireEvent.click(await screen.findByText('About Asha'))
+    const about = await screen.findByRole('region', { name: 'About you' })
+    expect(about.textContent).toContain('Height160 cm')
+    expect(about.textContent).toContain('Weight70 kg')
+    expect(screen.getByRole('region', { name: 'Health check' }).textContent).toContain('A thyroid condition')
+    expect(screen.getByRole('region', { name: 'Food habits' }).textContent).toContain('AllergiesPeanuts')
+    expect(within(about.closest('details')!).queryByRole('button')).toBeNull()
+    expect(screen.getByText('Asha’s sign-up answers. Only Asha can change them.')).toBeTruthy()
+  })
+
+  it('3. a client who skipped the questions shows a note', async () => {
+    setup({ profile: memoryProfileStore({ fullName: 'Asha Rao' }) })
+    fireEvent.click(await screen.findByRole('button', { name: 'Asha Rao' }))
+    expect(await screen.findByText('Asha has not answered the sign-up questions yet.')).toBeTruthy()
   })
 })
 
