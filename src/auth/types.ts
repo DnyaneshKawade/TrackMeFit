@@ -22,6 +22,10 @@ export interface AuthService {
   /** Picks the role of a new Google account; works once. */
   chooseRole(role: Role): Promise<void>
   resetPassword(email: string): Promise<void>
+  /** Sets a new password for the signed-in person (T-085). */
+  updatePassword?(password: string): Promise<void>
+  /** Calls back once when the person opened a "Forgot password" email link (T-085). */
+  onRecovery?(cb: () => void): Unsubscribe
   signOut(): Promise<void>
   current(): Promise<Account | null>
   onChange(cb: (account: Account | null) => void): Unsubscribe

@@ -13,6 +13,9 @@ export function supabaseFromEnv(): SupabaseClient | null {
 }
 
 export function createSupabaseAuth(sb: SupabaseClient): AuthService {
+  // A "Forgot password" link lands with type=recovery in the address. The
+  // client may handle it before the app listens, so remember it now (T-085).
+  let recovery = typeof window !== 'undefined' && /type=recovery/.test(window.location.hash)
   const toAccount = async (user: User | null): Promise<Account | null> => {
     if (!user) return null
     const { data } = await sb.from('profiles').select('role, full_name, role_chosen').eq('id', user.id).maybeSingle()
@@ -50,6 +53,20 @@ export function createSupabaseAuth(sb: SupabaseClient): AuthService {
     async resetPassword(email) {
       const { error } = await sb.auth.resetPasswordForEmail(email.trim(), { redirectTo: window.location.origin })
       if (error) throw error
+    },
+    async updatePassword(password) {
+      const { error } = await sb.auth.updateUser({ password })
+      if (error) throw error
+    },
+    onRecovery(cb) {
+      if (recovery) {
+        recovery = false
+        queueMicrotask(cb)
+      }
+      const { data } = sb.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') cb()
+      })
+      return () => data.subscription.unsubscribe()
     },
     async signOut() {
       const { error } = await sb.auth.signOut()
