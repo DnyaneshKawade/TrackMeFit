@@ -30,7 +30,7 @@ export const SECTIONS: Section[] = [
   {
     heading: 'What we keep',
     lines: [
-      '- Your account: name, email, and phone if you add it.',
+      '- Your account: name and email. Coaches also give a phone number.',
       '- Your details: birth date, height, sex, goal and food habits.',
       '- What you log: food, weight, body size, workouts and check-ins.',
       '- Progress photos and coach certificates you add.',

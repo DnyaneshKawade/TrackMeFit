@@ -14,7 +14,8 @@ Each one becomes a test with the same words in its name.
 
 1. The page shows the email (trackmefit5@gmail.com) and who answers (Track
    Me Fit). It says how to complain to the Data Protection Board.
-2. It says how to take back consent and what a coach sees.
+2. It says how to take back consent and what a coach sees. The phone line
+   says only coaches give a phone number.
 
 ## Rules and reasons
 - DK picked the name and email on 19 Oct 2026.

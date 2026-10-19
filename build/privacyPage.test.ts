@@ -30,6 +30,7 @@ describe('privacy contact and rights (T-089)', () => {
     expect(html).toContain('<p>Or email us at trackmefit5@gmail.com.</p>')
     expect(html).toContain('Track Me Fit answers every question and complaint about your data.')
     expect(html).toContain('Data Protection Board of India')
+    expect(html).toContain('Coaches also give a phone number.')
   })
 
   it('2. says how to take back consent and what a coach sees', () => {
