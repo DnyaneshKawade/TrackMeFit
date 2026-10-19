@@ -28,13 +28,13 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests planned |
 |---|---|---|
+| T-101b | Light or dark choice (Phone setting, Light, Dark), built with the new look DK asked for | `src/App.test.tsx` (theme choice applied) |
 | T-015 | USDA bulk importer (Foundation + SR Legacy) into our foods table | Mapper tests (started in T-007), import count check |
 | T-018c | Food logging extras: barcode scan (free for everyone, Open Food Facts kept separate under the ODbL), batch-cooked weighing | Component tests for each |
 | T-067 / T-068 later | Parked until users ask (DK, 17 Oct 2026): diet break, SCOFF check, doctor ticks, after the goal, weigh-in habit, plan from logs, gain check, protein choices question | — |
 | T-042a3b | Email to the coach at each approval decision; needs an email service and its key (e.g. Resend), sent from an Edge Function | Function test: one email per decision, key never in the app |
 | T-082n | Light week choice: week-1 weights, or the same weight with 3 reps left (4.9) | Engine tests |
 | T-083 | Stuck at the calorie floor: a card with checks (log everything, walk more, then see a doctor) instead of a lower number; optional diet break of 1-2 weeks at maintenance after 8-12 weeks of cutting, accepted by the user | Engine tests |
-| T-101 | Units and look: kg or lb for gym weights, and light or dark | Unit tests (plates in lb); `src/App.test.tsx` |
 | T-100 | Optional reminders (log food, weigh in, workout day, coach reply), a switch for each and a quiet time | Engine, database and Edge Function tests |
 | T-102 | Optional second sign-in step with an authenticator app | RLS test; set-up component test |
 | T-082g | RP-style soreness timing and an optional pump question; new set-change table (4.6) | Engine tests, migration test |
@@ -66,6 +66,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-101 | kg or lb for gym weights, saved with the account; sets stay saved in kg ([spec](../specs/T-101-units.md)) | Claude | `src/engine/units.test.ts` (2), `src/account/Account.test.tsx` (1), `src/training/Workouts.test.tsx` (1), `src/db/weightUnit.test.ts` (1) | Migration `20261117000000_weight_unit.sql` |
 | T-096 | Choose what your coach sees: switches for photos and health answers, off until the client turns them on ([spec](../specs/T-096-coach-shares.md)) | Claude | `src/db/coachShares.test.ts` (3), `src/coach/ClientView.test.tsx` (2), `src/coach/YourCoach.test.tsx` (1) | Migration `20261116000000_coach_shares.sql` |
 | T-091b | Google users add a password after a code sent to their email ([spec](../specs/T-091b-google-password.md)) | Claude | `src/account/Security.test.tsx` "Google users add a password (T-091b)" (3) | Supabase reauthenticate; no migration |
 | T-098 | Public page `/delete-account.html`: how to delete in the app and by email, what is removed; linked from the privacy page ([spec](../specs/T-098-delete-page.md)) | `build/privacyPage.test.ts` (1), `src/pwa.test.ts` (2 extended) |

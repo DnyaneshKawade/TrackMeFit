@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: T-101 kg or lb for gym weights
+- Account, Units: "Gym weights in" kg or lb. Saved with the account.
+- In lb, training screens show and take lb: sets, last time, suggestions, warm-ups, records and the plate calculator (45 lb bar, lb plates).
+- Sets stay saved in kg, so engines and coaches need no change. Body weight stays in kg.
+- The light or dark choice moved to T-101b, to build with the new look.
+- Migration: `20261117000000_weight_unit.sql` (DK runs it before merging).
+- Tests: `src/engine/units.test.ts` (2), `src/account/Account.test.tsx` (1), `src/training/Workouts.test.tsx` (1), `src/db/weightUnit.test.ts` (1).
+- The new food and recipe forms now load when first opened, to keep the first download under 140 KB.
+
 ## 2026-10-19: T-096 choose what your coach sees
 - Under Your coach, two switches: "Progress photos" and "Health answers". Both start off and save at once.
 - The coach sees "Not shared" for parts the client keeps private. An ended link turns both off.

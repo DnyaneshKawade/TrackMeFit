@@ -3,7 +3,9 @@
 // calculator with Indian gym plates.
 
 import { useEffect, useMemo, useState } from 'react'
-import { BARS, describePlates, platesFor } from '../engine/plates'
+import { describePlates, gymFor, platesFor } from '../engine/plates'
+import { shownWeight, weightText, type WeightUnit } from '../engine/units'
+import { useWeightUnit } from '../settings/units'
 import { exerciseRecords, type ExerciseRecords, type Lift } from '../engine/strength'
 import { shiftDate } from '../log/types'
 import { monthGrid, monthOf, monthRange, shiftMonth } from './calendar'
@@ -106,14 +108,15 @@ function Calendar({ store, today }: { store: WorkoutStore; today: string }) {
 }
 
 function StrengthChart({ points, measure }: Pick<ExerciseRecords, 'points' | 'measure'>) {
+  const weightUnit = useWeightUnit()
   if (points.length < 2) return <p className="muted">Do this exercise in two workouts to see a graph.</p>
-  const values = points.map((p) => p.value)
+  const values = points.map((p) => (measure === 'e1rm' ? shownWeight(p.value, weightUnit) : p.value))
   const lo = Math.min(...values)
   const hi = Math.max(...values)
   const pad = Math.max(1, (hi - lo) * 0.15)
   const x = (i: number) => (i / (points.length - 1)) * CHART_W
   const y = (v: number) => CHART_H - ((v - (lo - pad)) / (hi - lo + 2 * pad)) * CHART_H
-  const unit = measure === 'e1rm' ? ' kg' : ' reps'
+  const unit = measure === 'e1rm' ? ` ${weightUnit}` : ' reps'
   const what = measure === 'e1rm' ? 'Best one-rep max guess' : 'Most reps in a set'
   return (
     <figure className="strength-chart">
@@ -123,9 +126,9 @@ function StrengthChart({ points, measure }: Pick<ExerciseRecords, 'points' | 'me
         aria-label={`${what} in each workout, from ${values[0]}${unit} on ${shortDate(points[0].date)} to ${values[values.length - 1]}${unit} on ${shortDate(points[points.length - 1].date)}`}
       >
         <line x1="0" y1={CHART_H} x2={CHART_W} y2={CHART_H} className="axis" />
-        <polyline points={points.map((p, i) => `${x(i)},${y(p.value)}`).join(' ')} className="trend-line" />
+        <polyline points={values.map((v, i) => `${x(i)},${y(v)}`).join(' ')} className="trend-line" />
         {points.map((p, i) => (
-          <circle key={p.date + i} cx={x(i)} cy={y(p.value)} r="3" className="dot" />
+          <circle key={p.date + i} cx={x(i)} cy={y(values[i])} r="3" className="dot" />
         ))}
       </svg>
       <figcaption className="muted">
@@ -137,11 +140,12 @@ function StrengthChart({ points, measure }: Pick<ExerciseRecords, 'points' | 'me
   )
 }
 
-const lift = (l: Lift) => `${l.weightKg} kg × ${l.reps}`
+const lift = (l: Lift, unit: WeightUnit) => `${weightText(l.weightKg, unit)} × ${l.reps}`
 
 function ExerciseDetail({ store, exerciseId, onBack }: { store: WorkoutStore; exerciseId: string; onBack: () => void }) {
   const [records, setRecords] = useState<ExerciseRecords | null>(null)
   const [error, setError] = useState(false)
+  const unit = useWeightUnit()
   useEffect(() => {
     let live = true
     store.exerciseHistory(exerciseId).then(
@@ -166,7 +170,7 @@ function ExerciseDetail({ store, exerciseId, onBack }: { store: WorkoutStore; ex
               <div>
                 <dt>Heaviest</dt>
                 <dd>
-                  {lift(records.heaviest)} <span className="muted">· {shortDate(records.heaviest.performedOn)}</span>
+                  {lift(records.heaviest, unit)} <span className="muted">· {shortDate(records.heaviest.performedOn)}</span>
                 </dd>
               </div>
             )}
@@ -174,7 +178,7 @@ function ExerciseDetail({ store, exerciseId, onBack }: { store: WorkoutStore; ex
               <div>
                 <dt>Best one-rep max guess</dt>
                 <dd>
-                  {records.bestE1rm.e1rm} kg <span className="muted">· from {lift(records.bestE1rm)} · {shortDate(records.bestE1rm.performedOn)}</span>
+                  {weightText(records.bestE1rm.e1rm, unit)} <span className="muted">· from {lift(records.bestE1rm, unit)} · {shortDate(records.bestE1rm.performedOn)}</span>
                 </dd>
               </div>
             )}
@@ -183,7 +187,7 @@ function ExerciseDetail({ store, exerciseId, onBack }: { store: WorkoutStore; ex
                 <dt>Most reps in a set</dt>
                 <dd>
                   {records.mostReps.reps}
-                  {records.mostReps.weightKg > 0 ? ` at ${records.mostReps.weightKg} kg` : ''} <span className="muted">· {shortDate(records.mostReps.performedOn)}</span>
+                  {records.mostReps.weightKg > 0 ? ` at ${weightText(records.mostReps.weightKg, unit)}` : ''} <span className="muted">· {shortDate(records.mostReps.performedOn)}</span>
                 </dd>
               </div>
             )}
@@ -201,7 +205,7 @@ function ExerciseDetail({ store, exerciseId, onBack }: { store: WorkoutStore; ex
                 {records.repMaxes.map((r) => (
                   <tr key={r.target}>
                     <th scope="row">{r.target}</th>
-                    <td>{r.weightKg} kg</td>
+                    <td>{weightText(r.weightKg, unit)}</td>
                     <td className="muted">{shortDate(r.performedOn)}</td>
                   </tr>
                 ))}
@@ -265,19 +269,22 @@ function ExerciseList({ store, today, onPick }: { store: WorkoutStore; today: st
 }
 
 export function PlateCalculator({ initial = '' }: { initial?: string }) {
+  const unit = useWeightUnit()
+  const gym = gymFor(unit)
   const [weight, setWeight] = useState(initial)
-  const [bar, setBar] = useState(BARS[0])
+  const [picked, setBar] = useState<number | null>(null)
+  const bar = picked !== null && gym.bars.includes(picked) ? picked : gym.bars[0]
   const w = Number(weight.replace(',', '.'))
-  const load = weight.trim() ? platesFor(w, bar) : null
+  const load = weight.trim() ? platesFor(w, bar, gym.plates, unit) : null
   return (
     <section aria-label="Plate calculator" className="plates">
       <h3>Plate calculator</h3>
       <div className="plate-row">
-        <input aria-label="Weight to lift (kg)" placeholder="kg" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
+ <input aria-label={`Weight to lift (${unit})`} placeholder={unit} inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
         <span className="range" role="group" aria-label="Bar weight">
-          {BARS.map((b) => (
+          {gym.bars.map((b) => (
             <button key={b} className="chip" aria-pressed={b === bar} onClick={() => setBar(b)}>
-              {b} kg bar
+              {b} {unit} bar
             </button>
           ))}
         </span>
@@ -286,13 +293,15 @@ export function PlateCalculator({ initial = '' }: { initial?: string }) {
         <p role="status">
           {load.perSide.length > 0 && (
             <>
-              Each side: <strong>{describePlates(load.perSide)}</strong>.{' '}
+              Each side: <strong>{describePlates(load.perSide, unit)}</strong>.{' '}
             </>
           )}
           {load.reason && <span className="muted">{load.reason}</span>}
         </p>
       )}
-      <p className="muted">Uses 25, 20, 15, 10, 5, 2.5 and 1.25 kg plates.</p>
+      <p className="muted">
+        Uses {gym.plates.slice(0, -1).join(', ')} and {gym.plates[gym.plates.length - 1]} {unit} plates.
+      </p>
     </section>
   )
 }

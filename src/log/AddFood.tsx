@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { amountFor, type Food } from '../food/types'
 import type { FoodFinder } from '../food/finder'
 import { useFoodSearch } from '../food/useFoodSearch'
 import { OFF_ATTRIBUTION } from '../food/off'
 import type { CustomFood, NewCustomFood } from '../food/custom'
-import { CreateFood, CreateRecipe } from './CreateFood'
 import {
   amountLabel,
   EMPTY_QUICK_FORM,
@@ -20,6 +19,10 @@ import {
   type QuickForm,
   type RecentFood,
 } from './types'
+
+// The food and recipe forms load when first opened, to keep the first download small.
+const CreateFood = lazy(() => import('./CreateFood').then((m) => ({ default: m.CreateFood })))
+const CreateRecipe = lazy(() => import('./CreateFood').then((m) => ({ default: m.CreateRecipe })))
 
 const STATE_HINT = { raw: 'Weigh it raw', cooked: 'Cooked weight', asSold: 'As sold' } as const
 const SOURCE_NAME = { trackMeFit: 'Indian dish', usda: 'USDA', openFoodFacts: 'Open Food Facts', user: 'My food' } as Record<string, string>
@@ -175,7 +178,7 @@ export function AddFood({
         <h2>Add to {to}</h2>
         <button className="link" onClick={onClose}>Close</button>
       </header>
-      {body}
+      <Suspense fallback={<p className="muted">Loading…</p>}>{body}</Suspense>
     </section>
   )
 }

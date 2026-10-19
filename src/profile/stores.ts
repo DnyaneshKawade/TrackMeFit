@@ -32,11 +32,12 @@ export interface ProfileRow {
   allergies: string[] | null
   current_diet: ProfileInfo['currentDiet']
   onboarded_at: string | null
+  weight_unit?: ProfileInfo['weightUnit'] | null
 }
 
 const COLUMNS =
   'full_name, sex, birth_date, height_cm, activity, training_days, experience, equipment, goal, goal_rate, target_weight_kg, event_date, ' +
-  'diet_pref, food_rules, fasting, allergies, current_diet, onboarded_at'
+  'diet_pref, food_rules, fasting, allergies, current_diet, onboarded_at, weight_unit'
 
 const numOrNull = (v: number | string | null | undefined) => (v === null || v === undefined ? null : Number(v))
 
@@ -67,6 +68,7 @@ export const fromRow = (r: ProfileRow, h: HealthRow | null = null): ProfileInfo 
   medical: h?.medical ?? {},
   otherHealth: h?.other_health ?? '',
   onboardedAt: r.onboarded_at,
+  weightUnit: r.weight_unit === 'lb' ? 'lb' : 'kg',
 })
 
 export const toRow = (p: ProfileInfo): ProfileRow => ({
@@ -88,6 +90,7 @@ export const toRow = (p: ProfileInfo): ProfileRow => ({
   allergies: p.allergies,
   current_diet: p.currentDiet,
   onboarded_at: p.onboardedAt,
+  weight_unit: p.weightUnit,
 })
 
 export const toHealthRow = (p: ProfileInfo): HealthRow => ({ medical: p.medical, other_health: p.otherHealth.trim() })

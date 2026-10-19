@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { Workouts } from './Workouts'
+import { UnitContext } from '../settings/units'
 import { memoryWorkoutStore } from './memoryStore'
 import { offlineWorkoutStore } from './offlineStore'
 import type { KeyValue } from '../sync/outbox'
@@ -603,5 +604,41 @@ describe('suggested plan (T-041a)', () => {
     const saved = (await store.plans())[0]
     expect(saved.days.map((d) => d.name)).toEqual(['Full body A', 'Full body B'])
     expect(saved.days[0].exercises[0]).toMatchObject({ exerciseId: 'back-squat', sets: 4, repMin: 6, repMax: 10 })
+  })
+})
+
+describe('kg or lb for gym weights (T-101)', () => {
+  it('4. in lb, sets show and are typed in lb, and are saved in kg', async () => {
+    const store = memoryWorkoutStore({
+      plans: [ppl],
+      sessions: [
+        {
+          id: 's0',
+          performedOn: '2026-10-09',
+          planDayId: 'd1',
+          name: 'Push',
+          sets: [0, 1, 2].map((i) => ({ id: `x${i}`, exerciseId: 'bench-press', setIndex: i, weightKg: 60, reps: 10, rir: 1 })),
+        },
+      ],
+    })
+    render(
+      <UnitContext.Provider value="lb">
+        <Workouts store={store} today={TODAY} />
+      </UnitContext.Provider>,
+    )
+    fireEvent.click(await screen.findByRole('button', { name: 'Start a workout' }))
+    click(/^Push/)
+    const bench = await screen.findByRole('region', { name: 'Bench press (barbell)' })
+    expect(await within(bench).findByText('Last time: 132.5 lb × 10, 10, 10')).toBeTruthy()
+    const weight = screen.getByLabelText('Bench press (barbell) weight (lb)') as HTMLInputElement
+    fireEvent.change(weight, { target: { value: '135' } })
+    expect(within(bench).getByText(/^Each side of a 45 lb bar: 45 lb\./)).toBeTruthy()
+    click('More weight for Bench press (barbell)')
+    expect(weight.value).toBe('140')
+    fireEvent.change(weight, { target: { value: '135' } })
+    click('Log set')
+    expect(await within(bench).findByText(/^Set 1: 135 lb × /)).toBeTruthy()
+    const saved = (await store.history('bench-press', '2026-10-13', 1))[0]
+    expect(saved?.sets[0].weightKg).toBeCloseTo(61.235, 2)
   })
 })

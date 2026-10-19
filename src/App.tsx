@@ -51,6 +51,7 @@ import { memoryProgressStore, supabaseProgressStore } from './progress/stores'
 import type { ProgressStore } from './progress/types'
 import { memoryCoachStore, supabaseCoachStore, supabaseShares, type CoachStore } from './coach/store'
 import { memoryApprovalStore, supabaseApprovalStore, type CoachApprovalStore } from './coach/approval'
+import { UnitContext } from './settings/units'
 import type { ClientStores } from './coach/ClientView'
 import { memoryPhotoStore, supabasePhotoStore, type PhotoStore } from './progress/photoStore'
 import type { DataStore } from './account/data'
@@ -405,6 +406,18 @@ export function AppShell({
             coach={account.role === 'user' && !teen ? coaching : undefined}
             family={family && { store: family, teen }}
             canCoach={account.role === 'user' && !teen}
+            units={
+              profile && profiles
+                ? {
+                    unit: profile.weightUnit,
+                    onChange: async (weightUnit) => {
+                      const p = { ...profile, weightUnit }
+                      await profiles.save(p)
+                      setProfile(p)
+                    },
+                  }
+                : undefined
+            }
             onCoach={() => setTab('progress')}
             onSignOutAll={async () => {
               await auth.signOut('all')
@@ -500,7 +513,11 @@ export function AppShell({
         />
       )}
       <Suspense fallback={<main className="log">Loading…</main>}>
-        {tab === 'training' && <Workouts store={workouts!} exercises={exerciseStore} answers={profile ?? undefined} userId={account.id} />}
+        {tab === 'training' && (
+          <UnitContext.Provider value={profile?.weightUnit ?? 'kg'}>
+            <Workouts store={workouts!} exercises={exerciseStore} answers={profile ?? undefined} userId={account.id} />
+          </UnitContext.Provider>
+        )}
         {tab === 'admin' && admin && adminLevel && <AdminTab access={admin} me={account.id} level={adminLevel} />}
         {tab === 'clients' && coaching && approval && (
           <CoachHome store={approval}>

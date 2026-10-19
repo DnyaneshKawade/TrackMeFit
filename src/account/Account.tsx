@@ -8,7 +8,45 @@ import type { CoachStore } from '../coach/store'
 import { Security, type SecurityProps } from './Security'
 import { FamilyPart } from '../family/FamilyPart'
 import type { FamilyStore } from '../family/family'
+import type { WeightUnit } from '../engine/units'
 import './account.css'
+
+export interface UnitsProps {
+  unit: WeightUnit
+  onChange: (unit: WeightUnit) => Promise<void>
+}
+
+/** kg or lb for gym weights (T-101). Saved with the account, so every phone matches. */
+function Units({ unit, onChange }: UnitsProps) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const pick = async (u: WeightUnit) => {
+    if (u === unit) return
+    setBusy(true)
+    setError('')
+    try {
+      await onChange(u)
+    } catch {
+      setError('Couldn’t save this. Check your connection.')
+    }
+    setBusy(false)
+  }
+  return (
+    <section aria-label="Units">
+      <h3>Units</h3>
+      <p>Gym weights in:</p>
+      <span className="range" role="group" aria-label="Gym weights in">
+        {(['kg', 'lb'] as const).map((u) => (
+          <button key={u} className="chip" aria-pressed={u === unit} disabled={busy} onClick={() => void pick(u)}>
+            {u}
+          </button>
+        ))}
+      </span>
+      <p className="muted">Your body weight stays in kg. Old sets show in the new unit too.</p>
+      {error && <p className="error" role="alert">{error}</p>}
+    </section>
+  )
+}
 
 const day = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 
@@ -283,6 +321,7 @@ export function Account({
   onCoach,
   family,
   canCoach,
+  units,
   save = saveFile,
 }: {
   store: DataStore
@@ -303,6 +342,8 @@ export function Account({
   family?: { store: FamilyStore; teen: boolean }
   /** Adults who aren't coaches can ask to become one (T-103). */
   canCoach?: boolean
+  /** kg or lb for gym weights (T-101). */
+  units?: UnitsProps
   save?: (name: string, text: string) => void
 }) {
   return (
@@ -316,6 +357,7 @@ export function Account({
           <button className="link" onClick={onDetails}>See and change your details</button>
         </section>
       )}
+      {units && <Units {...units} />}
       {security && <Security {...security} />}
       {onSignOutAll && <SignOutAll onSignOutAll={onSignOutAll} />}
       {coach && <CoachPart coach={coach} onOpen={onCoach} />}
@@ -349,6 +391,7 @@ export function AccountTab({
   onCoach?: () => void
   family?: { store: FamilyStore; teen: boolean }
   canCoach?: boolean
+  units?: UnitsProps
 }) {
   const [store, setStore] = useState<DataStore | null>(null)
   useEffect(() => {
