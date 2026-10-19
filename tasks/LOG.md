@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Back after a break (T-082f)
+
+- After 10 or more days off an exercise, the suggested weight starts lighter.
+- 10 to 20 days: 10% lighter. 21 to 42 days: 20%. 43 or more: 30%.
+- Reps stay as last time, inside the range. The reason says how many days off.
+- The light week choice moved to its own task, T-082n.
+- Tests: 5 in `src/engine/afterBreak.test.ts`, 1 in `src/training/Workouts.test.tsx`.
+
 ## 2026-10-19: Weekly sets per muscle (T-082d)
 
 - The plan editor shows "Sets each week": each trained muscle with its sets, most first.
