@@ -2,6 +2,7 @@
 // them, their food habits, and the health check.
 
 import type { CurrentDiet } from './currentDiet'
+import type { WeightUnit } from '../engine/units'
 
 export type Sex = 'male' | 'female'
 export type Activity = 'desk' | 'on_feet' | 'physical'
@@ -39,6 +40,8 @@ export interface ProfileInfo {
   otherHealth: string
   /** When onboarding was finished or skipped; null until then. */
   onboardedAt: string | null
+  /** kg or lb for gym weights (T-101). */
+  weightUnit: WeightUnit
 }
 
 export interface ProfileStore {
@@ -67,6 +70,7 @@ export const EMPTY_PROFILE: ProfileInfo = {
   medical: {},
   otherHealth: '',
   onboardedAt: null,
+  weightUnit: 'kg',
 }
 
 /** Onboarding shows until the person finishes or skips it once. */

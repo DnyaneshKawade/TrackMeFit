@@ -1,6 +1,7 @@
 // Workout plans (days of exercises with sets and rep ranges) and logged
 // sessions, FitNotes style: every set is saved the moment it is logged.
 
+import { weightText, type WeightUnit } from '../engine/units'
 import { breakLoad, nextLoad, type LoadDecision } from '../engine/training'
 import type { Exercise } from './exercises'
 import type { Feedback } from './progression'
@@ -155,7 +156,7 @@ export function checkSet(weightKg: number, reps: number, rir: number | null): st
 }
 
 /** "60 kg × 10, 10, 9" for the sets done at the top weight last time. */
-export function describeSets(sets: SetLog[]): string {
+export function describeSets(sets: SetLog[], unit: WeightUnit = 'kg'): string {
   if (!sets.length) return ''
   const groups: { w: number; reps: number[] }[] = []
   for (const s of [...sets].sort((a, b) => a.setIndex - b.setIndex)) {
@@ -163,7 +164,7 @@ export function describeSets(sets: SetLog[]): string {
     if (g && g.w === s.weightKg) g.reps.push(s.reps)
     else groups.push({ w: s.weightKg, reps: [s.reps] })
   }
-  return groups.map((g) => `${g.w} kg × ${g.reps.join(', ')}`).join(' · ')
+  return groups.map((g) => `${weightText(g.w, unit)} × ${g.reps.join(', ')}`).join(' · ')
 }
 
 /** Whole days from one YYYY-MM-DD date to a later one. */

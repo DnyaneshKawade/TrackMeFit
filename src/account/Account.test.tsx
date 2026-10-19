@@ -140,3 +140,17 @@ describe('"I want to coach" (T-103)', () => {
     expect(screen.queryByRole('region', { name: 'Coach other people' })).toBeNull()
   })
 })
+
+describe('kg or lb for gym weights (T-101)', () => {
+  it('3. the Account page saves kg or lb', async () => {
+    let unit: 'kg' | 'lb' = 'kg'
+    const onChange = async (u: 'kg' | 'lb') => {
+      unit = u
+    }
+    render(<Account store={memoryDataStore()} onBack={() => {}} onDeleted={() => {}} units={{ unit, onChange }} />)
+    const part = screen.getByRole('region', { name: 'Units' })
+    expect(within(part).getByRole('button', { name: 'kg' }).getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(within(part).getByRole('button', { name: 'lb' }))
+    await waitFor(() => expect(unit).toBe('lb'))
+  })
+})

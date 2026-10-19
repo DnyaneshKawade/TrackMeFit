@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { describePlates, platesFor } from '../engine/plates'
+import { describePlates, gymFor, platesFor } from '../engine/plates'
+import { shownWeight, stepIn, toKg, weightText, type WeightUnit } from '../engine/units'
+import { useWeightUnit } from '../settings/units'
 import { newRecord, type StrengthSession } from '../engine/strength'
 import { PLATEAU_SESSIONS, plateauCheck } from '../engine/plateau'
 import { LANDMARKS, targetRir, type Muscle } from '../engine/training'
@@ -238,6 +240,9 @@ function ExerciseLog({
   onLogged: () => void
 }) {
   const deload = !!block && isDeloadWeek(block.week, block.hardWeeks)
+  // Weights are saved in kg and shown in the person's unit (T-101).
+  const unit = useWeightUnit()
+  const show = (kg: number) => String(shownWeight(kg, unit))
   const [history, setHistory] = useState<PastSession[] | null>(null)
   const [weight, setWeight] = useState('')
   const [reps, setReps] = useState('')
@@ -284,7 +289,7 @@ function ExerciseLog({
         const last = deload ? undefined : workingSets(h[0]?.sets ?? [])[0]
         const fill = s ? { weight: s.weight, reps: s.targetReps } : last ? { weight: last.weightKg, reps: last.reps } : null
         if (fill) {
-          setWeight((w) => w || String(fill.weight))
+          setWeight((w) => w || show(fill.weight))
           setReps((r) => r || String(fill.reps))
         }
       },
@@ -319,7 +324,7 @@ function ExerciseLog({
       : null
 
   const log = async () => {
-    const w = Number(weight.replace(',', '.'))
+    const w = toKg(Number(weight.replace(',', '.')), unit)
     const r = Number(reps)
     const x = rir.trim() === '' ? null : Number(rir)
     const problem = weight.trim() === '' || reps.trim() === '' ? 'Enter weight and reps.' : checkSet(w, r, x)
@@ -331,12 +336,12 @@ function ExerciseLog({
       const extra = { ...(tag ? { tag } : {}), ...(note?.trim() ? { note: note.trim() } : {}) }
       const saved = await store.addSet(session.id, { exerciseId: exercise.id, setIndex: nextIndex, weightKg: w, reps: r, rir: x, ...extra })
       onChange({ ...session, sets: [...session.sets, saved] })
-      const beat = past && newRecord(past, done, saved)
+      const beat = past && newRecord(past, done, saved, unit)
       setRecord(beat ? { setId: saved.id, text: beat.text } : null)
       // Weight and reps stay for the next set; the tag and note were for this one.
       // After a warm-up, the working weight comes back.
       if (tag === 'warmup' && working) {
-        setWeight(String(working.weight))
+        setWeight(show(working.weight))
         setReps(String(working.reps))
       }
       setTag(null)
@@ -376,7 +381,7 @@ function ExerciseLog({
           {superset.on ? 'End superset' : 'Superset with next'}
         </button>
       )}
-      {history && history[0] && workingSets(history[0].sets).length > 0 && <p className="muted">Last time: {describeSets(workingSets(history[0].sets))}</p>}
+      {history && history[0] && workingSets(history[0].sets).length > 0 && <p className="muted">Last time: {describeSets(workingSets(history[0].sets), unit)}</p>}
       {deload && plan && <p className="suggest">{deloadAdvice(plan.sets)}</p>}
       {block && !deload && (
         <p className="muted">
@@ -388,7 +393,7 @@ function ExerciseLog({
       )}
       {suggestion && (
         <p className="suggest">
-          Try {suggestion.weight} kg × {suggestion.targetReps}. <span className="muted">{suggestion.why}</span>
+          Try {weightText(suggestion.weight, unit)} × {suggestion.targetReps}. <span className="muted">{suggestion.why}</span>
         </p>
       )}
       {plateauNote && <p className="muted plateau">{plateauNote}</p>}
@@ -399,14 +404,14 @@ function ExerciseLog({
             <button
               key={i}
               className="chip"
-              aria-label={`Warm-up ${i + 1} for ${exercise.name}: ${w.weight} kg × ${w.reps}`}
+              aria-label={`Warm-up ${i + 1} for ${exercise.name}: ${weightText(w.weight, unit)} × ${w.reps}`}
               onClick={() => {
-                setWeight(String(w.weight))
+                setWeight(show(w.weight))
                 setReps(String(w.reps))
                 setTag('warmup')
               }}
             >
-              {w.weight} kg × {w.reps}
+              {weightText(w.weight, unit)} × {w.reps}
             </button>
           ))}
         </div>
@@ -415,7 +420,7 @@ function ExerciseLog({
         {done.map((s, i) => (
           <li key={s.id}>
             <span>
-              Set {i + 1}: {s.weightKg} kg × {s.reps}{s.rir !== null ? ` · ${s.rir} reps left` : ''}
+              Set {i + 1}: {weightText(s.weightKg, unit)} × {s.reps}{s.rir !== null ? ` · ${s.rir} reps left` : ''}
               {s.tag ? ` · ${SET_TAGS.find((t) => t.tag === s.tag)!.shown}` : ''}
               {pending.has(s.id) && <span className="muted"> · Waiting for internet</span>}
               {s.note && <small className="muted set-note">{s.note}</small>}
@@ -426,9 +431,9 @@ function ExerciseLog({
       </ol>
       <div className="set-row">
         <span className="stepper">
-          <button className="step" aria-label={`Less weight for ${exercise.name}`} onClick={() => step(weight, -exercise.increment, setWeight)}>−</button>
-          <input aria-label={`${exercise.name} weight (kg)`} placeholder="kg" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
-          <button className="step" aria-label={`More weight for ${exercise.name}`} onClick={() => step(weight, exercise.increment, setWeight)}>+</button>
+          <button className="step" aria-label={`Less weight for ${exercise.name}`} onClick={() => step(weight, -stepIn(exercise.increment, unit), setWeight)}>−</button>
+          <input aria-label={`${exercise.name} weight (${unit})`} placeholder={unit} inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
+          <button className="step" aria-label={`More weight for ${exercise.name}`} onClick={() => step(weight, stepIn(exercise.increment, unit), setWeight)}>+</button>
         </span>
         <span className="stepper">
           <button className="step" aria-label={`Fewer reps for ${exercise.name}`} onClick={() => step(reps, -1, setReps)}>−</button>
@@ -443,7 +448,7 @@ function ExerciseLog({
           🏆 {record.text}
         </p>
       )}
-      {exercise.equipment === 'barbell' && <PlateHint weight={weight} />}
+      {exercise.equipment === 'barbell' && <PlateHint weight={weight} unit={unit} />}
       <div className="set-extras">
         {SET_TAGS.map((t) => (
           <button key={t.tag} className="chip" aria-pressed={tag === t.tag} onClick={() => setTag(tag === t.tag ? null : t.tag)}>
@@ -461,14 +466,15 @@ function ExerciseLog({
   )
 }
 
-/** Plates for each side of a 20 kg bar, under a barbell exercise (T-044). */
-function PlateHint({ weight }: { weight: string }) {
+/** Plates for each side of a 20 kg (or 45 lb) bar, under a barbell exercise (T-044). */
+function PlateHint({ weight, unit }: { weight: string; unit: WeightUnit }) {
   const w = Number(weight.replace(',', '.'))
   if (!weight.trim() || !(w > 0)) return null
-  const load = platesFor(w)
+  const gym = gymFor(unit)
+  const load = platesFor(w, gym.bars[0], gym.plates, unit)
   return (
     <p className="muted plate-hint">
-      {load.perSide.length > 0 ? `Each side of a 20 kg bar: ${describePlates(load.perSide)}.` : ''} {load.reason}
+      {load.perSide.length > 0 ? `Each side of a ${gym.bars[0]} ${unit} bar: ${describePlates(load.perSide, unit)}.` : ''} {load.reason}
     </p>
   )
 }
