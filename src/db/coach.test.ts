@@ -85,6 +85,27 @@ describe('coach invite codes (T-026a)', () => {
   })
 })
 
+describe('client can only end a link (T-088)', () => {
+  it('1. a client can’t set an ended link back to active; 2. ending still works; 3. a new code still links again', async () => {
+    const pia = await t.signUp('pia@example.com')
+    const code = await t.as(coach, newCode)
+    expect(await t.as(pia, (db) => join(db, code))).toBe('Coach K')
+    // The coach ends it.
+    await t.as(coach, (db) => db.query(`update coach_clients set status = 'ended' where client_id = $1`, [pia]))
+    await expect(t.as(pia, (db) => db.query(`update coach_clients set status = 'active' where coach_id = $1`, [coach]))).rejects.toThrow(/only start again with a new code/)
+    // The coach can't open it again either.
+    await expect(t.as(coach, (db) => db.query(`update coach_clients set status = 'active' where client_id = $1`, [pia]))).rejects.toThrow()
+    expect(await t.as(pia, links)).toEqual([{ coach_id: coach, status: 'ended' }])
+
+    // Back with a new code, the client can still end it themselves.
+    const again = await t.as(coach, newCode)
+    await t.as(pia, (db) => join(db, again))
+    expect(await t.as(pia, links)).toEqual([{ coach_id: coach, status: 'active' }])
+    await t.as(pia, (db) => db.query(`update coach_clients set status = 'ended' where coach_id = $1`, [coach]))
+    expect(await t.as(pia, links)).toEqual([{ coach_id: coach, status: 'ended' }])
+  })
+})
+
 describe('client summaries (T-026b)', () => {
   it('6. sums last week per active client for the coach only, from one request', async () => {
     const t2 = await createTestDb()
