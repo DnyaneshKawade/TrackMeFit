@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: T-089 privacy page contact and rights
+- The privacy page shows trackmefit5@gmail.com and says Track Me Fit answers.
+- It says how to complain to the Data Protection Board, how to take back consent, and what a coach sees.
+- T-097 (support sign-ins in the download) is dropped: DK said no on 19 Oct 2026.
+- Tests: `build/privacyPage.test.ts` "privacy contact and rights (T-089)" (2).
+
 ## 2026-10-19: T-099 first steps for a new coach
 - A new coach sees three steps: fill in your details, we check you, invite a client.
 - Each is marked Done, Now or Next, and says what it means for clients.
