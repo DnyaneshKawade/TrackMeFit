@@ -128,6 +128,30 @@ describe('ask before sharing (T-087)', () => {
   })
 })
 
+describe('tell the other side when a link ends (T-094)', () => {
+  it('4. the database keeps who ended a link and when, and nobody can change it', async () => {
+    const uma = await t.signUp('uma@example.com', { full_name: 'Uma' })
+    const code = await t.as(coach, newCode)
+    await t.as(uma, (db) => join(db, code))
+    const ends = (db: PGlite) =>
+      db.query<{ other_name: string; ended_by_me: boolean; ended_by_other: boolean }>('select other_name, ended_by_me, ended_by_other from recent_link_ends()').then((r) => r.rows)
+    expect(await t.as(uma, ends)).toEqual([])
+    await t.as(coach, (db) => db.query(`update coach_clients set status = 'ended' where client_id = $1`, [uma]))
+    expect(await t.as(uma, ends)).toEqual([{ other_name: 'Coach K', ended_by_me: false, ended_by_other: true }])
+    expect(await t.as(coach, ends)).toContainEqual({ other_name: 'Uma', ended_by_me: true, ended_by_other: false })
+    // Nobody else sees it.
+    const neel = await t.signUp('neel@example.com')
+    expect(await t.as(neel, ends)).toEqual([])
+    // The time and who ended it can't be changed by hand.
+    await t.as(uma, (db) => db.query(`update coach_clients set ended_by = null, ended_at = now() - interval '60 days' where coach_id = $1`, [coach]))
+    expect(await t.as(uma, ends)).toEqual([{ other_name: 'Coach K', ended_by_me: false, ended_by_other: true }])
+    // Joining again clears it.
+    const again = await t.as(coach, newCode)
+    await t.as(uma, (db) => join(db, again))
+    expect(await t.as(uma, ends)).toEqual([])
+  })
+})
+
 describe('client summaries (T-026b)', () => {
   it('6. sums last week per active client for the coach only, from one request', async () => {
     const t2 = await createTestDb()

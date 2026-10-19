@@ -4,7 +4,7 @@ import { Chat } from './Chat'
 import type { ChatStore } from './chat'
 import { CheckInCard } from './CheckIn'
 import type { CheckInStore } from './checkIns'
-import type { CoachLink, CoachStore } from './store'
+import type { CoachLink, CoachStore, LinkEnd } from './store'
 
 export const SHARED_TEXT =
   'Your coach can see your food, workouts, weight, measurements and photos. They see your signup answers, health answers too. They can also set your targets and plans.'
@@ -19,6 +19,14 @@ const SHARE_LIST = [
 ]
 
 const shortDate = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+
+const dayMonth = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+
+/** Why the person has no coach now, when the other side ended it (T-094). */
+const endedText = (e: LinkEnd) =>
+  e.by === 'them'
+    ? `${e.name} ended your coaching on ${dayMonth(e.endedAt)}. Your data stays yours.`
+    : `Your coaching with ${e.name} ended on ${dayMonth(e.endedAt)}. Your data stays yours.`
 
 const joinError = (err: unknown) => {
   const message = String((err as Error)?.message)
@@ -42,6 +50,7 @@ export function YourCoach({ store, checkIns, chat, today }: { store: CoachStore;
   const [confirming, setConfirming] = useState(false)
   // The coach's name for the typed code, while the person decides.
   const [asking, setAsking] = useState<string | null>(null)
+  const [ended, setEnded] = useState<LinkEnd | null>(null)
 
   useEffect(() => {
     store.myCoach().then(setCoach, () => {
@@ -49,6 +58,11 @@ export function YourCoach({ store, checkIns, chat, today }: { store: CoachStore;
       setError('Couldn’t load your coach. Check your connection.')
     })
   }, [store])
+
+  useEffect(() => {
+    if (coach !== null) return
+    store.recentEnds().then((list) => setEnded(list.find((e) => e.by !== 'me') ?? null), () => undefined)
+  }, [store, coach])
 
   const look = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -137,6 +151,7 @@ export function YourCoach({ store, checkIns, chat, today }: { store: CoachStore;
         </div>
       ) : (
         <form onSubmit={look} noValidate>
+          {ended && <p className="note">{endedText(ended)}</p>}
           <p className="muted">Have a coach? Enter the code they sent you. You see what they will see before you share.</p>
           <span className="weigh-row">
             <input aria-label="Coach code" autoCapitalize="characters" autoComplete="off" value={code} onChange={(e) => setCode(e.target.value)} />

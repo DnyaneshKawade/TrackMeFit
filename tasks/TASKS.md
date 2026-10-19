@@ -37,7 +37,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-086 | One age rule, 18 and over (setup allows 13 today): everyone gives a birth date once, coaches and Google sign-ups too; under 18 can't go on | `src/profile/profile.test.ts`; `src/App.test.tsx`; `src/db/rls.test.ts` |
 | T-089 | Privacy page: a real contact email and the person who answers, how to complain to the Data Protection Board, how to take back consent, what a coach sees (needs DK's email and name) | Privacy page test; `src/words.test.ts` |
 | T-091b | Google users can add a password, after a code sent to their email (Supabase reauthenticate) | `src/account/Security.test.tsx` |
-| T-094 | Tell the other side when a coach link ends, with who ended it and when | `src/coach/YourCoach.test.tsx`, `src/coach/Clients.test.tsx`; `src/db/coach.test.ts` |
 | T-093 | Approved coaches can change their name, phone, city, years, link and certificates | `src/coach/CoachStatus.test.tsx`; `src/db/coachApproval.test.ts` |
 | T-095 | Coach codes list: open codes, when they end, cancel one, who used one | `src/coach/Clients.test.tsx`; `src/db/coach.test.ts` |
 | T-096 | Choose what your coach sees: switches for photos and health answers | `src/db/coach.test.ts` (RLS hides them when off); `src/coach/ClientView.test.tsx` |
@@ -77,6 +76,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-094 | Tell the other side when a coach link ends: the client sees who ended it and that the data stays theirs; the coach sees "Asha stopped sharing"; the database keeps who and when | `src/coach/YourCoach.test.tsx` (2), `src/coach/Clients.test.tsx` (1), `src/db/coach.test.ts` (1) |
 | T-092 | One tidy Account page: Your details, Sign-in and security, Your coach (name and since when), Your data and privacy, Delete my account | `src/account/Account.test.tsx` (2) |
 | T-091 | Sign-in and security on the Account page: your email and how you sign in; change password (old one first) and change email (links to both inboxes); Google users change it with Google | `src/account/Security.test.tsx` (3) |
 | T-090 | "Sign out" signs out this phone only; "Sign out on all devices" on the Account page, after a confirm, for a lost phone | `src/App.test.tsx` (1 updated), `src/account/Account.test.tsx` (2) |

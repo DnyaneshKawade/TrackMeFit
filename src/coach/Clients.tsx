@@ -6,7 +6,7 @@ import type { ChatStore } from './chat'
 import { PlanEditor } from '../training/PlanEditor'
 import type { Plan, WorkoutStore } from '../training/types'
 import { ClientView, type ClientStores } from './ClientView'
-import { inviteMessage, showCode, type ClientRow, type CoachStore, type Invite } from './store'
+import { inviteMessage, showCode, type ClientRow, type CoachStore, type Invite, type LinkEnd } from './store'
 import '../log/log.css'
 import '../progress/progress.css'
 
@@ -14,6 +14,8 @@ const day = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'n
 
 /** The coach's Clients tab: invite with a code (T-026a), see clients sorted by
  * who needs attention with the reasons (T-026b), end a link. */
+const dayMonth = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+
 export function Clients({
   store,
   storesFor,
@@ -45,6 +47,8 @@ export function Clients({
   const [programs, setPrograms] = useState<Plan[] | null>(null)
   const [limit, setLimit] = useState<number | null>(null)
   const [editingProgram, setEditingProgram] = useState<Plan | null>(null)
+  // Links the client or the app ended in the last 30 days (T-094).
+  const [ends, setEnds] = useState<LinkEnd[]>([])
 
   useEffect(() => {
     store.clients(today).then(
@@ -58,6 +62,7 @@ export function Clients({
 
   useEffect(() => {
     store.clientLimit().then(setLimit, () => undefined)
+    store.recentEnds().then((list) => setEnds(list.filter((e) => e.by !== 'me')), () => undefined)
   }, [store])
 
   useEffect(() => {
@@ -224,6 +229,21 @@ export function Clients({
           </>
         )}
       </section>
+      {ends.length > 0 && (
+        <section aria-label="Stopped sharing">
+          <h3>Stopped sharing</h3>
+          <ul className="weigh-list">
+            {ends.map((e) => (
+              <li key={e.linkId}>
+                {e.by === 'them'
+                  ? `${e.name} stopped sharing on ${dayMonth(e.endedAt)}.`
+                  : `Your link with ${e.name} ended on ${dayMonth(e.endedAt)}.`}
+              </li>
+            ))}
+          </ul>
+          <p className="muted">You can't see their data now. Send a new code to work together again.</p>
+        </section>
+      )}
       {templates && (
         <section aria-label="Program templates">
           <h3>Program templates</h3>

@@ -21,6 +21,16 @@ export interface CoachLink {
   since?: string | null
 }
 
+/** A link that ended in the last 30 days (T-094). */
+export interface LinkEnd {
+  linkId: string
+  /** The other person. */
+  name: string
+  endedAt: string
+  /** Who ended it: this person, the other person, or the app (an owner). */
+  by: 'me' | 'them' | 'app'
+}
+
 /** A client in the coach's list, with what the attention rules need (T-026b). */
 export type ClientRow = ClientSummary & { linkId: string }
 
@@ -37,6 +47,8 @@ export interface CoachStore {
   createInvite(): Promise<Invite>
   /** Ends a link, from either side. */
   end(linkId: string): Promise<void>
+  /** Links that ended in the last 30 days, newest first (T-094). */
+  recentEnds(): Promise<LinkEnd[]>
   /** Most active clients a coach may have (T-026i). */
   clientLimit(): Promise<number>
 }
@@ -71,13 +83,21 @@ export const emptyClient = (linkId: string, name: string): ClientRow => ({
 
 /** For tests and offline previews: codes map to coach names. */
 export function memoryCoachStore(
-  start: { coach?: CoachLink | null; clients?: ClientRow[]; codes?: Record<string, string>; limit?: number; fullCodes?: string[] } = {},
+  start: {
+    coach?: CoachLink | null
+    clients?: ClientRow[]
+    codes?: Record<string, string>
+    limit?: number
+    fullCodes?: string[]
+    ends?: LinkEnd[]
+  } = {},
 ): CoachStore {
   const limit = start.limit ?? CLIENT_LIMIT
   // Codes from coaches who have no room left.
   const full = new Set(start.fullCodes ?? [])
   let coach = start.coach ?? null
   let clients = [...(start.clients ?? [])]
+  let ends = [...(start.ends ?? [])]
   const codes = new Map(Object.entries(start.codes ?? {}))
   let n = 0
   const clean = (code: string) => code.replace(/[^a-z0-9]/gi, '').toUpperCase()
@@ -107,8 +127,13 @@ export function memoryCoachStore(
       return { code, expiresAt: '2026-10-22T00:00:00Z' }
     },
     async end(id) {
+      const name = coach?.id === id ? coach.name : clients.find((c) => c.linkId === id)?.name
+      if (name) ends = [{ linkId: id, name, endedAt: new Date().toISOString(), by: 'me' }, ...ends]
       if (coach?.id === id) coach = null
       clients = clients.filter((c) => c.linkId !== id)
+    },
+    async recentEnds() {
+      return [...ends]
     },
     async clientLimit() {
       return limit
@@ -201,6 +226,16 @@ export function supabaseCoachStore(sb: SupabaseClient, userId: string): CoachSto
     async end(id) {
       const { error } = await sb.from('coach_clients').update({ status: 'ended' }).eq('id', id)
       if (error) throw error
+    },
+    async recentEnds() {
+      const { data, error } = await sb.rpc('recent_link_ends')
+      if (error) throw error
+      return (data as { link_id: string; other_name: string | null; ended_at: string; ended_by_me: boolean; ended_by_other: boolean }[]).map((r) => ({
+        linkId: r.link_id,
+        name: r.other_name || 'Someone',
+        endedAt: r.ended_at,
+        by: r.ended_by_me ? 'me' : r.ended_by_other ? 'them' : 'app',
+      }))
     },
     async clientLimit() {
       const { data, error } = await sb.from('profiles').select('client_limit').eq('id', userId).single()

@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Tell the other side when a coach link ends (T-094)
+
+- A client whose coach ended the link sees "Kiran ended your coaching on 12 Nov. Your data stays yours."
+- A coach sees "Asha stopped sharing on 12 Nov." for 30 days.
+- The database keeps who ended a link and when. Nobody can change it by hand.
+- Migration: `20261113000000_link_ends.sql`.
+- Tests: 2 in `src/coach/YourCoach.test.tsx`, 1 in `src/coach/Clients.test.tsx`, 1 in `src/db/coach.test.ts`.
+
 ## 2026-10-19: One tidy Account page (T-092)
 
 - The Account page now has five parts in order: Your details, Sign-in and security, Your coach, Your data and privacy, Delete my account.
