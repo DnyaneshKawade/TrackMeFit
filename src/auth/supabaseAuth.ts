@@ -65,6 +65,12 @@ export function createSupabaseAuth(sb: SupabaseClient): AuthService {
     async changeEmail(email) {
       return (await import('./accountAuth')).changeEmail(sb, email)
     },
+    async sendPasswordCode() {
+      return (await import('./accountAuth')).sendPasswordCode(sb)
+    },
+    async addPassword(code, password) {
+      return (await import('./accountAuth')).addPassword(sb, code, password)
+    },
     onRecovery(cb) {
       if (recovery) {
         recovery = false

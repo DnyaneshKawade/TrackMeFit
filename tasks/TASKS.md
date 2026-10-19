@@ -34,7 +34,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-042a3b | Email to the coach at each approval decision; needs an email service and its key (e.g. Resend), sent from an Edge Function | Function test: one email per decision, key never in the app |
 | T-082n | Light week choice: week-1 weights, or the same weight with 3 reps left (4.9) | Engine tests |
 | T-083 | Stuck at the calorie floor: a card with checks (log everything, walk more, then see a doctor) instead of a lower number; optional diet break of 1-2 weeks at maintenance after 8-12 weeks of cutting, accepted by the user | Engine tests |
-| T-091b | Google users can add a password, after a code sent to their email (Supabase reauthenticate) | `src/account/Security.test.tsx` |
 | T-096 | Choose what your coach sees: switches for photos and health answers | `src/db/coach.test.ts` (RLS hides them when off); `src/coach/ClientView.test.tsx` |
 | T-098 | Public page on how to delete your account without the app (for the Play Store) | Page build test |
 | T-101 | Units and look: kg or lb for gym weights, and light or dark | Unit tests (plates in lb); `src/App.test.tsx` |
@@ -69,6 +68,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-091b | Google users add a password after a code sent to their email ([spec](../specs/T-091b-google-password.md)) | Claude | `src/account/Security.test.tsx` "Google users add a password (T-091b)" (3) | Supabase reauthenticate; no migration |
 | T-103 | "I want to coach" on the Account page sends a request; the owner makes them a coach from Requests, with an answer; one open request a person; adults who aren't coaches only ([spec](../specs/T-103-coach-request.md)) | `src/db/coachRequests.test.ts` (3), `src/account/Account.test.tsx` (2), `src/admin/Requests.test.tsx` (1) |
 | T-086 | One age rule: everyone gives a birth date once; under 13 can’t go on; 13 to 17 need a parent’s yes from the parent’s own account, which they can take back; coaches 18+; no coach and no calorie cut under 18 ([spec](../specs/T-086-age-rule.md)) | `src/db/ageRule.test.ts` (4), `src/App.test.tsx` (3), `src/family/FamilyPart.test.tsx` (2), `src/profile/profile.test.ts` (1) |
 | T-089 | Privacy page: contact email and who answers, how to complain to the Data Protection Board, how to take back consent, what a coach sees ([spec](../specs/T-089-privacy-contact.md)) | `build/privacyPage.test.ts` "privacy contact and rights (T-089)" (2) |
