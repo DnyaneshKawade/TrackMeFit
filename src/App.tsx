@@ -1,5 +1,4 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
-import { RoleStep } from './auth/RoleStep'
 import { memoryChatStore, supabaseChatStore, type ChatStore } from './coach/chat'
 import { memoryCheckInStore, supabaseCheckInStore, type CheckInStore } from './coach/checkIns'
 import { SignIn } from './auth/SignIn'
@@ -32,6 +31,9 @@ const Progress = lazy(() => import('./progress/Progress').then((m) => ({ default
 const Clients = lazy(() => import('./coach/Clients').then((m) => ({ default: m.Clients })))
 const CoachHome = lazy(() => import('./coach/CoachStatus').then((m) => ({ default: m.CoachHome })))
 const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ default: m.Onboarding })))
+// Only a new Google account sees this, once (T-066).
+const RoleStep = lazy(() => import('./auth/RoleStep').then((m) => ({ default: m.RoleStep })))
+const NewPassword = lazy(() => import('./auth/NewPassword').then((m) => ({ default: m.NewPassword })))
 const ProfilePage = lazy(() => import('./profile/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 // Only admins open the Admin tab (T-042a1).
 const AdminTab = lazy(() => import('./admin/Admin').then((m) => ({ default: m.AdminTab })))
@@ -194,6 +196,8 @@ export function AppShell({
   // "Your details" page (T-084), which stays open while `details` is set.
   const [editing, setEditing] = useState<{ weightKg: number | null; step?: number } | null>(null)
   const [details, setDetails] = useState<{ weightKg: number | null } | null>(null)
+  // Set after a "Forgot password" link, until a new password is saved (T-085).
+  const [recovering, setRecovering] = useState(false)
 
   useEffect(() => {
     setProfile(undefined)
@@ -213,9 +217,11 @@ export function AppShell({
     let live = true
     void auth.current().then((a) => live && setAccount(a))
     const off = auth.onChange((a) => setAccount(a))
+    const offRecovery = auth.onRecovery?.(() => live && setRecovering(true))
     return () => {
       live = false
       off()
+      offRecovery?.()
     }
   }, [auth])
 
@@ -229,15 +235,31 @@ export function AppShell({
   }
   if (account === undefined) return <main className="auth">Loading…</main>
   if (!account) return <SignIn auth={auth} />
+  if (recovering) {
+    return (
+      <Suspense fallback={<main className="auth">Loading…</main>}>
+        <NewPassword
+          auth={auth}
+          onDone={() => {
+            setRecovering(false)
+            // Drop the link's tokens from the address bar.
+            if (window.location.hash) window.history.replaceState(null, '', window.location.pathname + window.location.search)
+          }}
+        />
+      </Suspense>
+    )
+  }
   if (account.roleChosen === false) {
     return (
-      <RoleStep
-        name={account.name}
-        onChoose={async (role) => {
-          await auth.chooseRole(role)
-          setAccount({ ...account, role, roleChosen: true })
-        }}
-      />
+      <Suspense fallback={<main className="auth">Loading…</main>}>
+        <RoleStep
+          name={account.name}
+          onChoose={async (role) => {
+            await auth.chooseRole(role)
+            setAccount({ ...account, role, roleChosen: true })
+          }}
+        />
+      </Suspense>
     )
   }
   if (profile === undefined) return <main className="auth">Loading…</main>

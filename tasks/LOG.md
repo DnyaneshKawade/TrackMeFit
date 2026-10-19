@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Choose a new password (T-085)
+
+- The "Forgot password" link now opens "Choose a new password". Before, it only signed the person in.
+- Same rule as sign-up. The two boxes must match. "Not now" keeps the old password.
+- Tests: 3 in `src/auth/newPassword.test.tsx`.
+
 ## 2026-10-19: Ended coach links stay ended (T-088)
 
 - A client could set an ended coach link back to active, with no code. Now a trigger refuses it.
