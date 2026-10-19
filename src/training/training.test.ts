@@ -142,22 +142,22 @@ describe('set tags (T-043a)', () => {
 
 describe('own exercises and supersets (T-043b)', () => {
   it('12. an own exercise gets the usual jump, is searched and found by id, and can be replaced', () => {
-    const own = customExercise('custom:1', { name: 'Landmine press', primary: 'sideDelts', equipment: 'barbell', isolation: false })
+    const own = customExercise('custom:1', { name: 'Viking press', primary: 'sideDelts', equipment: 'barbell', isolation: false })
     expect(own).toMatchObject({ increment: 2.5, aliases: [], secondary: [] })
     expect(customExercise('custom:2', { name: 'Neck', primary: 'traps', equipment: 'machine', isolation: true }).increment).toBe(5)
     setCustomExercises([own])
-    expect(searchExercises('landmine').map((e) => e.id)).toEqual(['custom:1'])
-    expect(exerciseById.get('custom:1')?.name).toBe('Landmine press')
+    expect(searchExercises('viking').map((e) => e.id)).toEqual(['custom:1'])
+    expect(exerciseById.get('custom:1')?.name).toBe('Viking press')
     setCustomExercises([])
     expect(exerciseById.has('custom:1')).toBe(false)
-    expect(searchExercises('landmine')).toEqual([])
+    expect(searchExercises('viking')).toEqual([])
   })
 
   it('13. a new exercise needs a new name of up to 80 letters', () => {
     expect(checkNewExercise('  ')).toBe('Give the exercise a name.')
     expect(checkNewExercise('x'.repeat(81))).toBe('Use up to 80 letters.')
     expect(checkNewExercise('bench PRESS (barbell)')).toBe('Bench press (barbell) is already in the list.')
-    expect(checkNewExercise('Landmine press')).toBeNull()
+    expect(checkNewExercise('Viking press')).toBeNull()
   })
 
   it('12. reads own exercises from database rows', () => {
@@ -229,7 +229,7 @@ describe('own exercises (T-043c)', () => {
     setCustomExercises([hidden])
     try {
       expect(allExercises().some((e) => e.id === 'custom:2')).toBe(false)
-      expect(searchExercises('neck')).toEqual([])
+      expect(searchExercises('neck curl')).toEqual([])
       expect(exerciseById.get('custom:2')?.name).toBe('Neck curl')
       // A hidden name can be used again for a new exercise.
       expect(checkNewExercise('Neck curl')).toBeNull()

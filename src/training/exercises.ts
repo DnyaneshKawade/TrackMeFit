@@ -3,6 +3,7 @@
 // `increment` is the usual smallest weight jump in an Indian commercial gym.
 
 import type { Muscle } from '../engine/training'
+import { MORE_EXERCISES } from './exerciseLibrary'
 
 export type Equipment = 'barbell' | 'dumbbell' | 'machine' | 'cable' | 'bodyweight' | 'smith' | 'kettlebell'
 
@@ -113,6 +114,8 @@ export const EXERCISES: Exercise[] = [
   ex('db-overhead-extension', 'Dumbbell overhead triceps extension', 'triceps', [], 'dumbbell', true, ['db overhead extension']),
   ex('bench-dip', 'Bench dip', 'triceps', [], 'bodyweight', true, ['chair dip']),
   ex('single-leg-calf-raise', 'Single-leg calf raise', 'calves', [], 'bodyweight', true),
+  // More gym exercises (T-081)
+  ...MORE_EXERCISES.map(([id, name, p, s, eq, iso, al]) => ex(id, name, p, s, eq, iso, al)),
 ]
 
 /** Built-in and the person's own exercises by id (T-043b). */

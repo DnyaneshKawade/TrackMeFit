@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-18: 409 gym exercises (T-081)
+
+- The exercise list grew from 71 to 409, in `src/training/exerciseLibrary.ts`.
+- Every muscle has at least 10 moves, with more than one kind of equipment.
+- Search knows gym names like "stiff leg", "EZ bar", "pec fly", "preacher" and "hip thrust".
+- Old ids stay the same, so past sets and plans still work.
+- The list loads with the Training tab, not at start. The main file stayed at 139.2 KB.
+- Forearm, neck and inner thigh moves wait for T-082, when the engine counts those muscles.
+- Tests: 4 in `src/training/exerciseLibrary.test.ts`. Older tests now use names not in the list.
+
 ## 2026-10-18: Coach meal plans (T-078)
 
 - The client page has a Meal plan part: size, who set it and when, and "Change meal plan" or "Make a meal plan".
