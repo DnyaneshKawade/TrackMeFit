@@ -216,6 +216,27 @@ export function nextLoad(i: LoadInput): LoadDecision {
   return { weight: i.weight, targetReps: Math.min(hi, best + 1), why: 'Same weight; aim for one more rep.' }
 }
 
+/** How much lighter to start after time off from an exercise (T-082f).
+ * 10-20 days: 10%, 21-42 days: 20%, 43 or more: 30%. Null under 10 days.
+ * Steps are cautious picks; Dr. Muscle also starts at 10 days. */
+export function afterBreak(daysOff: number): { cut: number; why: string } | null {
+  if (!(daysOff >= 10)) return null
+  const cut = daysOff >= 43 ? 0.3 : daysOff >= 21 ? 0.2 : 0.1
+  const pct = Math.round(cut * 100)
+  return { cut, why: `You had ${Math.floor(daysOff)} days off. So start ${pct}% lighter today.` }
+}
+
+/** Load for the first session back: the cut, rounded down to the weight step,
+ * at the reps last done (kept inside the range). */
+export function breakLoad(weight: number, best: number, repRange: [number, number], increment: number, daysOff: number): LoadDecision | null {
+  const b = afterBreak(daysOff)
+  if (!b) return null
+  const step = increment > 0 ? increment : 1
+  const lighter = Math.max(0, Math.floor((weight * (1 - b.cut)) / step + 1e-9) * step)
+  const reps = Math.min(repRange[1], Math.max(repRange[0], best))
+  return { weight: Math.round(lighter * 100) / 100, targetReps: reps, why: b.why }
+}
+
 export interface DeloadCheck {
   week: number
   plannedHardWeeks: number

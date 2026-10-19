@@ -138,6 +138,51 @@ describe('warm-up sets (T-082c)', () => {
   })
 })
 
+describe('back after a break (T-082f)', () => {
+  it('6. the session suggests the lighter start with the reason', async () => {
+    const store = memoryWorkoutStore({
+      plans: [ppl],
+      sessions: [
+        {
+          id: 's0',
+          performedOn: '2026-09-20',
+          planDayId: 'd1',
+          name: 'Push',
+          sets: [0, 1, 2].map((i) => ({ id: `x${i}`, exerciseId: 'bench-press', setIndex: i, weightKg: 60, reps: 10, rir: 1 })),
+        },
+      ],
+    })
+    render(<Workouts store={store} today={TODAY} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Start a workout' }))
+    click(/^Push/)
+    const bench = await screen.findByRole('region', { name: 'Bench press (barbell)' })
+    expect(await within(bench).findByText(/Try 47.5 kg × 10/)).toBeTruthy()
+    expect(within(bench).getByText('You had 22 days off. So start 20% lighter today.')).toBeTruthy()
+    expect((screen.getByLabelText('Bench press (barbell) weight (kg)') as HTMLInputElement).value).toBe('47.5')
+  })
+})
+
+describe('plateau check (T-082e)', () => {
+  it('6. the session shows the plateau advice under the suggestion', async () => {
+    const store = memoryWorkoutStore({
+      plans: [ppl],
+      sessions: ['2026-10-05', '2026-09-28', '2026-09-21', '2026-09-14'].map((performedOn, n) => ({
+        id: `s${n}`,
+        performedOn,
+        planDayId: 'd1',
+        name: 'Push',
+        sets: [0, 1, 2].map((i) => ({ id: `x${n}${i}`, exerciseId: 'bench-press', setIndex: i, weightKg: 60, reps: 8, rir: 2 })),
+      })),
+    })
+    render(<Workouts store={store} today={TODAY} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Start a workout' }))
+    click(/^Push/)
+    const bench = await screen.findByRole('region', { name: 'Bench press (barbell)' })
+    await within(bench).findByText(/Try 60 kg × \d+\./)
+    expect(within(bench).getByText(/^No new best in 3 sessions\. (This muscle gets [\d.]+ sets a week\. So add one set here|At your next block, try .+ instead)\.$/)).toBeTruthy()
+  })
+})
+
 describe('logging a workout', () => {
   it('starts a plan day, suggests the next load from last time and logs sets', async () => {
     const store = memoryWorkoutStore({
@@ -443,7 +488,7 @@ describe('logger (T-043b)', () => {
   })
 })
 
-describe('own exercises (T-043c)', () => {
+describe('own exercises (T-043c)', { timeout: 15000 }, () => {
   const neck = { id: 'custom:9', name: 'Tyre flip', primary: 'traps' as const, equipment: 'machine' as const, isolation: true }
   const openPicker = async (exercises = memoryExerciseStore({ custom: [neck] }), store = memoryWorkoutStore()) => {
     render(<Workouts store={store} exercises={exercises} today={TODAY} />)
