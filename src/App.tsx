@@ -286,7 +286,8 @@ export function AppShell({
       />
     </Suspense>
   )
-  const canEdit = !!profile && account.role === 'user' && isOnboarded(profile) && !editing && !details
+  const canEditDetails = !!profile && account.role === 'user' && isOnboarded(profile)
+  const canEdit = canEditDetails && !editing && !details
   const topbar = (
     <>
       {viewBar}
@@ -342,6 +343,16 @@ export function AppShell({
               changePassword: auth.changePassword?.bind(auth),
               changeEmail: auth.changeEmail?.bind(auth),
             }}
+            onDetails={
+              canEditDetails
+                ? () => {
+                    setTab('food')
+                    void latestWeight().then((weightKg) => setDetails({ weightKg }), () => setDetails({ weightKg: null }))
+                  }
+                : undefined
+            }
+            coach={account.role === 'user' ? coaching : undefined}
+            onCoach={() => setTab('progress')}
             onSignOutAll={async () => {
               await auth.signOut('all')
               store?.sync?.clearCache()
