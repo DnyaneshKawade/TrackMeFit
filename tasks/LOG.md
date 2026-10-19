@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Stretch moves (T-082i)
+
+- 49 built-in moves are tagged as training the muscle when it is stretched.
+- Starter plans now start with seated leg curls, overhead triceps moves and incline curls.
+- Swap ideas pick a stretch move first, with the same kit when there is one.
+- A plan reason says why. The edge is small, so it is a preference only.
+- Tests: 4 in `src/training/stretch.test.ts`, 1 updated in `src/training/starterPlan.test.ts`.
+
 ## 2026-10-19: Plateau check (T-082e)
 
 - Each exercise checks its last sessions for a plateau: 3 in a row with no new best.

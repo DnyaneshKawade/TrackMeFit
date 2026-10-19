@@ -26,7 +26,8 @@ const KIT: Record<Where, Set<Kit> | null> = {
   none: new Set<Kit>(['bodyweight']),
 }
 
-/** Exercises for each slot, best first; the person's equipment filters them. */
+/** Exercises for each slot, best first; the person's equipment filters them.
+ * Moves that train the muscle when stretched come early (T-082i). */
 const SLOTS = {
   chest: ['bench-press', 'incline-db-press', 'db-bench-press', 'machine-chest-press', 'push-up', 'dips'],
   chestFly: ['cable-fly', 'pec-deck', 'db-fly'],
@@ -35,12 +36,12 @@ const SLOTS = {
   squat: ['back-squat', 'leg-press', 'hack-squat', 'goblet-squat', 'bulgarian-split-squat', 'bodyweight-squat', 'reverse-lunge'],
   quadIso: ['leg-extension', 'walking-lunge', 'reverse-lunge'],
   hinge: ['romanian-deadlift', 'db-rdl', 'glute-bridge'],
-  legCurl: ['lying-leg-curl', 'seated-leg-curl'],
+  legCurl: ['seated-leg-curl', 'lying-leg-curl'],
   press: ['overhead-press', 'db-shoulder-press', 'machine-shoulder-press', 'pike-push-up'],
   lateral: ['lateral-raise', 'cable-lateral-raise', 'machine-lateral-raise'],
   rearDelt: ['face-pull', 'rear-delt-fly', 'db-rear-delt-raise'],
-  biceps: ['db-curl', 'cable-curl', 'hammer-curl', 'barbell-curl'],
-  triceps: ['triceps-pushdown', 'overhead-triceps-extension', 'db-overhead-extension', 'bench-dip'],
+  biceps: ['db-curl', 'incline-db-curl', 'cable-curl', 'hammer-curl', 'barbell-curl'],
+  triceps: ['overhead-triceps-extension', 'triceps-pushdown', 'db-overhead-extension', 'bench-dip'],
   calves: ['standing-calf-raise', 'seated-calf-raise', 'single-leg-calf-raise'],
   abs: ['cable-crunch', 'hanging-leg-raise', 'ab-wheel'],
 } satisfies Record<string, string[]>
@@ -152,6 +153,8 @@ export function suggestPlan(c: StarterChoices): StarterPlan {
   if (c.where === 'home') reasons.push('It uses dumbbells and body weight, for training at home.')
   if (c.where === 'none') reasons.push('It uses body weight only.')
   if (c.where !== 'gym' && picked.some((ids) => ids.some((id) => NEED_BAR.has(id)))) reasons.push('Some exercises need a bar, like pull-ups. Swap them if you have none.')
+  if (picked.some((ids) => ids.some((id) => exerciseById.get(id)?.stretch)))
+    reasons.push('Some moves work the muscle when it is stretched. That may help it grow a bit more.')
   reasons.push('Change any exercise, set or day before you save.')
 
   return { plan: { name: split.name, days: planDays, hardWeeks: 4 }, reasons }

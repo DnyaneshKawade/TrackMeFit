@@ -66,6 +66,7 @@ describe('suggested workout plan (T-041a)', () => {
       'With 3 workouts a week, each one trains the whole body.',
       'Each muscle gets trained about twice a week.',
       'You are new to lifting, so sets start low. The weekly review adds sets when you recover well.',
+      'Some moves work the muscle when it is stretched. That may help it grow a bit more.',
       'Change any exercise, set or day before you save.',
     ])
   })
