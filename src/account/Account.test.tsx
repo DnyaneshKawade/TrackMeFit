@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { Account } from './Account'
 import { memoryDataStore } from './data'
+import { memoryCoachStore } from '../coach/store'
 
 afterEach(cleanup)
 
@@ -86,5 +87,37 @@ describe('sign out on all devices (T-090)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sign out on all devices' }))
     fireEvent.click(screen.getByRole('button', { name: 'Yes, sign out' }))
     expect((await screen.findByRole('alert')).textContent).toBe('Couldn’t sign out. Check your connection.')
+  })
+})
+
+describe('one tidy Account page (T-092)', () => {
+  it('1. parts come in order and each shows what it is set to now', async () => {
+    const opened: string[] = []
+    const coach = memoryCoachStore({ coach: { id: 'l1', personId: 'k1', name: 'Kiran Rao', since: '2026-10-12T05:00:00Z' } })
+    render(
+      <Account
+        store={memoryDataStore()}
+        onBack={() => {}}
+        onDeleted={() => {}}
+        onSignOutAll={async () => {}}
+        security={{ email: 'asha@example.com', signInWith: 'email' }}
+        onDetails={() => opened.push('details')}
+        coach={coach}
+        onCoach={() => opened.push('coach')}
+      />,
+    )
+    const parts = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'))
+    const order = ['Your details', 'Sign-in and security', 'Your coach', 'Your data and privacy', 'Delete my account']
+    expect(parts.filter((p) => order.includes(p!))).toEqual(order)
+    expect((await screen.findByText(/You share your data with/)).textContent).toBe('You share your data with Kiran Rao since 12 Oct 2026.')
+    fireEvent.click(screen.getByRole('button', { name: 'See and change your details' }))
+    fireEvent.click(screen.getByRole('button', { name: 'See what they see, or stop sharing' }))
+    expect(opened).toEqual(['details', 'coach'])
+  })
+
+  it('2. with no coach it says nobody else sees the data', async () => {
+    render(<Account store={memoryDataStore()} onBack={() => {}} onDeleted={() => {}} coach={memoryCoachStore()} onCoach={() => {}} />)
+    expect(await screen.findByText('You have no coach. Nobody else sees your data.')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Join a coach' })).toBeTruthy()
   })
 })

@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: One tidy Account page (T-092)
+
+- The Account page now has five parts in order: Your details, Sign-in and security, Your coach, Your data and privacy, Delete my account.
+- "Your coach" shows who sees your data and since when. It links to the Progress tab to join or stop.
+- Tests: 2 in `src/account/Account.test.tsx`.
+
 ## 2026-10-19: Sign-in and security (T-091)
 
 - The Account page shows your email and how you sign in.

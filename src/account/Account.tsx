@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { localDate } from '../log/types'
 import { dataError, fileName, saveFile, type DataRequest, type DataStore } from './data'
+import type { CoachStore } from '../coach/store'
 import { Security, type SecurityProps } from './Security'
 import './account.css'
 
@@ -14,7 +15,7 @@ function Download({ store, save }: { store: DataStore; save: (name: string, text
   const [error, setError] = useState('')
   return (
     <section aria-label="Download my data">
-      <h3>Download my data</h3>
+      <h4>Download my data</h4>
       <p>You get one file with everything we keep about you.</p>
       <p className="muted">Links to your photos in it work for 7 days.</p>
       {error && <p className="error" role="alert">{error}</p>}
@@ -50,7 +51,7 @@ function AskForChange({ store }: { store: DataStore }) {
   }, [store]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <section aria-label="Ask for a change">
-      <h3>Ask for a change</h3>
+      <h4>Ask for a change</h4>
       <p>You can fix most things yourself in the app.</p>
       <p>If something is wrong that you can't fix, tell us here.</p>
       <p className="muted">We answer within 90 days.</p>
@@ -184,12 +185,41 @@ function DeleteAccount({ store, onDeleted }: { store: DataStore; onDeleted: () =
   )
 }
 
+/** Who sees your data (T-092). Joining and stopping stay on the Progress tab. */
+function CoachPart({ coach, onOpen }: { coach: CoachStore; onOpen?: () => void }) {
+  const [link, setLink] = useState<{ name: string; since?: string | null } | null | undefined>(undefined)
+  useEffect(() => {
+    coach.myCoach().then(setLink, () => setLink(null))
+  }, [coach])
+  return (
+    <section aria-label="Your coach">
+      <h3>Your coach</h3>
+      {link === undefined ? (
+        <p className="muted">Loading…</p>
+      ) : link ? (
+        <p>
+          You share your data with <strong>{link.name}</strong>
+          {link.since ? ` since ${day(link.since)}` : ''}.
+        </p>
+      ) : (
+        <p>You have no coach. Nobody else sees your data.</p>
+      )}
+      {onOpen && (
+        <button className="link" onClick={onOpen}>{link ? 'See what they see, or stop sharing' : 'Join a coach'}</button>
+      )}
+    </section>
+  )
+}
+
 export function Account({
   store,
   onBack,
   onDeleted,
   onSignOutAll,
   security,
+  onDetails,
+  coach,
+  onCoach,
   save = saveFile,
 }: {
   store: DataStore
@@ -200,19 +230,36 @@ export function Account({
   onSignOutAll?: () => Promise<void>
   /** Email, how they sign in, and changing them (T-091). */
   security?: SecurityProps
+  /** Opens "Your details" (T-092). */
+  onDetails?: () => void
+  /** The person's coach link, shown read only; coaches have none (T-092). */
+  coach?: CoachStore
+  /** Opens the Progress tab, where joining and stopping happen. */
+  onCoach?: () => void
   save?: (name: string, text: string) => void
 }) {
   return (
     <main className="log account">
       <button className="link" onClick={onBack}>Back</button>
       <h2>Your account and data</h2>
-      <p>
-        <a href="/privacy.html" target="_blank" rel="noreferrer">Read our privacy policy</a>
-      </p>
+      {onDetails && (
+        <section aria-label="Your details">
+          <h3>Your details</h3>
+          <p>Your answers from sign-up: about you, health, training, goal and food.</p>
+          <button className="link" onClick={onDetails}>See and change your details</button>
+        </section>
+      )}
       {security && <Security {...security} />}
-      <Download store={store} save={save} />
-      <AskForChange store={store} />
       {onSignOutAll && <SignOutAll onSignOutAll={onSignOutAll} />}
+      {coach && <CoachPart coach={coach} onOpen={onCoach} />}
+      <section aria-label="Your data and privacy">
+        <h3>Your data and privacy</h3>
+        <p>
+          <a href="/privacy.html" target="_blank" rel="noreferrer">Read our privacy policy</a>
+        </p>
+        <Download store={store} save={save} />
+        <AskForChange store={store} />
+      </section>
       <DeleteAccount store={store} onDeleted={onDeleted} />
     </main>
   )
@@ -228,6 +275,9 @@ export function AccountTab({
   onDeleted: () => void
   onSignOutAll?: () => Promise<void>
   security?: SecurityProps
+  onDetails?: () => void
+  coach?: CoachStore
+  onCoach?: () => void
 }) {
   const [store, setStore] = useState<DataStore | null>(null)
   useEffect(() => {
