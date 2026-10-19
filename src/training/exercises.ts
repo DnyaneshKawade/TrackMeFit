@@ -20,7 +20,32 @@ export interface Exercise {
   increment: number
   /** An own exercise removed from the list; past sets still find it (T-043c). */
   hidden?: boolean
+  /** Loads the muscle when it is long, which may help it grow a bit more (T-082i). */
+  stretch?: boolean
 }
+
+/** Moves that load the muscle when it is stretched (Maeo 2021 and 2023,
+ * Pedrosa 2022, Kassiano 2023). The edge is small, so plans prefer them only. */
+export const STRETCH_IDS: ReadonlySet<string> = new Set([
+  // Hamstrings: seated curls and hip hinges
+  'seated-leg-curl', 'romanian-deadlift', 'db-rdl', 'stiff-leg-deadlift', 'ez-bar-stiff-leg-deadlift', 'db-stiff-leg-deadlift',
+  'smith-rdl', 'single-leg-rdl', 'kb-rdl', 'cable-rdl', 'snatch-grip-rdl', 'good-morning',
+  // Triceps: arms overhead
+  'overhead-triceps-extension', 'db-overhead-extension', 'rope-overhead-extension', 'single-arm-overhead-cable',
+  'ez-overhead-extension', 'single-arm-db-overhead', 'overhead-machine-extension', 'kb-overhead-extension',
+  // Biceps: arms behind the body
+  'incline-db-curl', 'bayesian-curl', 'incline-hammer-curl',
+  // Calves: straight-knee raises
+  'standing-calf-raise', 'single-leg-calf-raise', 'donkey-calf-raise', 'smith-calf-raise', 'barbell-calf-raise', 'db-calf-raise',
+  'leg-press-calf-raise', 'hack-squat-calf-raise', 'calf-press-machine', 'bodyweight-calf-raise', 'kb-calf-raise',
+  // Quads: deep knee bend
+  'hack-squat', 'sissy-squat',
+  // Chest: flys
+  'db-fly', 'cable-fly', 'incline-db-fly', 'decline-db-fly', 'low-to-high-cable-fly', 'high-to-low-cable-fly',
+  'flat-cable-fly', 'incline-cable-fly', 'seated-cable-fly', 'single-arm-cable-fly',
+  // Side delts: arm across or behind the body
+  'behind-back-cable-lateral', 'lean-away-lateral-raise', 'incline-lateral-raise',
+])
 
 const INC: Record<Equipment, number> = { barbell: 2.5, smith: 2.5, dumbbell: 2.5, machine: 5, cable: 2.5, bodyweight: 2.5, kettlebell: 4 }
 
@@ -32,7 +57,7 @@ const ex = (
   equipment: Equipment,
   isolation: boolean,
   aliases: string[] = [],
-): Exercise => ({ id, name, aliases, primary, secondary, equipment, isolation, increment: INC[equipment] })
+): Exercise => ({ id, name, aliases, primary, secondary, equipment, isolation, increment: INC[equipment], ...(STRETCH_IDS.has(id) ? { stretch: true } : {}) })
 
 export const EXERCISES: Exercise[] = [
   // Chest
@@ -136,10 +161,12 @@ export const allExercises = () => (custom.length ? [...custom.filter((e) => !e.h
 /** The person's own exercises, hidden ones included. */
 export const customExercises = () => custom
 
-/** A similar exercise to swap to: same main muscle and kind, same kit first (T-082e). */
+/** A similar exercise to swap to: same main muscle and kind (T-082e). Same
+ * kit and a stretch move come first, then a stretch move, then the same kit (T-082i). */
 export function similarExercise(ex: Exercise, skip: ReadonlySet<string>): Exercise | undefined {
   const options = allExercises().filter((e) => e.id !== ex.id && !skip.has(e.id) && e.primary === ex.primary && e.isolation === ex.isolation)
-  return options.find((e) => e.equipment === ex.equipment) ?? options[0]
+  const kit = (e: Exercise) => e.equipment === ex.equipment
+  return options.find((e) => kit(e) && e.stretch) ?? options.find((e) => e.stretch) ?? options.find(kit) ?? options[0]
 }
 
 export const EQUIPMENT_NAMES: Record<Equipment, string> = {
