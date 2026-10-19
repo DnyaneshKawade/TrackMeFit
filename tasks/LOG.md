@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: T-104 missed days on Progress
+
+- "Missed a day? Add an earlier weight" lets people pick a day and save that day's weight.
+- The measurements form has a Day field too. Days from a year back up to today work.
+- No database change. Tests: `src/progress/Progress.test.tsx` (3).
+
 ## 2026-10-19: T-101d new look on every screen
 
 - The top of each page shows the date and a greeting, with a round picture that opens Me.

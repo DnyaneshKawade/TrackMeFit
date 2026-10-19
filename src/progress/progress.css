@@ -77,3 +77,6 @@
 .chat .chat-list p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .chat textarea { font: inherit; padding: 8px; border-radius: 8px; border: 1.5px solid var(--field-line); min-height: 60px; }
 .client-list .unread { margin: 4px 0 0; font-weight: 600; color: var(--pv); }
+.weigh-in .missed { margin: 4px 0 0 -8px; font-size: 14px; }
+.weigh-in .day-pick, .measure-form input[type='date'] { margin-top: 8px; }
+.weigh-in .day-pick input, .measure-form input[type='date'] { font: inherit; padding: 10px 12px; border: 1.5px solid var(--field-line); border-radius: 10px; }
