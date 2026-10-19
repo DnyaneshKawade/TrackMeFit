@@ -1,14 +1,16 @@
-.account section { border-top: 1px solid #e3e8e6; padding: 12px 0; }
+.account section { border-top: 1px solid var(--line); padding: 12px 0; }
 .account form { display: grid; gap: 10px; margin: 12px 0; }
 .account label { display: grid; gap: 4px; font-size: 14px; }
-.account input, .account textarea { font: inherit; padding: 8px 10px; border: 1px solid #c9d2cf; border-radius: 8px; }
+.account input, .account textarea { font: inherit; padding: 8px 10px; border: 1px solid var(--field-line); border-radius: 8px; }
 .account textarea { min-height: 80px; }
 .account .actions { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .account .requests { list-style: none; padding: 0; margin: 12px 0 0; }
-.account .requests li { border-bottom: 1px solid #e3e8e6; padding: 8px 0; }
+.account .requests li { border-bottom: 1px solid var(--line); padding: 8px 0; }
 .account .requests p { margin: 4px 0; }
-.account .link.danger { color: #b42318; }
-.account .primary.danger { background: #b42318; width: auto; }
+.account .link.danger { color: var(--danger); }
+.account .primary.danger { background: var(--danger); width: auto; }
 .account .security { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 8px 0; }
-.account .security dt { color: var(--muted, #5b6b66); }
+.account .security dt { color: var(--muted); }
 .account .security dd { margin: 0; overflow-wrap: anywhere; }
+.account .range { display: flex; flex-wrap: wrap; gap: 6px; }
+.account .chip[aria-pressed='true'] { background: var(--p); color: var(--on-p); border-color: var(--p); }
