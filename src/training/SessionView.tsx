@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { describePlates, platesFor } from '../engine/plates'
 import { newRecord, type StrengthSession } from '../engine/strength'
-import { targetRir } from '../engine/training'
+import { PLATEAU_SESSIONS, plateauCheck } from '../engine/plateau'
+import { LANDMARKS, targetRir, type Muscle } from '../engine/training'
 import { warmupSets } from '../engine/warmup'
-import { exerciseById, type Exercise } from './exercises'
+import { exerciseById, similarExercise, type Exercise } from './exercises'
 import { ExercisePicker, type ExerciseLibrary } from './ExercisePicker'
 import { SyncNote } from '../sync/SyncNote'
 import { useSync } from '../sync/useSync'
@@ -83,12 +84,15 @@ export function SessionView({
   session: initial,
   planned,
   block,
+  weekly,
   library,
   onClose,
 }: {
   store: WorkoutStore
   session: Session
   planned: PlanExercise[]
+  /** Each muscle's sets a week in the plan (T-082e). */
+  weekly?: Partial<Record<Muscle, number>>
   /** The plan's training block, when the session follows a plan day. */
   block?: { week: number; hardWeeks: number }
   library?: ExerciseLibrary
@@ -156,6 +160,8 @@ export function SessionView({
               plan={planned.find((p) => p.exerciseId === exercise.id)}
               block={block}
               warm={ids.slice(0, ids.indexOf(exercise.id)).some((id) => exerciseById.get(id)?.primary === exercise.primary)}
+              weekly={weekly?.[exercise.primary]}
+              others={ids}
               current={now === exercise.id}
               superset={
                 next
@@ -196,6 +202,9 @@ export function SessionView({
   )
 }
 
+/** Past sessions read per exercise: enough for the plateau check (T-082e). */
+const HISTORY_SESSIONS = PLATEAU_SESSIONS + 3
+
 function ExerciseLog({
   store,
   session,
@@ -203,6 +212,8 @@ function ExerciseLog({
   plan,
   block,
   warm,
+  weekly,
+  others,
   current,
   superset,
   onChange,
@@ -215,6 +226,9 @@ function ExerciseLog({
   block?: { week: number; hardWeeks: number }
   /** An earlier exercise today trains the same muscle (T-082c). */
   warm?: boolean
+  /** Sets a week for this exercise's muscle, and today's exercises (T-082e). */
+  weekly?: number
+  others: string[]
   /** The exercise to do now in a superset. */
   current?: boolean
   /** Link with the next exercise; absent for the last one. */
@@ -239,16 +253,33 @@ function ExerciseLog({
   const range: [number, number] = plan ? [plan.repMin, plan.repMax] : exercise.isolation ? [10, 15] : [6, 10]
   // Reps left to aim for; 2 when the session follows no plan (T-082b).
   const aim = block ? targetRir(block.week, block.hardWeeks, exercise.isolation) : 2
-  // No weight increases in a deload week.
-  const suggestion = history && !deload ? suggestNext(history, exercise, range, aim, session.performedOn) : null
+  // No plateau advice or weight increases in a deload week.
+  const advise = (h: PastSession[]) => {
+    if (deload) return { next: null, plateau: null }
+    const plateau = plateauCheck({
+      history: h.map((x) => ({ performedOn: x.performedOn, sets: workingSets(x.sets) })).filter((x) => x.sets.length),
+      repRange: range,
+      increment: exercise.increment,
+      weeklySets: weekly === undefined ? undefined : Math.round(weekly * 10) / 10,
+      mavLow: LANDMARKS[exercise.primary].mavLow,
+      swapName: similarExercise(exercise, new Set(others))?.name,
+      today: session.performedOn,
+    })
+    // A plateau with a missed target swaps the step for a lighter session (T-082e).
+    const next = plateau?.action === 'lighter' ? { weight: plateau.weight, targetReps: range[0], why: plateau.why } : suggestNext(h, exercise, range, aim, session.performedOn)
+    return { next, plateau }
+  }
+  const advice = history ? advise(history) : null
+  const suggestion = advice?.next ?? null
+  const plateauNote = advice?.plateau && advice.plateau.action !== 'lighter' ? advice.plateau.why : null
 
   useEffect(() => {
     let live = true
-    store.history(exercise.id, session.performedOn).then(
+    store.history(exercise.id, session.performedOn, HISTORY_SESSIONS).then(
       (h) => {
         if (!live) return
         setHistory(h)
-        const s = deload ? null : suggestNext(h, exercise, range, aim, session.performedOn)
+        const s = advise(h).next
         // Otherwise start from last time's first working set.
         const last = deload ? undefined : workingSets(h[0]?.sets ?? [])[0]
         const fill = s ? { weight: s.weight, reps: s.targetReps } : last ? { weight: last.weightKg, reps: last.reps } : null
@@ -360,6 +391,7 @@ function ExerciseLog({
           Try {suggestion.weight} kg × {suggestion.targetReps}. <span className="muted">{suggestion.why}</span>
         </p>
       )}
+      {plateauNote && <p className="muted plateau">{plateauNote}</p>}
       {warmup && warmup.sets.length > 0 && (
         <div className="warmups">
           <p className="muted">Warm-up first. {warmup.why}</p>

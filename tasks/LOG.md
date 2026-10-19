@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Plateau check (T-082e)
+
+- Each exercise checks its last sessions for a plateau: 3 in a row with no new best.
+- A missed target gives one lighter session, 10% off.
+- Few sets for the muscle says to add a set. Otherwise it names a similar exercise for the next block.
+- Each exercise now reads its last 6 sessions.
+- Tests: 5 in `src/engine/plateau.test.ts`, 1 in `src/training/Workouts.test.tsx`.
+
 ## 2026-10-19: Back after a break (T-082f)
 
 - After 10 or more days off an exercise, the suggested weight starts lighter.

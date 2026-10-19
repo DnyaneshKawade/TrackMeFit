@@ -4,7 +4,7 @@ import type { ExerciseLibrary } from './ExercisePicker'
 import type { ExerciseStore } from './exerciseStore'
 import { customExercise, customExercises, setCustomExercises, type Exercise } from './exercises'
 import { PlanEditor } from './PlanEditor'
-import { blockWeek, weekLabel } from './progression'
+import { blockWeek, weekLabel, weeklySets } from './progression'
 import { RecordsView } from './RecordsView'
 import { ReviewView } from './ReviewView'
 import { SessionView } from './SessionView'
@@ -119,6 +119,7 @@ export function Workouts({
   const dayOf = (id: string | null): PlanDay | undefined => plans?.flatMap((p) => p.days).find((d) => d.id === id)
   const planOf = (dayId: string | null) => plans?.find((p) => p.days.some((d) => d.id === dayId))
   const blockOf = (p?: Plan) => (p ? { week: blockWeek(p.blockStartedOn ?? today, today), hardWeeks: p.hardWeeks ?? 4 } : undefined)
+  const weeklyOf = (p?: Plan) => (p ? weeklySets(p) : undefined)
 
   const start = async (day: PlanDay | null) => {
     try {
@@ -191,6 +192,7 @@ export function Workouts({
           session={view.session}
           planned={dayOf(view.session.planDayId)?.exercises ?? []}
           block={blockOf(planOf(view.session.planDayId))}
+          weekly={weeklyOf(planOf(view.session.planDayId))}
           library={library}
           onClose={back}
         />

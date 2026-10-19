@@ -136,6 +136,12 @@ export const allExercises = () => (custom.length ? [...custom.filter((e) => !e.h
 /** The person's own exercises, hidden ones included. */
 export const customExercises = () => custom
 
+/** A similar exercise to swap to: same main muscle and kind, same kit first (T-082e). */
+export function similarExercise(ex: Exercise, skip: ReadonlySet<string>): Exercise | undefined {
+  const options = allExercises().filter((e) => e.id !== ex.id && !skip.has(e.id) && e.primary === ex.primary && e.isolation === ex.isolation)
+  return options.find((e) => e.equipment === ex.equipment) ?? options[0]
+}
+
 export const EQUIPMENT_NAMES: Record<Equipment, string> = {
   barbell: 'Barbell',
   dumbbell: 'Dumbbell',

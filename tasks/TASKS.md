@@ -32,8 +32,8 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-018c | Food logging extras: barcode scan (free for everyone, Open Food Facts kept separate under the ODbL), batch-cooked weighing | Component tests for each |
 | T-067 / T-068 later | Parked until users ask (DK, 17 Oct 2026): diet break, SCOFF check, doctor ticks, after the goal, weigh-in habit, plan from logs, gain check, protein choices question | — |
 | T-042a3b | Email to the coach at each approval decision; needs an email service and its key (e.g. Resend), sent from an Edge Function | Function test: one email per decision, key never in the app |
-| T-082e | Plateau check: three sessions with no new best gives three choices (4.5) | Engine tests |
 | T-082n | Light week choice: week-1 weights, or the same weight with 3 reps left (4.9) | Engine tests |
+| T-083 | Stuck at the calorie floor: a card with checks (log everything, walk more, then see a doctor) instead of a lower number; optional diet break of 1-2 weeks at maintenance after 8-12 weeks of cutting, accepted by the user | Engine tests |
 | T-082g | RP-style soreness timing and an optional pump question; new set-change table (4.6) | Engine tests, migration test |
 | T-082h | Muscle priority: Grow more, Grow or Keep, in the plan editor and engine (4.7) | Engine and screen tests |
 | T-082i | Tag moves that train the muscle when stretched; starter plans and swaps prefer them (4.8) | Library and starter plan tests |
@@ -63,6 +63,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 ## Done
 
 | ID | Task | Tests |
+| T-082e | Plateau check: 3 sessions with no new best gives a lighter session, one more set, or a similar exercise, with the reason | `src/engine/plateau.test.ts` (5), `src/training/Workouts.test.tsx` (1) |
 | T-082f | Back after a break: 10, 21 or 43 days off an exercise starts 10, 20 or 30% lighter, with the reason | `src/engine/afterBreak.test.ts` (5), `src/training/Workouts.test.tsx` (1) |
 | T-082d | Plan editor shows each muscle’s sets a week as low, good, high or too many, with helper muscles at half | `src/engine/volume.test.ts` (3), `src/training/Workouts.test.tsx` (1) |
 | T-082c | Warm-up sets before the first working set: bar, 50, 70, 85%, rounded to plates; tap to fill the set as a warm-up | `src/engine/warmup.test.ts` (5), `src/training/Workouts.test.tsx` (1) |
