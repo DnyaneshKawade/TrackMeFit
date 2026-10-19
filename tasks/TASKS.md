@@ -28,7 +28,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests planned |
 |---|---|---|
-| T-101b | Light or dark choice (Phone setting, Light, Dark), built with the new look DK asked for | `src/App.test.tsx` (theme choice applied) |
+| T-101c | New look, part 2: calorie ring and meals card on Today, bottom tabs, one main button per screen, kind weekly streak | Component tests for each screen |
 | T-015 | USDA bulk importer (Foundation + SR Legacy) into our foods table | Mapper tests (started in T-007), import count check |
 | T-018c | Food logging extras: barcode scan (free for everyone, Open Food Facts kept separate under the ODbL), batch-cooked weighing | Component tests for each |
 | T-067 / T-068 later | Parked until users ask (DK, 17 Oct 2026): diet break, SCOFF check, doctor ticks, after the goal, weigh-in habit, plan from logs, gain check, protein choices question | — |
@@ -66,6 +66,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-101b | Calm Saffron look: colour tokens, DM Sans, saffron icon, and a Look choice (Phone setting, Light, Dark) ([spec](../specs/T-101b-look.md)) | Claude | `src/settings/theme.test.ts` (3), `src/account/Account.test.tsx` (1) | — |
 | T-101 | kg or lb for gym weights, saved with the account; sets stay saved in kg ([spec](../specs/T-101-units.md)) | Claude | `src/engine/units.test.ts` (2), `src/account/Account.test.tsx` (1), `src/training/Workouts.test.tsx` (1), `src/db/weightUnit.test.ts` (1) | Migration `20261117000000_weight_unit.sql` |
 | T-096 | Choose what your coach sees: switches for photos and health answers, off until the client turns them on ([spec](../specs/T-096-coach-shares.md)) | Claude | `src/db/coachShares.test.ts` (3), `src/coach/ClientView.test.tsx` (2), `src/coach/YourCoach.test.tsx` (1) | Migration `20261116000000_coach_shares.sql` |
 | T-091b | Google users add a password after a code sent to their email ([spec](../specs/T-091b-google-password.md)) | Claude | `src/account/Security.test.tsx` "Google users add a password (T-091b)" (3) | Supabase reauthenticate; no migration |

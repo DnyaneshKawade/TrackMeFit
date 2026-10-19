@@ -154,3 +154,17 @@ describe('kg or lb for gym weights (T-101)', () => {
     await waitFor(() => expect(unit).toBe('lb'))
   })
 })
+
+describe('light or dark (T-101b)', () => {
+  it('4. the Account page sets light or dark on this phone', () => {
+    setup()
+    const part = screen.getByRole('region', { name: 'Look' })
+    expect(within(part).getByRole('button', { name: 'Phone setting' }).getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(within(part).getByRole('button', { name: 'Dark' }))
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(localStorage.getItem('tmf-theme')).toBe('dark')
+    fireEvent.click(within(part).getByRole('button', { name: 'Phone setting' }))
+    expect(document.documentElement.dataset.theme).toBeUndefined()
+    expect(localStorage.getItem('tmf-theme')).toBeNull()
+  })
+})

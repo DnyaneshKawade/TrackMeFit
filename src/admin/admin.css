@@ -1,17 +1,17 @@
 .admin form { display: grid; gap: 10px; margin: 12px 0; }
 .admin label { display: grid; gap: 4px; font-size: 14px; }
-.admin input, .admin select { font: inherit; padding: 8px 10px; border: 1px solid #c9d2cf; border-radius: 8px; }
+.admin input, .admin select { font: inherit; padding: 8px 10px; border: 1px solid var(--field-line); border-radius: 8px; }
 .admin .qr { display: block; margin: 8px 0; background: #fff; }
 .admin code { word-break: break-all; }
 .admin-team { list-style: none; padding: 0; margin: 0; }
-.admin-team li { border-bottom: 1px solid #e3e8e6; padding: 10px 0; display: grid; gap: 6px; }
+.admin-team li { border-bottom: 1px solid var(--line); padding: 10px 0; display: grid; gap: 6px; }
 .admin .actions { display: flex; flex-wrap: wrap; gap: 4px; }
-.admin .add-admin { border-top: 1px solid #e3e8e6; padding-top: 12px; }
+.admin .add-admin { border-top: 1px solid var(--line); padding-top: 12px; }
 .admin .search { grid-template-columns: 1fr auto; align-items: end; }
-.admin textarea { font: inherit; padding: 8px 10px; border: 1px solid #c9d2cf; border-radius: 8px; }
+.admin textarea { font: inherit; padding: 8px 10px; border: 1px solid var(--field-line); border-radius: 8px; }
 .admin .coach-details { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 8px 0; }
-.admin .coach-details dt { color: #5b6b66; }
+.admin .coach-details dt { color: var(--muted); }
 .admin .coach-details dd { margin: 0; overflow-wrap: anywhere; }
 .admin .certs { list-style: none; padding: 0; display: grid; gap: 12px; }
 .admin .certs img { display: block; max-width: 100%; height: auto; border-radius: 8px; }
-.admin-team .tag { margin-left: 8px; font-size: 0.85em; padding: 0 6px; border-radius: 8px; background: #fff7e0; border: 1px solid #f0d78a; }
+.admin-team .tag { margin-left: 8px; font-size: 0.85em; padding: 0 6px; border-radius: 8px; background: var(--warn-bg); border: 1px solid var(--warn-line); }

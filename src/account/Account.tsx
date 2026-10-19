@@ -9,11 +9,41 @@ import { Security, type SecurityProps } from './Security'
 import { FamilyPart } from '../family/FamilyPart'
 import type { FamilyStore } from '../family/family'
 import type { WeightUnit } from '../engine/units'
+import { applyTheme, readTheme, saveTheme, type ThemeChoice } from '../settings/theme'
 import './account.css'
 
 export interface UnitsProps {
   unit: WeightUnit
   onChange: (unit: WeightUnit) => Promise<void>
+}
+
+const LOOKS: [ThemeChoice, string][] = [
+  ['system', 'Phone setting'],
+  ['light', 'Light'],
+  ['dark', 'Dark'],
+]
+
+/** Light or dark (T-101b). Saved on this phone only. */
+function Look() {
+  const [choice, setChoice] = useState<ThemeChoice>(() => readTheme())
+  const pick = (c: ThemeChoice) => {
+    setChoice(c)
+    saveTheme(c)
+    applyTheme(c)
+  }
+  return (
+    <section aria-label="Look">
+      <h3>Look</h3>
+      <span className="range" role="group" aria-label="Light or dark">
+        {LOOKS.map(([c, label]) => (
+          <button key={c} className="chip" aria-pressed={c === choice} onClick={() => pick(c)}>
+            {label}
+          </button>
+        ))}
+      </span>
+      <p className="muted">This is saved on this phone only.</p>
+    </section>
+  )
 }
 
 /** kg or lb for gym weights (T-101). Saved with the account, so every phone matches. */
@@ -357,6 +387,7 @@ export function Account({
           <button className="link" onClick={onDetails}>See and change your details</button>
         </section>
       )}
+      <Look />
       {units && <Units {...units} />}
       {security && <Security {...security} />}
       {onSignOutAll && <SignOutAll onSignOutAll={onSignOutAll} />}

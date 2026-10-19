@@ -1,19 +1,81 @@
+/* The Calm Saffron look (spec T-101b). Every colour is a token, so light and
+   dark only change the tokens. data-theme on <html> wins over the phone setting. */
 :root {
-  color-scheme: light dark;
-  background: #ffffff;
+  --font: 'DM Sans Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --bg: #fbf8f4;
+  --card: #ffffff;
+  --ink: #241a10;
+  --muted: #645646;
+  --line: #eee5da;
+  --border: #eee5da;
+  --field-line: #d9ccbc;
+  --soft: #f7f0e7;
+  --tint: #fbeedf;
+  --p: #a14a0c;
+  --pv: #a14a0c;
+  --p-ink: #6e3208;
+  --on-p: #ffffff;
+  --chart-muted: #c8b8a6;
+  --danger: #b42318;
+  --warn-bg: #fff6e0;
+  --warn-line: #f0d78a;
+  --warn-ink: #7a4f00;
+  --flag: #9a3412;
+  color-scheme: light;
+  background: var(--bg);
   -webkit-font-smoothing: antialiased;
 }
-@media (prefers-color-scheme: dark) {
-  :root { background: #0f1513; }
+:root[data-theme='dark'] {
+  --bg: #18130e;
+  --card: #221b14;
+  --ink: #f5ece2;
+  --muted: #c4b3a0;
+  --line: #3a2f24;
+  --border: #3a2f24;
+  --field-line: #4d3f31;
+  --soft: #2b231a;
+  --tint: #3a2815;
+  --pv: #f2b36b;
+  --p-ink: #f7c994;
+  --chart-muted: #6e5d4c;
+  --danger: #f97066;
+  --warn-bg: #3a2e12;
+  --warn-line: #8a6420;
+  --warn-ink: #ffd88a;
+  --flag: #fdba74;
+  color-scheme: dark;
 }
-body { margin: 0; min-height: 100vh; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #18130e;
+    --card: #221b14;
+    --ink: #f5ece2;
+    --muted: #c4b3a0;
+    --line: #3a2f24;
+    --border: #3a2f24;
+    --field-line: #4d3f31;
+    --soft: #2b231a;
+    --tint: #3a2815;
+    --pv: #f2b36b;
+    --p-ink: #f7c994;
+    --chart-muted: #6e5d4c;
+    --danger: #f97066;
+    --warn-bg: #3a2e12;
+    --warn-line: #8a6420;
+    --warn-ink: #ffd88a;
+    --flag: #fdba74;
+    color-scheme: dark;
+  }
+}
+body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font-family: var(--font); line-height: 1.5; }
+input, select, textarea { background: var(--card); color: var(--ink); }
+button { color: inherit; }
+h1, h2, h3 { letter-spacing: -0.01em; }
 
-.topbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid #dfe5e2; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
-.topbar-brand { color: #0f7a5c; margin-right: auto; }
-.topbar button { background: none; border: 0; color: #0f7a5c; font: inherit; cursor: pointer; }
-@media (prefers-color-scheme: dark) { .topbar { border-color: #2c3734; } }
+.topbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--card); font-family: var(--font); }
+.topbar-brand { color: var(--pv); margin-right: auto; }
+.topbar button { background: none; border: 0; color: var(--pv); font: inherit; cursor: pointer; min-height: 44px; }
 
-.tabs { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 520px; margin: 12px auto 0; padding: 0 16px; gap: 6px; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
-.tabs button { font: inherit; font-weight: 600; padding: 10px; border-radius: 10px; border: 0; background: #eef2f0; color: #5b6763; cursor: pointer; }
-.tabs button[aria-selected='true'] { background: #0f7a5c; color: #fff; }
-@media (prefers-color-scheme: dark) { .tabs button { background: #1f2826; color: #9aa8a3; } }
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 520px; margin: 12px auto 0; padding: 0 16px; gap: 6px; font-family: var(--font); }
+.tabs button { font: inherit; font-weight: 600; padding: 10px; border-radius: 12px; border: 0; background: var(--soft); color: var(--muted); cursor: pointer; min-height: 44px; }
+.tabs button[aria-selected='true'] { background: var(--p); color: var(--on-p); }

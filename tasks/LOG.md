@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: T-101b Calm Saffron look, light or dark
+- DK picked Calm Clinic in Saffron from the sample designs.
+- Every colour is now a token in `src/index.css`, with light and dark sets. The per-file dark rules are gone.
+- Account, Look: "Phone setting", "Light" or "Dark". Saved on this phone only, and set before the app draws.
+- DM Sans font, served from our own site. App icon and phone bar colour are saffron.
+- Workouts: the second buttons now share the dashed button look.
+- No migration. Spec: [T-101b](../specs/T-101b-look.md).
+- Tests: `src/settings/theme.test.ts` (3), `src/account/Account.test.tsx` (1).
+- Next: T-101c brings the screen layout from the sample designs.
+
 ## 2026-10-19: T-101 kg or lb for gym weights
 - Account, Units: "Gym weights in" kg or lb. Saved with the account.
 - In lb, training screens show and take lb: sets, last time, suggestions, warm-ups, records and the plate calculator (45 lb bar, lb plates).
