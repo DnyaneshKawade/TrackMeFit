@@ -198,18 +198,23 @@ describe('onboarding and progress', () => {
     const answers = [
       'Asha', 'female', '1995-06-15', 160, 'on_feet', 3, 'beginner', 'home', 'lose', -0.005, 58, 'jain',
       ['no_onion_garlic'], ['ekadashi'], ['peanuts'], { counts: { 'tmf:dish:roti': 4 }, kcal: 410, proteinG: 16 },
-      { diabetes: true, pregnant: false }, 'asthma', '2026-10-13T03:00:00Z',
+      '2026-10-13T03:00:00Z',
     ]
     const update = `update profiles set full_name = $1, sex = $2, birth_date = $3, height_cm = $4, activity = $5, training_days = $6,
                     experience = $7, equipment = $8, goal = $9, goal_rate = $10, target_weight_kg = $11, diet_pref = $12,
-                    food_rules = $13, fasting = $14, allergies = $15, current_diet = $16, medical = $17, other_health = $18,
-                    onboarded_at = $19 where id = $20`
+                    food_rules = $13, fasting = $14, allergies = $15, current_diet = $16,
+                    onboarded_at = $17 where id = $18`
     const mine = await t.as(me, (db) => db.query(update, [...answers, me]))
     expect(mine.affectedRows).toBe(1)
     const theirs = await t.as(me, (db) => db.query(update, [...answers, other]))
     expect(theirs.affectedRows).toBe(0)
     const row = (await t.db.query<{ goal: string; fasting: string[]; current_diet: object }>('select goal, fasting, current_diet from profiles where id = $1', [me])).rows[0]
     expect(row).toEqual({ goal: 'lose', fasting: ['ekadashi'], current_diet: { counts: { 'tmf:dish:roti': 4 }, kcal: 410, proteinG: 16 } })
+    // Health answers have their own table (T-096), written only by the person.
+    const health = (id: string) =>
+      t.as(me, (db) => db.query(`insert into health_answers (user_id, medical, other_health) values ($1, $2, 'asthma')`, [id, { diabetes: true }]))
+    await health(me)
+    await expect(health(other)).rejects.toThrow()
     await expect(t.as(me, (db) => db.query(`update profiles set goal_rate = -0.05 where id = $1`, [me]))).rejects.toThrow()
     await expect(t.as(me, (db) => db.query(`update profiles set equipment = 'castle' where id = $1`, [me]))).rejects.toThrow()
   })

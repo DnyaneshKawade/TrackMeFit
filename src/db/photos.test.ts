@@ -3,7 +3,7 @@ import type { PGlite } from '@electric-sql/pglite'
 import { createTestDb, type TestDb } from './testDb'
 
 // Progress photos (T-022b): records and files are private to the person and
-// their active coach.
+// their active coach, when shared with them (T-096).
 
 let t: TestDb
 let asha: string
@@ -23,6 +23,8 @@ beforeAll(async () => {
   coach = await t.signUp('coach@example.com', { role: 'coach' })
   await t.as(coach, (db) => db.query(`insert into coach_clients (coach_id, client_id) values ($1, $2)`, [coach, asha]))
   await t.as(asha, (db) => db.query(`update coach_clients set status = 'active' where coach_id = $1`, [coach]))
+  // Asha shares her photos with this coach (T-096).
+  await t.as(asha, (db) => db.query(`select set_coach_shares(id, true, false) from coach_clients where coach_id = $1`, [coach]))
   await t.as(asha, (db) => addPhoto(db, `${asha}/one.jpg`))
 })
 

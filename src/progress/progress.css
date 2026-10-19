@@ -62,6 +62,8 @@
 
 .your-coach .actions, .clients .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .your-coach .share-ask ul { margin: 8px 0; padding-left: 20px; line-height: 1.6; }
+.your-coach .share-parts { border: 0; padding: 0; margin: 12px 0; }
+.your-coach .share-parts label { display: flex; gap: 8px; align-items: center; padding: 6px 0; }
 .clients .invite { margin: 12px 0; padding: 10px 12px; border: 1px solid #0f7a5c; border-radius: 12px; }
 .clients .code { font-size: 20px; letter-spacing: 1px; }
 .client-list { list-style: none; padding: 0; margin: 0; }

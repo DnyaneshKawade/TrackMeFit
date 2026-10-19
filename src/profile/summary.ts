@@ -10,8 +10,9 @@ const namesOf = (list: [string, string][], vs: string[]) => vs.flatMap((v) => li
 
 export type Row = [label: string, value: string | null]
 
-/** The rows for each signup step, in step order. A missing answer reads "Not given". */
-export function summaryRows(p: ProfileInfo, weightKg: number | null, today: string): Row[][] {
+/** The rows for each signup step, in step order. A missing answer reads "Not given".
+ * `healthShared` is false when a coach looks and the client keeps health answers private (T-096). */
+export function summaryRows(p: ProfileInfo, weightKg: number | null, today: string, healthShared = true): Row[][] {
   const health = questionsFor(p.sex).filter((q) => p.medical[q.key]).map((q) => q.label)
   const days = NONVEG_OFF_DAYS.filter(([k]) => p.foodRules.includes(k)).map(([, v]) => v)
   const pace = p.goalRate ? `${fmt(Math.abs(Math.round(p.goalRate * 1000) / 10))}% of your weight a week` : null
@@ -23,10 +24,9 @@ export function summaryRows(p: ProfileInfo, weightKg: number | null, today: stri
       ['Height', p.heightCm ? `${fmt(p.heightCm)} cm` : null],
       ['Weight', weightKg ? `${fmt(weightKg)} kg` : null],
     ],
-    [
-      ['Health', health.length ? health.join(', ') : 'Nothing ticked'],
-      ...(p.otherHealth.trim() ? [['Other', p.otherHealth.trim()] as Row] : []),
-    ],
+    healthShared
+      ? [['Health', health.length ? health.join(', ') : 'Nothing ticked'], ...(p.otherHealth.trim() ? [['Other', p.otherHealth.trim()] as Row] : [])]
+      : [['Health', 'Not shared']],
     [
       ['Normal day', nameOf(ACTIVITY, p.activity)],
       ['Workouts a week', p.trainingDays === null ? null : String(p.trainingDays)],

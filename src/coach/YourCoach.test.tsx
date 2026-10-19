@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { YourCoach } from './YourCoach'
 import { memoryCoachStore } from './store'
 import { memoryCheckInStore } from './checkIns'
@@ -18,7 +18,7 @@ describe('your coach (T-026a)', () => {
     click('Next')
     fireEvent.click(await screen.findByRole('button', { name: 'Share with Coach K' }))
     expect((await screen.findByText(/You’re working with/)).textContent).toMatch(/^You’re working with Coach K\. Sharing since/)
-    expect(screen.getByText(/Your coach can see your food, workouts, weight, measurements and photos/)).toBeTruthy()
+    expect(screen.getByText(/Your coach can see your food, workouts, weight and measurements/)).toBeTruthy()
     expect((await store.myCoach())?.name).toBe('Coach K')
   })
 
@@ -59,8 +59,8 @@ describe('ask before sharing (T-087)', () => {
     click('Next')
     expect((await screen.findByText(/This code is from/)).textContent).toBe('This code is from Kiran Rao. If you say yes, they will see:')
     const items = screen.getAllByRole('listitem').map((li) => li.textContent)
-    expect(items).toContain('Your signup answers, health answers too')
-    expect(items).toContain('Your weight, measurements and photos')
+    expect(items).toContain('Your signup answers')
+    expect(items).toContain('Your weight and measurements')
     expect(await store.myCoach()).toBeNull()
     click('Share with Kiran Rao')
     expect(await screen.findByText(/Sharing since/)).toBeTruthy()
@@ -136,5 +136,27 @@ describe('tell the other side when a link ends (T-094)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Yes, stop' }))
     expect(await screen.findByLabelText('Coach code')).toBeTruthy()
     expect(screen.queryByText(/ended your coaching/)).toBeNull()
+  })
+})
+
+describe('choose what your coach sees (T-096)', () => {
+  it('6. photos and health answers start off; each switch saves at once', async () => {
+    const store = memoryCoachStore({ codes: { ABCDE12345: 'Kiran Rao' } })
+    render(<YourCoach store={store} />)
+    await type('ABCDE-12345')
+    click('Next')
+    expect(await screen.findByText('Your photos and health answers stay private. You can share them after this.')).toBeTruthy()
+    click('Share with Kiran Rao')
+    const photos = (await screen.findByRole('checkbox', { name: 'Progress photos' })) as HTMLInputElement
+    const health = screen.getByRole('checkbox', { name: 'Health answers' }) as HTMLInputElement
+    expect([photos.checked, health.checked]).toEqual([false, false])
+    fireEvent.click(photos)
+    await waitFor(() => expect(photos.checked).toBe(true))
+    expect((await store.myCoach())?.shares).toEqual({ photos: true, health: false })
+    fireEvent.click(health)
+    await waitFor(() => expect(health.checked).toBe(true))
+    fireEvent.click(photos)
+    await waitFor(() => expect(photos.checked).toBe(false))
+    expect((await store.myCoach())?.shares).toEqual({ photos: false, health: true })
   })
 })

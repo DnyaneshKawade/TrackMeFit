@@ -31,18 +31,22 @@ export interface ProfileRow {
   fasting: string[] | null
   allergies: string[] | null
   current_diet: ProfileInfo['currentDiet']
-  medical: Record<string, boolean> | null
-  other_health: string | null
   onboarded_at: string | null
 }
 
 const COLUMNS =
   'full_name, sex, birth_date, height_cm, activity, training_days, experience, equipment, goal, goal_rate, target_weight_kg, event_date, ' +
-  'diet_pref, food_rules, fasting, allergies, current_diet, medical, other_health, onboarded_at'
+  'diet_pref, food_rules, fasting, allergies, current_diet, onboarded_at'
 
 const numOrNull = (v: number | string | null | undefined) => (v === null || v === undefined ? null : Number(v))
 
-export const fromRow = (r: ProfileRow): ProfileInfo => ({
+/** Health answers have their own table, so a coach sees them only when shared (T-096). */
+export interface HealthRow {
+  medical: Record<string, boolean> | null
+  other_health: string | null
+}
+
+export const fromRow = (r: ProfileRow, h: HealthRow | null = null): ProfileInfo => ({
   fullName: r.full_name ?? '',
   sex: r.sex,
   birthDate: r.birth_date,
@@ -60,8 +64,8 @@ export const fromRow = (r: ProfileRow): ProfileInfo => ({
   fasting: r.fasting ?? [],
   allergies: r.allergies ?? [],
   currentDiet: r.current_diet ?? null,
-  medical: r.medical ?? {},
-  otherHealth: r.other_health ?? '',
+  medical: h?.medical ?? {},
+  otherHealth: h?.other_health ?? '',
   onboardedAt: r.onboarded_at,
 })
 
@@ -83,23 +87,30 @@ export const toRow = (p: ProfileInfo): ProfileRow => ({
   fasting: p.fasting,
   allergies: p.allergies,
   current_diet: p.currentDiet,
-  medical: p.medical,
-  other_health: p.otherHealth.trim(),
   onboarded_at: p.onboardedAt,
 })
+
+export const toHealthRow = (p: ProfileInfo): HealthRow => ({ medical: p.medical, other_health: p.otherHealth.trim() })
 
 /** The signed-in person's own profile. Every sign-up already has a row,
  * created by the database, so saving is an update. */
 export function supabaseProfileStore(sb: SupabaseClient, userId: string): ProfileStore {
   return {
     async get() {
-      const { data, error } = await sb.from('profiles').select(COLUMNS).eq('id', userId).single()
-      if (error) throw error
-      return fromRow(data as unknown as ProfileRow)
+      // A coach gets no health row unless the client shares it.
+      const [profile, health] = await Promise.all([
+        sb.from('profiles').select(COLUMNS).eq('id', userId).single(),
+        sb.from('health_answers').select('medical, other_health').eq('user_id', userId).maybeSingle(),
+      ])
+      if (profile.error) throw profile.error
+      if (health.error) throw health.error
+      return fromRow(profile.data as unknown as ProfileRow, health.data as HealthRow | null)
     },
     async save(p) {
       const { error } = await sb.from('profiles').update(toRow(p)).eq('id', userId)
       if (error) throw error
+      const h = await sb.from('health_answers').upsert({ user_id: userId, ...toHealthRow(p), updated_at: new Date().toISOString() })
+      if (h.error) throw h.error
     },
   }
 }
