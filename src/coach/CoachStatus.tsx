@@ -38,7 +38,7 @@ function DetailsForm({ store, shrink }: { store: CoachApprovalStore; shrink: (f:
     const y = years.trim() === '' ? null : Number(years)
     if (y !== null && (!Number.isInteger(y) || y < 0 || y > 60)) return setError('Years coaching must be a number from 0 to 60.')
     try {
-      await store.saveDetails({ phone: d.phone, city: d.city, years: y, link: d.link })
+      await store.saveDetails({ name: d.name, phone: d.phone, city: d.city, years: y, link: d.link })
       setMsg('Your details are saved.')
     } catch {
       setError('Couldn’t save. Check your connection.')
@@ -78,6 +78,10 @@ function DetailsForm({ store, shrink }: { store: CoachApprovalStore; shrink: (f:
     <>
       <form aria-label="Your coach details" onSubmit={(e) => void save(e)}>
         <h3>Your details</h3>
+        <label>
+          Name your clients see
+          <input value={d.name} maxLength={60} onChange={set('name')} />
+        </label>
         <label>
           Phone
           <input type="tel" value={d.phone} onChange={set('phone')} />
@@ -181,6 +185,11 @@ export function CoachHome({
           </div>
         )}
         {children}
+        {/* Approved coaches can still change their details; the status stays (T-093). */}
+        <details className="coach-own log">
+          <summary>Your coach details</summary>
+          <DetailsForm store={store} shrink={shrink} />
+        </details>
       </>
     )
 
