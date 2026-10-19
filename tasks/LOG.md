@@ -2,6 +2,11 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: T-098 public page on deleting an account
+- `/delete-account.html` says how to delete in the app, or by email to trackmefit5@gmail.com, and what is removed.
+- The privacy page links to it. It works offline like the privacy page. This is the link Google Play asks for.
+- Tests: `build/privacyPage.test.ts` "delete account page (T-098)" (1), `src/pwa.test.ts` (2 extended).
+
 ## 2026-10-19: T-103 "I want to coach"
 - Adults who aren't coaches see "Coach other people" on the Account page and can ask once.
 - The owner sees "Wants to coach" under Requests. "Make coach" makes them a coach, answers and logs it.

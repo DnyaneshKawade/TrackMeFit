@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { privacyPage } from './privacyPage'
+import { deletePage, privacyPage } from './privacyPage'
 import { SECTIONS } from '../src/legal/privacy'
 
 // The privacy policy page (spec T-077).
@@ -39,5 +39,19 @@ describe('privacy contact and rights (T-089)', () => {
     expect(html).toContain('Stop sharing with your coach under Your coach.')
     expect(html).toContain('A coach sees your food log, targets, workouts and plans.')
     expect(html).toContain('You say yes before a coach sees anything.')
+  })
+})
+
+describe('delete account page (T-098)', () => {
+  it('1. says how to delete in the app and without it, what is removed, and links to the app and policy', () => {
+    const html = deletePage()
+    expect(html.startsWith('<!doctype html>')).toBe(true)
+    expect(html).not.toMatch(/<script/i)
+    for (const heading of ['Delete it in the app', 'What is removed', 'Can’t sign in?']) expect(html, heading).toContain(`<h2>${heading}</h2>`)
+    expect(html).toContain('Type DELETE and tap &quot;Delete forever&quot;.')
+    expect(html).toContain('Email us at trackmefit5@gmail.com from the email you signed up with.')
+    expect(html).toContain('<a href="/">Open Track Me Fit</a>')
+    expect(html).toContain('<a href="/privacy.html">Read our privacy policy</a>')
+    expect(privacyPage()).toContain('/delete-account.html')
   })
 })

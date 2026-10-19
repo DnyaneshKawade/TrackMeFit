@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { buildId, stampServiceWorker } from './build/swStamp'
-import { privacyPage } from './build/privacyPage'
+import { deletePage, privacyPage } from './build/privacyPage'
 
 // After a production build, name the offline cache after this build so the
 // service worker drops the previous deploy's files.
@@ -26,7 +26,8 @@ function stampSw(): Plugin {
   }
 }
 
-// Writes the privacy policy as a plain page at /privacy.html (T-077).
+// Writes the privacy policy as a plain page at /privacy.html (T-077), and
+// how to delete an account at /delete-account.html (T-098).
 function privacy(): Plugin {
   let outDir = 'dist'
   return {
@@ -37,6 +38,7 @@ function privacy(): Plugin {
     },
     closeBundle() {
       writeFileSync(resolve(outDir, 'privacy.html'), privacyPage())
+      writeFileSync(resolve(outDir, 'delete-account.html'), deletePage())
     },
   }
 }

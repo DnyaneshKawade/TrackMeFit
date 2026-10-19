@@ -1,7 +1,8 @@
 // Writes the privacy policy (spec T-077) as a plain page with no scripts, so
 // it opens anywhere, signed in or not. The words live in src/legal/privacy.ts.
 
-import { CONTACT_EMAIL, SECTIONS, UPDATED, contactLines } from '../src/legal/privacy'
+import { CONTACT_EMAIL, SECTIONS, UPDATED, contactLines, type Section } from '../src/legal/privacy'
+import { DELETE_SECTIONS } from '../src/legal/deleteAccount'
 
 const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
@@ -18,17 +19,16 @@ function linesHtml(lines: string[]): string {
   return list ? out + '</ul>' : out
 }
 
-/** The whole page, with no scripts, so it opens anywhere. */
-export function privacyPage(email = CONTACT_EMAIL): string {
-  const body = [...SECTIONS, { heading: 'Contact us', lines: contactLines(email) }]
-    .map((s) => `<h2>${escape(s.heading)}</h2>${linesHtml(s.lines)}`)
-    .join('\n')
+const sectionsHtml = (sections: Section[]) => sections.map((s) => `<h2>${escape(s.heading)}</h2>${linesHtml(s.lines)}`).join('\n')
+
+/** A plain page with no scripts, so it opens anywhere. */
+function page(title: string, intro: string, body: string): string {
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Privacy policy · Track Me Fit</title>
+<title>${escape(title)} · Track Me Fit</title>
 <style>
 body { max-width: 640px; margin: 0 auto; padding: 16px; font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #1c2321; background: #fff; }
 h1 { color: #0f7a5c; font-size: 24px; }
@@ -39,11 +39,21 @@ a { color: #0f7a5c; }
 </style>
 </head>
 <body>
-<h1>Privacy policy</h1>
-<p class="muted">Updated on ${escape(UPDATED)}.</p>
+<h1>${escape(title)}</h1>
+${intro}
 ${body}
 <p><a href="/">Open Track Me Fit</a></p>
 </body>
 </html>
 `
+}
+
+/** The privacy policy (T-077). */
+export function privacyPage(email = CONTACT_EMAIL): string {
+  return page('Privacy policy', `<p class="muted">Updated on ${escape(UPDATED)}.</p>`, sectionsHtml([...SECTIONS, { heading: 'Contact us', lines: contactLines(email) }]))
+}
+
+/** How to delete an account, with or without the app (T-098). */
+export function deletePage(): string {
+  return page('Delete your account', '<p>You can delete your Track Me Fit account and all its data at any time.</p>', sectionsHtml(DELETE_SECTIONS) + '\n<p><a href="/privacy.html">Read our privacy policy</a></p>')
 }
