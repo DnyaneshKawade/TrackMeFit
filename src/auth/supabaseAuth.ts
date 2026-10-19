@@ -25,6 +25,7 @@ export function createSupabaseAuth(sb: SupabaseClient): AuthService {
       name: data?.full_name || (user.user_metadata?.full_name as string | undefined) || '',
       role: (data?.role as Role | undefined) ?? 'user',
       ...(data?.role_chosen === false ? { roleChosen: false } : {}),
+      signInWith: ((user.app_metadata?.providers as string[] | undefined) ?? ['email']).includes('email') ? 'email' : 'google',
     }
   }
 
@@ -57,6 +58,12 @@ export function createSupabaseAuth(sb: SupabaseClient): AuthService {
     async updatePassword(password) {
       const { error } = await sb.auth.updateUser({ password })
       if (error) throw error
+    },
+    async changePassword(oldPassword, newPassword) {
+      return (await import('./accountAuth')).changePassword(sb, oldPassword, newPassword)
+    },
+    async changeEmail(email) {
+      return (await import('./accountAuth')).changeEmail(sb, email)
     },
     onRecovery(cb) {
       if (recovery) {

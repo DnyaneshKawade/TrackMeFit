@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { localDate } from '../log/types'
 import { dataError, fileName, saveFile, type DataRequest, type DataStore } from './data'
+import { Security, type SecurityProps } from './Security'
 import './account.css'
 
 const day = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -188,6 +189,7 @@ export function Account({
   onBack,
   onDeleted,
   onSignOutAll,
+  security,
   save = saveFile,
 }: {
   store: DataStore
@@ -196,6 +198,8 @@ export function Account({
   onDeleted: () => void
   /** Signs out on every device, this one too (T-090). */
   onSignOutAll?: () => Promise<void>
+  /** Email, how they sign in, and changing them (T-091). */
+  security?: SecurityProps
   save?: (name: string, text: string) => void
 }) {
   return (
@@ -205,6 +209,7 @@ export function Account({
       <p>
         <a href="/privacy.html" target="_blank" rel="noreferrer">Read our privacy policy</a>
       </p>
+      {security && <Security {...security} />}
       <Download store={store} save={save} />
       <AskForChange store={store} />
       {onSignOutAll && <SignOutAll onSignOutAll={onSignOutAll} />}
@@ -222,6 +227,7 @@ export function AccountTab({
   onBack: () => void
   onDeleted: () => void
   onSignOutAll?: () => Promise<void>
+  security?: SecurityProps
 }) {
   const [store, setStore] = useState<DataStore | null>(null)
   useEffect(() => {

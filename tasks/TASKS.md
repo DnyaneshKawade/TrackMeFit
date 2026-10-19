@@ -36,7 +36,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-083 | Stuck at the calorie floor: a card with checks (log everything, walk more, then see a doctor) instead of a lower number; optional diet break of 1-2 weeks at maintenance after 8-12 weeks of cutting, accepted by the user | Engine tests |
 | T-086 | One age rule, 18 and over (setup allows 13 today): everyone gives a birth date once, coaches and Google sign-ups too; under 18 can't go on | `src/profile/profile.test.ts`; `src/App.test.tsx`; `src/db/rls.test.ts` |
 | T-089 | Privacy page: a real contact email and the person who answers, how to complain to the Data Protection Board, how to take back consent, what a coach sees (needs DK's email and name) | Privacy page test; `src/words.test.ts` |
-| T-091 | Sign-in and security on the Account page: your email and how you sign in, change password, change email, Google users can add a password | `src/account/Account.test.tsx` |
+| T-091b | Google users can add a password, after a code sent to their email (Supabase reauthenticate) | `src/account/Security.test.tsx` |
 | T-092 | One tidy Account page: Your details, Sign-in and security, Your coach, Your data and privacy, Delete account, each showing what it is set to now | `src/account/Account.test.tsx`; `src/words.test.ts` |
 | T-094 | Tell the other side when a coach link ends, with who ended it and when | `src/coach/YourCoach.test.tsx`, `src/coach/Clients.test.tsx`; `src/db/coach.test.ts` |
 | T-093 | Approved coaches can change their name, phone, city, years, link and certificates | `src/coach/CoachStatus.test.tsx`; `src/db/coachApproval.test.ts` |
@@ -78,6 +78,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-091 | Sign-in and security on the Account page: your email and how you sign in; change password (old one first) and change email (links to both inboxes); Google users change it with Google | `src/account/Security.test.tsx` (3) |
 | T-090 | "Sign out" signs out this phone only; "Sign out on all devices" on the Account page, after a confirm, for a lost phone | `src/App.test.tsx` (1 updated), `src/account/Account.test.tsx` (2) |
 | T-087 | Ask before sharing with a coach: the code first shows the coach's name and all they will see, health answers too; nothing is shared until "Share with ..."; the time of the yes is saved | `src/coach/YourCoach.test.tsx` (2 new, 1 updated), `src/db/coach.test.ts` (1) |
 | T-085 | "Forgot password" now works: the email link opens "Choose a new password", which saves it, then opens the app | `src/auth/newPassword.test.tsx` (3) |

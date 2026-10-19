@@ -1,7 +1,6 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import { memoryChatStore, supabaseChatStore, type ChatStore } from './coach/chat'
 import { memoryCheckInStore, supabaseCheckInStore, type CheckInStore } from './coach/checkIns'
-import { SignIn } from './auth/SignIn'
 import { createSupabaseAuth, supabaseFromEnv } from './auth/supabaseAuth'
 import type { Account, AuthService } from './auth/types'
 import { FoodLog } from './log/FoodLog'
@@ -32,6 +31,8 @@ const Clients = lazy(() => import('./coach/Clients').then((m) => ({ default: m.C
 const CoachHome = lazy(() => import('./coach/CoachStatus').then((m) => ({ default: m.CoachHome })))
 const Onboarding = lazy(() => import('./profile/Onboarding').then((m) => ({ default: m.Onboarding })))
 // Only a new Google account sees this, once (T-066).
+// Signed-in visits never need the sign-in screen, so it loads only when shown.
+const SignIn = lazy(() => import('./auth/SignIn').then((m) => ({ default: m.SignIn })))
 const RoleStep = lazy(() => import('./auth/RoleStep').then((m) => ({ default: m.RoleStep })))
 const NewPassword = lazy(() => import('./auth/NewPassword').then((m) => ({ default: m.NewPassword })))
 const ProfilePage = lazy(() => import('./profile/ProfilePage').then((m) => ({ default: m.ProfilePage })))
@@ -234,7 +235,12 @@ export function AppShell({
     )
   }
   if (account === undefined) return <main className="auth">Loading…</main>
-  if (!account) return <SignIn auth={auth} />
+  if (!account)
+    return (
+      <Suspense fallback={<main className="auth">Loading…</main>}>
+        <SignIn auth={auth} />
+      </Suspense>
+    )
   if (recovering) {
     return (
       <Suspense fallback={<main className="auth">Loading…</main>}>
@@ -329,6 +335,12 @@ export function AppShell({
               workouts?.sync?.clearCache()
               setTab('food')
               void auth.signOut().catch(() => null)
+            }}
+            security={{
+              email: account.email,
+              signInWith: account.signInWith ?? 'email',
+              changePassword: auth.changePassword?.bind(auth),
+              changeEmail: auth.changeEmail?.bind(auth),
             }}
             onSignOutAll={async () => {
               await auth.signOut('all')
