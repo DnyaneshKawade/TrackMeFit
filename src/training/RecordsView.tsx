@@ -1,19 +1,15 @@
 // Records and progress (spec T-044): a workout calendar, the exercises done
-// in the last year, each exercise's records and strength graph, and a plate
-// calculator with Indian gym plates.
+// in the last year, each exercise's records, history and graph (T-106), and
+// a plate calculator with Indian gym plates.
 
 import { useEffect, useMemo, useState } from 'react'
 import { describePlates, gymFor, platesFor } from '../engine/plates'
-import { shownWeight, weightText, type WeightUnit } from '../engine/units'
 import { useWeightUnit } from '../settings/units'
-import { exerciseRecords, type ExerciseRecords, type Lift } from '../engine/strength'
 import { shiftDate } from '../log/types'
 import { monthGrid, monthOf, monthRange, shiftMonth } from './calendar'
 import { exerciseById } from './exercises'
+import { ExerciseDetail } from './ExerciseDetail'
 import type { SessionSummary, WorkoutStore } from './types'
-
-const CHART_W = 320
-const CHART_H = 120
 
 const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 const longDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -102,121 +98,6 @@ function Calendar({ store, today }: { store: WorkoutStore; today: string }) {
             </li>
           ))}
         </ul>
-      )}
-    </section>
-  )
-}
-
-function StrengthChart({ points, measure }: Pick<ExerciseRecords, 'points' | 'measure'>) {
-  const weightUnit = useWeightUnit()
-  if (points.length < 2) return <p className="muted">Do this exercise in two workouts to see a graph.</p>
-  const values = points.map((p) => (measure === 'e1rm' ? shownWeight(p.value, weightUnit) : p.value))
-  const lo = Math.min(...values)
-  const hi = Math.max(...values)
-  const pad = Math.max(1, (hi - lo) * 0.15)
-  const x = (i: number) => (i / (points.length - 1)) * CHART_W
-  const y = (v: number) => CHART_H - ((v - (lo - pad)) / (hi - lo + 2 * pad)) * CHART_H
-  const unit = measure === 'e1rm' ? ` ${weightUnit}` : ' reps'
-  const what = measure === 'e1rm' ? 'Best one-rep max guess' : 'Most reps in a set'
-  return (
-    <figure className="strength-chart">
-      <svg
-        viewBox={`-4 -4 ${CHART_W + 8} ${CHART_H + 8}`}
-        role="img"
-        aria-label={`${what} in each workout, from ${values[0]}${unit} on ${shortDate(points[0].date)} to ${values[values.length - 1]}${unit} on ${shortDate(points[points.length - 1].date)}`}
-      >
-        <line x1="0" y1={CHART_H} x2={CHART_W} y2={CHART_H} className="axis" />
-        <polyline points={values.map((v, i) => `${x(i)},${y(v)}`).join(' ')} className="trend-line" />
-        {points.map((p, i) => (
-          <circle key={p.date + i} cx={x(i)} cy={y(values[i])} r="3" className="dot" />
-        ))}
-      </svg>
-      <figcaption className="muted">
-        {what} in each workout. Lowest {lo}
-        {unit}, highest {hi}
-        {unit}.
-      </figcaption>
-    </figure>
-  )
-}
-
-const lift = (l: Lift, unit: WeightUnit) => `${weightText(l.weightKg, unit)} × ${l.reps}`
-
-function ExerciseDetail({ store, exerciseId, onBack }: { store: WorkoutStore; exerciseId: string; onBack: () => void }) {
-  const [records, setRecords] = useState<ExerciseRecords | null>(null)
-  const [error, setError] = useState(false)
-  const unit = useWeightUnit()
-  useEffect(() => {
-    let live = true
-    store.exerciseHistory(exerciseId).then(
-      (h) => live && setRecords(exerciseRecords(h)),
-      () => live && setError(true),
-    )
-    return () => {
-      live = false
-    }
-  }, [store, exerciseId])
-
-  return (
-    <section aria-label={`Records for ${nameOf(exerciseId)}`} className="exercise-records">
-      <button className="link" onClick={onBack}>← All exercises</button>
-      <h3>{nameOf(exerciseId)}</h3>
-      {error && <p className="error">Couldn’t load your records. Check your connection.</p>}
-      {!error && !records && <p className="muted">Loading…</p>}
-      {records && (
-        <>
-          <dl className="records">
-            {records.heaviest && (
-              <div>
-                <dt>Heaviest</dt>
-                <dd>
-                  {lift(records.heaviest, unit)} <span className="muted">· {shortDate(records.heaviest.performedOn)}</span>
-                </dd>
-              </div>
-            )}
-            {records.bestE1rm && (
-              <div>
-                <dt>Best one-rep max guess</dt>
-                <dd>
-                  {weightText(records.bestE1rm.e1rm, unit)} <span className="muted">· from {lift(records.bestE1rm, unit)} · {shortDate(records.bestE1rm.performedOn)}</span>
-                </dd>
-              </div>
-            )}
-            {records.mostReps && (
-              <div>
-                <dt>Most reps in a set</dt>
-                <dd>
-                  {records.mostReps.reps}
-                  {records.mostReps.weightKg > 0 ? ` at ${weightText(records.mostReps.weightKg, unit)}` : ''} <span className="muted">· {shortDate(records.mostReps.performedOn)}</span>
-                </dd>
-              </div>
-            )}
-          </dl>
-          {records.repMaxes.length > 0 && (
-            <table className="rep-maxes" aria-label="Heaviest for each number of reps">
-              <thead>
-                <tr>
-                  <th scope="col">Reps</th>
-                  <th scope="col">Heaviest</th>
-                  <th scope="col">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {records.repMaxes.map((r) => (
-                  <tr key={r.target}>
-                    <th scope="row">{r.target}</th>
-                    <td>{weightText(r.weightKg, unit)}</td>
-                    <td className="muted">{shortDate(r.performedOn)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-          <StrengthChart points={records.points} measure={records.measure} />
-          {records.notes.map((n) => (
-            <p key={n} className="muted">{n}</p>
-          ))}
-        </>
       )}
     </section>
   )
@@ -315,7 +196,7 @@ export function RecordsView({ store, today, onClose }: { store: WorkoutStore; to
         <button className="link" onClick={onClose}>Close</button>
       </header>
       {exerciseId ? (
-        <ExerciseDetail store={store} exerciseId={exerciseId} onBack={() => setExerciseId(null)} />
+        <ExerciseDetail store={store} exerciseId={exerciseId} today={today} onBack={() => setExerciseId(null)} />
       ) : (
         <>
           <Calendar store={store} today={today} />

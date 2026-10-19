@@ -100,3 +100,18 @@
 /* Second actions on the Workouts page share the dashed "add" button look. */
 .log > .add, .log section > .add { display: block; background: none; border: 1.5px dashed var(--field-line); border-radius: 12px; width: 100%; min-height: 44px; margin-top: 8px; padding: 10px; font: inherit; color: var(--pv); font-weight: 600; cursor: pointer; }
 .sets li { min-height: 44px; padding: 4px 8px; margin: 4px 0; border-radius: 12px; background: var(--soft); }
+/* History and Graph tabs (T-106) */
+.exercise header .history-link { margin-left: auto; font-size: 13px; }
+.detail-tabs { display: flex; gap: 6px; margin: 4px 0 12px; }
+.exercise-records .range { display: flex; gap: 6px; flex-wrap: wrap; }
+.exercise-records .chip[aria-pressed='true'] { background: var(--p); color: var(--on-p); border-color: var(--p); }
+.history-day h4 { font-size: 14px; margin: 14px 0 4px; }
+.history-day ol { margin: 0; padding-left: 22px; }
+.history-day li { padding: 2px 0; }
+.graph-kind { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+.graph-kind select { flex: 1; }
+.strength-chart .dot { cursor: pointer; }
+.strength-chart .dot.on { fill: var(--p); }
+.graph-days { list-style: none; padding: 0; margin: 8px 0; }
+.graph-days .day-button { display: flex; justify-content: space-between; width: 100%; padding: 10px 14px; margin-bottom: 6px; }
+.graph-days .day-button[aria-pressed='true'] { border-color: var(--p); }
