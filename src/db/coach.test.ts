@@ -152,6 +152,21 @@ describe('tell the other side when a link ends (T-094)', () => {
   })
 })
 
+describe('coach codes list (T-095)', () => {
+  it('2. a coach lists and cancels only their own codes, and a cancelled code can’t be used', async () => {
+    const code = await t.as(coach, newCode)
+    const mine = (db: PGlite) => db.query<{ code: string }>('select code from coach_invites').then((r) => r.rows.map((x) => x.code))
+    expect(await t.as(coach, mine)).toContain(code)
+    // Another coach can't cancel it.
+    await t.as(coach2, (db) => db.query('delete from coach_invites where code = $1', [code]))
+    expect(await t.as(coach, mine)).toContain(code)
+    await t.as(coach, (db) => db.query('delete from coach_invites where code = $1', [code]))
+    expect(await t.as(coach, mine)).not.toContain(code)
+    const tara = await t.signUp('tara@example.com')
+    await expect(t.as(tara, (db) => join(db, code))).rejects.toThrow(/invite not valid/)
+  })
+})
+
 describe('client summaries (T-026b)', () => {
   it('6. sums last week per active client for the coach only, from one request', async () => {
     const t2 = await createTestDb()

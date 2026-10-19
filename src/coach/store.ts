@@ -45,6 +45,10 @@ export interface CoachStore {
   clients(today: string): Promise<ClientRow[]>
   /** A new one-time code for a coach, valid for 7 days. */
   createInvite(): Promise<Invite>
+  /** A coach's codes that still work, newest first (T-095). */
+  invites(): Promise<Invite[]>
+  /** Cancels a code so nobody can use it (T-095). */
+  cancelInvite(code: string): Promise<void>
   /** Ends a link, from either side. */
   end(linkId: string): Promise<void>
   /** Links that ended in the last 30 days, newest first (T-094). */
@@ -90,6 +94,7 @@ export function memoryCoachStore(
     limit?: number
     fullCodes?: string[]
     ends?: LinkEnd[]
+    invites?: Invite[]
   } = {},
 ): CoachStore {
   const limit = start.limit ?? CLIENT_LIMIT
@@ -98,6 +103,7 @@ export function memoryCoachStore(
   let coach = start.coach ?? null
   let clients = [...(start.clients ?? [])]
   let ends = [...(start.ends ?? [])]
+  let open: Invite[] = [...(start.invites ?? [])]
   const codes = new Map(Object.entries(start.codes ?? {}))
   let n = 0
   const clean = (code: string) => code.replace(/[^a-z0-9]/gi, '').toUpperCase()
@@ -124,7 +130,15 @@ export function memoryCoachStore(
     async createInvite() {
       if (clients.length >= limit) throw new Error('client limit reached')
       const code = `ABCDE${String(++n).padStart(5, '0')}`
-      return { code, expiresAt: '2026-10-22T00:00:00Z' }
+      const invite = { code, expiresAt: '2026-10-22T00:00:00Z' }
+      open = [invite, ...open]
+      return invite
+    },
+    async invites() {
+      return [...open]
+    },
+    async cancelInvite(code) {
+      open = open.filter((i) => i.code !== code)
     },
     async end(id) {
       const name = coach?.id === id ? coach.name : clients.find((c) => c.linkId === id)?.name
@@ -222,6 +236,20 @@ export function supabaseCoachStore(sb: SupabaseClient, userId: string): CoachSto
       if (error) throw error
       const row = data as { code: string; expires_at: string }
       return { code: row.code, expiresAt: row.expires_at }
+    },
+    async invites() {
+      const { data, error } = await sb
+        .from('coach_invites')
+        .select('code, expires_at')
+        .eq('coach_id', userId)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return (data as { code: string; expires_at: string }[]).map((r) => ({ code: r.code, expiresAt: r.expires_at }))
+    },
+    async cancelInvite(code) {
+      const { error } = await sb.from('coach_invites').delete().eq('code', code)
+      if (error) throw error
     },
     async end(id) {
       const { error } = await sb.from('coach_clients').update({ status: 'ended' }).eq('id', id)

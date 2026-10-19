@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: Coach codes list (T-095)
+
+- The Clients tab lists codes not used yet, with the day each ends.
+- Cancel stops a code, for one sent to the wrong person.
+- Tests: 1 in `src/coach/Clients.test.tsx`, 1 in `src/db/coach.test.ts`.
+
 ## 2026-10-19: Tell the other side when a coach link ends (T-094)
 
 - A client whose coach ended the link sees "Kiran ended your coaching on 12 Nov. Your data stays yours."
