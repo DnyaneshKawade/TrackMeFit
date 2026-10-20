@@ -12,6 +12,8 @@ import { ExerciseDetail } from './ExerciseDetail'
 import { SyncNote } from '../sync/SyncNote'
 import { useSync } from '../sync/useSync'
 import { CopyWorkout, type Copied } from './CopyWorkout'
+import { cardioById } from './cardio'
+import { CardioDetail, CardioLog, CardioPicker } from './CardioLog'
 import { ExerciseSettings } from './ExerciseSettings'
 import { FeedbackSheet } from './FeedbackSheet'
 import { deloadAdvice, isDeloadWeek, weekLabel } from './progression'
@@ -118,6 +120,8 @@ export function SessionView({
   // Sets from a past workout that fill today's boxes (T-113).
   const [copying, setCopying] = useState(false)
   const [copied, setCopied] = useState<Map<string, Copied>>(new Map())
+  // Cardio is picked from its own short list (T-114).
+  const [addingCardio, setAddingCardio] = useState(false)
   // Bumped when an exercise's settings change, so cards read them again (T-112).
   const [, setSettingsSaved] = useState(0)
   const saveSetting =
@@ -143,7 +147,10 @@ export function SessionView({
     )
   }
 
-  const ids = [...new Set([...planned.map((p) => p.exerciseId), ...session.sets.map((s) => s.exerciseId), ...extra])]
+  const all = [...new Set([...planned.map((p) => p.exerciseId), ...session.sets.map((s) => s.exerciseId), ...extra])]
+  // Cardio has its own cards after the strength exercises and is never in a superset.
+  const ids = all.filter((id) => !cardioById.has(id))
+  const cardioIds = all.filter((id) => cardioById.has(id))
 
   if (picking) {
     return (
@@ -162,7 +169,11 @@ export function SessionView({
     <>
       {detail && (
         <section className="sheet records-view">
-          <ExerciseDetail store={store} exerciseId={detail} today={session.performedOn} backLabel="← Back to workout" onBack={() => setDetail(null)} />
+          {cardioById.has(detail) ? (
+            <CardioDetail store={store} exerciseId={detail} backLabel="← Back to workout" onBack={() => setDetail(null)} />
+          ) : (
+            <ExerciseDetail store={store} exerciseId={detail} today={session.performedOn} backLabel="← Back to workout" onBack={() => setDetail(null)} />
+          )}
         </section>
       )}
       {/* Hidden, not closed, so typed weights and the rest timer stay. */}
@@ -226,7 +237,21 @@ export function SessionView({
             </section>
           )
         })}
+        {cardioIds.map((id) => (
+          <CardioLog key={id} store={store} session={session} cardio={cardioById.get(id)!} onChange={setSession} onDetail={() => setDetail(id)} />
+        ))}
         <button className="add" onClick={() => setPicking(true)}>+ Add exercise</button>
+        {addingCardio ? (
+          <CardioPicker
+            onClose={() => setAddingCardio(false)}
+            onPick={(c) => {
+              if (!all.includes(c.id)) setExtra((x) => [...x, c.id])
+              setAddingCardio(false)
+            }}
+          />
+        ) : (
+          <button className="add" onClick={() => setAddingCardio(true)}>+ Add cardio</button>
+        )}
         {copying ? (
           <CopyWorkout
             store={store}

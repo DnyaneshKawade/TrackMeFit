@@ -7,6 +7,8 @@ import { describePlates, gymFor, platesFor } from '../engine/plates'
 import { useWeightUnit } from '../settings/units'
 import { shiftDate } from '../log/types'
 import { monthGrid, monthOf, monthRange, shiftMonth } from './calendar'
+import { cardioById } from './cardio'
+import { CardioDetail } from './CardioLog'
 import { exerciseById } from './exercises'
 import { ExerciseDetail } from './ExerciseDetail'
 import type { SessionSummary, WorkoutStore } from './types'
@@ -14,7 +16,7 @@ import type { SessionSummary, WorkoutStore } from './types'
 const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 const longDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
 const monthName = (month: string) => new Date(month + '-01T00:00:00').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
-const nameOf = (id: string) => exerciseById.get(id)?.name ?? 'Exercise no longer in your list'
+const nameOf = (id: string) => exerciseById.get(id)?.name ?? cardioById.get(id)?.name ?? 'Exercise no longer in your list'
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
 function Calendar({ store, today }: { store: WorkoutStore; today: string }) {
@@ -196,7 +198,11 @@ export function RecordsView({ store, today, onClose }: { store: WorkoutStore; to
         <button className="link" onClick={onClose}>Close</button>
       </header>
       {exerciseId ? (
-        <ExerciseDetail store={store} exerciseId={exerciseId} today={today} onBack={() => setExerciseId(null)} />
+        cardioById.has(exerciseId) ? (
+          <CardioDetail store={store} exerciseId={exerciseId} onBack={() => setExerciseId(null)} />
+        ) : (
+          <ExerciseDetail store={store} exerciseId={exerciseId} today={today} onBack={() => setExerciseId(null)} />
+        )
       ) : (
         <>
           <Calendar store={store} today={today} />

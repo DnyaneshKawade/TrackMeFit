@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-20: T-114 cardio sets
+
+- "+ Add cardio" in a workout picks from 10 moves, like treadmill, bike and rower.
+- Each entry takes a time and, for most moves, a distance. It shows the speed.
+- Records show the farthest, longest and fastest. Cardio never counts as muscle sets.
+- Migration `20261125000000_cardio_sets.sql` adds `duration_sec` and `distance_km` to `set_logs`.
+- Tests: `src/engine/cardio.test.ts` (4), `src/db/cardioSets.test.ts` (1), `src/training/cardioSets.test.tsx` (4).
+
 ## 2026-10-20: T-113 copy a past workout
 
 - "Copy a past workout" in a workout lists the last 90 days. Pick one and tick the exercises.
