@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-20: T-115 browse exercises by muscle
+
+- The exercise picker has a row of muscle chips, like Chest and Biceps, each with a count.
+- A chip shows only that muscle's exercises. It works with the search.
+- No database change.
+- Tests: `src/training/browseByMuscle.test.tsx` (4).
+
 ## 2026-10-20: T-114 cardio sets
 
 - "+ Add cardio" in a workout picks from 10 moves, like treadmill, bike and rower.

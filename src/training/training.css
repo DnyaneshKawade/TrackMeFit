@@ -27,6 +27,8 @@
 .set-extras { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
 .set-extras .chip { padding: 6px 10px; font-size: 13px; }
 .set-extras .chip[aria-pressed='true'] { background: var(--p); color: var(--on-p); border-color: var(--p); }
+.muscle-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+.muscle-chips .chip { flex: none; }
 .set-extras input { font: inherit; padding: 8px 10px; border: 1.5px solid var(--field-line); border-radius: 10px; flex: 1; min-width: 140px; }
 .set-note { display: block; }
 .rest-timer { position: sticky; top: 0; z-index: 2; display: flex; gap: 8px; align-items: center; padding: 8px 12px; margin: 8px 0; border-radius: 12px; background: var(--acc-tint); color: var(--acc-ink); border: 0; }

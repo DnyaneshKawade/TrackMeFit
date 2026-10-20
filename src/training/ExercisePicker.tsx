@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { LANDMARKS, type Muscle } from '../engine/training'
-import { EQUIPMENT_NAMES, MUSCLE_NAMES, checkNewExercise, searchExercises, type Equipment, type Exercise, type ExerciseSetting, type NewExercise } from './exercises'
+import { BROWSE_ORDER, EQUIPMENT_NAMES, MUSCLE_NAMES, checkNewExercise, countByMuscle, searchExercises, type Equipment, type Exercise, type ExerciseSetting, type NewExercise } from './exercises'
 
 /** Favourites and the person's own exercises (T-043b). */
 export interface ExerciseLibrary {
@@ -154,7 +154,11 @@ export function ExercisePicker({ onPick, onClose, library }: { onPick: (e: Exerc
   const [form, setForm] = useState<'new' | Exercise | null>(null)
   const [removed, setRemoved] = useState<Exercise | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const list = searchExercises(q)
+  // Browse by main muscle, as in FitNotes; works with the search too (T-115).
+  const [muscle, setMuscle] = useState<Muscle | null>(null)
+  const found = searchExercises(q)
+  const counts = countByMuscle(found)
+  const list = muscle ? found.filter((e) => e.primary === muscle) : found
   const favs = library ? list.filter((e) => library.favourites.has(e.id)) : []
   const rest = favs.length ? list.filter((e) => !library!.favourites.has(e.id)) : list
 
@@ -179,6 +183,14 @@ export function ExercisePicker({ onPick, onClose, library }: { onPick: (e: Exerc
       ) : (
         <>
           <input className="search" aria-label="Search exercises" placeholder="Search: bench, squat, biceps…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
+          <div className="set-extras muscle-chips" role="group" aria-label="Show by muscle">
+            <button className="chip" aria-pressed={muscle === null} onClick={() => setMuscle(null)}>All</button>
+            {BROWSE_ORDER.filter((m) => counts.has(m) || m === muscle).map((m) => (
+              <button key={m} className="chip" aria-pressed={muscle === m} onClick={() => setMuscle(muscle === m ? null : m)}>
+                {MUSCLE_NAMES[m]} <span className="muted">{counts.get(m) ?? 0}</span>
+              </button>
+            ))}
+          </div>
           {library && (
             <div className="shortcuts">
               <button className="chip" onClick={() => setForm('new')}>+ New exercise</button>
@@ -204,7 +216,7 @@ export function ExercisePicker({ onPick, onClose, library }: { onPick: (e: Exerc
           )}
           {list.length === 0 && (
             <div className="not-found">
-              <p className="muted">No exercise matches “{q}”.</p>
+              <p className="muted">{muscle ? `No ${MUSCLE_NAMES[muscle].toLowerCase()} exercise matches “${q}”.` : `No exercise matches “${q}”.`}</p>
               {library && (
                 <button className="link" onClick={() => setForm('new')}>
                   Add “{q.trim()}” as a new exercise
