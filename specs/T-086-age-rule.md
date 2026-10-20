@@ -52,3 +52,6 @@ Each one becomes a test with the same words in its name.
 - `src/App.test.tsx` "one age rule (T-086)" (1, 2, 4)
 - `src/family/FamilyPart.test.tsx` "one age rule (T-086)" (2, 3)
 - `src/profile/profile.test.ts` "one age rule (T-086)" (5)
+
+## Change (T-122, 20 Oct 2026)
+DK kept only the parent's yes. Teens now get the adult diet rules and can have a coach. See [T-122](T-122-teen-limits.md).

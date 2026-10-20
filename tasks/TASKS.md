@@ -80,6 +80,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-122 | Teens follow the adult rules after a parent's yes: "Lose fat" offered, and a coach allowed. Coaches stay 18+ ([spec](../specs/T-122-teen-limits.md)) | Claude | `src/profile/profile.test.ts` (1 changed), `src/db/ageRule.test.ts` (1 changed) | — |
 | T-105b | Fix: a teen's birth date in About you showed "Couldn't save" and setup went on. Now only the birth date saves first, then the parent page shows; old errors clear ([spec](../specs/T-105-age-in-about-you.md)) | Claude | `src/App.test.tsx` (1 new, 1 updated) | — |
 | T-106 | History and Graph for each exercise, as in FitNotes: every past set by day with record marks, a graph with 6 choices and 5 time ranges, tap a day for its sets, and a History link on each exercise during a workout ([spec](../specs/T-106-history-graph.md)) | Claude | `src/engine/strengthGraph.test.ts` (3), `src/training/Records.test.tsx` (5 new, 2 updated) | — |
 | T-105 | Age asked in About you instead of a separate first page; Skip setup needs it first; coaches keep the short age page ([spec](../specs/T-105-age-in-about-you.md)) | Claude | `src/profile/Onboarding.test.tsx` (2), `src/App.test.tsx` (1 new, 2 updated) | — |
