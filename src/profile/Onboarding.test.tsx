@@ -65,10 +65,22 @@ describe('onboarding', () => {
     expect(heading()).toBe('Health check')
   })
 
-  it('can be skipped straight to logging', async () => {
+  it('can be skipped straight to logging, once the birth date is given (T-105)', async () => {
     const { onSkip } = setup()
     click('Skip setup and start logging')
-    await waitFor(() => expect(onSkip).toHaveBeenCalled())
+    expect(screen.getByText('Enter your date of birth.')).toBeTruthy()
+    expect(onSkip).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByLabelText('Date of birth'), { target: { value: '1995-06-15' } })
+    click('Skip setup and start logging')
+    await waitFor(() => expect(onSkip).toHaveBeenCalledWith('1995-06-15'))
+  })
+
+  it('saves a new birth date as soon as About you is done (T-105)', async () => {
+    const onBirthDate = vi.fn().mockResolvedValue(undefined)
+    setup({ onBirthDate })
+    aboutYou()
+    await waitFor(() => expect(onBirthDate).toHaveBeenCalledTimes(1))
+    expect(await screen.findByRole('heading', { name: 'Health check' })).toBeTruthy()
   })
 
   it('needs a health answer, shows doctor notes, and keeps the pace gentle when health calls for it', () => {

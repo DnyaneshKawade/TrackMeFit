@@ -16,7 +16,8 @@ yes, by the parent's own sign-in.
 Each one becomes a test with the same words in its name.
 
 1. Everyone answers their date of birth once, coaches and Google sign-ups
-   too. It can't be skipped. Under 13 can't go on.
+   too. It can't be skipped. Under 13 can't go on. (Since T-105, people in
+   setup answer it in "About you" instead of a separate page.)
 2. From 13 to 17, a teen waits for a parent. The teen shows a code. A parent
    with their own adult account types it under Account, sees what it means,
    and says yes. The teen can then use the app. Until then the database

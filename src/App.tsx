@@ -283,22 +283,6 @@ export function AppShell({
     )
   }
   if (profile === undefined) return <main className="auth">Loading…</main>
-  // Everyone gives a birth date once; support viewing as someone isn't held up.
-  if (profile && !profile.birthDate && !view) {
-    return (
-      <Suspense fallback={<main className="auth">Loading…</main>}>
-        <AgeStep
-          today={localDate()}
-          onSave={async (birthDate) => {
-            const p = { ...profile, birthDate }
-            await profiles!.save(p)
-            setProfile(p)
-          }}
-          onSignOut={() => void auth.signOut()}
-        />
-      </Suspense>
-    )
-  }
   if (account.roleChosen === false) {
     return (
       <Suspense fallback={<main className="auth">Loading…</main>}>
@@ -309,6 +293,24 @@ export function AppShell({
             await auth.chooseRole(role)
             setAccount({ ...account, role, roleChosen: true })
           }}
+        />
+      </Suspense>
+    )
+  }
+  // Everyone gives a birth date once; support viewing as someone isn't held up.
+  // People in setup give it in "About you" instead (T-105); coaches and
+  // people who finished setup without one still see this step.
+  if (profile && !profile.birthDate && !view && (account.role !== 'user' || isOnboarded(profile))) {
+    return (
+      <Suspense fallback={<main className="auth">Loading…</main>}>
+        <AgeStep
+          today={localDate()}
+          onSave={async (birthDate) => {
+            const p = { ...profile, birthDate }
+            await profiles!.save(p)
+            setProfile(p)
+          }}
+          onSignOut={() => void auth.signOut()}
         />
       </Suspense>
     )
@@ -500,9 +502,14 @@ export function AppShell({
               if (details) setDetails({ weightKg })
             }}
             loadFoods={loadFoods}
-            onSkip={async () => {
+            onBirthDate={async (birthDate) => {
+              const p = { ...profile, birthDate }
+              await profiles!.save(p)
+              setProfile(p)
+            }}
+            onSkip={async (birthDate) => {
               if (editing) return setEditing(null)
-              const p = { ...profile, fullName: profile.fullName || account.name, onboardedAt: new Date().toISOString() }
+              const p = { ...profile, birthDate: birthDate ?? profile.birthDate, fullName: profile.fullName || account.name, onboardedAt: new Date().toISOString() }
               await profiles!.save(p)
               setProfile(p)
             }}
