@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-19: T-106 history and graph for each exercise
+
+- Ideas from FitNotes, as DK asked. Each exercise now has Records, History and Graph.
+- History lists every workout, newest first, with each set. A 🏆 marks new records.
+- The graph can show six things, over 1 month to all time. Tap a day to see its sets.
+- During a workout, each exercise has a History link. Back keeps what you typed.
+- No database change.
+
 ## 2026-10-19: T-105 age asked in About you
 
 - New people no longer see the "One question first" page. "About you" asks the date of birth and saves it on Next.
