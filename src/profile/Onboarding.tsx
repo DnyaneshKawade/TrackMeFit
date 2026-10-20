@@ -221,6 +221,7 @@ export function Onboarding({
 
   const next = async () => {
     if (!stepDone()) return
+    setSaveError(null)
     if (step === 0 && newBirthDate && onBirthDate) {
       setBusy(true)
       try {
@@ -272,6 +273,7 @@ export function Onboarding({
       if (problem) return
     }
     setBusy(true)
+    setSaveError(null)
     try {
       await onSkip(newBirthDate ? about.birthDate : undefined)
     } catch {

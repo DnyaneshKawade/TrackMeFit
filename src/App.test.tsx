@@ -4,10 +4,11 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { AppShell } from './App'
 import type { Account, AuthService } from './auth/types'
 import { memoryProfileStore } from './profile/stores'
-import type { ProfileInfo } from './profile/types'
+import { ageOn, type ProfileInfo } from './profile/types'
 import { memoryTargetStore } from './targets/stores'
 import { memoryProgressStore } from './progress/stores'
 import { memoryFamilyStore } from './family/family'
+import { localDate } from './log/types'
 
 afterEach(cleanup)
 
@@ -115,7 +116,7 @@ describe('first run', () => {
   })
 
   it('opens the app anyway if the profile can’t be loaded', async () => {
-    const broken = { get: vi.fn().mockRejectedValue(new Error('offline')), save: vi.fn() }
+    const broken = { get: vi.fn().mockRejectedValue(new Error('offline')), save: vi.fn(), saveBirthDate: vi.fn() }
     render(<AppShell auth={auth(user)} profileStoreFor={() => broken} />)
     expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
   })
@@ -233,8 +234,20 @@ describe('one age rule (T-086)', () => {
     expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
   })
 
+  // Like the database: before a parent says yes, a teen can save only the birth date.
+  const teenRule = () => {
+    const store = memoryProfileStore()
+    return {
+      ...store,
+      save: async (p: ProfileInfo) => {
+        if (p.birthDate && ageOn(p.birthDate, localDate()) < 18) throw new Error('new row violates row-level security policy')
+        return store.save(p)
+      },
+    }
+  }
+
   it('5. a teen who gives their birth date in About you waits for a parent (T-105)', async () => {
-    const profiles = memoryProfileStore()
+    const profiles = teenRule()
     render(<AppShell auth={auth(user)} profileStoreFor={() => profiles} familyFor={() => memoryFamilyStore()} />)
     await screen.findByRole('heading', { name: 'About you' })
     type('Your name', 'Riya')
@@ -245,6 +258,18 @@ describe('one age rule (T-086)', () => {
     click('Next')
     expect(await screen.findByRole('heading', { name: 'Ask a parent to say yes' })).toBeTruthy()
     expect((await profiles.get()).birthDate).toBe('2011-01-01')
+    expect(screen.queryByText(/Couldn’t save/)).toBeNull()
+  })
+
+  it('5. a teen who skips setup also waits for a parent, with no save error (T-105b)', async () => {
+    const profiles = teenRule()
+    render(<AppShell auth={auth(user)} profileStoreFor={() => profiles} familyFor={() => memoryFamilyStore()} />)
+    await screen.findByRole('heading', { name: 'About you' })
+    type('Date of birth', '2010-10-20')
+    click('Skip setup and start logging')
+    expect(await screen.findByRole('heading', { name: 'Ask a parent to say yes' })).toBeTruthy()
+    expect((await profiles.get()).birthDate).toBe('2010-10-20')
+    expect(screen.queryByText(/Couldn’t save/)).toBeNull()
   })
 
   it('3. a Google teen is not offered the coach role', async () => {
