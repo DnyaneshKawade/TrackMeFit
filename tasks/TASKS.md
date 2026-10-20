@@ -28,7 +28,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests planned |
 |---|---|---|
-| T-108 | "Something hurt" asked per exercise, not per muscle, with a swap suggested for that lift only (RP) | Engine and FeedbackSheet tests, migration test |
 | T-109 | Block controls: set 3-7 hard weeks, end a block early, and "start next block" that copies the plan with optional exercise swaps; deload can drop traps and forearms (RP) | Engine and plan screen tests |
 | T-110 | Skip a workout day, with an optional reason; the plan moves to the next day and the skip counts in the weekly review (RP) | Engine and screen tests |
 | T-111 | Myo-reps set type: one start set, then short mini-sets, logged as total reps (RP) | Engine and logger tests |
@@ -79,6 +78,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-108 | "Something hurt" asked per exercise; the week review swaps only that lift, once accepted (RP) | `src/training/painPerExercise.test.tsx`, `src/db/painPerExercise.test.ts` |
 | T-107 | Block weeks counted by workouts done, not days: a missed day waits; a coach can start a client at a later week ([spec](../specs/T-107-block-weeks.md)) | Claude | `src/training/blockWeeks.test.tsx` (4), `src/training/Review.test.tsx`, `src/coach/ClientView.test.tsx` (updated) | — |
 | T-122 | Teens follow the adult rules after a parent's yes: "Lose fat" offered, and a coach allowed. Coaches stay 18+ ([spec](../specs/T-122-teen-limits.md)) | Claude | `src/profile/profile.test.ts` (1 changed), `src/db/ageRule.test.ts` (1 changed) | — |
 | T-105b | Fix: a teen's birth date in About you showed "Couldn't save" and setup went on. Now only the birth date saves first, then the parent page shows; old errors clear ([spec](../specs/T-105-age-in-about-you.md)) | Claude | `src/App.test.tsx` (1 new, 1 updated) | — |

@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-20: T-108 pain per exercise
+
+- The feedback sheet asks "Something hurt" for each exercise done, not each muscle.
+- The week review names the lift that hurt and suggests a similar one. The plan changes only when accepted.
+- Migration `20261120000000_pain_per_exercise.sql` adds `muscle_feedback.hurt_exercises`.
+- Tests: `src/training/painPerExercise.test.tsx` (4), `src/db/painPerExercise.test.ts` (1).
+
 ## 2026-10-20: library updates (from Dependabot #114)
 
 - Dependabot's 7 updates failed the type check. `@types/node` came only through an older package.
