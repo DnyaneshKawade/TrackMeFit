@@ -51,8 +51,9 @@ describe('first run', () => {
     const targets = memoryTargetStore('u1')
     render(<AppShell auth={auth(user)} profileStoreFor={() => profiles} progressStoreFor={() => progress} targetStoreFor={() => targets} />)
 
-    await answerAge()
+    // No separate age step: the birth date is asked in About you (T-105).
     expect(await screen.findByRole('heading', { name: 'About you' })).toBeTruthy()
+    expect(screen.queryByRole('form', { name: 'Your age' })).toBeNull()
     expect((screen.getByLabelText('Your name') as HTMLInputElement).value).toBe('Asha')
     pick('Sex', 'Female')
     type('Date of birth', '1995-06-15')
@@ -60,6 +61,7 @@ describe('first run', () => {
     type('Weight today (kg)', '64.5')
     type('Waist at the belly button (cm, optional)', '82')
     click('Next')
+    await screen.findByRole('group', { name: 'Health conditions' })
     pick('Health conditions', 'None of these')
     click('Next')
     pick('On a normal day you are', 'Mostly sitting')
@@ -88,7 +90,7 @@ describe('first run', () => {
   it('remembers a skip so onboarding doesn’t come back', async () => {
     const profiles = memoryProfileStore()
     const { unmount } = render(<AppShell auth={auth(user)} profileStoreFor={() => profiles} />)
-    await answerAge()
+    fireEvent.change(await screen.findByLabelText('Date of birth'), { target: { value: '1995-06-15' } })
     fireEvent.click(await screen.findByRole('button', { name: 'Skip setup and start logging' }))
     expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
     unmount()
@@ -229,6 +231,20 @@ describe('one age rule (T-086)', () => {
     await family.sayYes('abcd-1234')
     click('My parent said yes')
     expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
+  })
+
+  it('5. a teen who gives their birth date in About you waits for a parent (T-105)', async () => {
+    const profiles = memoryProfileStore()
+    render(<AppShell auth={auth(user)} profileStoreFor={() => profiles} familyFor={() => memoryFamilyStore()} />)
+    await screen.findByRole('heading', { name: 'About you' })
+    type('Your name', 'Riya')
+    pick('Sex', 'Female')
+    type('Date of birth', '2011-01-01')
+    type('Height (cm)', '155')
+    type('Weight today (kg)', '45')
+    click('Next')
+    expect(await screen.findByRole('heading', { name: 'Ask a parent to say yes' })).toBeTruthy()
+    expect((await profiles.get()).birthDate).toBe('2011-01-01')
   })
 
   it('3. a Google teen is not offered the coach role', async () => {

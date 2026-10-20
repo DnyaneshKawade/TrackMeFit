@@ -107,14 +107,17 @@ export function Onboarding({
   initial,
   onFinish,
   onSkip,
+  onBirthDate,
   loadFoods,
   today = localDate(),
   edit,
 }: {
   initial: ProfileInfo
   onFinish: (r: OnboardingResult) => Promise<void>
-  /** Skips setup; in edit mode, closes without saving. */
-  onSkip: () => Promise<void>
+  /** Skips setup; in edit mode, closes without saving. Gets the birth date when it was first given here. */
+  onSkip: (birthDate?: string) => Promise<void>
+  /** Saves a first birth date as soon as "About you" is done, so the age rule applies at once (T-105). */
+  onBirthDate?: (birthDate: string) => Promise<void>
   /** Loads the food database for "Add another food". */
   loadFoods?: () => Promise<FoodFinder>
   today?: string
@@ -213,8 +216,22 @@ export function Onboarding({
     return !problem
   }
 
-  const next = () => {
-    if (stepDone()) setStep(step + 1)
+  /** True when the birth date is new here and must be saved first (T-105). */
+  const newBirthDate = !initial.birthDate && !edit
+
+  const next = async () => {
+    if (!stepDone()) return
+    if (step === 0 && newBirthDate && onBirthDate) {
+      setBusy(true)
+      try {
+        await onBirthDate(about.birthDate)
+      } catch {
+        setSaveError('Couldn’t save. Check your connection and try again.')
+        return setBusy(false)
+      }
+      setBusy(false)
+    }
+    setStep(step + 1)
   }
 
   /** Edit mode: saves the answers so far and keeps the current targets. */
@@ -248,9 +265,15 @@ export function Onboarding({
   }
 
   const skip = async () => {
+    // Skipping still needs a birth date, for the age rule (T-105).
+    if (newBirthDate) {
+      const problem = checkAboutYou(about, today).birthDate
+      setErrors(problem ? { birthDate: problem } : {})
+      if (problem) return
+    }
     setBusy(true)
     try {
-      await onSkip()
+      await onSkip(newBirthDate ? about.birthDate : undefined)
     } catch {
       setSaveError('Couldn’t save. Check your connection and try again.')
       setBusy(false)
@@ -585,7 +608,7 @@ export function Onboarding({
           </button>
         )}
         {step < STEPS.length - 1 ? (
-          <button type="button" className="primary" onClick={next}>
+          <button type="button" className="primary" onClick={() => void next()} disabled={busy}>
             {step === 5 && !diet.kcal ? 'Skip this step' : 'Next'}
           </button>
         ) : plan?.suggested ? (
