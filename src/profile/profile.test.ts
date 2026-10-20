@@ -432,15 +432,15 @@ describe('protein, carbs, fat and fibre in the plan (T-068c)', () => {
 })
 
 describe('one age rule (T-086)', () => {
-  it('5. under 18, the app suggests no calorie cut, with a reason', () => {
+  it('1. under 18, losing weight follows the same rules as adults (T-122)', () => {
     const teen = { ...asha, birthDate: '2010-01-01' }
-    expect(paceOptions('lose', 'beginner', {}, { weightKg: 70, heightCm: 160, ageYears: 16 })).toEqual([])
-    expect(noLossReason({ weightKg: 70, heightCm: 160, ageYears: 16 })).toBe('You are still growing, so we don’t suggest eating less. Eat what you burn and stay active.')
+    const adultBody = { weightKg: 70, heightCm: 160, ageYears: 30 }
+    expect(paceOptions('lose', 'beginner', {}, { ...adultBody, ageYears: 16 })).toEqual(paceOptions('lose', 'beginner', {}, adultBody))
+    expect(noLossReason({ ...adultBody, ageYears: 16 })).toBeNull()
     const plan = buildPlan(teen, 70, TODAY)
-    expect(plan.steps).toBeNull()
-    expect(plan.reasons[0]).toMatch(/still growing/)
-    expect(plan.suggested!.kcal).toBe(buildPlan({ ...teen, goal: 'maintain', goalRate: 0 }, 70, TODAY).suggested!.kcal)
-    // Recomp, which also eats a little less, is held at the burn too.
-    expect(buildPlan({ ...teen, goal: 'recomp' }, 70, TODAY).steps).toBeNull()
+    expect(plan.steps).not.toBeNull()
+    expect(plan.reasons.join(' ')).not.toMatch(/still growing/)
+    // Underweight teens still get no cut, like adults.
+    expect(noLossReason({ weightKg: 45, heightCm: 160, ageYears: 16 })).toMatch(/underweight/)
   })
 })

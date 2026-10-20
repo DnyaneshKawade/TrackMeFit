@@ -9,6 +9,13 @@ Newest first. One entry per finished piece of work: what changed, which tests co
 - A coach who starts a client at week 3 now starts it today at week 3.
 - Database: `20261119000000_block_start_week.sql` adds `block_start_week`. Offline, weeks fall back to days.
 
+## 2026-10-20: T-122 teens follow the adult rules
+
+- DK asked which teen limits a law or store rule needs. Only the parent's yes (DPDP Act).
+- So "Lose fat" is now offered to teens, with the same safe paces as adults.
+- Teens can have a coach after a parent says yes. Coaches still must be 18 or older.
+- Database: `20261118000000_teen_coach.sql` drops the "no coach under 18" trigger. The privacy policy line is gone too.
+
 ## 2026-10-20: T-105b fix for a teen's birth date
 
 - DK found it: a birth date under 18 showed "Couldn't save", and setup still went on.
