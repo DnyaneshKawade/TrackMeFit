@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-20: T-107 block weeks by workouts done
+
+- The block week now counts workouts done, as RP does. A missed day waits.
+- One week is one workout for each plan day. Empty workouts don't count.
+- A coach who starts a client at week 3 now starts it today at week 3.
+- Database: `20261119000000_block_start_week.sql` adds `block_start_week`. Offline, weeks fall back to days.
+
 ## 2026-10-19: training tasks from the RP and FitNotes research
 
 - DK asked for tasks from the two studies. Notes: `trackmefit-notes/rp-app-research.md` and `fitnotes-research.md`.

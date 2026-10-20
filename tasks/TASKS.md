@@ -28,7 +28,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests planned |
 |---|---|---|
-| T-107 | Block weeks counted by workouts done, not calendar days, so a missed day waits instead of moving you to the next week (RP; today `blockWeek` counts days) | Engine tests: missed days, two workouts in one day, old blocks |
 | T-108 | "Something hurt" asked per exercise, not per muscle, with a swap suggested for that lift only (RP) | Engine and FeedbackSheet tests, migration test |
 | T-109 | Block controls: set 3-7 hard weeks, end a block early, and "start next block" that copies the plan with optional exercise swaps; deload can drop traps and forearms (RP) | Engine and plan screen tests |
 | T-110 | Skip a workout day, with an optional reason; the plan moves to the next day and the skip counts in the weekly review (RP) | Engine and screen tests |
@@ -80,6 +79,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-107 | Block weeks counted by workouts done, not days: a missed day waits; a coach can start a client at a later week ([spec](../specs/T-107-block-weeks.md)) | Claude | `src/training/blockWeeks.test.tsx` (4), `src/training/Review.test.tsx`, `src/coach/ClientView.test.tsx` (updated) | — |
 | T-106 | History and Graph for each exercise, as in FitNotes: every past set by day with record marks, a graph with 6 choices and 5 time ranges, tap a day for its sets, and a History link on each exercise during a workout ([spec](../specs/T-106-history-graph.md)) | Claude | `src/engine/strengthGraph.test.ts` (3), `src/training/Records.test.tsx` (5 new, 2 updated) | — |
 | T-105 | Age asked in About you instead of a separate first page; Skip setup needs it first; coaches keep the short age page ([spec](../specs/T-105-age-in-about-you.md)) | Claude | `src/profile/Onboarding.test.tsx` (2), `src/App.test.tsx` (1 new, 2 updated) | — |
 | T-104 | Missed days on Progress: add a weight or measurements for an earlier day, up to a year back ([spec](../specs/T-104-missed-days.md)) | Claude | `src/progress/Progress.test.tsx` (3) | — |

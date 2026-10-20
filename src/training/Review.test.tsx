@@ -27,7 +27,8 @@ const benchSession = (id: string, on: string, w: number): Session => ({
 
 describe('feedback after a workout', () => {
   it('asks how each trained muscle felt and saves the answers', async () => {
-    const store = memoryWorkoutStore({ plans: [plan('2026-10-05')] })
+    // One workout of a one-day plan done, so this is week 2 (T-107).
+    const store = memoryWorkoutStore({ plans: [plan('2026-10-05')], sessions: [benchSession('s0', '2026-10-05', 60)] })
     render(<Workouts store={store} today={TODAY} />)
     fireEvent.click(await screen.findByRole('button', { name: 'Start a workout' }))
     click(/^Upper A/)

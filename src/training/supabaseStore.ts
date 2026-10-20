@@ -24,6 +24,7 @@ interface PlanRow {
   name: string
   hard_weeks: number
   block_started_on: string
+  block_start_week?: number
   updated_by?: string | null
   updated_at?: string
   plan_days: { id: string; day_index: number; name: string; plan_exercises: { position: number; exercise_id: string; sets: number; rep_min: number; rep_max: number; superset_next?: boolean }[] }[]
@@ -34,6 +35,7 @@ export const planFromRow = (r: PlanRow): Plan => ({
   name: r.name,
   hardWeeks: r.hard_weeks,
   blockStartedOn: r.block_started_on,
+  ...(r.block_start_week && r.block_start_week > 1 ? { blockStartWeek: r.block_start_week } : {}),
   ...(r.updated_by ? { changedBy: r.updated_by } : {}),
   ...(r.updated_at ? { changedOn: localDate(new Date(r.updated_at)) } : {}),
   days: [...r.plan_days]
@@ -51,6 +53,7 @@ export const planFromRow = (r: PlanRow): Plan => ({
 export interface SummaryRow {
   id: string
   performed_on: string
+  plan_day_id?: string | null
   plan_days: { name: string } | null
   set_logs: { exercise_id: string }[]
 }
@@ -59,6 +62,7 @@ export const summaryFromRow = (r: SummaryRow): SessionSummary => ({
   id: r.id,
   performedOn: r.performed_on,
   name: r.plan_days?.name ?? 'Workout',
+  planDayId: r.plan_day_id ?? null,
   exerciseIds: [...new Set(r.set_logs.map((x) => x.exercise_id))],
 })
 
@@ -76,7 +80,7 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templ
       const rows = check(
         await sb
           .from('workout_plans')
-          .select('id, name, hard_weeks, block_started_on, updated_by, updated_at, plan_days(id, day_index, name, plan_exercises(position, exercise_id, sets, rep_min, rep_max, superset_next))')
+          .select('id, name, hard_weeks, block_started_on, block_start_week, updated_by, updated_at, plan_days(id, day_index, name, plan_exercises(position, exercise_id, sets, rep_min, rep_max, superset_next))')
           .eq('user_id', userId)
           .eq('is_active', true)
           .eq('is_template', templates)
@@ -184,7 +188,7 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templ
       const rows = check(
         await sb
           .from('workout_sessions')
-          .select('id, performed_on, plan_days(name), set_logs(exercise_id)')
+          .select('id, performed_on, plan_day_id, plan_days(name), set_logs(exercise_id)')
           .eq('user_id', userId)
           .gte('performed_on', from)
           .lte('performed_on', to)
@@ -219,8 +223,8 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templ
         latest.set(r.muscle, { muscle: r.muscle, recovery: r.recovery, effort: r.effort, pain: r.pain })
       return [...latest.values()]
     },
-    async startBlock(planId, date) {
-      check(await sb.from('workout_plans').update({ block_started_on: date }).eq('id', planId))
+    async startBlock(planId, date, week = 1) {
+      check(await sb.from('workout_plans').update({ block_started_on: date, block_start_week: week }).eq('id', planId))
     },
   }
   return store

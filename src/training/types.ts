@@ -32,6 +32,8 @@ export interface Plan {
   hardWeeks?: number
   /** Local date the current training block started. */
   blockStartedOn?: string
+  /** The week the block started at, when a coach starts it later than week 1 (T-107). */
+  blockStartWeek?: number
   /** Who last saved the plan and the local date, the person or their coach (T-026d). */
   changedBy?: string
   changedOn?: string
@@ -86,6 +88,8 @@ export interface SessionSummary {
   name: string
   /** Exercises done, without repeats. */
   exerciseIds: string[]
+  /** The plan day it followed, if any; counts towards the block week (T-107). */
+  planDayId?: string | null
 }
 
 /** Workouts read for records: a year of summaries, 200 workouts of history. */
@@ -113,7 +117,8 @@ export interface WorkoutStore {
   /** The latest answers per muscle from sessions on or after a date. */
   feedbackSince(date: string): Promise<Feedback[]>
   /** Starts a new training block (after a deload) from a date. */
-  startBlock(planId: string, date: string): Promise<void>
+  /** Week is the block week on that date; 1 unless a coach starts later (T-107). */
+  startBlock(planId: string, date: string, week?: number): Promise<void>
   /** Present when sessions and sets can wait on the phone to sync (T-027). */
   sync?: Sync
 }

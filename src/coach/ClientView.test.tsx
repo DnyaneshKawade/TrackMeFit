@@ -273,7 +273,9 @@ describe('program templates (T-026g)', () => {
     expect(await within(plans).findByText('Push · Legs')).toBeTruthy()
     const [copy] = await stores.workouts.plans()
     expect(copy.id).not.toBe('t1')
-    expect(copy.blockStartedOn).toBe('2026-10-01')
+    // Starts today at week 3; later weeks count the workouts done (T-107).
+    expect(copy.blockStartedOn).toBe('2026-10-15')
+    expect(copy.blockStartWeek).toBe(3)
     expect(copy.days[0].exercises.map((e) => e.exerciseId)).toEqual(['bench-press'])
   })
 })
