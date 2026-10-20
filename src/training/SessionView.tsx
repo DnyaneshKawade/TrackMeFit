@@ -3,6 +3,7 @@ import { describePlates, gymFor, platesFor } from '../engine/plates'
 import { shownWeight, stepIn, toKg, weightText, type WeightUnit } from '../engine/units'
 import { useWeightUnit } from '../settings/units'
 import { myoText, newRecord, type StrengthSession } from '../engine/strength'
+import { assistedNewRecord } from '../engine/assisted'
 import { PLATEAU_SESSIONS, plateauCheck } from '../engine/plateau'
 import { LANDMARKS, targetRir, type Muscle } from '../engine/training'
 import { warmupSets } from '../engine/warmup'
@@ -343,7 +344,8 @@ function ExerciseLog({
   // No plateau advice or weight increases in a deload week.
   const advise = (h: PastSession[]) => {
     if (deload) return { next: null, plateau: null }
-    const plateau = plateauCheck({
+    // Plateau advice reads weight as load, so assisted machines skip it (T-117).
+    const plateau = exercise.assisted ? null : plateauCheck({
       history: h.map((x) => ({ performedOn: x.performedOn, sets: workingSets(x.sets) })).filter((x) => x.sets.length),
       repRange: range,
       increment: exercise.increment,
@@ -409,7 +411,7 @@ function ExerciseLog({
   const lastSet = history ? workingSets(history[0]?.sets ?? [])[0] : undefined
   const working = suggestion ? { weight: suggestion.weight, reps: suggestion.targetReps } : lastSet ? { weight: lastSet.weightKg, reps: lastSet.reps } : null
   const warmup =
-    working && workingSets(done).length === 0
+    working && workingSets(done).length === 0 && !exercise.assisted
       ? warmupSets({ workingKg: working.weight, workingReps: working.reps, equipment: exercise.equipment, isolation: exercise.isolation, warm: !!warm, increment: exercise.increment })
       : null
 
@@ -433,8 +435,8 @@ function ExerciseLog({
       const extra = { ...(tag ? { tag } : {}), ...(miniReps ? { miniReps } : {}), ...(note?.trim() ? { note: note.trim() } : {}) }
       const saved = await store.addSet(session.id, { exerciseId: exercise.id, setIndex: nextIndex, weightKg: w, reps: total, rir: x, ...extra })
       onChange({ ...session, sets: [...session.sets, saved] })
-      const beat = past && newRecord(past, done, saved, unit)
-      setRecord(beat ? { setId: saved.id, text: beat.text } : null)
+      const beat = past && (exercise.assisted ? assistedNewRecord(past, done, saved, unit) : newRecord(past, done, saved, unit)?.text)
+      setRecord(beat ? { setId: saved.id, text: beat } : null)
       // Weight and reps stay for the next set; the tag and note were for this one.
       // After a warm-up, the working weight comes back.
       if (tag === 'warmup' && working) {
@@ -490,13 +492,14 @@ function ExerciseLog({
       </header>
       {settingsOpen && saveSetting && <ExerciseSettings exerciseId={exercise.id} onSave={saveSetting} onClose={() => setSettingsOpen(false)} />}
       {exercise.setupNote && <p className="muted setup-note">Setup: {exercise.setupNote}</p>}
-      {copied && <p className="muted">Copied from {new Date(copied.from + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}: {describeSets(copied.sets, unit)}</p>}
+      {exercise.assisted && <p className="muted">The weight here is help. Less help is progress.</p>}
+      {copied && <p className="muted">Copied from {new Date(copied.from + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}: {describeSets(copied.sets, unit, exercise.assisted)}</p>}
       {superset && (
         <button className="chip superset-link" aria-label={`Superset ${exercise.name} with the next exercise`} aria-pressed={superset.on} onClick={superset.toggle}>
           {superset.on ? 'End superset' : 'Superset with next'}
         </button>
       )}
-      {history && history[0] && workingSets(history[0].sets).length > 0 && <p className="muted">Last time: {describeSets(workingSets(history[0].sets), unit)}</p>}
+      {history && history[0] && workingSets(history[0].sets).length > 0 && <p className="muted">Last time: {describeSets(workingSets(history[0].sets), unit, exercise.assisted)}</p>}
       {deload && plan && <p className="suggest">{deloadAdvice(plan.sets, exercise.primary)}</p>}
       {block && !deload && (
         <p className="muted">
@@ -508,7 +511,7 @@ function ExerciseLog({
       )}
       {suggestion && (
         <p className="suggest">
-          Try {weightText(suggestion.weight, unit)} × {suggestion.targetReps}. <span className="muted">{suggestion.why}</span>
+          Try {weightText(suggestion.weight, unit)}{exercise.assisted ? ' help' : ''} × {suggestion.targetReps}. <span className="muted">{suggestion.why}</span>
         </p>
       )}
       {plateauNote && <p className="muted plateau">{plateauNote}</p>}
@@ -535,7 +538,7 @@ function ExerciseLog({
         {done.map((s, i) => (
           <li key={s.id}>
             <span>
-              Set {i + 1}: {weightText(s.weightKg, unit)} × {s.reps}{s.rir !== null ? ` · ${s.rir} reps left` : ''}
+              Set {i + 1}: {weightText(s.weightKg, unit)}{exercise.assisted ? ' help' : ''} × {s.reps}{s.rir !== null ? ` · ${s.rir} reps left` : ''}
               {s.tag ? ` · ${SET_TAGS.find((t) => t.tag === s.tag)!.shown}` : ''}
               {myoText(s) ? ` (${myoText(s)})` : ''}
               {pending.has(s.id) && <span className="muted"> · Waiting for internet</span>}

@@ -22,6 +22,8 @@ export interface Exercise {
   hidden?: boolean
   /** Loads the muscle when it is long, which may help it grow a bit more (T-082i). */
   stretch?: boolean
+  /** An assisted machine: the weight is help, so less is progress (T-117). */
+  assisted?: boolean
   /** The person's own rest time in seconds (T-112). */
   restSec?: number
   /** The person's machine or seat notes (T-112). */
@@ -64,6 +66,9 @@ export const STRETCH_IDS: ReadonlySet<string> = new Set([
   'behind-back-cable-lateral', 'lean-away-lateral-raise', 'incline-lateral-raise',
 ])
 
+/** Machines where the weight helps the person up (T-117). */
+export const ASSISTED_IDS: ReadonlySet<string> = new Set(['assisted-pull-up', 'assisted-dips'])
+
 const INC: Record<Equipment, number> = { barbell: 2.5, smith: 2.5, dumbbell: 2.5, machine: 5, cable: 2.5, bodyweight: 2.5, kettlebell: 4 }
 
 const ex = (
@@ -74,7 +79,7 @@ const ex = (
   equipment: Equipment,
   isolation: boolean,
   aliases: string[] = [],
-): Exercise => ({ id, name, aliases, primary, secondary, equipment, isolation, increment: INC[equipment], ...(STRETCH_IDS.has(id) ? { stretch: true } : {}) })
+): Exercise => ({ id, name, aliases, primary, secondary, equipment, isolation, increment: INC[equipment], ...(STRETCH_IDS.has(id) ? { stretch: true } : {}), ...(ASSISTED_IDS.has(id) ? { assisted: true } : {}) })
 
 export const EXERCISES: Exercise[] = [
   // Chest

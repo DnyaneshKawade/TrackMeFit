@@ -18,6 +18,7 @@ import {
   type Lift,
   type StrengthSession,
 } from '../engine/strength'
+import { ASSISTED_GRAPH_KINDS, assistedGraph, assistedHistory, assistedRecords, type AssistedGraphKind, type AssistedRecords } from '../engine/assisted'
 import { exerciseById } from './exercises'
 import type { WorkoutStore } from './types'
 
@@ -35,7 +36,8 @@ const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateStrin
 const longDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 const nameOf = (id: string) => exerciseById.get(id)?.name ?? 'Exercise no longer in your list'
 const lift = (l: Lift, unit: WeightUnit) => `${weightText(l.weightKg, unit)} × ${l.reps}`
-const setText = (s: { weightKg: number; reps: number }, unit: WeightUnit) => (s.weightKg > 0 ? `${weightText(s.weightKg, unit)} × ${s.reps}` : `${s.reps} reps`)
+const setText = (s: { weightKg: number; reps: number }, unit: WeightUnit, help = false) =>
+  help ? `${weightText(s.weightKg, unit)} help × ${s.reps}` : s.weightKg > 0 ? `${weightText(s.weightKg, unit)} × ${s.reps}` : `${s.reps} reps`
 const TAG_WORDS = { warmup: 'warm-up', drop: 'drop set', failure: 'to failure', myo: 'myo-reps' }
 
 function Records({ records, unit }: { records: ExerciseRecords; unit: WeightUnit }) {
@@ -95,8 +97,37 @@ function Records({ records, unit }: { records: ExerciseRecords; unit: WeightUnit
   )
 }
 
-function History({ sessions, unit }: { sessions: StrengthSession[]; unit: WeightUnit }) {
-  const days = useMemo(() => historyWithRecords(sessions), [sessions])
+/** Records for an assisted machine, where less help is better (T-117). */
+function AssistedRecordsView({ records, unit }: { records: AssistedRecords; unit: WeightUnit }) {
+  return (
+    <>
+      <dl className="records">
+        {records.leastHelp && (
+          <div>
+            <dt>Least help</dt>
+            <dd>
+              {setText(records.leastHelp, unit, true)} <span className="muted">· {shortDate(records.leastHelp.performedOn)}</span>
+            </dd>
+          </div>
+        )}
+        {records.mostReps && (
+          <div>
+            <dt>Most reps in a set</dt>
+            <dd>
+              {setText(records.mostReps, unit, true)} <span className="muted">· {shortDate(records.mostReps.performedOn)}</span>
+            </dd>
+          </div>
+        )}
+      </dl>
+      {records.notes.map((n) => (
+        <p key={n} className="muted">{n}</p>
+      ))}
+    </>
+  )
+}
+
+function History({ sessions, unit, assisted }: { sessions: StrengthSession[]; unit: WeightUnit; assisted: boolean }) {
+  const days = useMemo(() => (assisted ? assistedHistory(sessions) : historyWithRecords(sessions)), [sessions, assisted])
   if (!days.length) return <p className="muted">Log this exercise to see your history.</p>
   return (
     <>
@@ -107,7 +138,7 @@ function History({ sessions, unit }: { sessions: StrengthSession[]; unit: Weight
           <ol>
             {d.sets.map((s, j) => (
               <li key={j}>
-                {setText(s, unit)}
+                {setText(s, unit, assisted)}
                 {s.tag && <span className="muted"> · {TAG_WORDS[s.tag]}</span>}
                 {s.record && <span aria-label="New record"> 🏆</span>}
               </li>
@@ -119,20 +150,24 @@ function History({ sessions, unit }: { sessions: StrengthSession[]; unit: Weight
   )
 }
 
-function Graph({ sessions, today, unit, noWeight }: { sessions: StrengthSession[]; today: string; unit: WeightUnit; noWeight: boolean }) {
-  const [kind, setKind] = useState<GraphKind>(noWeight ? 'reps' : 'e1rm')
+function Graph({ sessions, today, unit, noWeight, assisted }: { sessions: StrengthSession[]; today: string; unit: WeightUnit; noWeight: boolean; assisted: boolean }) {
+  const [kind, setKind] = useState<GraphKind | AssistedGraphKind>(assisted ? 'help' : noWeight ? 'reps' : 'e1rm')
   const [range, setRange] = useState<GraphRange>('3m')
   const [picked, setPicked] = useState<number | null>(null)
-  const points = useMemo(() => graphPoints(sessions, kind, range, today), [sessions, kind, range, today])
+  const points = useMemo(
+    () => (assisted ? assistedGraph(sessions, kind as AssistedGraphKind, range, today) : graphPoints(sessions, kind as GraphKind, range, today)),
+    [sessions, kind, range, today, assisted],
+  )
   // Sets per day, to show when a point is tapped.
   const byDay = useMemo(() => {
     const m = new Map<string, StrengthSession['sets']>()
     for (const s of sessions) m.set(s.performedOn, [...(m.get(s.performedOn) ?? []), ...s.sets])
     return m
   }, [sessions])
-  const isWeight = WEIGHT_KINDS.has(kind)
+  const isWeight = kind === 'help' || WEIGHT_KINDS.has(kind as GraphKind)
+  const kinds: [string, string][] = assisted ? ASSISTED_GRAPH_KINDS : GRAPH_KINDS.filter(([k]) => !noWeight || !WEIGHT_KINDS.has(k))
   const values = points.map((p) => (isWeight ? shownWeight(p.value, unit) : p.value))
-  const label = GRAPH_KINDS.find(([k]) => k === kind)?.[1] ?? ''
+  const label = kinds.find(([k]) => k === kind)?.[1] ?? ''
   const suffix = isWeight ? ` ${unit}` : ' reps'
   const show = (v: number) => `${Math.round(v * 10) / 10}${suffix}`
   const pick = (i: number | null) => setPicked(i === picked ? null : i)
@@ -171,11 +206,11 @@ function Graph({ sessions, today, unit, noWeight }: { sessions: StrengthSession[
         <select
           value={kind}
           onChange={(e) => {
-            setKind(e.target.value as GraphKind)
+            setKind(e.target.value as GraphKind | AssistedGraphKind)
             setPicked(null)
           }}
         >
-          {GRAPH_KINDS.filter(([k]) => !noWeight || !WEIGHT_KINDS.has(k)).map(([k, text]) => (
+          {kinds.map(([k, text]) => (
             <option key={k} value={k}>{text}</option>
           ))}
         </select>
@@ -206,7 +241,7 @@ function Graph({ sessions, today, unit, noWeight }: { sessions: StrengthSession[
               </button>
               {i === picked && (
                 <p className="muted" role="status">
-                  {(byDay.get(p.date) ?? []).map((s) => setText(s, unit) + (s.tag ? ` (${TAG_WORDS[s.tag]})` : '')).join(', ')}
+                  {(byDay.get(p.date) ?? []).map((s) => setText(s, unit, assisted) + (s.tag ? ` (${TAG_WORDS[s.tag]})` : '')).join(', ')}
                 </p>
               )}
             </li>
@@ -245,7 +280,9 @@ export function ExerciseDetail({
       live = false
     }
   }, [store, exerciseId])
+  const assisted = !!exerciseById.get(exerciseId)?.assisted
   const records = useMemo(() => (sessions ? exerciseRecords(sessions) : null), [sessions])
+  const helped = useMemo(() => (sessions && assisted ? assistedRecords(sessions) : null), [sessions, assisted])
 
   return (
     <section aria-label={`Records for ${nameOf(exerciseId)}`} className="exercise-records">
@@ -260,9 +297,9 @@ export function ExerciseDetail({
       </div>
       {error && <p className="error">Couldn’t load your records. Check your connection.</p>}
       {!error && !sessions && <p className="muted">Loading…</p>}
-      {sessions && records && tab === 'records' && <Records records={records} unit={unit} />}
-      {sessions && tab === 'history' && <History sessions={sessions} unit={unit} />}
-      {sessions && records && tab === 'graph' && <Graph sessions={sessions} today={today} unit={unit} noWeight={!records.heaviest} />}
+      {sessions && records && tab === 'records' && (helped ? <AssistedRecordsView records={helped} unit={unit} /> : <Records records={records} unit={unit} />)}
+      {sessions && tab === 'history' && <History sessions={sessions} unit={unit} assisted={assisted} />}
+      {sessions && records && tab === 'graph' && <Graph sessions={sessions} today={today} unit={unit} noWeight={!records.heaviest} assisted={assisted} />}
     </section>
   )
 }

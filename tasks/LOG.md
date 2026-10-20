@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-20: T-117 assisted machines
+
+- Assisted pull-ups and dips treat the weight as help. Less help is progress.
+- Records show least help. Advice takes help away when every set hits the top of the range.
+- The graph shows help, and warm-ups and plateau advice are skipped.
+- No database change.
+- Tests: `src/engine/assisted.test.ts` (5), `src/training/assisted.test.tsx` (2).
+
 ## 2026-10-20: T-116 workout clock
 
 - A clock starts at the first set and counts up.
