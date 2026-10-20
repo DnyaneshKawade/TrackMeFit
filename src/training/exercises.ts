@@ -261,6 +261,19 @@ export const MUSCLE_NAMES: Record<Muscle, string> = {
   frontDelts: 'Front delts', forearms: 'Forearms', adductors: 'Inner thighs', neck: 'Neck',
 }
 
+/** Muscles in body order, top to bottom, for browsing the list (T-115). */
+export const BROWSE_ORDER: Muscle[] = [
+  'chest', 'back', 'frontDelts', 'sideDelts', 'rearDelts', 'traps', 'biceps', 'triceps', 'forearms',
+  'abs', 'quads', 'hamstrings', 'glutes', 'adductors', 'calves', 'neck',
+]
+
+/** How many exercises train each muscle most, in one pass. */
+export function countByMuscle(list: Exercise[]): Map<Muscle, number> {
+  const counts = new Map<Muscle, number>()
+  for (const e of list) counts.set(e.primary, (counts.get(e.primary) ?? 0) + 1)
+  return counts
+}
+
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 
 /** Name, alias or muscle search; every word must match the start of a word. */

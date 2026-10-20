@@ -28,7 +28,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests planned |
 |---|---|---|
-| T-115 | Browse exercises by muscle in the picker, as in FitNotes' list, next to search | Picker tests |
 | T-116 | Keep the screen on during a workout (Wake Lock), and a workout clock from the first set (FitNotes) | Hook test with a fake Wake Lock; timer tests |
 | T-117 | Assisted machines: weight counts as help, so less weight is progress (RP, FitNotes) | Engine tests for records, suggestions and graph |
 | T-118 | Technique video link for each exercise (free YouTube links, nothing hosted) (RP) | Library test: every link is https and from an allowed site |
@@ -72,6 +71,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-115 | Browse exercises by muscle in the picker: a row of muscle chips with counts, working with the search (FitNotes) ([spec](../specs/T-115-browse-by-muscle.md)) | `src/training/browseByMuscle.test.tsx` |
 | T-114 | Cardio sets: time and distance for treadmill, bike, rower, walks and runs, with speed and records; kept apart from muscle sets (FitNotes) ([spec](../specs/T-114-cardio-sets.md)) | `src/engine/cardio.test.ts`, `src/db/cardioSets.test.ts`, `src/training/cardioSets.test.tsx` |
 | T-113 | Copy a past workout: pick one from the last 90 days, tick exercises, and their sets fill the boxes; nothing is logged until done (FitNotes) ([spec](../specs/T-113-copy-workout.md)) | `src/training/copyWorkout.test.tsx` |
 | T-112 | Exercise settings: own weight step, rest time and machine or seat notes; buttons, rest timer and advice use them (FitNotes, RP) ([spec](../specs/T-112-exercise-settings.md)) | `src/training/exerciseSettings.test.tsx`, `src/db/exerciseSettings.test.ts` |
