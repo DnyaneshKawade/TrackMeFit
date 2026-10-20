@@ -241,7 +241,7 @@ describe('offline workouts (T-027b)', () => {
     expect((await store.summaries('2026-10-01', '2026-10-31')).map((x) => x.name)).toEqual(['Push'])
     await store.sessionsOn('2026-10-10')
     state.online = false
-    expect(await store.summaries('2026-10-01', '2026-10-31')).toEqual([{ id: 's0', performedOn: '2026-10-10', name: 'Push', exerciseIds: ['bench'] }])
+    expect(await store.summaries('2026-10-01', '2026-10-31')).toEqual([{ id: 's0', performedOn: '2026-10-10', name: 'Push', planDayId: 'd1', exerciseIds: ['bench'] }])
     await expect(store.summaries('2026-09-01', '2026-09-30')).rejects.toThrow()
     await expect(store.exerciseHistory('bench')).rejects.toThrow()
   })

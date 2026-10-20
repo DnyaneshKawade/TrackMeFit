@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
 import { shiftDate } from '../log/types'
 import { MUSCLE_NAMES } from './exercises'
-import { blockWeek, reviewWeek, type Feedback, type WeekReview } from './progression'
+import { reviewWeek, type Feedback, type WeekReview } from './progression'
 import type { PastSession, Plan, WorkoutStore } from './types'
 
 /** Suggested changes for next week. Nothing changes until the person taps Apply. */
-export function ReviewView({ store, plan, today, onDone }: { store: WorkoutStore; plan: Plan; today: string; onDone: () => void }) {
+export function ReviewView({ store, plan, today, week, onDone }: { store: WorkoutStore; plan: Plan; today: string; week: number; onDone: () => void }) {
   const hardWeeks = plan.hardWeeks ?? 4
   const started = plan.blockStartedOn ?? today
-  const week = blockWeek(started, today)
   const [data, setData] = useState<{ histories: Record<string, PastSession[]>; feedback: Feedback[] } | null>(null)
   const [runDown, setRunDown] = useState(false)
   const [error, setError] = useState<string | null>(null)

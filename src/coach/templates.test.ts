@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { copyTemplate, joinText, startForWeek } from './templates'
+import { copyTemplate, joinText } from './templates'
 import type { Plan } from '../training/types'
 
 describe('program templates (T-026g)', () => {
@@ -27,9 +27,7 @@ describe('program templates (T-026g)', () => {
     })
   })
 
-  it('5. starting at week N sets the program start N-1 weeks back', () => {
-    expect(startForWeek('2026-10-15', 1)).toBe('2026-10-15')
-    expect(startForWeek('2026-10-15', 3)).toBe('2026-10-01')
+  it('5. the join text names the starting week', () => {
     expect(joinText('Asha', 1, 4)).toBe('Asha starts at week 1 today.')
   })
 })

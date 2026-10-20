@@ -60,7 +60,7 @@ export function memoryWorkoutStore(
         .filter((s) => s.performedOn >= from && s.performedOn <= to)
         .sort((a, b) => b.performedOn.localeCompare(a.performedOn))
         .slice(0, MAX_SUMMARIES)
-        .map((s): SessionSummary => ({ id: s.id, performedOn: s.performedOn, name: s.name, exerciseIds: [...new Set(s.sets.map((x) => x.exerciseId))] }))
+        .map((s): SessionSummary => ({ id: s.id, performedOn: s.performedOn, name: s.name, planDayId: s.planDayId, exerciseIds: [...new Set(s.sets.map((x) => x.exerciseId))] }))
     },
     async saveNote(sessionId, note) {
       const s = sessions.find((x) => x.id === sessionId)
@@ -84,8 +84,8 @@ export function memoryWorkoutStore(
       for (const { f } of dated) latest.set(f.muscle, { muscle: f.muscle, recovery: f.recovery, effort: f.effort, pain: f.pain })
       return [...latest.values()]
     },
-    async startBlock(planId, date) {
-      plans = plans.map((p) => (p.id === planId ? { ...p, blockStartedOn: date } : p))
+    async startBlock(planId, date, week = 1) {
+      plans = plans.map((p) => (p.id === planId ? { ...p, blockStartedOn: date, blockStartWeek: week } : p))
     },
   }
   return store
