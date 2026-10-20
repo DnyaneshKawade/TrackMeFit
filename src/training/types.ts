@@ -52,6 +52,9 @@ export interface SetLog {
   tag?: SetTag
   /** Myo-reps mini-sets; `reps` is then the total, start set included (T-111). */
   miniReps?: number[]
+  /** Cardio (T-114): the time and distance; weight and reps are then 0. */
+  seconds?: number
+  distanceKm?: number
   note?: string
 }
 

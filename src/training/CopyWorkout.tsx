@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { shiftDate } from '../log/types'
 import { useWeightUnit } from '../settings/units'
+import { cardioById } from './cardio'
 import { exerciseById } from './exercises'
 import { describeSets, workingSets, type SessionSummary, type SetLog, type WorkoutStore } from './types'
 
@@ -28,7 +29,7 @@ export function CopyWorkout({ store, today, onCopy, onClose }: { store: WorkoutS
   useEffect(() => {
     let live = true
     store.summaries(shiftDate(today, -COPY_DAYS), shiftDate(today, -1)).then(
-      (l) => live && setList(l.filter((s) => !s.skipped && s.exerciseIds.length).slice(0, COPY_LIST)),
+      (l) => live && setList(l.filter((s) => !s.skipped && s.exerciseIds.some((id) => !cardioById.has(id))).slice(0, COPY_LIST)),
       () => live && setError('Couldn’t load your workouts. Check your connection.'),
     )
     return () => {
@@ -41,7 +42,9 @@ export function CopyWorkout({ store, today, onCopy, onClose }: { store: WorkoutS
       const found = (await store.sessionsOn(s.performedOn)).find((x) => x.id === s.id)
       // Grouped in one pass, in the order the exercises were done.
       const byExercise = new Map<string, SetLog[]>()
-      for (const set of [...(found?.sets ?? [])].sort((a, b) => a.setIndex - b.setIndex)) byExercise.set(set.exerciseId, [...(byExercise.get(set.exerciseId) ?? []), set])
+      // Cardio is not copied; its boxes take a time, not weight and reps (T-114).
+      for (const set of [...(found?.sets ?? [])].sort((a, b) => a.setIndex - b.setIndex))
+        if (!cardioById.has(set.exerciseId)) byExercise.set(set.exerciseId, [...(byExercise.get(set.exerciseId) ?? []), set])
       setPicked({ on: s.performedOn, sets: byExercise })
       setTicked(new Set(byExercise.keys()))
       setError(null)
