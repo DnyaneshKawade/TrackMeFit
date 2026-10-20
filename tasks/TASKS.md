@@ -28,7 +28,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests planned |
 |---|---|---|
-| T-110 | Skip a workout day, with an optional reason; the plan moves to the next day and the skip counts in the weekly review (RP) | Engine and screen tests |
 | T-111 | Myo-reps set type: one start set, then short mini-sets, logged as total reps (RP) | Engine and logger tests |
 | T-112 | Exercise settings: own weight step, machine or seat notes, own rest time; suggestions use the step (FitNotes, RP) | Engine and screen tests, migration test |
 | T-113 | Copy sets from a past workout: the whole workout or chosen sets, then edit (FitNotes) | Store and screen tests |
@@ -77,6 +76,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-110 | Skip a workout day with an optional reason; the plan moves to the next day and the week review shows skips (RP) ([spec](../specs/T-110-skip-day.md)) | `src/training/skipDay.test.tsx`, `src/db/skipDay.test.ts` |
 | T-109 | Block controls: 3-7 hard weeks, end a block early, start the next block with optional swaps; the light week can skip traps and forearms (RP) ([spec](../specs/T-109-block-controls.md)) | `src/training/blockControls.test.tsx`, `src/db/blockHardWeeks.test.ts` |
 | T-108 | "Something hurt" asked per exercise; the week review swaps only that lift, once accepted (RP) | `src/training/painPerExercise.test.tsx`, `src/db/painPerExercise.test.ts` |
 | T-107 | Block weeks counted by workouts done, not days: a missed day waits; a coach can start a client at a later week ([spec](../specs/T-107-block-weeks.md)) | Claude | `src/training/blockWeeks.test.tsx` (4), `src/training/Review.test.tsx`, `src/coach/ClientView.test.tsx` (updated) | — |

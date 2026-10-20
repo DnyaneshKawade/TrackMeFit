@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-20: T-110 skip a workout day
+
+- Plans show the next day. "Skip" saves a skip with an optional reason, and the plan moves on.
+- A skip counts for the block week but not as training. The week review lists skips.
+- Migration `20261122000000_skip_day.sql` adds `workout_sessions.skipped` and `skip_reason`.
+- Tests: `src/training/skipDay.test.tsx` (5), `src/db/skipDay.test.ts` (1).
+
 ## 2026-10-20: T-109 block controls
 
 - Each plan has a "Block" screen. Pick 3 to 7 hard weeks, take the light week now, or start the next block.

@@ -5,7 +5,22 @@ import { reviewWeek, type Feedback, type WeekReview } from './progression'
 import type { PastSession, Plan, WorkoutStore } from './types'
 
 /** Suggested changes for next week. Nothing changes until the person taps Apply. */
-export function ReviewView({ store, plan, today, week, onDone }: { store: WorkoutStore; plan: Plan; today: string; week: number; onDone: () => void }) {
+export function ReviewView({
+  store,
+  plan,
+  today,
+  week,
+  skips,
+  onDone,
+}: {
+  store: WorkoutStore
+  plan: Plan
+  today: string
+  week: number
+  /** Workouts skipped this week, as a sentence (T-110). */
+  skips?: string | null
+  onDone: () => void
+}) {
   const hardWeeks = plan.hardWeeks ?? 4
   const started = plan.blockStartedOn ?? today
   const [data, setData] = useState<{ histories: Record<string, PastSession[]>; feedback: Feedback[] } | null>(null)
@@ -51,6 +66,7 @@ export function ReviewView({ store, plan, today, week, onDone }: { store: Workou
       {week >= 1 && review && (
         <>
           <p>{review.why}</p>
+          {skips && <p className="muted">{skips}</p>}
           <label className="pain">
             <input type="checkbox" checked={runDown} onChange={(e) => setRunDown(e.target.checked)} /> I feel tired overall (poor sleep, low energy, joint pain)
           </label>

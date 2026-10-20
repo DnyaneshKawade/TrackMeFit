@@ -18,7 +18,7 @@ import {
   type SetDecision,
 } from '../engine/training'
 import { exerciseById, similarExercise } from './exercises'
-import type { PastSession, Plan, SetLog } from './types'
+import type { PastSession, Plan, PlanDay, SetLog } from './types'
 
 export interface Feedback {
   muscle: Muscle
@@ -55,6 +55,24 @@ export function workoutsInBlock(plan: Plan, workouts: { performedOn: string; pla
   const start = plan.blockStartedOn ?? today
   const days = new Set(plan.days.map((d) => d.id))
   return workouts.filter((w) => w.planDayId && days.has(w.planDayId) && w.performedOn >= start && w.performedOn <= today).length
+}
+
+/** The plan day to do next: the one after the last plan day done or skipped
+ * (T-110). Days run in order and start again after the last one. */
+export function nextPlanDay(plan: Plan, workouts: { planDayId?: string | null }[]): PlanDay | undefined {
+  const days = [...plan.days].sort((a, b) => a.dayIndex - b.dayIndex)
+  // Workouts come newest first, so the first match is the latest.
+  const last = workouts.find((w) => w.planDayId && days.some((d) => d.id === w.planDayId))
+  const i = last ? days.findIndex((d) => d.id === last.planDayId) : -1
+  return days[(i + 1) % days.length]
+}
+
+/** "You skipped 2 workouts this week: busy, ill." for the week review (T-110). */
+export function skipNote(skips: { skipped?: { reason?: string } }[]): string | null {
+  if (!skips.length) return null
+  const reasons = skips.map((s) => s.skipped?.reason).filter((r): r is string => !!r)
+  const count = skips.length === 1 ? '1 workout' : `${skips.length} workouts`
+  return `You skipped ${count} this week${reasons.length ? `: ${reasons.join(', ')}` : ''}.`
 }
 
 export const isDeloadWeek = (week: number, hardWeeks: number) => week < 1 || week > hardWeeks

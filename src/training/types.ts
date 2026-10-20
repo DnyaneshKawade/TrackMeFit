@@ -74,7 +74,11 @@ export interface Session {
   sets: SetLog[]
   /** Workout notes (T-043). */
   note?: string
+  /** A plan day skipped on purpose, with an optional reason (T-110). */
+  skipped?: { reason?: string }
 }
+
+export const MAX_SKIP_REASON = 100
 
 export interface PastSession {
   performedOn: string
@@ -90,6 +94,8 @@ export interface SessionSummary {
   exerciseIds: string[]
   /** The plan day it followed, if any; counts towards the block week (T-107). */
   planDayId?: string | null
+  /** Skipped on purpose: counts for the block week, not as training (T-110). */
+  skipped?: { reason?: string }
 }
 
 /** Workouts read for records: a year of summaries, 200 workouts of history. */
@@ -103,6 +109,8 @@ export interface WorkoutStore {
   sessionsOn(date: string): Promise<Session[]>
   /** An id made on the phone makes a repeat send save once (T-027). */
   startSession(date: string, day: PlanDay | null, id?: string): Promise<Session>
+  /** Skips a plan day on a date, so the plan moves on to the next day (T-110). */
+  skipDay(date: string, day: PlanDay, reason?: string): Promise<void>
   addSet(sessionId: string, set: NewSet, id?: string): Promise<SetLog>
   removeSet(id: string): Promise<void>
   /** Earlier sessions with this exercise, newest first. */

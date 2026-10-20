@@ -32,6 +32,10 @@ export function memoryWorkoutStore(
       sessions.push(s)
       return structuredClone(s)
     },
+    async skipDay(date, day, reason) {
+      const why = reason?.trim()
+      sessions.push({ id: id(), performedOn: date, planDayId: day.id ?? null, name: day.name, sets: [], skipped: why ? { reason: why } : {} })
+    },
     async addSet(sessionId, set: NewSet, given?: string) {
       const session = sessions.find((s) => s.id === sessionId)
       if (!session) throw Object.assign(new Error('no such session'), { code: '23503' })
@@ -60,7 +64,7 @@ export function memoryWorkoutStore(
         .filter((s) => s.performedOn >= from && s.performedOn <= to)
         .sort((a, b) => b.performedOn.localeCompare(a.performedOn))
         .slice(0, MAX_SUMMARIES)
-        .map((s): SessionSummary => ({ id: s.id, performedOn: s.performedOn, name: s.name, planDayId: s.planDayId, exerciseIds: [...new Set(s.sets.map((x) => x.exerciseId))] }))
+        .map((s): SessionSummary => ({ id: s.id, performedOn: s.performedOn, name: s.name, planDayId: s.planDayId, exerciseIds: [...new Set(s.sets.map((x) => x.exerciseId))], ...(s.skipped ? { skipped: s.skipped } : {}) }))
     },
     async saveNote(sessionId, note) {
       const s = sessions.find((x) => x.id === sessionId)

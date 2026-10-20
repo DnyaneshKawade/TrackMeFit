@@ -254,7 +254,9 @@ export function ClientView({
               <li key={w.id}>
                 <span>{shortDate(w.performedOn)}</span>
                 <strong>{w.name}</strong>
-                <span className="muted">{w.exerciseIds.length === 1 ? '1 exercise' : `${w.exerciseIds.length} exercises`}</span>
+                <span className="muted">
+                  {w.skipped ? `Skipped${w.skipped.reason ? `: ${w.skipped.reason}` : ''}` : w.exerciseIds.length === 1 ? '1 exercise' : `${w.exerciseIds.length} exercises`}
+                </span>
               </li>
             ))}
           </ul>

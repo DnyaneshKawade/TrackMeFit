@@ -5,13 +5,15 @@ import type { ExerciseStore } from './exerciseStore'
 import { customExercise, customExercises, setCustomExercises, type Exercise } from './exercises'
 import { PlanEditor } from './PlanEditor'
 import { BlockView } from './BlockView'
-import { blockWeek, blockWeekByWorkouts, weekLabel, weeklySets, workoutsInBlock } from './progression'
+import { blockWeek, blockWeekByWorkouts, nextPlanDay, skipNote, weekLabel, weeklySets, workoutsInBlock } from './progression'
 import { RecordsView } from './RecordsView'
 import { ReviewView } from './ReviewView'
 import { SessionView } from './SessionView'
+import { SkipView } from './SkipView'
 import { SuggestPlan, type TrainingAnswers } from './SuggestPlan'
 import { SyncNote } from '../sync/SyncNote'
 import type { Plan, PlanDay, Session, SessionSummary, WorkoutStore } from './types'
+import { shiftDate } from '../log/types'
 import '../log/log.css'
 import './training.css'
 
@@ -22,6 +24,7 @@ type View =
   | { kind: 'block'; plan: Plan }
   | { kind: 'session'; session: Session }
   | { kind: 'start' }
+  | { kind: 'skip'; plan: Plan; day: PlanDay }
   | { kind: 'records' }
   | { kind: 'suggest' }
 
@@ -130,6 +133,12 @@ export function Workouts({
     if (!blockWorkouts) return blockWeek(startedOn, today) + (p.blockStartWeek ?? 1) - 1
     return blockWeekByWorkouts({ startedOn, today, done: workoutsInBlock(p, blockWorkouts, today), daysPerWeek: p.days.length, startWeek: p.blockStartWeek })
   }
+  const nextOf = (p: Plan) => nextPlanDay(p, blockWorkouts ?? [])
+  // This plan's skips in the last 7 days, for the week review (T-110).
+  const skipsOf = (p: Plan) => {
+    const days = new Set(p.days.map((d) => d.id))
+    return (blockWorkouts ?? []).filter((w) => w.skipped && w.planDayId && days.has(w.planDayId) && w.performedOn >= shiftDate(today, -6))
+  }
   const blockOf = (p?: Plan) => (p ? { week: weekOf(p), hardWeeks: p.hardWeeks ?? 4 } : undefined)
   const weeklyOf = (p?: Plan) => (p ? weeklySets(p) : undefined)
 
@@ -175,7 +184,7 @@ export function Workouts({
   if (view.kind === 'review') {
     return (
       <main className="log">
-        <ReviewView store={store} plan={view.plan} today={today} week={weekOf(view.plan)} onDone={back} />
+        <ReviewView store={store} plan={view.plan} today={today} week={weekOf(view.plan)} skips={skipNote(skipsOf(view.plan))} onDone={back} />
       </main>
     )
   }
@@ -184,6 +193,23 @@ export function Workouts({
     return (
       <main className="log">
         <BlockView store={store} plan={view.plan} today={today} week={weekOf(view.plan)} onDone={back} />
+      </main>
+    )
+  }
+
+  if (view.kind === 'skip') {
+    const after = nextPlanDay(view.plan, [{ planDayId: view.day.id }])
+    return (
+      <main className="log">
+        <SkipView
+          day={view.day}
+          next={after && after.id !== view.day.id ? after : undefined}
+          onClose={() => setView({ kind: 'start' })}
+          onSkip={async (reason) => {
+            await store.skipDay(today, view.day, reason)
+            back()
+          }}
+        />
       </main>
     )
   }
@@ -228,17 +254,27 @@ export function Workouts({
             <h2>Start a workout</h2>
             <button className="link" onClick={() => setView({ kind: 'home' })}>Close</button>
           </header>
-          {plans?.map((p) => (
-            <div key={p.id} className="start-plan">
-              <h3>{p.name}</h3>
-              {p.days.map((d) => (
-                <button key={d.id} className="day-button" onClick={() => void start(d)}>
-                  <strong>{d.name}</strong>
-                  <span className="muted">{d.exercises.length} exercises</span>
-                </button>
-              ))}
-            </div>
-          ))}
+          {plans?.map((p) => {
+            const next = nextOf(p)
+            return (
+              <div key={p.id} className="start-plan">
+                <h3>{p.name}</h3>
+                {p.days.map((d) => (
+                  <button key={d.id} className="day-button" onClick={() => void start(d)}>
+                    <strong>{d.name}</strong>
+                    <span className="muted">
+                      {d.exercises.length} exercises{d.id === next?.id ? ' · next up' : ''}
+                    </span>
+                  </button>
+                ))}
+                {next && (
+                  <button className="link" onClick={() => setView({ kind: 'skip', plan: p, day: next })}>
+                    Skip {next.name}
+                  </button>
+                )}
+              </div>
+            )
+          })}
           <button className="add" onClick={() => void start(null)}>Empty workout</button>
         </section>
       </main>
@@ -254,10 +290,17 @@ export function Workouts({
       <ul className="session-list">
         {sessions.map((s) => (
           <li key={s.id}>
-            <button className="day-button" onClick={() => setView({ kind: 'session', session: s })}>
-              <strong>{s.name}</strong>
-              <span className="muted">{s.sets.length} sets logged</span>
-            </button>
+            {s.skipped ? (
+              <p className="day-button">
+                <strong>{s.name}</strong>
+                <span className="muted">Skipped{s.skipped.reason ? `: ${s.skipped.reason}` : ''}</span>
+              </p>
+            ) : (
+              <button className="day-button" onClick={() => setView({ kind: 'session', session: s })}>
+                <strong>{s.name}</strong>
+                <span className="muted">{s.sets.length} sets logged</span>
+              </button>
+            )}
           </li>
         ))}
       </ul>
@@ -278,6 +321,7 @@ export function Workouts({
                 <strong>{p.name}</strong>
                 <span className="muted">{p.days.map((d) => d.name).join(' · ')}</span>
                 <span className="muted">{weekLabel(b.week, b.hardWeeks)}</span>
+                {nextOf(p) && <span className="muted">Next: {nextOf(p)!.name}</span>}
                 {userId && p.changedBy && p.changedBy !== userId && (
                   <span className="muted">Changed by your coach{p.changedOn ? ` on ${shortDate(p.changedOn)}` : ''}.</span>
                 )}
