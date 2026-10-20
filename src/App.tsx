@@ -443,7 +443,7 @@ export function AppShell({
                   }
                 : undefined
             }
-            coach={account.role === 'user' && !teen ? coaching : undefined}
+            coach={account.role === 'user' ? coaching : undefined}
             family={family && { store: family, teen }}
             canCoach={account.role === 'user' && !teen}
             units={
