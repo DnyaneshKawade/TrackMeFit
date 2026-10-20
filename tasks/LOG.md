@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-20: library updates (from Dependabot #114)
+
+- Dependabot's 7 updates failed the type check. `@types/node` came only through an older package.
+- Added `@types/node` 22 to match Node 22. PGlite stays at 0.3: 0.5 made database tests time out.
+- No app change. All tests, lint, build and the audit pass.
+
 ## 2026-10-20: T-107 block weeks by workouts done
 
 - The block week now counts workouts done, as RP does. A missed day waits.
