@@ -102,3 +102,48 @@ describe('Catch up to Steady (T-059c)', () => {
     expect(await screen.findByRole('region', { name: 'Switch to Steady' })).toBeTruthy()
   })
 })
+
+describe('missed days (T-104)', () => {
+  it('1. adds a weight for an earlier day, then goes back to today', async () => {
+    const store = memoryProgressStore([{ date: TODAY, kg: 64 }])
+    render(<Progress store={store} goal="lose" today={TODAY} />)
+    await screen.findByRole('heading', { name: 'Progress' })
+    click('Missed a day? Add an earlier weight')
+    type('Day of the weigh-in', '2026-10-10')
+    expect((screen.getByLabelText('Weight on 10 Oct (kg)') as HTMLInputElement).value).toBe('')
+    type('Weight on 10 Oct (kg)', '64.8')
+    click('Save')
+    await screen.findByLabelText('Today’s weight (kg)')
+    expect(await store.weighIns()).toEqual([
+      { date: '2026-10-10', kg: 64.8 },
+      { date: TODAY, kg: 64 },
+    ])
+  })
+
+  it('2. a future day or one over a year back is not saved', async () => {
+    const store = memoryProgressStore()
+    render(<Progress store={store} goal="lose" today={TODAY} />)
+    await screen.findByRole('heading', { name: 'Progress' })
+    click('Missed a day? Add an earlier weight')
+    type('Day of the weigh-in', '2026-10-20')
+    type('Weight on 20 Oct (kg)', '64')
+    click('Save')
+    expect(await screen.findByText('Pick today or an earlier day.')).toBeTruthy()
+    type('Day of the weigh-in', '2025-10-01')
+    type('Weight on 1 Oct (kg)', '64')
+    click('Save')
+    expect(await screen.findByText('Pick a day in the last year.')).toBeTruthy()
+    expect(await store.weighIns()).toEqual([])
+  })
+
+  it('3. measurements can be added for an earlier day', async () => {
+    const store = memoryProgressStore()
+    render(<Progress store={store} goal="lose" today={TODAY} />)
+    await screen.findByRole('heading', { name: 'Progress' })
+    click('Add')
+    type('Day of the measurements', '2026-10-06')
+    type('Waist (cm)', '82')
+    click('Save measurements')
+    await waitFor(async () => expect(await store.measurements()).toEqual([{ date: '2026-10-06', waistCm: 82 }]))
+  })
+})
