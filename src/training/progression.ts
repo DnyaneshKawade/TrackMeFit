@@ -17,6 +17,7 @@ import {
   type Recovery,
   type SetDecision,
 } from '../engine/training'
+import { startOf } from '../engine/myo'
 import { exerciseById, similarExercise } from './exercises'
 import type { PastSession, Plan, PlanDay, SetLog } from './types'
 
@@ -97,7 +98,7 @@ export function nextBlockSwaps(plan: Plan, ids: string[]): Swap[] {
 export const weekLabel = (week: number, hardWeeks: number) => (isDeloadWeek(week, hardWeeks) ? 'Light week' : `Week ${week} of ${hardWeeks}`)
 
 /** Best estimated one-rep max in a session's sets. */
-const bestE1rm = (sets: SetLog[]) => Math.max(0, ...sets.map((s) => estimatedOneRepMax(s.weightKg, s.reps, s.rir ?? 0)))
+const bestE1rm = (sets: SetLog[]) => Math.max(0, ...sets.map(startOf).map((s) => estimatedOneRepMax(s.weightKg, s.reps, s.rir ?? 0)))
 
 /** Up, same or down comparing each session with the one before (newest first),
  * by best estimated one-rep max; changes under 1% count as the same. */

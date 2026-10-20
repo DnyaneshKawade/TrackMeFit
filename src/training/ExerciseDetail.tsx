@@ -36,7 +36,7 @@ const longDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString
 const nameOf = (id: string) => exerciseById.get(id)?.name ?? 'Exercise no longer in your list'
 const lift = (l: Lift, unit: WeightUnit) => `${weightText(l.weightKg, unit)} × ${l.reps}`
 const setText = (s: { weightKg: number; reps: number }, unit: WeightUnit) => (s.weightKg > 0 ? `${weightText(s.weightKg, unit)} × ${s.reps}` : `${s.reps} reps`)
-const TAG_WORDS = { warmup: 'warm-up', drop: 'drop set', failure: 'to failure' }
+const TAG_WORDS = { warmup: 'warm-up', drop: 'drop set', failure: 'to failure', myo: 'myo-reps' }
 
 function Records({ records, unit }: { records: ExerciseRecords; unit: WeightUnit }) {
   return (
