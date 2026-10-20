@@ -37,6 +37,15 @@ export function checkWeight(text: string): string | null {
   return null
 }
 
+/** A missed day can be added up to a year back, never in the future (T-104). */
+export function checkDay(day: string, today: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day > today) return 'Pick today or an earlier day.'
+  const back = new Date(`${today}T00:00:00Z`)
+  back.setUTCFullYear(back.getUTCFullYear() - 1)
+  if (day < back.toISOString().slice(0, 10)) return 'Pick a day in the last year.'
+  return null
+}
+
 /** Checks a measurement form. At least one field is needed; every filled one
  * must be in range. */
 export function checkMeasurement(text: Partial<Record<MeasureKey, string>>): Partial<Record<MeasureKey | 'form', string>> {
