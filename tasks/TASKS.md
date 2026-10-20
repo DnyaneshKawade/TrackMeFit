@@ -66,6 +66,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | ID | Task | Tests |
 |---|---|---|
 | T-105 | Age asked in About you instead of a separate first page; Skip setup needs it first; coaches keep the short age page ([spec](../specs/T-105-age-in-about-you.md)) | Claude | `src/profile/Onboarding.test.tsx` (2), `src/App.test.tsx` (1 new, 2 updated) | — |
+| T-104 | Missed days on Progress: add a weight or measurements for an earlier day, up to a year back ([spec](../specs/T-104-missed-days.md)) | Claude | `src/progress/Progress.test.tsx` (3) | — |
 | T-101d | New look on every screen: day and greeting at the top, round picture opens Me, tabs Today, Workouts, Progress, Me (Your details, account, Sign out), meals in one card with a floating Add food button, cards on Your details, Me, Progress and Clients ([spec](../specs/T-101d-every-screen.md)) | Claude | `src/greeting.test.ts` (2), `src/log/week.test.ts` (1), `src/App.test.tsx` (updated), `src/auth/SignIn.test.tsx` (updated) | — |
 | T-101c | New look, part 2: Ocean blue on Pearl grey, bottom tabs with icons, calorie ring card with macro bars, kind weekly count, card layout for meals, exercises and progress ([spec](../specs/T-101c-layouts.md)) | Claude | `src/log/week.test.ts` (2), `src/log/FoodLog.test.tsx` (2) | — |
 | T-101b | Calm Saffron look: colour tokens, DM Sans, saffron icon, and a Look choice (Phone setting, Light, Dark) ([spec](../specs/T-101b-look.md)) | Claude | `src/settings/theme.test.ts` (3), `src/account/Account.test.tsx` (1) | — |
