@@ -102,6 +102,10 @@
 .sets li { min-height: 44px; padding: 4px 8px; margin: 4px 0; border-radius: 12px; background: var(--soft); }
 /* History and Graph tabs (T-106) */
 .exercise header .history-link { margin-left: auto; font-size: 13px; }
+.exercise header .history-link + .link { font-size: 13px; }
+.exercise-settings { display: grid; gap: 8px; margin: 8px 0; padding: 10px; border: 1.5px solid var(--line); border-radius: 12px; }
+.exercise-settings label { display: grid; gap: 4px; }
+.setup-note { margin: 4px 0; }
 .detail-tabs { display: flex; gap: 6px; margin: 4px 0 12px; }
 .exercise-records .range { display: flex; gap: 6px; flex-wrap: wrap; }
 .exercise-records .chip[aria-pressed='true'] { background: var(--p); color: var(--on-p); border-color: var(--p); }

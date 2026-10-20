@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { LANDMARKS, type Muscle } from '../engine/training'
-import { EQUIPMENT_NAMES, MUSCLE_NAMES, checkNewExercise, searchExercises, type Equipment, type Exercise, type NewExercise } from './exercises'
+import { EQUIPMENT_NAMES, MUSCLE_NAMES, checkNewExercise, searchExercises, type Equipment, type Exercise, type ExerciseSetting, type NewExercise } from './exercises'
 
 /** Favourites and the person's own exercises (T-043b). */
 export interface ExerciseLibrary {
@@ -10,6 +10,8 @@ export interface ExerciseLibrary {
   /** Edit or remove an own exercise (T-043c). */
   updateCustom: (id: string, e: NewExercise) => Promise<Exercise>
   setHidden: (id: string, hidden: boolean) => Promise<void>
+  /** Own weight step, rest time and notes for an exercise (T-112). */
+  saveSetting?: (s: ExerciseSetting) => Promise<void>
 }
 
 const MUSCLES = Object.keys(LANDMARKS) as Muscle[]

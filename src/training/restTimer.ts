@@ -7,7 +7,8 @@ export const REST_COMPOUND = 150
 export const REST_ISOLATION = 90
 export const REST_STEP = 15
 
-export const restSeconds = (exercise: Pick<Exercise, 'isolation'>) => (exercise.isolation ? REST_ISOLATION : REST_COMPOUND)
+/** The person's own rest time first (T-112), else by kind of exercise. */
+export const restSeconds = (exercise: Pick<Exercise, 'isolation' | 'restSec'>) => exercise.restSec ?? (exercise.isolation ? REST_ISOLATION : REST_COMPOUND)
 
 /** Whole seconds left, counted from the clock so a sleeping phone stays right. */
 export const restLeft = (endsAt: number, now: number) => Math.max(0, Math.ceil((endsAt - now) / 1000))
@@ -29,7 +30,7 @@ export function supersetGroups(ids: string[], linked: Set<string>): string[][] {
 
 /** Rest after a set in a group: none until its last exercise, then the
  * longest rest of the group, so a big lift still gets its full rest. */
-export function restAfterSet(group: Pick<Exercise, 'id' | 'isolation'>[], exerciseId: string): number | null {
+export function restAfterSet(group: Pick<Exercise, 'id' | 'isolation' | 'restSec'>[], exerciseId: string): number | null {
   if (group.length > 1 && group[group.length - 1].id !== exerciseId) return null
   return Math.max(...group.map(restSeconds))
 }
