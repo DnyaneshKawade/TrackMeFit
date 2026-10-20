@@ -80,6 +80,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-106 | History and Graph for each exercise, as in FitNotes: every past set by day with record marks, a graph with 6 choices and 5 time ranges, tap a day for its sets, and a History link on each exercise during a workout ([spec](../specs/T-106-history-graph.md)) | Claude | `src/engine/strengthGraph.test.ts` (3), `src/training/Records.test.tsx` (5 new, 2 updated) | — |
 | T-105 | Age asked in About you instead of a separate first page; Skip setup needs it first; coaches keep the short age page ([spec](../specs/T-105-age-in-about-you.md)) | Claude | `src/profile/Onboarding.test.tsx` (2), `src/App.test.tsx` (1 new, 2 updated) | — |
 | T-104 | Missed days on Progress: add a weight or measurements for an earlier day, up to a year back ([spec](../specs/T-104-missed-days.md)) | Claude | `src/progress/Progress.test.tsx` (3) | — |
 | T-101d | New look on every screen: day and greeting at the top, round picture opens Me, tabs Today, Workouts, Progress, Me (Your details, account, Sign out), meals in one card with a floating Add food button, cards on Your details, Me, Progress and Clients ([spec](../specs/T-101d-every-screen.md)) | Claude | `src/greeting.test.ts` (2), `src/log/week.test.ts` (1), `src/App.test.tsx` (updated), `src/auth/SignIn.test.tsx` (updated) | — |
