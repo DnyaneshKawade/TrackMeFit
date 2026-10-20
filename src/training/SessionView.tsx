@@ -6,11 +6,12 @@ import { myoText, newRecord, type StrengthSession } from '../engine/strength'
 import { PLATEAU_SESSIONS, plateauCheck } from '../engine/plateau'
 import { LANDMARKS, targetRir, type Muscle } from '../engine/training'
 import { warmupSets } from '../engine/warmup'
-import { exerciseById, similarExercise, type Exercise } from './exercises'
+import { exerciseById, similarExercise, type Exercise, type ExerciseSetting } from './exercises'
 import { ExercisePicker, type ExerciseLibrary } from './ExercisePicker'
 import { ExerciseDetail } from './ExerciseDetail'
 import { SyncNote } from '../sync/SyncNote'
 import { useSync } from '../sync/useSync'
+import { ExerciseSettings } from './ExerciseSettings'
 import { FeedbackSheet } from './FeedbackSheet'
 import { deloadAdvice, isDeloadWeek, weekLabel } from './progression'
 import { formatRest, REST_STEP, restAfterSet, restLeft, supersetGroups } from './restTimer'
@@ -113,6 +114,14 @@ export function SessionView({
   const [restEnds, setRestEnds] = useState<number | null>(null)
   // An exercise's history and graph, opened from its card (T-106).
   const [detail, setDetail] = useState<string | null>(null)
+  // Bumped when an exercise's settings change, so cards read them again (T-112).
+  const [, setSettingsSaved] = useState(0)
+  const saveSetting =
+    library?.saveSetting &&
+    (async (s: ExerciseSetting) => {
+      await library.saveSetting!(s)
+      setSettingsSaved((n) => n + 1)
+    })
 
   const trained = [...new Set(session.sets.map((s) => exerciseById.get(s.exerciseId)?.primary).filter((m) => m !== undefined))]
 
@@ -193,6 +202,7 @@ export function SessionView({
                 }
                 onChange={setSession}
                 onDetail={() => setDetail(exercise.id)}
+                saveSetting={saveSetting}
                 onLogged={() => {
                   const rest = restAfterSet(exercises, exercise.id)
                   // In a superset, go straight to the next exercise; rest after the last.
@@ -234,6 +244,7 @@ function ExerciseLog({
   superset,
   onChange,
   onDetail,
+  saveSetting,
   onLogged,
 }: {
   store: WorkoutStore
@@ -253,6 +264,8 @@ function ExerciseLog({
   onChange: (s: Session) => void
   /** Opens this exercise's history and graph. */
   onDetail: () => void
+  /** Saves own step, rest and notes; absent when they can't be saved (T-112). */
+  saveSetting?: (s: ExerciseSetting) => Promise<void>
   /** Starts the rest timer. */
   onLogged: () => void
 }) {
@@ -270,6 +283,7 @@ function ExerciseLog({
   const [note, setNote] = useState<string | null>(null)
   // Myo-reps mini-sets, typed as "5 4 4" (T-111).
   const [mini, setMini] = useState('')
+  const [settingsOpen, setSettingsOpen] = useState(false)
   /** Earlier days with this exercise, for "New record" (T-044b); null until loaded or offline. */
   const [past, setPast] = useState<StrengthSession[] | null>(null)
   const [record, setRecord] = useState<{ setId: string; text: string } | null>(null)
@@ -405,7 +419,14 @@ function ExerciseLog({
         <button className="link history-link" aria-label={`History and graph for ${exercise.name}`} onClick={onDetail}>
           History
         </button>
+        {saveSetting && (
+          <button className="link" aria-label={`Settings for ${exercise.name}`} aria-expanded={settingsOpen} onClick={() => setSettingsOpen(!settingsOpen)}>
+            Settings
+          </button>
+        )}
       </header>
+      {settingsOpen && saveSetting && <ExerciseSettings exerciseId={exercise.id} onSave={saveSetting} onClose={() => setSettingsOpen(false)} />}
+      {exercise.setupNote && <p className="muted setup-note">Setup: {exercise.setupNote}</p>}
       {superset && (
         <button className="chip superset-link" aria-label={`Superset ${exercise.name} with the next exercise`} aria-pressed={superset.on} onClick={superset.toggle}>
           {superset.on ? 'End superset' : 'Superset with next'}

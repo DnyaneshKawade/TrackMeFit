@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { localDate } from '../log/types'
 import type { ExerciseLibrary } from './ExercisePicker'
 import type { ExerciseStore } from './exerciseStore'
-import { customExercise, customExercises, setCustomExercises, type Exercise } from './exercises'
+import { customExercise, customExercises, allSettings, setCustomExercises, setExerciseSettings, type Exercise } from './exercises'
 import { PlanEditor } from './PlanEditor'
 import { BlockView } from './BlockView'
 import { blockWeek, blockWeekByWorkouts, nextPlanDay, skipNote, weekLabel, weeklySets, workoutsInBlock } from './progression'
@@ -61,13 +61,15 @@ export function Workouts({
   const load = useCallback(async () => {
     try {
       // Own exercises and favourites are extras: without them the log still works.
-      const [p, s, own, favs] = await Promise.all([
+      const [p, s, own, favs, settings] = await Promise.all([
         store.plans(),
         store.sessionsOn(today),
         exercises ? exercises.custom().catch(() => null) : null,
         exercises ? exercises.favourites().catch(() => null) : null,
+        exercises ? exercises.settings().catch(() => null) : null,
       ])
       if (own) setCustomExercises(own.map((x) => customExercise(x.id, x)))
+      if (settings) setExerciseSettings(settings)
       if (favs) setFavourites(new Set(favs))
       setPlans(p)
       setSessions(s)
@@ -108,6 +110,11 @@ export function Workouts({
           const saved = customExercise(row.id, row)
           replaceCustom(id, () => saved)
           return saved
+        },
+        async saveSetting(s) {
+          await exercises.saveSetting(s)
+          const others = allSettings().filter((x) => x.exerciseId !== s.exerciseId)
+          setExerciseSettings(s.stepKg || s.restSec || s.note ? [...others, s] : others)
         },
         async setHidden(id, hidden) {
           await exercises.setHidden(id, hidden)

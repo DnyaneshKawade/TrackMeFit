@@ -22,7 +22,24 @@ export interface Exercise {
   hidden?: boolean
   /** Loads the muscle when it is long, which may help it grow a bit more (T-082i). */
   stretch?: boolean
+  /** The person's own rest time in seconds (T-112). */
+  restSec?: number
+  /** The person's machine or seat notes (T-112). */
+  setupNote?: string
 }
+
+/** The person's own settings for one exercise (T-112). Empty fields keep the usual. */
+export interface ExerciseSetting {
+  exerciseId: string
+  /** Own weight step in kg; replaces `increment` for buttons and suggestions. */
+  stepKg?: number
+  restSec?: number
+  note?: string
+}
+
+export const STEP_KG_RANGE = [0.25, 20] as const
+export const REST_RANGE = [15, 600] as const
+export const MAX_SETUP_NOTE = 200
 
 /** Moves that load the muscle when it is stretched (Maeo 2021 and 2023,
  * Pedrosa 2022, Kassiano 2023). The edge is small, so plans prefer them only. */
@@ -145,14 +162,40 @@ export const EXERCISES: Exercise[] = [
 
 /** Built-in and the person's own exercises by id (T-043b). */
 export const exerciseById = new Map(EXERCISES.map((e) => [e.id, e]))
+const BUILT_IN = new Map(EXERCISES.map((e) => [e.id, e]))
 
 let custom: Exercise[] = []
+let settings = new Map<string, ExerciseSetting>()
+
+/** An exercise with the person's own step, rest and notes on it (T-112). */
+function withSetting(e: Exercise): Exercise {
+  const s = settings.get(e.id)
+  if (!s) return e
+  return { ...e, ...(s.stepKg ? { increment: s.stepKg } : {}), ...(s.restSec ? { restSec: s.restSec } : {}), ...(s.note ? { setupNote: s.note } : {}) }
+}
+
+/** The exercise as in the library, without the person's settings. */
+export const baseExercise = (id: string) => BUILT_IN.get(id) ?? custom.find((e) => e.id === id)
+
+/** The person's settings for an exercise, if any (T-112). */
+export const exerciseSetting = (id: string) => settings.get(id)
+export const allSettings = () => [...settings.values()]
+
+/** Makes the person's exercise settings apply everywhere (T-112). */
+export function setExerciseSettings(list: ExerciseSetting[]) {
+  const changed = new Set([...settings.keys(), ...list.map((s) => s.exerciseId)])
+  settings = new Map(list.map((s) => [s.exerciseId, s]))
+  for (const id of changed) {
+    const base = baseExercise(id)
+    if (base) exerciseById.set(id, withSetting(base))
+  }
+}
 
 /** Makes the person's own exercises known everywhere (search, plans, logs). */
 export function setCustomExercises(list: Exercise[]) {
   for (const e of custom) exerciseById.delete(e.id)
   custom = list
-  for (const e of list) exerciseById.set(e.id, e)
+  for (const e of list) exerciseById.set(e.id, withSetting(e))
 }
 
 /** The person's own exercises first, then the built-in library. Hidden ones are left out. */

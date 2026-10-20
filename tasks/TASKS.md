@@ -28,7 +28,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests planned |
 |---|---|---|
-| T-112 | Exercise settings: own weight step, machine or seat notes, own rest time; suggestions use the step (FitNotes, RP) | Engine and screen tests, migration test |
 | T-113 | Copy sets from a past workout: the whole workout or chosen sets, then edit (FitNotes) | Store and screen tests |
 | T-114 | Cardio sets: distance and time for treadmill, cycle, rower and walks (FitNotes) | Engine, migration and logger tests |
 | T-115 | Browse exercises by muscle in the picker, as in FitNotes' list, next to search | Picker tests |
@@ -75,6 +74,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-112 | Exercise settings: own weight step, rest time and machine or seat notes; buttons, rest timer and advice use them (FitNotes, RP) ([spec](../specs/T-112-exercise-settings.md)) | `src/training/exerciseSettings.test.tsx`, `src/db/exerciseSettings.test.ts` |
 | T-111 | Myo-reps set type: start set plus mini-sets, saved as total reps; records and progress use the start set (RP) ([spec](../specs/T-111-myo-reps.md)) | `src/training/myoReps.test.tsx`, `src/db/myoReps.test.ts` |
 | T-110 | Skip a workout day with an optional reason; the plan moves to the next day and the week review shows skips (RP) ([spec](../specs/T-110-skip-day.md)) | `src/training/skipDay.test.tsx`, `src/db/skipDay.test.ts` |
 | T-109 | Block controls: 3-7 hard weeks, end a block early, start the next block with optional swaps; the light week can skip traps and forearms (RP) ([spec](../specs/T-109-block-controls.md)) | `src/training/blockControls.test.tsx`, `src/db/blockHardWeeks.test.ts` |

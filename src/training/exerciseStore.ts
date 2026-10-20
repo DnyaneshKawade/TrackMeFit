@@ -4,7 +4,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Muscle } from '../engine/training'
-import type { Equipment, NewExercise } from './exercises'
+import type { Equipment, ExerciseSetting, NewExercise } from './exercises'
 
 /** An own exercise as saved; its id is `custom:<uuid>`. */
 export interface SavedExercise extends NewExercise {
@@ -21,11 +21,18 @@ export interface ExerciseStore {
   setHidden(id: string, hidden: boolean): Promise<void>
   favourites(): Promise<string[]>
   setFavourite(exerciseId: string, on: boolean): Promise<void>
+  /** Own weight step, rest time and notes per exercise (T-112). */
+  settings(): Promise<ExerciseSetting[]>
+  /** Saves one exercise's settings; with every field empty it removes them. */
+  saveSetting(s: ExerciseSetting): Promise<void>
 }
 
-export function memoryExerciseStore(init: { custom?: SavedExercise[]; favourites?: string[] } = {}): ExerciseStore {
+const isEmpty = (s: ExerciseSetting) => !s.stepKg && !s.restSec && !s.note?.trim()
+
+export function memoryExerciseStore(init: { custom?: SavedExercise[]; favourites?: string[]; settings?: ExerciseSetting[] } = {}): ExerciseStore {
   const own = [...(init.custom ?? [])]
   const favs = new Set(init.favourites ?? [])
+  const settings = new Map((init.settings ?? []).map((s) => [s.exerciseId, s]))
   let n = 1
   return {
     async custom() {
@@ -56,6 +63,13 @@ export function memoryExerciseStore(init: { custom?: SavedExercise[]; favourites
     async setFavourite(id, on) {
       if (on) favs.add(id)
       else favs.delete(id)
+    },
+    async settings() {
+      return [...settings.values()]
+    },
+    async saveSetting(s) {
+      if (isEmpty(s)) settings.delete(s.exerciseId)
+      else settings.set(s.exerciseId, { ...s })
     },
   }
 }
@@ -124,6 +138,24 @@ export function supabaseExerciseStore(sb: SupabaseClient, userId: string): Exerc
     async setFavourite(exerciseId, on) {
       if (on) check(await sb.from('favourite_exercises').upsert({ user_id: userId, exercise_id: exerciseId }, { ignoreDuplicates: true }))
       else check(await sb.from('favourite_exercises').delete().eq('user_id', userId).eq('exercise_id', exerciseId))
+    },
+    async settings() {
+      const rows = check(await sb.from('exercise_settings').select('exercise_id, step_kg, rest_seconds, note').eq('user_id', userId).limit(1000))
+      return (rows as { exercise_id: string; step_kg: number | string | null; rest_seconds: number | null; note: string | null }[]).map((r) => ({
+        exerciseId: r.exercise_id,
+        ...(r.step_kg !== null ? { stepKg: Number(r.step_kg) } : {}),
+        ...(r.rest_seconds !== null ? { restSec: r.rest_seconds } : {}),
+        ...(r.note ? { note: r.note } : {}),
+      }))
+    },
+    async saveSetting(s) {
+      if (isEmpty(s)) check(await sb.from('exercise_settings').delete().eq('user_id', userId).eq('exercise_id', s.exerciseId))
+      else
+        check(
+          await sb
+            .from('exercise_settings')
+            .upsert({ user_id: userId, exercise_id: s.exerciseId, step_kg: s.stepKg ?? null, rest_seconds: s.restSec ?? null, note: s.note?.trim() || null, updated_at: new Date().toISOString() }),
+        )
     },
   }
 }

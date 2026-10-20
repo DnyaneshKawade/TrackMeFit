@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-20: T-112 exercise settings
+
+- Each workout card has "Settings": own weight step, rest time and machine or seat notes.
+- The + and − buttons, rest timer, warm-ups and weight advice use them. The card shows the notes.
+- Migration `20261124000000_exercise_settings.sql` adds `exercise_settings` and adds it to "Download my data".
+- Tests: `src/training/exerciseSettings.test.tsx` (4), `src/db/exerciseSettings.test.ts` (1).
+
 ## 2026-10-20: T-111 myo-reps
 
 - New "Myo-reps" set tag. The person enters the start set and mini-sets like "5 4 4".
