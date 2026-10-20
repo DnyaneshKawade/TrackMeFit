@@ -503,12 +503,16 @@ export function AppShell({
             }}
             loadFoods={loadFoods}
             onBirthDate={async (birthDate) => {
-              const p = { ...profile, birthDate }
-              await profiles!.save(p)
-              setProfile(p)
+              // Only the birth date: a teen's other answers wait for a parent (T-105b).
+              await profiles!.saveBirthDate(birthDate)
+              setProfile({ ...profile, birthDate })
             }}
             onSkip={async (birthDate) => {
               if (editing) return setEditing(null)
+              if (birthDate && ageOn(birthDate, localDate()) < 18) {
+                await profiles!.saveBirthDate(birthDate)
+                return setProfile({ ...profile, birthDate })
+              }
               const p = { ...profile, birthDate: birthDate ?? profile.birthDate, fullName: profile.fullName || account.name, onboardedAt: new Date().toISOString() }
               await profiles!.save(p)
               setProfile(p)
