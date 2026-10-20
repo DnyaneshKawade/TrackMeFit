@@ -35,9 +35,11 @@ export function ParentStep({ store, onDone, onSignOut }: { store: FamilyStore; o
         <h2>Ask a parent to say yes</h2>
         <p>You are under 18. A parent must say yes before you use Track Me Fit.</p>
         <ol>
-          <li>Your parent signs in with their own Track Me Fit account.</li>
-          <li>They open Account and find Your child.</li>
+          <li>Tap “Show my code” below.</li>
+          <li>Your parent signs in with their own Track Me Fit account. It is free to make one.</li>
+          <li>They open the Me tab and find “Your child”.</li>
           <li>They type your code there and say yes.</li>
+          <li>Then tap “My parent said yes”.</li>
         </ol>
         <p className="auth-hint">Until you are 18, you can’t link to a coach. The app won’t ask you to eat less.</p>
         {code ? (
