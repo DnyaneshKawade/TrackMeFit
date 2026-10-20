@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { describePlates, gymFor, platesFor } from '../engine/plates'
 import { shownWeight, stepIn, toKg, weightText, type WeightUnit } from '../engine/units'
 import { useWeightUnit } from '../settings/units'
-import { newRecord, type StrengthSession } from '../engine/strength'
+import { myoText, newRecord, type StrengthSession } from '../engine/strength'
 import { PLATEAU_SESSIONS, plateauCheck } from '../engine/plateau'
 import { LANDMARKS, targetRir, type Muscle } from '../engine/training'
 import { warmupSets } from '../engine/warmup'
@@ -18,6 +18,7 @@ import {
   checkSet,
   describeSets,
   MAX_SET_NOTE,
+  parseMiniReps,
   MAX_WORKOUT_NOTE,
   SET_TAGS,
   suggestNext,
@@ -267,6 +268,8 @@ function ExerciseLog({
   const [busy, setBusy] = useState(false)
   const [tag, setTag] = useState<SetTag | null>(null)
   const [note, setNote] = useState<string | null>(null)
+  // Myo-reps mini-sets, typed as "5 4 4" (T-111).
+  const [mini, setMini] = useState('')
   /** Earlier days with this exercise, for "New record" (T-044b); null until loaded or offline. */
   const [past, setPast] = useState<StrengthSession[] | null>(null)
   const [record, setRecord] = useState<{ setId: string; text: string } | null>(null)
@@ -343,14 +346,21 @@ function ExerciseLog({
     const w = toKg(Number(weight.replace(',', '.')), unit)
     const r = Number(reps)
     const x = rir.trim() === '' ? null : Number(rir)
-    const problem = weight.trim() === '' || reps.trim() === '' ? 'Enter weight and reps.' : checkSet(w, r, x)
+    const miniReps = tag === 'myo' ? parseMiniReps(mini) : null
+    const total = r + (miniReps ?? []).reduce((a, b) => a + b, 0)
+    const problem =
+      weight.trim() === '' || reps.trim() === ''
+        ? 'Enter weight and reps.'
+        : tag === 'myo' && !miniReps
+          ? 'Enter the mini-set reps, like 5 4 4. Each is 1 to 30 reps.'
+          : checkSet(w, total, x)
     setError(problem)
     if (problem) return
     setBusy(true)
     try {
       const nextIndex = done.reduce((m, s) => Math.max(m, s.setIndex + 1), 0)
-      const extra = { ...(tag ? { tag } : {}), ...(note?.trim() ? { note: note.trim() } : {}) }
-      const saved = await store.addSet(session.id, { exerciseId: exercise.id, setIndex: nextIndex, weightKg: w, reps: r, rir: x, ...extra })
+      const extra = { ...(tag ? { tag } : {}), ...(miniReps ? { miniReps } : {}), ...(note?.trim() ? { note: note.trim() } : {}) }
+      const saved = await store.addSet(session.id, { exerciseId: exercise.id, setIndex: nextIndex, weightKg: w, reps: total, rir: x, ...extra })
       onChange({ ...session, sets: [...session.sets, saved] })
       const beat = past && newRecord(past, done, saved, unit)
       setRecord(beat ? { setId: saved.id, text: beat.text } : null)
@@ -362,6 +372,7 @@ function ExerciseLog({
       }
       setTag(null)
       setNote(null)
+      setMini('')
       onLogged()
     } catch {
       setError('Couldn’t save the set. Check your connection and try again.')
@@ -441,6 +452,7 @@ function ExerciseLog({
             <span>
               Set {i + 1}: {weightText(s.weightKg, unit)} × {s.reps}{s.rir !== null ? ` · ${s.rir} reps left` : ''}
               {s.tag ? ` · ${SET_TAGS.find((t) => t.tag === s.tag)!.shown}` : ''}
+              {myoText(s) ? ` (${myoText(s)})` : ''}
               {pending.has(s.id) && <span className="muted"> · Waiting for internet</span>}
               {s.note && <small className="muted set-note">{s.note}</small>}
             </span>
@@ -480,6 +492,12 @@ function ExerciseLog({
           <input aria-label={`${exercise.name} set note`} placeholder="Note for this set" maxLength={MAX_SET_NOTE} value={note} onChange={(e) => setNote(e.target.value)} />
         )}
       </div>
+      {tag === 'myo' && (
+        <div className="myo">
+          <p className="muted">Myo-reps: one hard start set, then mini-sets of 3 to 5 reps. Rest about 5 deep breaths between them. Put the start set in reps above.</p>
+          <input aria-label={`${exercise.name} mini-set reps`} placeholder="Mini-sets, like 5 4 4" value={mini} onChange={(e) => setMini(e.target.value)} />
+        </div>
+      )}
       {error && <p className="error" role="alert">{error}</p>}
     </section>
   )

@@ -1,6 +1,7 @@
 // Workout plans (days of exercises with sets and rep ranges) and logged
 // sessions, FitNotes style: every set is saved the moment it is logged.
 
+import { startOf } from '../engine/myo'
 import { weightText, type WeightUnit } from '../engine/units'
 import { breakLoad, nextLoad, type LoadDecision } from '../engine/training'
 import type { Exercise } from './exercises'
@@ -47,22 +48,38 @@ export interface SetLog {
   reps: number
   /** Reps in reserve, if the person noted it. */
   rir: number | null
-  /** Warm-up, drop set or taken to failure (T-043). */
+  /** Warm-up, drop set, taken to failure (T-043) or myo-reps (T-111). */
   tag?: SetTag
+  /** Myo-reps mini-sets; `reps` is then the total, start set included (T-111). */
+  miniReps?: number[]
   note?: string
 }
 
-export type SetTag = 'warmup' | 'drop' | 'failure'
+export type SetTag = 'warmup' | 'drop' | 'failure' | 'myo'
 export const SET_TAGS: { tag: SetTag; label: string; shown: string }[] = [
   { tag: 'warmup', label: 'Warm-up', shown: 'warm-up' },
   { tag: 'drop', label: 'Drop set', shown: 'drop set' },
   { tag: 'failure', label: 'Failure', shown: 'to failure' },
+  { tag: 'myo', label: 'Myo-reps', shown: 'myo-reps' },
 ]
+
+/** Myo-reps (T-111): up to 10 mini-sets of 1 to 30 reps after the start set. */
+export const MAX_MINI_SETS = 10
+export const MAX_MINI_REPS = 30
+
+/** Mini-set reps typed as "5 4 4" (or with commas). Null when it isn't valid. */
+export function parseMiniReps(text: string): number[] | null {
+  const parts = text.split(/[\s,+]+/).filter(Boolean)
+  if (!parts.length || parts.length > MAX_MINI_SETS) return null
+  const reps = parts.map(Number)
+  return reps.every((r) => Number.isInteger(r) && r >= 1 && r <= MAX_MINI_REPS) ? reps : null
+}
 export const MAX_SET_NOTE = 200
 export const MAX_WORKOUT_NOTE = 500
 
 /** Sets that count for progress: warm-ups and drop sets are left out. */
-export const workingSets = (sets: SetLog[]) => sets.filter((s) => s.tag !== 'warmup' && s.tag !== 'drop')
+/** Myo-reps count by their start set (T-111). */
+export const workingSets = (sets: SetLog[]) => sets.filter((s) => s.tag !== 'warmup' && s.tag !== 'drop').map(startOf)
 
 export type NewSet = Omit<SetLog, 'id'>
 

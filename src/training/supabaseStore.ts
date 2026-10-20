@@ -6,7 +6,7 @@ import { localDate } from '../log/types'
 import type { Feedback } from './progression'
 import { MAX_RECORD_SESSIONS, MAX_SUMMARIES, type PastSession, type Plan, type Session, type SessionSummary, type SetLog, type SetTag, type WorkoutStore } from './types'
 
-interface SetRow { id: string; exercise_id: string; set_index: number; weight_kg: number | string; reps: number; rir: number | null; tag?: SetTag | null; note?: string | null }
+interface SetRow { id: string; exercise_id: string; set_index: number; weight_kg: number | string; reps: number; rir: number | null; tag?: SetTag | null; mini_reps?: number[] | null; note?: string | null }
 
 export const setFromRow = (r: SetRow): SetLog => ({
   id: r.id,
@@ -16,6 +16,7 @@ export const setFromRow = (r: SetRow): SetLog => ({
   reps: r.reps,
   rir: r.rir,
   ...(r.tag ? { tag: r.tag } : {}),
+  ...(r.mini_reps?.length ? { miniReps: r.mini_reps } : {}),
   ...(r.note ? { note: r.note } : {}),
 })
 
@@ -72,7 +73,7 @@ export const summaryFromRow = (r: SummaryRow): SessionSummary => ({
   ...skippedFrom(r),
 })
 
-const SET_COLUMNS = 'id, exercise_id, set_index, weight_kg, reps, rir, tag, note'
+const SET_COLUMNS = 'id, exercise_id, set_index, weight_kg, reps, rir, tag, mini_reps, note'
 
 /** With `templates`, the store reads and saves a coach's program templates
  * (T-026g), which never show on their own Training tab. */
@@ -167,7 +168,7 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templ
       return session((check({ data, error }) as { id: string }).id)
     },
     async addSet(sessionId, s, id) {
-      const row = { session_id: sessionId, exercise_id: s.exerciseId, set_index: s.setIndex, weight_kg: s.weightKg, reps: s.reps, rir: s.rir, tag: s.tag ?? null, is_warmup: s.tag === 'warmup', note: s.note ?? null }
+      const row = { session_id: sessionId, exercise_id: s.exerciseId, set_index: s.setIndex, weight_kg: s.weightKg, reps: s.reps, rir: s.rir, tag: s.tag ?? null, mini_reps: s.miniReps ?? null, is_warmup: s.tag === 'warmup', note: s.note ?? null }
       const { data, error } = await sb
         .from('set_logs')
         .insert({ ...row, ...(id ? { id } : {}) })

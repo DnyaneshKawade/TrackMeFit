@@ -2,12 +2,17 @@
 // functions, no I/O. Only working sets count: warm-ups and drop sets are
 // left out, as in the rest of the logger.
 
+import { startOf } from './myo'
 import { weightText, type WeightUnit } from './units'
+
+export { myoText, startOf } from './myo'
 
 export interface StrengthSet {
   weightKg: number
   reps: number
-  tag?: 'warmup' | 'drop' | 'failure'
+  tag?: 'warmup' | 'drop' | 'failure' | 'myo'
+  /** Myo-reps: the mini-sets after the start set; `reps` is the total (T-111). */
+  miniReps?: number[]
 }
 
 export interface StrengthSession {
@@ -61,7 +66,8 @@ export function exerciseRecords(sessions: StrengthSession[]): ExerciseRecords {
   for (const session of ordered) {
     let sessionE1rm = 0
     let sessionReps = 0
-    for (const s of session.sets) {
+    for (const raw of session.sets) {
+      const s = startOf(raw)
       if (!working(s)) continue
       const lift = { weightKg: s.weightKg, reps: s.reps, performedOn: session.performedOn }
       if (s.weightKg > 0 && (!heaviest || s.weightKg > heaviest.weightKg)) heaviest = lift
@@ -95,6 +101,7 @@ export function exerciseRecords(sessions: StrengthSession[]): ExerciseRecords {
     if (!best) notes.push(`Do ${REP_CAP} reps or fewer in a set for your one-rep max.`)
   } else notes.push('You did this with no weight. So the graph shows your most reps.')
   notes.push('Warm-ups and drop sets are left out.')
+  if (sessions.some((x) => x.sets.some((s) => s.tag === 'myo'))) notes.push('Myo-reps count by their start set.')
 
   return {
     heaviest,
@@ -119,7 +126,8 @@ export interface NewRecord {
 /** Does this set beat the person's best (spec T-044b)? Earlier workouts and
  * the sets already done today count. Null for warm-ups, drop sets, ties, and
  * the first workout with an exercise, which only sets the starting point. */
-export function newRecord(past: StrengthSession[], today: StrengthSet[], set: StrengthSet, unit: WeightUnit = 'kg'): NewRecord | null {
+export function newRecord(past: StrengthSession[], today: StrengthSet[], logged: StrengthSet, unit: WeightUnit = 'kg'): NewRecord | null {
+  const set = startOf(logged)
   if (!working(set)) return null
   if (!past.some((p) => p.sets.some(working))) return null
   const before = exerciseRecords([...past, { performedOn: '9999-12-31', sets: today }])

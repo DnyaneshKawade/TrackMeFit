@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-20: T-111 myo-reps
+
+- New "Myo-reps" set tag. The person enters the start set and mini-sets like "5 4 4".
+- One set is saved with the total reps and the mini-sets. Records and progress use the start set.
+- Migration `20261123000000_myo_reps.sql` allows the tag and adds `set_logs.mini_reps`.
+- Tests: `src/training/myoReps.test.tsx` (3), `src/db/myoReps.test.ts` (1).
+
 ## 2026-10-20: T-110 skip a workout day
 
 - Plans show the next day. "Skip" saves a skip with an optional reason, and the plan moves on.
