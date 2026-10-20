@@ -11,6 +11,7 @@ import { ExercisePicker, type ExerciseLibrary } from './ExercisePicker'
 import { ExerciseDetail } from './ExerciseDetail'
 import { SyncNote } from '../sync/SyncNote'
 import { useSync } from '../sync/useSync'
+import { CopyWorkout, type Copied } from './CopyWorkout'
 import { ExerciseSettings } from './ExerciseSettings'
 import { FeedbackSheet } from './FeedbackSheet'
 import { deloadAdvice, isDeloadWeek, weekLabel } from './progression'
@@ -114,6 +115,9 @@ export function SessionView({
   const [restEnds, setRestEnds] = useState<number | null>(null)
   // An exercise's history and graph, opened from its card (T-106).
   const [detail, setDetail] = useState<string | null>(null)
+  // Sets from a past workout that fill today's boxes (T-113).
+  const [copying, setCopying] = useState(false)
+  const [copied, setCopied] = useState<Map<string, Copied>>(new Map())
   // Bumped when an exercise's settings change, so cards read them again (T-112).
   const [, setSettingsSaved] = useState(0)
   const saveSetting =
@@ -203,6 +207,7 @@ export function SessionView({
                 onChange={setSession}
                 onDetail={() => setDetail(exercise.id)}
                 saveSetting={saveSetting}
+                copied={copied.get(exercise.id)}
                 onLogged={() => {
                   const rest = restAfterSet(exercises, exercise.id)
                   // In a superset, go straight to the next exercise; rest after the last.
@@ -222,6 +227,20 @@ export function SessionView({
           )
         })}
         <button className="add" onClick={() => setPicking(true)}>+ Add exercise</button>
+        {copying ? (
+          <CopyWorkout
+            store={store}
+            today={session.performedOn}
+            onClose={() => setCopying(false)}
+            onCopy={(c) => {
+              setCopied(c)
+              setExtra((x) => [...x, ...[...c.keys()].filter((id) => !ids.includes(id))])
+              setCopying(false)
+            }}
+          />
+        ) : (
+          <button className="add" onClick={() => setCopying(true)}>Copy a past workout</button>
+        )}
         <WorkoutNote store={store} session={session} />
       </section>
     </>
@@ -245,6 +264,7 @@ function ExerciseLog({
   onChange,
   onDetail,
   saveSetting,
+  copied,
   onLogged,
 }: {
   store: WorkoutStore
@@ -266,6 +286,8 @@ function ExerciseLog({
   onDetail: () => void
   /** Saves own step, rest and notes; absent when they can't be saved (T-112). */
   saveSetting?: (s: ExerciseSetting) => Promise<void>
+  /** Sets copied from a past workout, to fill the boxes set by set (T-113). */
+  copied?: Copied
   /** Starts the rest timer. */
   onLogged: () => void
 }) {
@@ -310,6 +332,14 @@ function ExerciseLog({
   const advice = history ? advise(history) : null
   const suggestion = advice?.next ?? null
   const plateauNote = advice?.plateau && advice.plateau.action !== 'lighter' ? advice.plateau.why : null
+
+  // A copied workout replaces whatever was in the boxes (T-113).
+  useEffect(() => {
+    const first = copied?.sets[0]
+    if (!first) return
+    setWeight(show(first.weightKg))
+    setReps(String(first.reps))
+  }, [copied]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     let live = true
@@ -384,6 +414,12 @@ function ExerciseLog({
         setWeight(show(working.weight))
         setReps(String(working.reps))
       }
+      // A copied workout fills the next set's boxes (T-113).
+      const nextCopy = copied?.sets[done.length + 1]
+      if (nextCopy && tag !== 'warmup') {
+        setWeight(show(nextCopy.weightKg))
+        setReps(String(nextCopy.reps))
+      }
       setTag(null)
       setNote(null)
       setMini('')
@@ -427,6 +463,7 @@ function ExerciseLog({
       </header>
       {settingsOpen && saveSetting && <ExerciseSettings exerciseId={exercise.id} onSave={saveSetting} onClose={() => setSettingsOpen(false)} />}
       {exercise.setupNote && <p className="muted setup-note">Setup: {exercise.setupNote}</p>}
+      {copied && <p className="muted">Copied from {new Date(copied.from + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}: {describeSets(copied.sets, unit)}</p>}
       {superset && (
         <button className="chip superset-link" aria-label={`Superset ${exercise.name} with the next exercise`} aria-pressed={superset.on} onClick={superset.toggle}>
           {superset.on ? 'End superset' : 'Superset with next'}

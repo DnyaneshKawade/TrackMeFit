@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-20: T-113 copy a past workout
+
+- "Copy a past workout" in a workout lists the last 90 days. Pick one and tick the exercises.
+- Their sets fill the boxes set by set. Nothing is logged until the person taps "Log set".
+- No database change.
+- Tests: `src/training/copyWorkout.test.tsx` (4).
+
 ## 2026-10-20: T-112 exercise settings
 
 - Each workout card has "Settings": own weight step, rest time and machine or seat notes.
