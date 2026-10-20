@@ -30,7 +30,7 @@ function Calendar({ store, today }: { store: WorkoutStore; today: string }) {
     setPicked(null)
     const [from, to] = monthRange(month)
     store.summaries(from, to).then(
-      (l) => live && setList(l),
+      (l) => live && setList(l.filter((s) => !s.skipped)),
       () => live && setError(true),
     )
     return () => {

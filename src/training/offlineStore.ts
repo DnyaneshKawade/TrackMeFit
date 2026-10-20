@@ -149,6 +149,8 @@ export function offlineWorkoutStore(
     savePlan: (plan) => remote.savePlan(plan),
     deletePlan: (id) => remote.deletePlan(id),
     startBlock: (planId, date, week) => remote.startBlock(planId, date, week),
+    // A skip needs a connection; it is rare and changes the plan's next day.
+    skipDay: (date, day, reason) => remote.skipDay(date, day, reason),
     async sessionsOn(date) {
       const list = await cached(
         () => remote.sessionsOn(date),

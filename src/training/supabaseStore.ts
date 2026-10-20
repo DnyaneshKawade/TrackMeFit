@@ -54,9 +54,14 @@ export interface SummaryRow {
   id: string
   performed_on: string
   plan_day_id?: string | null
+  skipped?: boolean
+  skip_reason?: string | null
   plan_days: { name: string } | null
   set_logs: { exercise_id: string }[]
 }
+
+const skippedFrom = (r: { skipped?: boolean; skip_reason?: string | null }) =>
+  r.skipped ? { skipped: r.skip_reason ? { reason: r.skip_reason } : {} } : {}
 
 export const summaryFromRow = (r: SummaryRow): SessionSummary => ({
   id: r.id,
@@ -64,6 +69,7 @@ export const summaryFromRow = (r: SummaryRow): SessionSummary => ({
   name: r.plan_days?.name ?? 'Workout',
   planDayId: r.plan_day_id ?? null,
   exerciseIds: [...new Set(r.set_logs.map((x) => x.exercise_id))],
+  ...skippedFrom(r),
 })
 
 const SET_COLUMNS = 'id, exercise_id, set_index, weight_kg, reps, rir, tag, note'
@@ -129,11 +135,11 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templ
       const rows = check(
         await sb
           .from('workout_sessions')
-          .select(`id, performed_on, plan_day_id, note, plan_days(name), set_logs(${SET_COLUMNS})`)
+          .select(`id, performed_on, plan_day_id, note, skipped, skip_reason, plan_days(name), set_logs(${SET_COLUMNS})`)
           .eq('user_id', userId)
           .eq('performed_on', date)
           .order('id'),
-      ) as unknown as { id: string; performed_on: string; plan_day_id: string | null; note: string | null; plan_days: { name: string } | null; set_logs: SetRow[] }[]
+      ) as unknown as { id: string; performed_on: string; plan_day_id: string | null; note: string | null; skipped: boolean; skip_reason: string | null; plan_days: { name: string } | null; set_logs: SetRow[] }[]
       return rows.map(
         (r): Session => ({
           id: r.id,
@@ -142,8 +148,12 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templ
           name: r.plan_days?.name ?? 'Workout',
           sets: r.set_logs.map(setFromRow),
           ...(r.note ? { note: r.note } : {}),
+          ...skippedFrom(r),
         }),
       )
+    },
+    async skipDay(date, day, reason) {
+      check(await sb.from('workout_sessions').insert({ performed_on: date, plan_day_id: day.id, skipped: true, skip_reason: reason?.trim() || null }))
     },
     async startSession(date, day, id) {
       const session = (sid: string): Session => ({ id: sid, performedOn: date, planDayId: day?.id ?? null, name: day?.name ?? 'Workout', sets: [] })
@@ -189,7 +199,7 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templ
       const rows = check(
         await sb
           .from('workout_sessions')
-          .select('id, performed_on, plan_day_id, plan_days(name), set_logs(exercise_id)')
+          .select('id, performed_on, plan_day_id, skipped, skip_reason, plan_days(name), set_logs(exercise_id)')
           .eq('user_id', userId)
           .gte('performed_on', from)
           .lte('performed_on', to)
