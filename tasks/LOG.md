@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-20: T-109 block controls
+
+- Each plan has a "Block" screen. Pick 3 to 7 hard weeks, take the light week now, or start the next block.
+- The next block starts at week 1 on the same plan, with only the swaps ticked.
+- In a light week, traps and forearms exercises can be skipped.
+- Plans now save their hard weeks. Migration `20261121000000_block_hard_weeks.sql` keeps it 3 to 7.
+- Tests: `src/training/blockControls.test.tsx` (4), `src/db/blockHardWeeks.test.ts` (1).
+
 ## 2026-10-20: T-108 pain per exercise
 
 - The feedback sheet asks "Something hurt" for each exercise done, not each muscle.
