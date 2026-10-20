@@ -133,3 +133,80 @@ export function newRecord(past: StrengthSession[], today: StrengthSet[], set: St
   if (!old && set.weightKg === 0 && most && set.reps > most.reps) return { kind: 'reps', text: `New record: most reps in a set. Your best before was ${most.reps}.` }
   return null
 }
+
+/** What the strength graph can show (T-106), like FitNotes' graph choices. */
+export type GraphKind = 'e1rm' | 'heaviest' | 'reps' | 'bestSet' | 'volume' | 'totalReps'
+export const GRAPH_KINDS: [GraphKind, string][] = [
+  ['e1rm', 'One-rep max guess'],
+  ['heaviest', 'Heaviest weight'],
+  ['reps', 'Most reps in a set'],
+  ['bestSet', 'Best set (weight × reps)'],
+  ['volume', 'Total weight lifted'],
+  ['totalReps', 'Total reps'],
+]
+/** Graph kinds shown in kg or lb; the others are counts. */
+export const WEIGHT_KINDS = new Set<GraphKind>(['e1rm', 'heaviest', 'bestSet', 'volume'])
+
+export type GraphRange = '1m' | '3m' | '6m' | '1y' | 'all'
+export const GRAPH_RANGES: [GraphRange, string][] = [
+  ['1m', '1 month'],
+  ['3m', '3 months'],
+  ['6m', '6 months'],
+  ['1y', '1 year'],
+  ['all', 'All'],
+]
+const RANGE_MONTHS: Record<Exclude<GraphRange, 'all'>, number> = { '1m': 1, '3m': 3, '6m': 6, '1y': 12 }
+
+/** The first day a range covers, or null for all of it. */
+export function rangeStart(range: GraphRange, today: string): string | null {
+  if (range === 'all') return null
+  const d = new Date(`${today}T00:00:00Z`)
+  d.setUTCMonth(d.getUTCMonth() - RANGE_MONTHS[range])
+  return d.toISOString().slice(0, 10)
+}
+
+/** One value per workout for the chosen graph, oldest first. Working sets
+ * only; workouts with nothing to show (no weight for a weight graph) are left out. */
+export function graphPoints(sessions: StrengthSession[], kind: GraphKind, range: GraphRange, today: string): { date: string; value: number }[] {
+  const from = rangeStart(range, today)
+  const out: { date: string; value: number }[] = []
+  for (const s of [...sessions].sort((a, b) => a.performedOn.localeCompare(b.performedOn))) {
+    if (from && s.performedOn < from) continue
+    const sets = s.sets.filter(working)
+    if (!sets.length) continue
+    let value = 0
+    for (const x of sets) {
+      if (kind === 'e1rm') value = Math.max(value, e1rm(x.weightKg, x.reps) ?? 0)
+      else if (kind === 'heaviest') value = Math.max(value, x.weightKg)
+      else if (kind === 'reps') value = Math.max(value, x.reps)
+      else if (kind === 'bestSet') value = Math.max(value, x.weightKg * x.reps)
+      else if (kind === 'volume') value += x.weightKg * x.reps
+      else value += x.reps
+    }
+    if (value > 0) out.push({ date: s.performedOn, value: kind === 'e1rm' ? round05(value) : Math.round(value * 10) / 10 })
+  }
+  return out
+}
+
+/** Past workouts newest first, each set marked when it set a new record at
+ * the time: heaviest weight or best one-rep max guess (T-106). The first
+ * workout only sets the starting point, so it has no marks. */
+export function historyWithRecords(sessions: StrengthSession[]): { performedOn: string; sets: (StrengthSet & { record: boolean })[] }[] {
+  let heaviest = 0
+  let best = 0
+  let first = true
+  const out: { performedOn: string; sets: (StrengthSet & { record: boolean })[] }[] = []
+  for (const s of [...sessions].sort((a, b) => a.performedOn.localeCompare(b.performedOn))) {
+    const sets = s.sets.map((x) => {
+      if (!working(x)) return { ...x, record: false }
+      const est = round05(e1rm(x.weightKg, x.reps) ?? 0)
+      const record = !first && ((x.weightKg > 0 && x.weightKg > heaviest) || (est > 0 && est > best))
+      heaviest = Math.max(heaviest, x.weightKg)
+      best = Math.max(best, est)
+      return { ...x, record }
+    })
+    if (s.sets.some(working)) first = false
+    out.push({ performedOn: s.performedOn, sets })
+  }
+  return out.reverse()
+}

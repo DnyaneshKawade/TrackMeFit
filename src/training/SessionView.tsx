@@ -8,6 +8,7 @@ import { LANDMARKS, targetRir, type Muscle } from '../engine/training'
 import { warmupSets } from '../engine/warmup'
 import { exerciseById, similarExercise, type Exercise } from './exercises'
 import { ExercisePicker, type ExerciseLibrary } from './ExercisePicker'
+import { ExerciseDetail } from './ExerciseDetail'
 import { SyncNote } from '../sync/SyncNote'
 import { useSync } from '../sync/useSync'
 import { FeedbackSheet } from './FeedbackSheet'
@@ -109,6 +110,8 @@ export function SessionView({
   const [picking, setPicking] = useState(false)
   const [askFeedback, setAskFeedback] = useState(false)
   const [restEnds, setRestEnds] = useState<number | null>(null)
+  // An exercise's history and graph, opened from its card (T-106).
+  const [detail, setDetail] = useState<string | null>(null)
 
   const trained = [...new Set(session.sets.map((s) => exerciseById.get(s.exerciseId)?.primary).filter((m) => m !== undefined))]
 
@@ -141,66 +144,75 @@ export function SessionView({
   }
 
   return (
-    <section className="session" aria-label={session.name}>
-      <header className="sheet-head">
-        <h2>{session.name}</h2>
-        <button className="link" onClick={() => (trained.length ? setAskFeedback(true) : onClose())}>Done</button>
-      </header>
-      {block && <p className="muted">{weekLabel(block.week, block.hardWeeks)}</p>}
-      {restEnds !== null && <RestTimer key={restEnds} endsAt={restEnds} onChange={setRestEnds} />}
-      <SyncNote sync={store.sync} noun={['workout entry', 'workout entries']} />
-      {supersetGroups(ids, linked).map((group) => {
-        const exercises = group.flatMap((id) => exerciseById.get(id) ?? [])
-        const cards = exercises.map((exercise, i) => {
-          const next = ids[ids.indexOf(exercise.id) + 1]
+    <>
+      {detail && (
+        <section className="sheet records-view">
+          <ExerciseDetail store={store} exerciseId={detail} today={session.performedOn} backLabel="← Back to workout" onBack={() => setDetail(null)} />
+        </section>
+      )}
+      {/* Hidden, not closed, so typed weights and the rest timer stay. */}
+      <section className="session" aria-label={session.name} hidden={!!detail}>
+        <header className="sheet-head">
+          <h2>{session.name}</h2>
+          <button className="link" onClick={() => (trained.length ? setAskFeedback(true) : onClose())}>Done</button>
+        </header>
+        {block && <p className="muted">{weekLabel(block.week, block.hardWeeks)}</p>}
+        {restEnds !== null && <RestTimer key={restEnds} endsAt={restEnds} onChange={setRestEnds} />}
+        <SyncNote sync={store.sync} noun={['workout entry', 'workout entries']} />
+        {supersetGroups(ids, linked).map((group) => {
+          const exercises = group.flatMap((id) => exerciseById.get(id) ?? [])
+          const cards = exercises.map((exercise, i) => {
+            const next = ids[ids.indexOf(exercise.id) + 1]
+            return (
+              <ExerciseLog
+                key={exercise.id}
+                store={store}
+                session={session}
+                exercise={exercise}
+                plan={planned.find((p) => p.exerciseId === exercise.id)}
+                block={block}
+                warm={ids.slice(0, ids.indexOf(exercise.id)).some((id) => exerciseById.get(id)?.primary === exercise.primary)}
+                weekly={weekly?.[exercise.primary]}
+                others={ids}
+                current={now === exercise.id}
+                superset={
+                  next
+                    ? {
+                        on: linked.has(exercise.id),
+                        toggle: () =>
+                          setLinked((l) => {
+                            const copy = new Set(l)
+                            if (copy.has(exercise.id)) copy.delete(exercise.id)
+                            else copy.add(exercise.id)
+                            return copy
+                          }),
+                      }
+                    : undefined
+                }
+                onChange={setSession}
+                onDetail={() => setDetail(exercise.id)}
+                onLogged={() => {
+                  const rest = restAfterSet(exercises, exercise.id)
+                  // In a superset, go straight to the next exercise; rest after the last.
+                  setNow(rest === null ? exercises[i + 1].id : exercises.length > 1 ? exercises[0].id : null)
+                  setRestEnds(rest === null ? null : Date.now() + rest * 1000)
+                }}
+              />
+            )
+          })
+          if (exercises.length < 2) return cards
           return (
-            <ExerciseLog
-              key={exercise.id}
-              store={store}
-              session={session}
-              exercise={exercise}
-              plan={planned.find((p) => p.exerciseId === exercise.id)}
-              block={block}
-              warm={ids.slice(0, ids.indexOf(exercise.id)).some((id) => exerciseById.get(id)?.primary === exercise.primary)}
-              weekly={weekly?.[exercise.primary]}
-              others={ids}
-              current={now === exercise.id}
-              superset={
-                next
-                  ? {
-                      on: linked.has(exercise.id),
-                      toggle: () =>
-                        setLinked((l) => {
-                          const copy = new Set(l)
-                          if (copy.has(exercise.id)) copy.delete(exercise.id)
-                          else copy.add(exercise.id)
-                          return copy
-                        }),
-                    }
-                  : undefined
-              }
-              onChange={setSession}
-              onLogged={() => {
-                const rest = restAfterSet(exercises, exercise.id)
-                // In a superset, go straight to the next exercise; rest after the last.
-                setNow(rest === null ? exercises[i + 1].id : exercises.length > 1 ? exercises[0].id : null)
-                setRestEnds(rest === null ? null : Date.now() + rest * 1000)
-              }}
-            />
+            <section key={group.join('+')} className="superset" aria-label={`Superset: ${exercises.map((e) => e.name).join(' and ')}`}>
+              <p className="superset-head">Superset: do one set of each, then rest.</p>
+              {now && group.includes(now) && <p className="superset-now" role="status">Now do {exerciseById.get(now)?.name}</p>}
+              {cards}
+            </section>
           )
-        })
-        if (exercises.length < 2) return cards
-        return (
-          <section key={group.join('+')} className="superset" aria-label={`Superset: ${exercises.map((e) => e.name).join(' and ')}`}>
-            <p className="superset-head">Superset: do one set of each, then rest.</p>
-            {now && group.includes(now) && <p className="superset-now" role="status">Now do {exerciseById.get(now)?.name}</p>}
-            {cards}
-          </section>
-        )
-      })}
-      <button className="add" onClick={() => setPicking(true)}>+ Add exercise</button>
-      <WorkoutNote store={store} session={session} />
-    </section>
+        })}
+        <button className="add" onClick={() => setPicking(true)}>+ Add exercise</button>
+        <WorkoutNote store={store} session={session} />
+      </section>
+    </>
   )
 }
 
@@ -219,6 +231,7 @@ function ExerciseLog({
   current,
   superset,
   onChange,
+  onDetail,
   onLogged,
 }: {
   store: WorkoutStore
@@ -236,6 +249,8 @@ function ExerciseLog({
   /** Link with the next exercise; absent for the last one. */
   superset?: { on: boolean; toggle: () => void }
   onChange: (s: Session) => void
+  /** Opens this exercise's history and graph. */
+  onDetail: () => void
   /** Starts the rest timer. */
   onLogged: () => void
 }) {
@@ -375,6 +390,9 @@ function ExerciseLog({
       <header>
         <h3>{exercise.name}</h3>
         {plan && <span className="muted">{plan.sets} × {plan.repMin}–{plan.repMax}</span>}
+        <button className="link history-link" aria-label={`History and graph for ${exercise.name}`} onClick={onDetail}>
+          History
+        </button>
       </header>
       {superset && (
         <button className="chip superset-link" aria-label={`Superset ${exercise.name} with the next exercise`} aria-pressed={superset.on} onClick={superset.toggle}>

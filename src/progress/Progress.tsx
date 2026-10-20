@@ -12,6 +12,7 @@ import type { GoalChoice, ProfileInfo } from '../profile/types'
 import type { DietTarget, TargetStore, TargetValues } from '../targets/types'
 import {
   MEASURE_FIELDS,
+  checkDay,
   checkMeasurement,
   checkWeight,
   goalNote,
@@ -53,28 +54,32 @@ export function WeightChartView({ weighIns }: { weighIns: WeighIn[] }) {
 }
 
 function MeasurementForm({
-  initial,
+  today,
+  savedOn,
   onSave,
   onCancel,
 }: {
-  initial: Measurement | undefined
-  onSave: (text: Partial<Record<MeasureKey, string>>) => Promise<void>
+  today: string
+  /** What is already saved for a day, to fill the form. */
+  savedOn: (day: string) => Measurement | undefined
+  onSave: (text: Partial<Record<MeasureKey, string>>, day: string) => Promise<void>
   onCancel: () => void
 }) {
-  const [text, setText] = useState<Partial<Record<MeasureKey, string>>>(() =>
-    Object.fromEntries(MEASURE_FIELDS.map((f) => [f.key, initial?.[f.key] === undefined ? '' : String(initial[f.key])])),
-  )
-  const [errors, setErrors] = useState<Partial<Record<MeasureKey | 'form', string>>>({})
+  const fill = (m: Measurement | undefined) => Object.fromEntries(MEASURE_FIELDS.map((f) => [f.key, m?.[f.key] === undefined ? '' : String(m[f.key])]))
+  const [day, setDay] = useState(today)
+  const [text, setText] = useState<Partial<Record<MeasureKey, string>>>(() => fill(savedOn(today)))
+  const [errors, setErrors] = useState<Partial<Record<MeasureKey | 'form' | 'day', string>>>({})
   const [busy, setBusy] = useState(false)
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault()
-    const found = checkMeasurement(text)
+    const dayProblem = checkDay(day, today)
+    const found = { ...checkMeasurement(text), ...(dayProblem ? { day: dayProblem } : {}) }
     setErrors(found)
     if (Object.keys(found).length) return
     setBusy(true)
     try {
-      await onSave(text)
+      await onSave(text, day)
     } catch {
       setErrors({ form: 'Couldn’t save. Check your connection and try again.' })
       setBusy(false)
@@ -84,6 +89,20 @@ function MeasurementForm({
   return (
     <form className="measure-form" onSubmit={save} noValidate aria-label="Measurements">
       <p className="muted">Measure in the morning with a soft tape. Leave out any you don’t track.</p>
+      <label className="target-field">
+        <span>Day</span>
+        <input
+          type="date"
+          aria-label="Day of the measurements"
+          max={today}
+          value={day}
+          onChange={(e) => {
+            setDay(e.target.value)
+            setText(fill(savedOn(e.target.value)))
+          }}
+        />
+        {errors.day && <small className="error">{errors.day}</small>}
+      </label>
       {MEASURE_FIELDS.map((f) => (
         <label key={f.key} className="target-field">
           <span>{f.label}</span>
@@ -183,6 +202,9 @@ export function Progress({
   const [weighIns, setWeighIns] = useState<WeighIn[] | null>(null)
   const [measurements, setMeasurements] = useState<Measurement[]>([])
   const [weight, setWeight] = useState('')
+  /** The day this weight is for; an earlier day fills in a missed weigh-in (T-104). */
+  const [day, setDay] = useState(today)
+  const [picking, setPicking] = useState(false)
   const [weightError, setWeightError] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [measuring, setMeasuring] = useState(false)
@@ -208,12 +230,15 @@ export function Progress({
 
   const saveWeight = async (e: React.FormEvent) => {
     e.preventDefault()
-    const problem = checkWeight(weight)
+    const problem = checkDay(day, today) ?? checkWeight(weight)
     setWeightError(problem)
     if (problem) return
     setBusy(true)
     try {
-      await store.saveWeighIn(today, Number(weight))
+      await store.saveWeighIn(day, Number(weight))
+      // Back to today after filling in a missed day.
+      setDay(today)
+      setPicking(false)
       await load()
     } catch {
       setWeightError('Couldn’t save. Check your connection and try again.')
@@ -230,8 +255,8 @@ export function Progress({
     }
   }
 
-  const saveMeasurement = async (text: Partial<Record<MeasureKey, string>>) => {
-    const m: Measurement = { date: today }
+  const saveMeasurement = async (text: Partial<Record<MeasureKey, string>>, day: string) => {
+    const m: Measurement = { date: day }
     for (const f of MEASURE_FIELDS) if (text[f.key]?.trim()) m[f.key] = Number(text[f.key])
     await store.saveMeasurement(m)
     setMeasuring(false)
@@ -242,7 +267,13 @@ export function Progress({
 
   const summary = weightSummary(weighIns)
   const note = summary ? goalNote(goal, summary.weekRate) : null
-  const hasToday = weighIns.some((w) => w.date === today)
+  const hasDay = weighIns.some((w) => w.date === day)
+  const pickDay = (d: string) => {
+    setDay(d)
+    setWeightError(null)
+    const saved = weighIns.find((w) => w.date === d)
+    setWeight(saved ? String(saved.kg) : '')
+  }
   const changes = measurementChanges(measurements)
   const recent = [...weighIns].reverse().slice(0, 7)
   const hidden = later !== null && later > shiftDate(today, -14)
@@ -255,16 +286,26 @@ export function Progress({
 
       <form className="weigh-in" onSubmit={saveWeight} noValidate>
         <label className="field">
-          <span>Today’s weight</span>
+          <span>{day === today ? 'Today’s weight' : `Weight on ${shortDate(day)}`}</span>
           <span className="weigh-row">
-            <input aria-label="Today’s weight (kg)" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
+            <input aria-label={day === today ? 'Today’s weight (kg)' : `Weight on ${shortDate(day)} (kg)`} inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
             <span className="muted">kg</span>
             <button className="primary" disabled={busy}>
-              {hasToday ? 'Update' : 'Save'}
+              {hasDay ? 'Update' : 'Save'}
             </button>
           </span>
           {weightError && <small className="error">{weightError}</small>}
         </label>
+        {picking ? (
+          <label className="field day-pick">
+            <span>Day</span>
+            <input type="date" aria-label="Day of the weigh-in" max={today} value={day} onChange={(e) => pickDay(e.target.value)} />
+          </label>
+        ) : (
+          <button type="button" className="link missed" onClick={() => setPicking(true)}>
+            Missed a day? Add an earlier weight
+          </button>
+        )}
         <p className="muted">Weigh yourself after waking up and using the toilet, before eating.</p>
       </form>
 
@@ -322,7 +363,7 @@ export function Progress({
           )}
         </header>
         {measuring ? (
-          <MeasurementForm initial={measurements.find((m) => m.date === today)} onSave={saveMeasurement} onCancel={() => setMeasuring(false)} />
+          <MeasurementForm today={today} savedOn={(d) => measurements.find((m) => m.date === d)} onSave={saveMeasurement} onCancel={() => setMeasuring(false)} />
         ) : changes.length ? (
           <ul className="weigh-list measure-list">
             {changes.map((c) => (

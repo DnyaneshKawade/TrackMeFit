@@ -148,7 +148,7 @@ export function offlineWorkoutStore(
       ),
     savePlan: (plan) => remote.savePlan(plan),
     deletePlan: (id) => remote.deletePlan(id),
-    startBlock: (planId, date) => remote.startBlock(planId, date),
+    startBlock: (planId, date, week) => remote.startBlock(planId, date, week),
     async sessionsOn(date) {
       const list = await cached(
         () => remote.sessionsOn(date),
@@ -198,7 +198,7 @@ export function offlineWorkoutStore(
           const kept = days.filter(([d]) => d >= from && d <= to).sort(([a], [b]) => b.localeCompare(a))
           if (!kept.length) return undefined
           return kept.flatMap(([, list]) =>
-            list.map((x): SessionSummary => ({ id: x.id, performedOn: x.performedOn, name: x.name, exerciseIds: [...new Set(x.sets.map((y) => y.exerciseId))] })),
+            list.map((x): SessionSummary => ({ id: x.id, performedOn: x.performedOn, name: x.name, planDayId: x.planDayId, exerciseIds: [...new Set(x.sets.map((y) => y.exerciseId))] })),
           )
         },
       ),

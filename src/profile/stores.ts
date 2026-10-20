@@ -10,6 +10,9 @@ export function memoryProfileStore(initial: Partial<ProfileInfo> = {}): ProfileS
     async save(p) {
       profile = { ...p }
     },
+    async saveBirthDate(date) {
+      profile = { ...profile, birthDate: date }
+    },
   }
 }
 
@@ -114,6 +117,10 @@ export function supabaseProfileStore(sb: SupabaseClient, userId: string): Profil
       if (error) throw error
       const h = await sb.from('health_answers').upsert({ user_id: userId, ...toHealthRow(p), updated_at: new Date().toISOString() })
       if (h.error) throw h.error
+    },
+    async saveBirthDate(date) {
+      const { error } = await sb.from('profiles').update({ birth_date: date }).eq('id', userId)
+      if (error) throw error
     },
   }
 }

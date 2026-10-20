@@ -4,13 +4,13 @@ import type { ExerciseLibrary } from './ExercisePicker'
 import type { ExerciseStore } from './exerciseStore'
 import { customExercise, customExercises, setCustomExercises, type Exercise } from './exercises'
 import { PlanEditor } from './PlanEditor'
-import { blockWeek, weekLabel, weeklySets } from './progression'
+import { blockWeek, blockWeekByWorkouts, weekLabel, weeklySets, workoutsInBlock } from './progression'
 import { RecordsView } from './RecordsView'
 import { ReviewView } from './ReviewView'
 import { SessionView } from './SessionView'
 import { SuggestPlan, type TrainingAnswers } from './SuggestPlan'
 import { SyncNote } from '../sync/SyncNote'
-import type { Plan, PlanDay, Session, WorkoutStore } from './types'
+import type { Plan, PlanDay, Session, SessionSummary, WorkoutStore } from './types'
 import '../log/log.css'
 import './training.css'
 
@@ -48,6 +48,8 @@ export function Workouts({
   const [plans, setPlans] = useState<Plan[] | null>(null)
   const [favourites, setFavourites] = useState<Set<string>>(new Set())
   const [sessions, setSessions] = useState<Session[]>([])
+  // Workouts since the oldest block began; null when they couldn't load (T-107).
+  const [blockWorkouts, setBlockWorkouts] = useState<SessionSummary[] | null>(null)
   const [view, setView] = useState<View>({ kind: 'home' })
   const [error, setError] = useState<string | null>(null)
 
@@ -65,6 +67,9 @@ export function Workouts({
       setPlans(p)
       setSessions(s)
       setError(null)
+      // One read for every plan's block. Without it, weeks fall back to dates.
+      const from = p.map((x) => x.blockStartedOn ?? today).sort()[0]
+      setBlockWorkouts(from && from <= today ? await store.summaries(from, today).catch(() => null) : [])
     } catch {
       setPlans([])
       setError('Couldn’t load your workouts. Check your connection.')
@@ -118,7 +123,12 @@ export function Workouts({
 
   const dayOf = (id: string | null): PlanDay | undefined => plans?.flatMap((p) => p.days).find((d) => d.id === id)
   const planOf = (dayId: string | null) => plans?.find((p) => p.days.some((d) => d.id === dayId))
-  const blockOf = (p?: Plan) => (p ? { week: blockWeek(p.blockStartedOn ?? today, today), hardWeeks: p.hardWeeks ?? 4 } : undefined)
+  const weekOf = (p: Plan) => {
+    const startedOn = p.blockStartedOn ?? today
+    if (!blockWorkouts) return blockWeek(startedOn, today) + (p.blockStartWeek ?? 1) - 1
+    return blockWeekByWorkouts({ startedOn, today, done: workoutsInBlock(p, blockWorkouts, today), daysPerWeek: p.days.length, startWeek: p.blockStartWeek })
+  }
+  const blockOf = (p?: Plan) => (p ? { week: weekOf(p), hardWeeks: p.hardWeeks ?? 4 } : undefined)
   const weeklyOf = (p?: Plan) => (p ? weeklySets(p) : undefined)
 
   const start = async (day: PlanDay | null) => {
@@ -163,7 +173,7 @@ export function Workouts({
   if (view.kind === 'review') {
     return (
       <main className="log">
-        <ReviewView store={store} plan={view.plan} today={today} onDone={back} />
+        <ReviewView store={store} plan={view.plan} today={today} week={weekOf(view.plan)} onDone={back} />
       </main>
     )
   }

@@ -39,6 +39,22 @@ export function blockWeek(blockStartedOn: string, today: string): number {
   return Math.floor((toDay(today) - toDay(blockStartedOn)) / 7) + 1
 }
 
+/** Week of the block from workouts done, not days passed (T-107, as in RP):
+ * a missed day waits instead of moving the person on. Each full set of plan
+ * days done is one week. A start date still ahead is the light week before
+ * the block (week 0). */
+export function blockWeekByWorkouts(b: { startedOn: string; today: string; done: number; daysPerWeek: number; startWeek?: number }): number {
+  if (b.today < b.startedOn) return blockWeek(b.startedOn, b.today)
+  return (b.startWeek ?? 1) + Math.floor(b.done / Math.max(1, b.daysPerWeek))
+}
+
+/** Plan workouts done in the current block, from the person's workouts. */
+export function workoutsInBlock(plan: Plan, workouts: { performedOn: string; planDayId?: string | null }[], today: string): number {
+  const start = plan.blockStartedOn ?? today
+  const days = new Set(plan.days.map((d) => d.id))
+  return workouts.filter((w) => w.planDayId && days.has(w.planDayId) && w.performedOn >= start && w.performedOn <= today).length
+}
+
 export const isDeloadWeek = (week: number, hardWeeks: number) => week < 1 || week > hardWeeks
 
 /** "Week 2 of 4" or "Deload week". */

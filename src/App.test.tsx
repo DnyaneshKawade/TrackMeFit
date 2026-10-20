@@ -4,10 +4,11 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { AppShell } from './App'
 import type { Account, AuthService } from './auth/types'
 import { memoryProfileStore } from './profile/stores'
-import type { ProfileInfo } from './profile/types'
+import { ageOn, type ProfileInfo } from './profile/types'
 import { memoryTargetStore } from './targets/stores'
 import { memoryProgressStore } from './progress/stores'
 import { memoryFamilyStore } from './family/family'
+import { localDate } from './log/types'
 
 afterEach(cleanup)
 
@@ -51,8 +52,9 @@ describe('first run', () => {
     const targets = memoryTargetStore('u1')
     render(<AppShell auth={auth(user)} profileStoreFor={() => profiles} progressStoreFor={() => progress} targetStoreFor={() => targets} />)
 
-    await answerAge()
+    // No separate age step: the birth date is asked in About you (T-105).
     expect(await screen.findByRole('heading', { name: 'About you' })).toBeTruthy()
+    expect(screen.queryByRole('form', { name: 'Your age' })).toBeNull()
     expect((screen.getByLabelText('Your name') as HTMLInputElement).value).toBe('Asha')
     pick('Sex', 'Female')
     type('Date of birth', '1995-06-15')
@@ -60,6 +62,7 @@ describe('first run', () => {
     type('Weight today (kg)', '64.5')
     type('Waist at the belly button (cm, optional)', '82')
     click('Next')
+    await screen.findByRole('group', { name: 'Health conditions' })
     pick('Health conditions', 'None of these')
     click('Next')
     pick('On a normal day you are', 'Mostly sitting')
@@ -88,7 +91,7 @@ describe('first run', () => {
   it('remembers a skip so onboarding doesn’t come back', async () => {
     const profiles = memoryProfileStore()
     const { unmount } = render(<AppShell auth={auth(user)} profileStoreFor={() => profiles} />)
-    await answerAge()
+    fireEvent.change(await screen.findByLabelText('Date of birth'), { target: { value: '1995-06-15' } })
     fireEvent.click(await screen.findByRole('button', { name: 'Skip setup and start logging' }))
     expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
     unmount()
@@ -113,7 +116,7 @@ describe('first run', () => {
   })
 
   it('opens the app anyway if the profile can’t be loaded', async () => {
-    const broken = { get: vi.fn().mockRejectedValue(new Error('offline')), save: vi.fn() }
+    const broken = { get: vi.fn().mockRejectedValue(new Error('offline')), save: vi.fn(), saveBirthDate: vi.fn() }
     render(<AppShell auth={auth(user)} profileStoreFor={() => broken} />)
     expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
   })
@@ -229,6 +232,44 @@ describe('one age rule (T-086)', () => {
     await family.sayYes('abcd-1234')
     click('My parent said yes')
     expect(await screen.findByRole('region', { name: 'Breakfast' })).toBeTruthy()
+  })
+
+  // Like the database: before a parent says yes, a teen can save only the birth date.
+  const teenRule = () => {
+    const store = memoryProfileStore()
+    return {
+      ...store,
+      save: async (p: ProfileInfo) => {
+        if (p.birthDate && ageOn(p.birthDate, localDate()) < 18) throw new Error('new row violates row-level security policy')
+        return store.save(p)
+      },
+    }
+  }
+
+  it('5. a teen who gives their birth date in About you waits for a parent (T-105)', async () => {
+    const profiles = teenRule()
+    render(<AppShell auth={auth(user)} profileStoreFor={() => profiles} familyFor={() => memoryFamilyStore()} />)
+    await screen.findByRole('heading', { name: 'About you' })
+    type('Your name', 'Riya')
+    pick('Sex', 'Female')
+    type('Date of birth', '2011-01-01')
+    type('Height (cm)', '155')
+    type('Weight today (kg)', '45')
+    click('Next')
+    expect(await screen.findByRole('heading', { name: 'Ask a parent to say yes' })).toBeTruthy()
+    expect((await profiles.get()).birthDate).toBe('2011-01-01')
+    expect(screen.queryByText(/Couldn’t save/)).toBeNull()
+  })
+
+  it('5. a teen who skips setup also waits for a parent, with no save error (T-105b)', async () => {
+    const profiles = teenRule()
+    render(<AppShell auth={auth(user)} profileStoreFor={() => profiles} familyFor={() => memoryFamilyStore()} />)
+    await screen.findByRole('heading', { name: 'About you' })
+    type('Date of birth', '2010-10-20')
+    click('Skip setup and start logging')
+    expect(await screen.findByRole('heading', { name: 'Ask a parent to say yes' })).toBeTruthy()
+    expect((await profiles.get()).birthDate).toBe('2010-10-20')
+    expect(screen.queryByText(/Couldn’t save/)).toBeNull()
   })
 
   it('3. a Google teen is not offered the coach role', async () => {

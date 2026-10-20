@@ -3,7 +3,7 @@ import { createTestDb, type TestDb } from './testDb'
 
 // One age rule (spec T-086): under 13 can't sign up, 13 to 17 need a
 // parent's yes from an adult account, coaches are 18 or older, and people
-// under 18 can't have a coach.
+// under 18 can have a coach once a parent says yes (T-122).
 
 let t: TestDb
 let teen: string
@@ -67,10 +67,10 @@ describe('one age rule (T-086)', () => {
     await addFood(mum)
   })
 
-  it('4. coaches are 18 or older, and people under 18 can’t have a coach', async () => {
+  it('4. coaches are 18 or older; people under 18 can have a coach (T-122)', async () => {
     await expect(setBirth(coach, yearsAgo(17))).rejects.toThrow(/coaches must be 18/)
     await setBirth(coach, yearsAgo(30))
-    await expect(t.db.query(`insert into coach_clients (coach_id, client_id, status) values ($1, $2, 'active')`, [coach, teen])).rejects.toThrow(/under 18 cannot have a coach/)
+    await t.db.query(`insert into coach_clients (coach_id, client_id, status) values ($1, $2, 'active')`, [coach, teen])
     await t.db.query(`insert into coach_clients (coach_id, client_id, status) values ($1, $2, 'active')`, [coach, mum])
   })
 })

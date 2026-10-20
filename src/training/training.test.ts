@@ -211,7 +211,7 @@ describe('records data (T-044)', () => {
   it('maps a workout row to a summary without repeated exercises', () => {
     expect(
       summaryFromRow({ id: 's', performed_on: '2026-10-10', plan_days: null, set_logs: [{ exercise_id: 'a' }, { exercise_id: 'b' }, { exercise_id: 'a' }] }),
-    ).toEqual({ id: 's', performedOn: '2026-10-10', name: 'Workout', exerciseIds: ['a', 'b'] })
+    ).toEqual({ id: 's', performedOn: '2026-10-10', name: 'Workout', planDayId: null, exerciseIds: ['a', 'b'] })
   })
 })
 

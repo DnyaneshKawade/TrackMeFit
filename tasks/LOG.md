@@ -2,6 +2,55 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-20: T-107 block weeks by workouts done
+
+- The block week now counts workouts done, as RP does. A missed day waits.
+- One week is one workout for each plan day. Empty workouts don't count.
+- A coach who starts a client at week 3 now starts it today at week 3.
+- Database: `20261119000000_block_start_week.sql` adds `block_start_week`. Offline, weeks fall back to days.
+
+## 2026-10-20: T-122 teens follow the adult rules
+
+- DK asked which teen limits a law or store rule needs. Only the parent's yes (DPDP Act).
+- So "Lose fat" is now offered to teens, with the same safe paces as adults.
+- Teens can have a coach after a parent says yes. Coaches still must be 18 or older.
+- Database: `20261118000000_teen_coach.sql` drops the "no coach under 18" trigger. The privacy policy line is gone too.
+
+## 2026-10-20: T-105b fix for a teen's birth date
+
+- DK found it: a birth date under 18 showed "Couldn't save", and setup still went on.
+- Cause: setup saved the whole profile and health answers. The database blocks a teen's answers until a parent says yes.
+- Now Next and Skip save only the birth date first, then show the parent page. The red message clears on the next try.
+- No database change. Tests: `src/App.test.tsx` (1 new, 1 updated with a store that acts like the database).
+
+## 2026-10-19: training tasks from the RP and FitNotes research
+
+- DK asked for tasks from the two studies. Notes: `trackmefit-notes/rp-app-research.md` and `fitnotes-research.md`.
+- New tasks T-107 to T-121, most useful first. T-107 fixes missed days moving the block week.
+- T-082g and T-082h now follow RP more closely. The block-week item moved from T-046 to T-107.
+- Left out: things we already do better (rest timer, supersets, units, plateau rule, offline logging).
+
+## 2026-10-19: T-106 history and graph for each exercise
+
+- Ideas from FitNotes, as DK asked. Each exercise now has Records, History and Graph.
+- History lists every workout, newest first, with each set. A 🏆 marks new records.
+- The graph can show six things, over 1 month to all time. Tap a day to see its sets.
+- During a workout, each exercise has a History link. Back keeps what you typed.
+- No database change.
+
+## 2026-10-19: T-105 age asked in About you
+
+- New people no longer see the "One question first" page. "About you" asks the date of birth and saves it on Next.
+- "Skip setup" asks for the date of birth first. Coaches still see the short age page.
+- Only under-18s see the parent page, now with five short steps that name the Me tab.
+- No database change. Tests: `src/profile/Onboarding.test.tsx` (2), `src/App.test.tsx` (1 new).
+
+## 2026-10-19: T-104 missed days on Progress
+
+- "Missed a day? Add an earlier weight" lets people pick a day and save that day's weight.
+- The measurements form has a Day field too. Days from a year back up to today work.
+- No database change. Tests: `src/progress/Progress.test.tsx` (3).
+
 ## 2026-10-19: T-101d new look on every screen
 
 - The top of each page shows the date and a greeting, with a round picture that opens Me.

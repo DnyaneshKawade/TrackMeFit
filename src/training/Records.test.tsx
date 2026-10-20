@@ -79,8 +79,9 @@ describe('records and strength graphs (T-044)', () => {
       '860 kg28 Sept',
       '1060 kg28 Sept',
     ])
-    expect(within(page).getByRole('img', { name: /Best one-rep max guess in each workout, from 80 kg on 28 Sept to 81.5 kg on 5 Oct/ })).toBeTruthy()
     expect(within(page).getByText('Worked out from sets of 12 reps or fewer. Higher reps give a poor guess.')).toBeTruthy()
+    fireEvent.click(within(page).getByRole('button', { name: 'Graph' }))
+    expect(within(page).getByRole('img', { name: /One-rep max guess in each workout, from 80 kg on 28 Sept to 81.5 kg on 5 Oct/ })).toBeTruthy()
     click('← All exercises')
     expect(await screen.findByRole('region', { name: 'Your exercises' })).toBeTruthy()
   })
@@ -89,6 +90,7 @@ describe('records and strength graphs (T-044)', () => {
     await open()
     fireEvent.click(await screen.findByRole('button', { name: /^Dips/ }))
     const page = await screen.findByRole('region', { name: 'Records for Dips' })
+    fireEvent.click(await within(page).findByRole('button', { name: 'Graph' }))
     expect(await within(page).findByRole('img', { name: /Most reps in a set in each workout, from 12 reps .* to 15 reps/ })).toBeTruthy()
     expect(within(page).queryByRole('table')).toBeNull()
   })
@@ -190,5 +192,77 @@ describe('"New record" during a workout (T-044b)', () => {
     await screen.findByText(/Last time/)
     await logSet('Bench press (barbell)', '150', '1')
     expect(note()).toBeNull()
+  })
+})
+
+describe('history and graph for each exercise (T-106)', () => {
+  // An older bench workout, outside the last month.
+  const withOld = () => memoryWorkoutStore({ sessions: [...SESSIONS, session('s0', '2026-08-01', 'Push', sets('bench-press', [50, 10]))] })
+  const openBench = async (store = withOld()) => {
+    await open(store)
+    fireEvent.click(await screen.findByRole('button', { name: /^Bench press \(barbell\)/ }))
+    const page = await screen.findByRole('region', { name: 'Records for Bench press (barbell)' })
+    await within(page).findByRole('table')
+    return page
+  }
+
+  it('1. History lists every workout, newest first, with each set and record marks', async () => {
+    const page = await openBench()
+    fireEvent.click(within(page).getByRole('button', { name: 'History' }))
+    const days = within(page).getAllByRole('heading', { level: 4 }).map((h) => h.textContent)
+    expect(days).toEqual(['Monday, 5 October 2026', 'Monday, 28 September 2026', 'Saturday, 1 August 2026'])
+    const sets = (day: string) => within(within(page).getByRole('region', { name: day })).getAllByRole('listitem').map((li) => li.textContent)
+    // The warm-up is shown but never a record. The first workout only sets the start.
+    expect(sets('Monday, 5 October 2026')).toEqual(['40 kg × 10 · warm-up', '70 kg × 5 🏆'])
+    expect(sets('Monday, 28 September 2026')).toEqual(['60 kg × 10 🏆', '60 kg × 8'])
+    expect(sets('Saturday, 1 August 2026')).toEqual(['50 kg × 10'])
+  })
+
+  it('2. the graph can show other measures and time ranges', async () => {
+    const page = await openBench()
+    fireEvent.click(within(page).getByRole('button', { name: 'Graph' }))
+    // Three months back by default, so 1 August is in.
+    expect(within(page).getByRole('img', { name: /^One-rep max guess in each workout, from 66.5 kg on 1 Aug to 81.5 kg on 5 Oct/ })).toBeTruthy()
+    fireEvent.click(within(page).getByRole('button', { name: '1 month' }))
+    expect(within(page).getByRole('img', { name: /from 80 kg on 28 Sept to 81.5 kg/ })).toBeTruthy()
+    fireEvent.change(within(page).getByLabelText('Graph shows'), { target: { value: 'volume' } })
+    // 60 × 10 + 60 × 8 = 1080; the warm-up is left out on 5 Oct.
+    expect(within(page).getByRole('img', { name: /^Total weight lifted in each workout, from 1080 kg on 28 Sept to 350 kg on 5 Oct/ })).toBeTruthy()
+    fireEvent.change(within(page).getByLabelText('Graph shows'), { target: { value: 'totalReps' } })
+    expect(within(page).getByRole('img', { name: /^Total reps in each workout, from 18 reps .* to 5 reps/ })).toBeTruthy()
+  })
+
+  it('3. tapping a workout shows its sets', async () => {
+    const page = await openBench()
+    fireEvent.click(within(page).getByRole('button', { name: 'Graph' }))
+    const list = within(page).getByRole('list', { name: 'Each workout' })
+    fireEvent.click(within(list).getByRole('button', { name: /5 Oct/ }))
+    expect(within(list).getByRole('status').textContent).toBe('40 kg × 10 (warm-up), 70 kg × 5')
+  })
+
+  it('4. with no weight, the graph only offers counts', async () => {
+    await open()
+    fireEvent.click(await screen.findByRole('button', { name: /^Dips/ }))
+    const page = await screen.findByRole('region', { name: 'Records for Dips' })
+    fireEvent.click(await within(page).findByRole('button', { name: 'Graph' }))
+    const options = within(within(page).getByLabelText('Graph shows')).getAllByRole('option').map((o) => o.textContent)
+    expect(options).toEqual(['Most reps in a set', 'Total reps'])
+  })
+
+  it('5. a workout opens an exercise’s history and goes back with typed weights kept', async () => {
+    render(<Workouts store={withOld()} today={TODAY} />)
+    click('Start a workout')
+    click('Empty workout')
+    fireEvent.click(await screen.findByRole('button', { name: '+ Add exercise' }))
+    type('Search exercises', 'bench press')
+    click(/^Bench press \(barbell\)/)
+    type('Bench press (barbell) weight (kg)', '72.5')
+    click('History and graph for Bench press (barbell)')
+    const page = await screen.findByRole('region', { name: 'Records for Bench press (barbell)' })
+    fireEvent.click(await within(page).findByRole('button', { name: 'History' }))
+    expect(within(page).getAllByRole('heading', { level: 4 })).toHaveLength(3)
+    click('← Back to workout')
+    expect(screen.queryByRole('region', { name: 'Records for Bench press (barbell)' })).toBeNull()
+    expect((screen.getByLabelText('Bench press (barbell) weight (kg)') as HTMLInputElement).value).toBe('72.5')
   })
 })

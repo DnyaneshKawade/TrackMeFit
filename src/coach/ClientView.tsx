@@ -22,7 +22,7 @@ import type { ChatStore } from './chat'
 import { ClientCheckIns } from './CheckIn'
 import type { CheckInStore } from './checkIns'
 import type { ClientRow, Shares } from './store'
-import { copyTemplate, joinText, startForWeek } from './templates'
+import { copyTemplate, joinText } from './templates'
 
 /** A client's data as their coach sees it; row-level security allows the reads and target changes. */
 export interface ClientStores {
@@ -130,7 +130,7 @@ export function ClientView({
     if (!copy.days.length) return setError('This template only has your own exercises. Add exercises from the library first.')
     try {
       const saved = await stores.workouts.savePlan(copy)
-      await stores.workouts.startBlock(saved.id!, startForWeek(today, week))
+      await stores.workouts.startBlock(saved.id!, today, week)
       setPlans(await stores.workouts.plans())
       setStarting(false)
       setWeek(1)
