@@ -90,8 +90,9 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templ
     },
     async savePlan(plan) {
       let planId = plan.id
-      if (planId) check(await sb.from('workout_plans').update({ name: plan.name.trim() }).eq('id', planId))
-      else planId = (check(await sb.from('workout_plans').insert({ user_id: userId, name: plan.name.trim(), is_template: templates }).select('id').single()) as { id: string }).id
+      const hard_weeks = plan.hardWeeks ?? 4
+      if (planId) check(await sb.from('workout_plans').update({ name: plan.name.trim(), hard_weeks }).eq('id', planId))
+      else planId = (check(await sb.from('workout_plans').insert({ user_id: userId, name: plan.name.trim(), hard_weeks, is_template: templates }).select('id').single()) as { id: string }).id
 
       const keep = plan.days.filter((d) => d.id).map((d) => d.id!)
       let del = sb.from('plan_days').delete().eq('plan_id', planId)

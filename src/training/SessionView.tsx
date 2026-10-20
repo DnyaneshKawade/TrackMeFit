@@ -401,7 +401,7 @@ function ExerciseLog({
         </button>
       )}
       {history && history[0] && workingSets(history[0].sets).length > 0 && <p className="muted">Last time: {describeSets(workingSets(history[0].sets), unit)}</p>}
-      {deload && plan && <p className="suggest">{deloadAdvice(plan.sets)}</p>}
+      {deload && plan && <p className="suggest">{deloadAdvice(plan.sets, exercise.primary)}</p>}
       {block && !deload && (
         <p className="muted">
           {(() => {

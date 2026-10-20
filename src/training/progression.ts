@@ -59,6 +59,22 @@ export function workoutsInBlock(plan: Plan, workouts: { performedOn: string; pla
 
 export const isDeloadWeek = (week: number, hardWeeks: number) => week < 1 || week > hardWeeks
 
+/** Hard weeks a block can have before its light week (T-109). */
+export const HARD_WEEK_CHOICES = [3, 4, 5, 6, 7] as const
+
+/** Swaps the person picked when starting the next block (T-109): each to a
+ * similar exercise not already in the plan. Sets and reps stay the same. */
+export function nextBlockSwaps(plan: Plan, ids: string[]): Swap[] {
+  const taken = new Set(plan.days.flatMap((d) => d.exercises.map((e) => e.exerciseId)))
+  return ids.flatMap((id): Swap[] => {
+    const ex = exerciseById.get(id)
+    const to = ex && taken.has(id) ? similarExercise(ex, taken) : undefined
+    if (!ex || !to) return []
+    taken.add(to.id)
+    return [{ from: id, to: to.id, why: `Swap ${ex.name} for ${to.name}.` }]
+  })
+}
+
 /** "Week 2 of 4" or "Deload week". */
 export const weekLabel = (week: number, hardWeeks: number) => (isDeloadWeek(week, hardWeeks) ? 'Light week' : `Week ${week} of ${hardWeeks}`)
 
@@ -156,7 +172,7 @@ export function painSwaps(plan: Plan, hurt: string[]): Swap[] {
   })
 }
 
-const applySwaps = (plan: Plan, swaps: Swap[]): Plan => {
+export const applySwaps = (plan: Plan, swaps: Swap[]): Plan => {
   const to = new Map(swaps.flatMap((s) => (s.to ? [[s.from, s.to] as const] : [])))
   if (!to.size) return plan
   return { ...plan, days: plan.days.map((d) => ({ ...d, exercises: d.exercises.map((e) => ({ ...e, exerciseId: to.get(e.exerciseId) ?? e.exerciseId })) })) }
@@ -218,5 +234,10 @@ export function reviewWeek(input: {
 }
 
 /** What to do on a planned exercise in a deload week. */
-export const deloadAdvice = (sets: number) =>
-  `Light week: ${deloadSets(sets)} sets at your week-1 weights. Stop while you could still do 4 more reps.`
+export const deloadAdvice = (sets: number, muscle?: Muscle) =>
+  muscle && LIGHT_WEEK_SKIP.has(muscle)
+    ? 'Light week: you can skip this one. Rows, pulls and carries work it too.'
+    : `Light week: ${deloadSets(sets)} sets at your week-1 weights. Stop while you could still do 4 more reps.`
+
+/** Small muscles a light week can leave out (T-109, as in RP). */
+export const LIGHT_WEEK_SKIP: ReadonlySet<Muscle> = new Set(['traps', 'forearms'])

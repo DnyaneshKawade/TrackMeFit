@@ -4,6 +4,7 @@ import type { ExerciseLibrary } from './ExercisePicker'
 import type { ExerciseStore } from './exerciseStore'
 import { customExercise, customExercises, setCustomExercises, type Exercise } from './exercises'
 import { PlanEditor } from './PlanEditor'
+import { BlockView } from './BlockView'
 import { blockWeek, blockWeekByWorkouts, weekLabel, weeklySets, workoutsInBlock } from './progression'
 import { RecordsView } from './RecordsView'
 import { ReviewView } from './ReviewView'
@@ -18,6 +19,7 @@ type View =
   | { kind: 'home' }
   | { kind: 'plan'; plan: Plan }
   | { kind: 'review'; plan: Plan }
+  | { kind: 'block'; plan: Plan }
   | { kind: 'session'; session: Session }
   | { kind: 'start' }
   | { kind: 'records' }
@@ -178,6 +180,14 @@ export function Workouts({
     )
   }
 
+  if (view.kind === 'block') {
+    return (
+      <main className="log">
+        <BlockView store={store} plan={view.plan} today={today} week={weekOf(view.plan)} onDone={back} />
+      </main>
+    )
+  }
+
   if (view.kind === 'suggest') {
     return (
       <main className="log">
@@ -274,6 +284,9 @@ export function Workouts({
               </button>
               <button className="link" aria-label={`Review week for ${p.name}`} onClick={() => setView({ kind: 'review', plan: p })}>
                 Review week
+              </button>
+              <button className="link" aria-label={`Block for ${p.name}`} onClick={() => setView({ kind: 'block', plan: p })}>
+                Block
               </button>
             </li>
           )
