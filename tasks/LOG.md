@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-20: T-116 workout clock
+
+- A clock starts at the first set and counts up.
+- Keeping the screen on was dropped. DK wants the phone to sleep as usual.
+- No database change. The start time lives only on the phone.
+- Tests: `src/training/workoutClock.test.tsx` (3).
+
 ## 2026-10-20: T-115 browse exercises by muscle
 
 - The exercise picker has a row of muscle chips, like Chest and Biceps, each with a count.

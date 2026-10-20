@@ -15,6 +15,7 @@ import { CopyWorkout, type Copied } from './CopyWorkout'
 import { cardioById } from './cardio'
 import { CardioDetail, CardioLog, CardioPicker } from './CardioLog'
 import { ExerciseSettings } from './ExerciseSettings'
+import { WorkoutClock } from './WorkoutClock'
 import { FeedbackSheet } from './FeedbackSheet'
 import { deloadAdvice, isDeloadWeek, weekLabel } from './progression'
 import { formatRest, REST_STEP, restAfterSet, restLeft, supersetGroups } from './restTimer'
@@ -183,6 +184,7 @@ export function SessionView({
           <button className="link" onClick={() => (trained.length ? setAskFeedback(true) : onClose())}>Done</button>
         </header>
         {block && <p className="muted">{weekLabel(block.week, block.hardWeeks)}</p>}
+        <WorkoutClock sessionId={session.id} setCount={session.sets.length} startedEmpty={initial.sets.length === 0} />
         {restEnds !== null && <RestTimer key={restEnds} endsAt={restEnds} onChange={setRestEnds} />}
         <SyncNote sync={store.sync} noun={['workout entry', 'workout entries']} />
         {supersetGroups(ids, linked).map((group) => {
