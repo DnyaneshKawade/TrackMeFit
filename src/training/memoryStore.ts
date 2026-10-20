@@ -81,7 +81,7 @@ export function memoryWorkoutStore(
         .map((f) => ({ f, on: sessions.find((s) => s.id === f.sessionId)?.performedOn ?? '' }))
         .filter((x) => x.on >= date)
         .sort((a, b) => a.on.localeCompare(b.on) || a.f.order - b.f.order)
-      for (const { f } of dated) latest.set(f.muscle, { muscle: f.muscle, recovery: f.recovery, effort: f.effort, pain: f.pain })
+      for (const { f } of dated) latest.set(f.muscle, { muscle: f.muscle, recovery: f.recovery, effort: f.effort, pain: f.pain, ...(f.hurt?.length ? { hurt: f.hurt } : {}) })
       return [...latest.values()]
     },
     async startBlock(planId, date, week = 1) {

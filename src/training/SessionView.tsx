@@ -119,6 +119,7 @@ export function SessionView({
     return (
       <FeedbackSheet
         muscles={trained}
+        exercises={[...new Set(session.sets.map((s) => s.exerciseId))]}
         onSkip={onClose}
         onSave={async (f) => {
           await store.saveFeedback(session.id, f)

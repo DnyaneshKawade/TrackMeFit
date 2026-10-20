@@ -17,7 +17,7 @@ import {
   type Recovery,
   type SetDecision,
 } from '../engine/training'
-import { exerciseById } from './exercises'
+import { exerciseById, similarExercise } from './exercises'
 import type { PastSession, Plan, SetLog } from './types'
 
 export interface Feedback {
@@ -25,6 +25,8 @@ export interface Feedback {
   recovery: Recovery
   effort: Effort
   pain: boolean
+  /** The exercises that hurt (T-108). Older answers only have `pain`. */
+  hurt?: string[]
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -128,6 +130,36 @@ export interface MuscleReview {
   nextSets: number
   decision: SetDecision | null
   why: string
+  /** Exercises that hurt and what to do instead (T-108). `to` is set only for a
+   * plan exercise with a similar one to move to. */
+  swaps: Swap[]
+}
+
+export interface Swap {
+  from: string
+  to?: string
+  why: string
+}
+
+/** Swap each exercise that hurt for a similar one not already in the plan (T-108). */
+export function painSwaps(plan: Plan, hurt: string[]): Swap[] {
+  const inPlan = new Set(plan.days.flatMap((d) => d.exercises.map((e) => e.exerciseId)))
+  const taken = new Set(inPlan)
+  return hurt.map((id): Swap => {
+    const ex = exerciseById.get(id)
+    const name = ex?.name ?? 'This exercise'
+    if (!ex || !inPlan.has(id)) return { from: id, why: `${name} hurt. Try a different exercise next time.` }
+    const to = similarExercise(ex, taken)
+    if (!to) return { from: id, why: `${name} hurt. Pick a different exercise for it in your plan.` }
+    taken.add(to.id)
+    return { from: id, to: to.id, why: `${name} hurt, so we swap it for ${to.name}.` }
+  })
+}
+
+const applySwaps = (plan: Plan, swaps: Swap[]): Plan => {
+  const to = new Map(swaps.flatMap((s) => (s.to ? [[s.from, s.to] as const] : [])))
+  if (!to.size) return plan
+  return { ...plan, days: plan.days.map((d) => ({ ...d, exercises: d.exercises.map((e) => ({ ...e, exerciseId: to.get(e.exerciseId) ?? e.exerciseId })) })) }
 }
 
 export interface WeekReview {
@@ -154,6 +186,7 @@ export function reviewWeek(input: {
     (m): m is Muscle => !!m,
   )
   let proposed = input.plan
+  const pendingSwaps: Swap[] = []
   let down = 0
   const muscles = mainMuscles.map((muscle): MuscleReview => {
     const sets = volume[muscle] ?? 0
@@ -161,11 +194,13 @@ export function reviewWeek(input: {
     const perf = musclePerformance([...new Set(exIds)].map((id) => performanceTrend(input.histories[id] ?? [])))
     if (perf.performance === 'down') down++
     const fb = input.feedback.find((f) => f.muscle === muscle)
-    if (!fb) return { muscle, sets, nextSets: sets, decision: null, why: 'No feedback after training yet, so sets stay the same.' }
+    if (!fb) return { muscle, sets, nextSets: sets, decision: null, why: 'No feedback after training yet, so sets stay the same.', swaps: [] }
     const decision = nextWeekSets(sets, { ...perf, recovery: fb.recovery, effort: fb.effort, pain: fb.pain }, LANDMARKS[muscle])
     const whole = Math.round(decision.change)
     if (whole) proposed = applySetChange(proposed, muscle, whole)
-    return { muscle, sets, nextSets: sets + whole, decision, why: decision.why }
+    const swaps = painSwaps(input.plan, fb.hurt ?? [])
+    pendingSwaps.push(...swaps)
+    return { muscle, sets, nextSets: sets + whole, decision, why: decision.why, swaps }
   })
 
   const deload = shouldDeload({ week: input.week, plannedHardWeeks: input.hardWeeks, musclesDown: down, musclesTrained: mainMuscles.length, userRunDown: input.runDown })
@@ -178,7 +213,8 @@ export function reviewWeek(input: {
           : 'Half your muscles got weaker at once. Take a light week now.'
     return { week: input.week, deload, why, muscles, proposed: input.plan }
   }
-  return { week: input.week, deload, why: `Week ${input.week} of ${input.hardWeeks}.`, muscles, proposed }
+  // Swaps go on last, so set changes still find each muscle's exercises.
+  return { week: input.week, deload, why: `Week ${input.week} of ${input.hardWeeks}.`, muscles, proposed: applySwaps(proposed, pendingSwaps) }
 }
 
 /** What to do on a planned exercise in a deload week. */

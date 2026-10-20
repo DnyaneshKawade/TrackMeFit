@@ -204,7 +204,7 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templ
       if (!list.length) return
       check(
         await sb.from('muscle_feedback').upsert(
-          list.map((f) => ({ session_id: sessionId, muscle: f.muscle, recovery: f.recovery, effort: f.effort, pain: f.pain })),
+          list.map((f) => ({ session_id: sessionId, muscle: f.muscle, recovery: f.recovery, effort: f.effort, pain: f.pain, hurt_exercises: f.hurt ?? [] })),
           { onConflict: 'session_id,muscle' },
         ),
       )
@@ -213,14 +213,14 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templ
       const rows = check(
         await sb
           .from('muscle_feedback')
-          .select('muscle, recovery, effort, pain, created_at, workout_sessions!inner(performed_on, user_id)')
+          .select('muscle, recovery, effort, pain, hurt_exercises, created_at, workout_sessions!inner(performed_on, user_id)')
           .eq('workout_sessions.user_id', userId)
           .gte('workout_sessions.performed_on', date)
           .order('created_at'),
-      ) as unknown as (Feedback & { workout_sessions: { performed_on: string } })[]
+      ) as unknown as (Omit<Feedback, 'hurt'> & { hurt_exercises: string[] | null; workout_sessions: { performed_on: string } })[]
       const latest = new Map<string, Feedback>()
       for (const r of [...rows].sort((a, b) => a.workout_sessions.performed_on.localeCompare(b.workout_sessions.performed_on)))
-        latest.set(r.muscle, { muscle: r.muscle, recovery: r.recovery, effort: r.effort, pain: r.pain })
+        latest.set(r.muscle, { muscle: r.muscle, recovery: r.recovery, effort: r.effort, pain: r.pain, ...(r.hurt_exercises?.length ? { hurt: r.hurt_exercises } : {}) })
       return [...latest.values()]
     },
     async startBlock(planId, date, week = 1) {

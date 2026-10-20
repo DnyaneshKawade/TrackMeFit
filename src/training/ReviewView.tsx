@@ -26,7 +26,7 @@ export function ReviewView({ store, plan, today, week, onDone }: { store: Workou
   }, [store, plan, today])
 
   const review: WeekReview | null = data ? reviewWeek({ plan, week, hardWeeks, histories: data.histories, feedback: data.feedback, runDown }) : null
-  const changes = review ? review.muscles.filter((m) => m.nextSets !== m.sets) : []
+  const changes = review ? review.muscles.filter((m) => m.nextSets !== m.sets || m.swaps.some((s) => s.to)) : []
 
   const act = async (fn: () => Promise<unknown>) => {
     try {
@@ -72,7 +72,10 @@ export function ReviewView({ store, plan, today, week, onDone }: { store: Workou
                       {MUSCLE_NAMES[m.muscle]}: {m.sets === m.nextSets ? `${m.sets} sets` : `${m.sets} → ${m.nextSets} sets`}
                     </strong>
                     <span className="muted">{m.why}</span>
-                    {m.decision?.swapExercise && <span className="muted">Try a different exercise for this muscle.</span>}
+                    {m.swaps.map((s) => (
+                      <span key={s.from} className="muted">{s.why}</span>
+                    ))}
+                    {m.decision?.swapExercise && !m.swaps.length && <span className="muted">Try a different exercise for this muscle.</span>}
                   </li>
                 ))}
               </ul>
