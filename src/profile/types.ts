@@ -47,6 +47,9 @@ export interface ProfileInfo {
 export interface ProfileStore {
   get(): Promise<ProfileInfo>
   save(p: ProfileInfo): Promise<void>
+  /** Saves only the birth date. A teen can do this before a parent says
+   * yes; the database blocks their other answers until then (T-105b). */
+  saveBirthDate(date: string): Promise<void>
 }
 
 export const EMPTY_PROFILE: ProfileInfo = {

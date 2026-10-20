@@ -30,3 +30,6 @@ A new look for the age page that coaches see.
 | 2 | `src/profile/Onboarding.test.tsx`, `src/App.test.tsx` "one age rule (T-086)" 5 |
 | 3 | `src/profile/Onboarding.test.tsx`, `src/App.test.tsx` "remembers a skip" |
 | 4 | `src/App.test.tsx` "one age rule (T-086)" 1 |
+
+## Fix (T-105b, 20 Oct 2026)
+The first build saved the whole profile with the birth date. The database blocks a teen's health answers until a parent says yes. So teens saw "Couldn't save". Now Next and Skip save only the birth date (`saveBirthDate`), then the parent page shows. Test: "a teen who skips setup also waits for a parent, with no save error".

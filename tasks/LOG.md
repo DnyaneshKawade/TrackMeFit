@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-20: T-105b fix for a teen's birth date
+
+- DK found it: a birth date under 18 showed "Couldn't save", and setup still went on.
+- Cause: setup saved the whole profile and health answers. The database blocks a teen's answers until a parent says yes.
+- Now Next and Skip save only the birth date first, then show the parent page. The red message clears on the next try.
+- No database change. Tests: `src/App.test.tsx` (1 new, 1 updated with a store that acts like the database).
+
 ## 2026-10-19: training tasks from the RP and FitNotes research
 
 - DK asked for tasks from the two studies. Notes: `trackmefit-notes/rp-app-research.md` and `fitnotes-research.md`.
