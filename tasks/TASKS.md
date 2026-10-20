@@ -70,7 +70,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
-| T-116 | Keep the screen on during a workout (Wake Lock, with a switch) and a workout clock from the first set (FitNotes) ([spec](../specs/T-116-screen-on-clock.md)) | `src/training/workoutClock.test.tsx` |
+| T-116 | Workout clock from the first set (FitNotes); keeping the screen on was dropped by DK ([spec](../specs/T-116-workout-clock.md)) | `src/training/workoutClock.test.tsx` |
 | T-115 | Browse exercises by muscle in the picker: a row of muscle chips with counts, working with the search (FitNotes) ([spec](../specs/T-115-browse-by-muscle.md)) | `src/training/browseByMuscle.test.tsx` |
 | T-114 | Cardio sets: time and distance for treadmill, bike, rower, walks and runs, with speed and records; kept apart from muscle sets (FitNotes) ([spec](../specs/T-114-cardio-sets.md)) | `src/engine/cardio.test.ts`, `src/db/cardioSets.test.ts`, `src/training/cardioSets.test.tsx` |
 | T-113 | Copy a past workout: pick one from the last 90 days, tick exercises, and their sets fill the boxes; nothing is logged until done (FitNotes) ([spec](../specs/T-113-copy-workout.md)) | `src/training/copyWorkout.test.tsx` |

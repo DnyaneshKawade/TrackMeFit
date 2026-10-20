@@ -1,10 +1,9 @@
-// Keep the screen on and time the workout (spec T-116). Both are per-device
-// conveniences; storage and Wake Lock may be missing, and nothing breaks.
+// Time the workout from its first set (spec T-116). A per-device
+// convenience; storage may be off, and nothing breaks.
 
 import { useEffect, useState } from 'react'
 
 const START = 'tmf:workout-start:'
-const AWAKE = 'tmf:keep-awake'
 /** Start times older than this are cleared when a new workout starts. */
 export const KEEP_START_MS = 2 * 86400000
 
@@ -34,59 +33,6 @@ export function markStart(sessionId: string, now: number): number {
     // Not kept; the clock still runs until the page reloads.
   }
   return now
-}
-
-/** The person's choice to keep the screen on; on unless they turned it off. */
-export function readKeepAwake(): boolean {
-  try {
-    return localStorage.getItem(AWAKE) !== '0'
-  } catch {
-    return true
-  }
-}
-
-export function writeKeepAwake(on: boolean) {
-  try {
-    if (on) localStorage.removeItem(AWAKE)
-    else localStorage.setItem(AWAKE, '0')
-  } catch {
-    // Not kept; it applies until the page reloads.
-  }
-}
-
-interface Sentinel {
-  release(): Promise<void>
-}
-type WakeLockApi = { request(type: 'screen'): Promise<Sentinel> }
-
-/** Holds a screen Wake Lock while `on`. The phone drops it when the app is
- * hidden, so it is asked for again when the app shows. False when the phone
- * can't keep the screen on. */
-export function useWakeLock(on: boolean): boolean {
-  const api = (typeof navigator !== 'undefined' ? (navigator as Navigator & { wakeLock?: WakeLockApi }).wakeLock : undefined) ?? null
-  useEffect(() => {
-    if (!on || !api) return
-    let lock: Sentinel | null = null
-    let live = true
-    const take = () => {
-      if (document.visibilityState !== 'visible') return
-      api.request('screen').then(
-        (l) => {
-          if (live) lock = l
-          else void l.release()
-        },
-        () => {},
-      )
-    }
-    take()
-    document.addEventListener('visibilitychange', take)
-    return () => {
-      live = false
-      document.removeEventListener('visibilitychange', take)
-      void lock?.release().catch(() => {})
-    }
-  }, [on, api])
-  return !!api
 }
 
 /** Seconds since `start`, ticking each second; null with no start. */
