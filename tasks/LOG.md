@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-20: T-116 screen on and workout clock
+
+- The screen stays on while a workout is open, on phones with Wake Lock. A switch lets it sleep.
+- A clock starts at the first set and counts up.
+- No database change. Both live only on the phone.
+- Tests: `src/training/workoutClock.test.tsx` (5).
+
 ## 2026-10-20: T-115 browse exercises by muscle
 
 - The exercise picker has a row of muscle chips, like Chest and Biceps, each with a count.

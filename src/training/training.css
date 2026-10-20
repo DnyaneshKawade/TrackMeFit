@@ -36,6 +36,7 @@
 .rest-timer .step { font-size: 14px; padding: 0 10px; min-height: 36px; }
 .workout-note { display: grid; gap: 4px; margin: 16px 0; font-size: 14px; }
 .workout-note textarea { font: inherit; padding: 10px; border: 1.5px solid var(--field-line); border-radius: 10px; resize: vertical; }
+.workout-clock { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 4px 0; }
 .set-row .primary { width: auto; padding: 10px 14px; }
 .plan-card { display: grid; }
 .plan-card .link { justify-self: end; margin-top: -4px; }
