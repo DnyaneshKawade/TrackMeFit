@@ -9,6 +9,13 @@ Newest first. One entry per finished piece of work: what changed, which tests co
 - Now Next and Skip save only the birth date first, then show the parent page. The red message clears on the next try.
 - No database change. Tests: `src/App.test.tsx` (1 new, 1 updated with a store that acts like the database).
 
+## 2026-10-19: training tasks from the RP and FitNotes research
+
+- DK asked for tasks from the two studies. Notes: `trackmefit-notes/rp-app-research.md` and `fitnotes-research.md`.
+- New tasks T-107 to T-121, most useful first. T-107 fixes missed days moving the block week.
+- T-082g and T-082h now follow RP more closely. The block-week item moved from T-046 to T-107.
+- Left out: things we already do better (rest timer, supersets, units, plateau rule, offline logging).
+
 ## 2026-10-19: T-106 history and graph for each exercise
 
 - Ideas from FitNotes, as DK asked. Each exercise now has Records, History and Graph.

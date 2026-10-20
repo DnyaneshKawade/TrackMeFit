@@ -28,6 +28,21 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests planned |
 |---|---|---|
+| T-107 | Block weeks counted by workouts done, not calendar days, so a missed day waits instead of moving you to the next week (RP; today `blockWeek` counts days) | Engine tests: missed days, two workouts in one day, old blocks |
+| T-108 | "Something hurt" asked per exercise, not per muscle, with a swap suggested for that lift only (RP) | Engine and FeedbackSheet tests, migration test |
+| T-109 | Block controls: set 3-7 hard weeks, end a block early, and "start next block" that copies the plan with optional exercise swaps; deload can drop traps and forearms (RP) | Engine and plan screen tests |
+| T-110 | Skip a workout day, with an optional reason; the plan moves to the next day and the skip counts in the weekly review (RP) | Engine and screen tests |
+| T-111 | Myo-reps set type: one start set, then short mini-sets, logged as total reps (RP) | Engine and logger tests |
+| T-112 | Exercise settings: own weight step, machine or seat notes, own rest time; suggestions use the step (FitNotes, RP) | Engine and screen tests, migration test |
+| T-113 | Copy sets from a past workout: the whole workout or chosen sets, then edit (FitNotes) | Store and screen tests |
+| T-114 | Cardio sets: distance and time for treadmill, cycle, rower and walks (FitNotes) | Engine, migration and logger tests |
+| T-115 | Browse exercises by muscle in the picker, as in FitNotes' list, next to search | Picker tests |
+| T-116 | Keep the screen on during a workout (Wake Lock), and a workout clock from the first set (FitNotes) | Hook test with a fake Wake Lock; timer tests |
+| T-117 | Assisted machines: weight counts as help, so less weight is progress (RP, FitNotes) | Engine tests for records, suggestions and graph |
+| T-118 | Technique video link for each exercise (free YouTube links, nothing hosted) (RP) | Library test: every link is https and from an allowed site |
+| T-119 | Exercise goals, like "100 kg squat", shown on the graph and records (FitNotes) | Engine and screen tests |
+| T-120 | Calendar dots by muscle, and a filter by exercise (FitNotes) | Calendar tests |
+| T-121 | Share a workout as text, such as on WhatsApp (FitNotes) | Text builder tests |
 | T-015 | USDA bulk importer (Foundation + SR Legacy) into our foods table | Mapper tests (started in T-007), import count check |
 | T-018c | Food logging extras: barcode scan (free for everyone, Open Food Facts kept separate under the ODbL), batch-cooked weighing | Component tests for each |
 | T-067 / T-068 later | Parked until users ask (DK, 17 Oct 2026): diet break, SCOFF check, doctor ticks, after the goal, weigh-in habit, plan from logs, gain check, protein choices question | — |
@@ -36,8 +51,8 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-083 | Stuck at the calorie floor: a card with checks (log everything, walk more, then see a doctor) instead of a lower number; optional diet break of 1-2 weeks at maintenance after 8-12 weeks of cutting, accepted by the user | Engine tests |
 | T-100 | Optional reminders (log food, weigh in, workout day, coach reply), a switch for each and a quiet time | Engine, database and Edge Function tests |
 | T-102 | Optional second sign-in step with an authenticator app | RLS test; set-up component test |
-| T-082g | RP-style soreness timing and an optional pump question; new set-change table (4.6) | Engine tests, migration test |
-| T-082h | Muscle priority: Grow more, Grow or Keep, in the plan editor and engine (4.7) | Engine and screen tests |
+| T-082g | RP-style soreness: ask "still sore?" at the first set of that muscle in the next workout, not after the workout; optional pump question; new set-change table (4.6; RP notes) | Engine tests, migration test, screen test |
+| T-082h | Muscle priority: Grow more, Grow or Keep, in the plan editor and engine, and change it in the middle of a block (4.7; RP notes; the engine's `priority` already exists) | Engine and screen tests |
 | T-082j | Beginner start: add weight each session on big lifts, then switch to rep ranges (4.3) | Engine tests |
 | T-082k | Once a block, a "reps left" check on one-joint moves (4.11) | Engine and screen tests |
 | T-082l | Starter plan defaults for people 60 and over; rep range and rest defaults (4.12, 4.13) | Starter plan tests |
@@ -50,7 +65,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-042c4 | Safety alerts: coach-set targets under 1,200 kcal, loss faster than 1% a week for 3 weeks, sign-ups under 18; contact or pause a coach | Alert rules tests, shared with the coach attention list |
 | T-042c5 | Complaints queue with the 90-day clock; feature switches (new sign-ups, food submissions, maintenance) and banners | A switched-off feature hides; a complaint past its date shows first |
 | T-045 | Export and import: CSV and JSON for food, workouts and body data; import from Strong, Hevy and FitNotes | Round-trip export/import tests; sample files from each app |
-| T-046 | Training engine extras: block weeks counted by sessions done, illness advice (restart, deload or continue), learned MEV and MRV per person, fresh exercises at a new block, optional "felt the muscle" tie-breaker | Engine tests, each with its reason |
+| T-046 | Training engine extras: illness advice (restart, deload or continue), learned MEV and MRV per person, fresh exercises at a new block, optional "felt the muscle" tie-breaker | Engine tests, each with its reason |
 | T-047 | Diet suggestion extras, all opt-in: "don't raise calories during a cut", weekly target split across training and rest days, stall options (ease the goal, maintenance break, end the diet) | Engine tests, each with its reason |
 | T-048 | Copy a whole meal or day; weekly averages in the log | Log tests; component tests |
 | T-049 | Food source and checked badge in search and on the amount screen; merge duplicate entries | Search and component tests |
