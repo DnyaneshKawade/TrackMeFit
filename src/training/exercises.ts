@@ -28,6 +28,8 @@ export interface Exercise {
   restSec?: number
   /** The person's machine or seat notes (T-112). */
   setupNote?: string
+  /** The person's goal, like 100 kg for 1 rep (T-119). */
+  goal?: { kg: number; reps: number }
 }
 
 /** The person's own settings for one exercise (T-112). Empty fields keep the usual. */
@@ -37,11 +39,16 @@ export interface ExerciseSetting {
   stepKg?: number
   restSec?: number
   note?: string
+  /** A goal weight, and the reps to lift it for (1 when not given) (T-119). */
+  goalKg?: number
+  goalReps?: number
 }
 
 export const STEP_KG_RANGE = [0.25, 20] as const
 export const REST_RANGE = [15, 600] as const
 export const MAX_SETUP_NOTE = 200
+export const GOAL_KG_RANGE = [1, 600] as const
+export const GOAL_REPS_RANGE = [1, 30] as const
 
 /** Moves that load the muscle when it is stretched (Maeo 2021 and 2023,
  * Pedrosa 2022, Kassiano 2023). The edge is small, so plans prefer them only. */
@@ -176,7 +183,7 @@ let settings = new Map<string, ExerciseSetting>()
 function withSetting(e: Exercise): Exercise {
   const s = settings.get(e.id)
   if (!s) return e
-  return { ...e, ...(s.stepKg ? { increment: s.stepKg } : {}), ...(s.restSec ? { restSec: s.restSec } : {}), ...(s.note ? { setupNote: s.note } : {}) }
+  return { ...e, ...(s.stepKg ? { increment: s.stepKg } : {}), ...(s.restSec ? { restSec: s.restSec } : {}), ...(s.note ? { setupNote: s.note } : {}), ...(s.goalKg ? { goal: { kg: s.goalKg, reps: s.goalReps ?? 1 } } : {}) }
 }
 
 /** The exercise as in the library, without the person's settings. */
