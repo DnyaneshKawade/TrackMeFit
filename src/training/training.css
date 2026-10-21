@@ -138,3 +138,8 @@
 .graph-days { list-style: none; padding: 0; margin: 8px 0; }
 .graph-days .day-button { display: flex; justify-content: space-between; width: 100%; padding: 10px 14px; margin-bottom: 6px; }
 .graph-days .day-button[aria-pressed='true'] { border-color: var(--p); }
+/* Deleting and putting back (T-123). */
+.undo-row { margin: 4px 0; font-size: 14px; }
+.delete-workout { margin-top: 16px; }
+.delete-workout p { margin: 0 0 4px; }
+.skipped-day .link { justify-self: start; padding-left: 0; }

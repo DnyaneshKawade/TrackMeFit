@@ -48,6 +48,11 @@ export function memoryWorkoutStore(
     async removeSet(setId) {
       for (const s of sessions) s.sets = s.sets.filter((x) => x.id !== setId)
     },
+    async deleteSession(sessionId) {
+      const i = sessions.findIndex((s) => s.id === sessionId)
+      if (i >= 0) sessions.splice(i, 1)
+      for (let j = feedback.length - 1; j >= 0; j--) if (feedback[j].sessionId === sessionId) feedback.splice(j, 1)
+    },
     async history(exerciseId, beforeDate, limit = 3) {
       return sessions
         .filter((s) => s.performedOn < beforeDate)

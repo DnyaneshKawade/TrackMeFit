@@ -31,7 +31,9 @@ import {
   workingSets,
   type PastSession,
   type PlanExercise,
+  type NewSet,
   type Session,
+  type SetLog,
   type SetTag,
   type WorkoutStore,
 } from './types'
@@ -86,6 +88,34 @@ function WorkoutNote({ store, session }: { store: WorkoutStore; session: Session
       <textarea aria-label="Workout notes" maxLength={MAX_WORKOUT_NOTE} rows={2} value={note} onChange={(e) => setNote(e.target.value)} onBlur={() => void save()} />
       {error && <small className="error" role="alert">{error}</small>}
     </label>
+  )
+}
+
+/** Deletes the whole workout after a second tap (T-123). */
+function DeleteWorkout({ store, session, onDeleted }: { store: WorkoutStore; session: Session; onDeleted: () => void }) {
+  const [asking, setAsking] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(false)
+  const n = session.sets.length
+  const remove = async () => {
+    setBusy(true)
+    setError(false)
+    try {
+      await store.deleteSession(session.id)
+      onDeleted()
+    } catch {
+      setError(true)
+      setBusy(false)
+    }
+  }
+  if (!asking) return <button className="link danger delete-workout" onClick={() => setAsking(true)}>Delete this workout</button>
+  return (
+    <div className="delete-workout" role="group" aria-label="Delete this workout?">
+      <p>{n ? `Delete this workout and its ${n} ${n === 1 ? 'set' : 'sets'}?` : 'Delete this workout?'} You can’t undo this.</p>
+      <button className="link danger" disabled={busy} onClick={() => void remove()}>Yes, delete</button>
+      <button className="link" onClick={() => setAsking(false)}>Keep it</button>
+      {error && <p className="error" role="alert">Couldn’t delete it. Check your connection and try again.</p>}
+    </div>
   )
 }
 
@@ -270,6 +300,7 @@ export function SessionView({
           <button className="add" onClick={() => setCopying(true)}>Copy a past workout</button>
         )}
         <WorkoutNote store={store} session={session} />
+        <DeleteWorkout store={store} session={session} onDeleted={onClose} />
       </section>
     </>
   )
@@ -334,6 +365,8 @@ function ExerciseLog({
   // Myo-reps mini-sets, typed as "5 4 4" (T-111).
   const [mini, setMini] = useState('')
   const [settingsOpen, setSettingsOpen] = useState(false)
+  // The last set removed, so it can be put back (T-123).
+  const [removed, setRemoved] = useState<SetLog | null>(null)
   /** Earlier days with this exercise, for "New record" (T-044b); null until loaded or offline. */
   const [past, setPast] = useState<StrengthSession[] | null>(null)
   const [record, setRecord] = useState<{ setId: string; text: string } | null>(null)
@@ -416,6 +449,7 @@ function ExerciseLog({
       : null
 
   const log = async () => {
+    setRemoved(null)
     const w = toKg(Number(weight.replace(',', '.')), unit)
     const r = Number(reps)
     const x = rir.trim() === '' ? null : Number(rir)
@@ -469,10 +503,24 @@ function ExerciseLog({
   const remove = async (id: string) => {
     try {
       await store.removeSet(id)
+      setRemoved(session.sets.find((s) => s.id === id) ?? null)
       onChange({ ...session, sets: session.sets.filter((s) => s.id !== id) })
       if (record?.setId === id) setRecord(null)
     } catch {
       setError('Couldn’t remove that set. Try again.')
+    }
+  }
+
+  const putBack = async () => {
+    if (!removed) return
+    const set: Partial<SetLog> = { ...removed }
+    delete set.id
+    try {
+      const saved = await store.addSet(session.id, set as NewSet)
+      setRemoved(null)
+      onChange({ ...session, sets: [...session.sets, saved] })
+    } catch {
+      setError('Couldn’t put the set back. Try again.')
     }
   }
 
@@ -551,6 +599,12 @@ function ExerciseLog({
           </li>
         ))}
       </ol>
+      {removed && (
+        <p className="undo-row" role="status">
+          Set removed.{' '}
+          <button className="link" onClick={() => void putBack()}>Undo</button>
+        </p>
+      )}
       <div className="set-row">
         <span className="stepper">
           <button className="step" aria-label={`Less weight for ${exercise.name}`} onClick={() => step(weight, -stepIn(exercise.increment, unit), setWeight)}>−</button>

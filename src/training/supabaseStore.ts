@@ -182,6 +182,10 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templ
     async removeSet(id) {
       check(await sb.from('set_logs').delete().eq('id', id))
     },
+    // Sets and muscle answers go with it (on delete cascade).
+    async deleteSession(id) {
+      check(await sb.from('workout_sessions').delete().eq('id', id))
+    },
     async history(exerciseId, beforeDate, limit = 3) {
       const rows = check(
         await sb
