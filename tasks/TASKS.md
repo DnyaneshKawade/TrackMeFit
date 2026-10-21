@@ -67,6 +67,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-126 | Log a past workout: pick a date up to a year back before starting; sets save on that day, with no live clocks ([spec](../specs/T-126-past-workout.md)) | `src/training/pastWorkout.test.tsx` |
 | T-125 | Coaches can't delete a client's plans, diet targets or meal plans; they still add and change them ([spec](../specs/T-125-coach-delete-rules.md)) | `src/db/coachNoDeletes.test.ts` |
 | T-124 | Deletes that were missing: a day's measurements, bring back a removed own exercise, clear exercise settings, withdraw an open request; weigh-ins, photos, certificates and plans ask first ([spec](../specs/T-124-more-deletes.md)) | `src/progress/Progress.test.tsx`, `src/training/moreDeletes.test.tsx`, `src/account/Account.test.tsx`, `src/db/withdrawRequests.test.ts` |
 | T-123 | Delete a whole workout (asks first), undo a skip, and Undo after removing a set or cardio entry; works offline ([spec](../specs/T-123-workout-deletes.md)) | `src/training/deleteWorkout.test.tsx`, `src/training/offlineStore.test.ts` |

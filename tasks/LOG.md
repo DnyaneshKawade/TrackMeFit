@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-21: T-126 log a past workout
+
+- "Start a workout" has a Workout date box. It starts at today and goes back up to a year.
+- A workout started on an earlier date saves there. Its screen shows the date and hides the live clocks.
+- No database change.
+- Tests: `src/training/pastWorkout.test.tsx` (4).
+
 ## 2026-10-21: T-125 coach delete rules
 
 - The database no longer lets a coach delete a client's plans, diet targets or meal plans.
