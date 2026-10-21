@@ -67,6 +67,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-122 | More graph choices: every choice always shows, volume names, "Total sets", and a Training volume graph for workout volume and weekly sets per muscle; Calm Ocean dropdown ([spec](../specs/T-122-graph-options.md)) | `src/engine/volumeHistory.test.ts`, `src/training/trainingVolume.test.tsx`, `src/training/Records.test.tsx` |
 | T-119 | Exercise goals, like "100 kg × 1 squat": set in exercise settings, shown on records with progress and as a dashed line on the graph (FitNotes) ([spec](../specs/T-119-exercise-goals.md)) | `src/engine/goal.test.ts`, `src/training/exerciseGoals.test.tsx`, `src/db/exerciseGoals.test.ts` |
 | T-118 | Technique videos: a "Watch how" YouTube search for every exercise, opened outside the app; nothing hosted (DK chose search over hand-picked links) ([spec](../specs/T-118-technique-videos.md)) | `src/training/techniqueVideos.test.tsx` |
 | T-117 | Assisted machines: the weight is help, so least help is the record, advice takes help away, and the graph shows help (RP, FitNotes) ([spec](../specs/T-117-assisted-machines.md)) | `src/engine/assisted.test.ts`, `src/training/assisted.test.tsx` |

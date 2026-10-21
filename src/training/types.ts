@@ -140,6 +140,8 @@ export interface WorkoutStore {
   exerciseHistory(exerciseId: string, limit?: number): Promise<PastSession[]>
   /** Workouts from one date to another, both included, newest first. */
   summaries(from: string, to: string): Promise<SessionSummary[]>
+  /** Every set of the workouts from one date to another, newest first, in one read (T-122). Needs a connection. */
+  sessionsBetween(from: string, to: string): Promise<PastSession[]>
   saveFeedback(sessionId: string, feedback: Feedback[]): Promise<void>
   /** Saves the workout notes; empty clears them. */
   saveNote(sessionId: string, note: string): Promise<void>

@@ -166,17 +166,22 @@ function Graph({ sessions, today, unit, noWeight, assisted, goal }: { sessions: 
     return m
   }, [sessions])
   const isWeight = kind === 'help' || WEIGHT_KINDS.has(kind as GraphKind)
-  const kinds: [string, string][] = assisted ? ASSISTED_GRAPH_KINDS : GRAPH_KINDS.filter(([k]) => !noWeight || !WEIGHT_KINDS.has(k))
+  // Every choice shows, even before anything is logged (T-122).
+  const kinds: [string, string][] = assisted ? ASSISTED_GRAPH_KINDS : GRAPH_KINDS
   const values = points.map((p) => (isWeight ? shownWeight(p.value, unit) : p.value))
   const label = kinds.find(([k]) => k === kind)?.[1] ?? ''
-  const suffix = isWeight ? ` ${unit}` : ' reps'
-  const show = (v: number) => `${Math.round(v * 10) / 10}${suffix}`
+  const count = kind === 'sets' ? 'set' : 'rep'
+  const show = (v: number) => {
+    const n = Math.round(v * 10) / 10
+    return isWeight ? `${n} ${unit}` : `${n} ${count}${n === 1 ? '' : 's'}`
+  }
   const pick = (i: number | null) => setPicked(i === picked ? null : i)
   // The goal as a dashed line on the weight graphs (T-119).
   const goalKg = goal ? goalLine(goal, kind) : null
   const goalShown = goalKg === null ? null : shownWeight(goalKg, unit)
 
-  let chart = <p className="muted">Pick a longer time, or log two workouts, to see a graph.</p>
+  // Weight choices stay in the list with no weight logged, so say why it is empty.
+  let chart = <p className="muted">{isWeight && noWeight && !assisted ? 'Nothing to show yet. Log a set with weight to see this.' : 'Pick a longer time, or log two workouts, to see a graph.'}</p>
   if (points.length >= 2) {
     const lo = Math.min(...values, ...(goalShown === null ? [] : [goalShown]))
     const hi = Math.max(...values, ...(goalShown === null ? [] : [goalShown]))

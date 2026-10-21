@@ -118,8 +118,21 @@
 .history-day h4 { font-size: 14px; margin: 14px 0 4px; }
 .history-day ol { margin: 0; padding-left: 22px; }
 .history-day li { padding: 2px 0; }
-.graph-kind { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
-.graph-kind select { flex: 1; }
+.graph-kind { display: grid; gap: 6px; margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--muted); }
+/* The graph dropdown in the Calm Ocean look (T-122): a soft field with a drawn arrow. */
+.graph-kind select {
+  appearance: none; -webkit-appearance: none; width: 100%; min-height: 48px; box-sizing: border-box;
+  padding: 12px 44px 12px 14px; font: inherit; font-size: 16px; font-weight: 600; color: var(--ink);
+  border: 1.5px solid var(--field-line); border-radius: 12px; cursor: pointer; box-shadow: var(--shadow);
+  background-color: var(--card);
+  background-image: linear-gradient(45deg, transparent 50%, var(--pv) 50%), linear-gradient(135deg, var(--pv) 50%, transparent 50%);
+  background-position: calc(100% - 22px) 50%, calc(100% - 16px) 50%;
+  background-size: 6px 6px; background-repeat: no-repeat;
+}
+.graph-kind select:hover { border-color: var(--pv); }
+.graph-kind select:focus-visible { outline: none; border-color: var(--p); box-shadow: 0 0 0 3px var(--tint); }
+.graph-kind select option { color: var(--ink); background: var(--card); font-weight: 400; }
+.training-volume li.day-button { box-sizing: border-box; cursor: default; }
 .strength-chart .dot { cursor: pointer; }
 .strength-chart .dot.on { fill: var(--p); }
 .graph-days { list-style: none; padding: 0; margin: 8px 0; }
