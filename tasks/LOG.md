@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-21: T-118 technique video links
+
+- Each exercise card and records page has "Watch how". It opens a YouTube search for good form.
+- DK chose search links for all exercises over hand-picked videos.
+- No database change.
+- Tests: `src/training/techniqueVideos.test.tsx` (3).
+
 ## 2026-10-20: T-117 assisted machines
 
 - Assisted pull-ups and dips treat the weight as help. Less help is progress.
