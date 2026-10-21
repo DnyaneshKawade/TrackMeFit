@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-21: Myo-reps box style fix
+
+- The myo-reps mini-set box now looks like the other fields: same border, size and blue focus ring.
+- The set row can't grow wider than a small phone screen, so Log set always shows.
+- CSS only (`src/training/training.css`). Checked by eye at 320 px width.
+
 ## 2026-10-21: T-125 coach delete rules
 
 - The database no longer lets a coach delete a client's plans, diet targets or meal plans.

@@ -20,8 +20,8 @@
 .suggest { font-size: 14px; }
 .sets { padding-left: 0; list-style: none; margin: 6px 0; }
 .sets li { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
-.set-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.set-row .stepper { display: grid; grid-template-columns: 40px 1fr 40px; gap: 4px; }
+.set-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.set-row .stepper { display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px; gap: 4px; min-width: 0; }
 .set-row .stepper input { text-align: center; }
 .step { font: inherit; font-size: 18px; font-weight: 700; border: 1.5px solid var(--field-line); border-radius: 10px; background: none; color: var(--pv); cursor: pointer; min-height: 44px; }
 .set-extras { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
@@ -37,7 +37,7 @@
 .workout-note { display: grid; gap: 4px; margin: 16px 0; font-size: 14px; }
 .workout-note textarea { font: inherit; padding: 10px; border: 1.5px solid var(--field-line); border-radius: 10px; resize: vertical; }
 .workout-clock { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 4px 0; }
-.set-row .primary { width: auto; padding: 10px 14px; }
+.set-row .primary { width: 100%; min-width: 0; padding: 10px 14px; }
 .plan-card { display: grid; }
 .plan-card .link { justify-self: end; margin-top: -4px; }
 .feedback-muscle { border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 10px 0; }
@@ -143,3 +143,8 @@
 .delete-workout { margin-top: 16px; }
 .delete-workout p { margin: 0 0 4px; }
 .skipped-day .link { justify-self: start; padding-left: 0; }
+/* Myo-reps mini-set box: same field look as the set row. */
+.myo { display: grid; gap: 6px; margin-top: 8px; }
+.myo p { margin: 0; font-size: 14px; }
+.myo input { font: inherit; width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 12px; border: 1.5px solid var(--field-line); border-radius: 10px; }
+.set-row input:focus-visible, .set-extras input:focus-visible, .myo input:focus-visible { outline: none; border-color: var(--p); box-shadow: 0 0 0 3px var(--tint); }
