@@ -148,3 +148,30 @@
 .myo p { margin: 0; font-size: 14px; }
 .myo input { font: inherit; width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 12px; border: 1.5px solid var(--field-line); border-radius: 10px; }
 .set-row input:focus-visible, .set-extras input:focus-visible, .myo input:focus-visible { outline: none; border-color: var(--p); box-shadow: 0 0 0 3px var(--tint); }
+/* Calendar dots, one per muscle group trained (T-120). */
+:root {
+  --g-chest: #c2410c; --g-back: #15803d; --g-shoulders: #a16207; --g-arms: #7c3aed;
+  --g-legs: #1f5fad; --g-core: #64748b; --g-cardio: #be185d;
+}
+:root[data-theme='dark'] {
+  --g-chest: #fb923c; --g-back: #4ade80; --g-shoulders: #facc15; --g-arms: #c4b5fd;
+  --g-legs: #7fb0f0; --g-core: #a3b1c4; --g-cardio: #f472b6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --g-chest: #fb923c; --g-back: #4ade80; --g-shoulders: #facc15; --g-arms: #c4b5fd;
+    --g-legs: #7fb0f0; --g-core: #a3b1c4; --g-cardio: #f472b6;
+  }
+}
+.month td { vertical-align: top; }
+.month .dots { display: flex; justify-content: center; gap: 2px; height: 6px; margin-top: 2px; }
+.dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--chart-muted); }
+.dot.g-chest { background: var(--g-chest); }
+.dot.g-back { background: var(--g-back); }
+.dot.g-shoulders { background: var(--g-shoulders); }
+.dot.g-arms { background: var(--g-arms); }
+.dot.g-legs { background: var(--g-legs); }
+.dot.g-core { background: var(--g-core); }
+.dot.g-cardio { background: var(--g-cardio); }
+.dot-key { display: flex; flex-wrap: wrap; gap: 4px 12px; list-style: none; padding: 0; margin: 8px 0; font-size: 13px; color: var(--muted); }
+.dot-key .dot { width: 8px; height: 8px; vertical-align: middle; }

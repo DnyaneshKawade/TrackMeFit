@@ -8,6 +8,13 @@ Newest first. One entry per finished piece of work: what changed, which tests co
 - The set row can't grow wider than a small phone screen, so Log set always shows.
 - CSS only (`src/training/training.css`). Checked by eye at 320 px width.
 
+## 2026-10-21: T-120 calendar dots and exercise filter
+
+- Each trained day shows dots for the muscle groups trained, with a colour key.
+- "Show days with" marks only the days with one exercise, and keeps it across months.
+- No database change.
+- Tests: `src/training/calendar.test.ts` (1 new), `src/training/Records.test.tsx` (1 new, 1 changed).
+
 ## 2026-10-21: T-125 coach delete rules
 
 - The database no longer lets a coach delete a client's plans, diet targets or meal plans.
