@@ -28,6 +28,9 @@ type View =
   | { kind: 'records' }
   | { kind: 'suggest' }
 
+/** How far back a past workout can be logged (T-126). */
+const PAST_DAYS = 365
+
 const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 
 /** Swaps one own exercise in the list known to search, plans and logs. */
@@ -56,6 +59,8 @@ export function Workouts({
   // Workouts since the oldest block began; null when they couldn't load (T-107).
   const [blockWorkouts, setBlockWorkouts] = useState<SessionSummary[] | null>(null)
   const [view, setView] = useState<View>({ kind: 'home' })
+  // The day a new workout is logged on; an earlier day for a past workout (T-126).
+  const [on, setOn] = useState(today)
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
@@ -151,13 +156,16 @@ export function Workouts({
 
   const start = async (day: PlanDay | null) => {
     try {
-      const session = await store.startSession(today, day)
+      const session = await store.startSession(on <= today && on >= earliest ? on : today, day)
+      setOn(today)
       setView({ kind: 'session', session })
     } catch {
       setError('Couldn’t start the workout. Check your connection.')
       setView({ kind: 'home' })
     }
   }
+
+  const earliest = shiftDate(today, -PAST_DAYS)
 
   const back = () => {
     setView({ kind: 'home' })
@@ -257,6 +265,7 @@ export function Workouts({
           block={blockOf(planOf(view.session.planDayId))}
           weekly={weeklyOf(planOf(view.session.planDayId))}
           library={library}
+          past={view.session.performedOn < today}
           onClose={back}
         />
       </main>
@@ -271,6 +280,11 @@ export function Workouts({
             <h2>Start a workout</h2>
             <button className="link" onClick={() => setView({ kind: 'home' })}>Close</button>
           </header>
+          <label className="field workout-date">
+            Workout date
+            <input type="date" min={earliest} max={today} value={on} onChange={(e) => setOn(e.target.value || today)} />
+          </label>
+          <p className="muted">{on < today ? `This workout is logged on ${shortDate(on)}.` : 'Did it on an earlier day? Pick that date first.'}</p>
           {plans?.map((p) => {
             const next = nextOf(p)
             return (

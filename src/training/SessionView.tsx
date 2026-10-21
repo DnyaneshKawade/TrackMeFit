@@ -126,6 +126,7 @@ export function SessionView({
   block,
   weekly,
   library,
+  past = false,
   onClose,
 }: {
   store: WorkoutStore
@@ -136,6 +137,8 @@ export function SessionView({
   /** The plan's training block, when the session follows a plan day. */
   block?: { week: number; hardWeeks: number }
   library?: ExerciseLibrary
+  /** Logged for an earlier day, so no live clocks (T-126). */
+  past?: boolean
   onClose: () => void
 }) {
   const [session, setSession] = useState(initial)
@@ -215,8 +218,12 @@ export function SessionView({
           <button className="link" onClick={() => (trained.length ? setAskFeedback(true) : onClose())}>Done</button>
         </header>
         {block && <p className="muted">{weekLabel(block.week, block.hardWeeks)}</p>}
-        <WorkoutClock sessionId={session.id} setCount={session.sets.length} startedEmpty={initial.sets.length === 0} />
-        {restEnds !== null && <RestTimer key={restEnds} endsAt={restEnds} onChange={setRestEnds} />}
+        {past ? (
+          <p className="muted">Past workout on {new Date(session.performedOn + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}.</p>
+        ) : (
+          <WorkoutClock sessionId={session.id} setCount={session.sets.length} startedEmpty={initial.sets.length === 0} />
+        )}
+        {!past && restEnds !== null && <RestTimer key={restEnds} endsAt={restEnds} onChange={setRestEnds} />}
         <SyncNote sync={store.sync} noun={['workout entry', 'workout entries']} />
         {supersetGroups(ids, linked).map((group) => {
           const exercises = group.flatMap((id) => exerciseById.get(id) ?? [])
