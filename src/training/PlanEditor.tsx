@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ConfirmDelete } from '../ui/ConfirmDelete'
 import { weeklyVolume } from '../engine/volume'
 import { exerciseById, MUSCLE_NAMES } from './exercises'
 import { weeklySets } from './progression'
@@ -118,7 +119,7 @@ export function PlanEditor({
         </ul>
       )}
       <button className="primary" disabled={busy} onClick={save}>Save plan</button>
-      {onDelete && <button className="link danger" onClick={() => void onDelete()}>Delete plan</button>}
+      {onDelete && <ConfirmDelete danger label="Delete plan" question="Delete this plan? Past workouts stay." onConfirm={onDelete} />}
     </section>
   )
 }

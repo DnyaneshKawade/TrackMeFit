@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { ConfirmDelete } from '../ui/ConfirmDelete'
 import { localDate, shiftDate, type LogStore } from '../log/types'
 import { DietStats } from './DietStats'
 import { Photos } from './Photos'
@@ -57,12 +58,14 @@ function MeasurementForm({
   today,
   savedOn,
   onSave,
+  onDelete,
   onCancel,
 }: {
   today: string
   /** What is already saved for a day, to fill the form. */
   savedOn: (day: string) => Measurement | undefined
   onSave: (text: Partial<Record<MeasureKey, string>>, day: string) => Promise<void>
+  onDelete: (day: string) => Promise<void>
   onCancel: () => void
 }) {
   const fill = (m: Measurement | undefined) => Object.fromEntries(MEASURE_FIELDS.map((f) => [f.key, m?.[f.key] === undefined ? '' : String(m[f.key])]))
@@ -114,6 +117,7 @@ function MeasurementForm({
         </label>
       ))}
       {errors.form && <p className="error">{errors.form}</p>}
+      {savedOn(day) && <ConfirmDelete label="Delete this day’s measurements" question="Delete all measurements for this day?" onConfirm={() => onDelete(day)} />}
       <button className="primary" disabled={busy}>
         Save measurements
       </button>
@@ -263,6 +267,12 @@ export function Progress({
     await load()
   }
 
+  const removeMeasurement = async (day: string) => {
+    await store.removeMeasurement(day)
+    setMeasuring(false)
+    await load()
+  }
+
   if (weighIns === null) return <main className="log">Loading…</main>
 
   const summary = weightSummary(weighIns)
@@ -342,9 +352,7 @@ export function Progress({
               <li key={w.date}>
                 <span>{shortDate(w.date)}</span>
                 <strong>{w.kg} kg</strong>
-                <button className="link" aria-label={`Remove ${shortDate(w.date)}`} onClick={() => void remove(w.date)}>
-                  Remove
-                </button>
+                <ConfirmDelete label="Remove" ariaLabel={`Remove ${shortDate(w.date)}`} question={`Delete the ${shortDate(w.date)} weigh-in?`} onConfirm={() => remove(w.date)} />
               </li>
             ))}
           </ul>
@@ -363,7 +371,7 @@ export function Progress({
           )}
         </header>
         {measuring ? (
-          <MeasurementForm today={today} savedOn={(d) => measurements.find((m) => m.date === d)} onSave={saveMeasurement} onCancel={() => setMeasuring(false)} />
+          <MeasurementForm today={today} savedOn={(d) => measurements.find((m) => m.date === d)} onSave={saveMeasurement} onDelete={removeMeasurement} onCancel={() => setMeasuring(false)} />
         ) : changes.length ? (
           <ul className="weigh-list measure-list">
             {changes.map((c) => (

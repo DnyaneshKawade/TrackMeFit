@@ -29,6 +29,8 @@ export interface ProgressStore {
   measurements(): Promise<Measurement[]>
   /** One set of measurements per day: saving again replaces that day's. */
   saveMeasurement(m: Measurement): Promise<void>
+  /** Deletes one day's measurements (T-124). */
+  removeMeasurement(date: string): Promise<void>
 }
 
 export function checkWeight(text: string): string | null {

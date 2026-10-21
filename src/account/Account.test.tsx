@@ -168,3 +168,26 @@ describe('light or dark (T-101b)', () => {
     expect(localStorage.getItem('tmf-theme')).toBeNull()
   })
 })
+
+describe('withdraw a request (T-124)', () => {
+  it('an open change request and an open coach request can be withdrawn; answered ones cannot', async () => {
+    const at = '2026-10-10T10:00:00Z'
+    const store = memoryDataStore({
+      requests: [
+        { id: 'a', note: 'Weight on 3 Oct is wrong', status: 'open', answer: '', createdAt: at, closedAt: null, kind: 'change' },
+        { id: 'b', note: 'Old ask', status: 'closed', answer: 'Fixed', createdAt: '2026-10-01T10:00:00Z', closedAt: at, kind: 'change' },
+        { id: 'c', note: 'I want to coach.', status: 'open', answer: '', createdAt: at, closedAt: null, kind: 'coach' },
+      ],
+    })
+    render(<Account store={store} onBack={() => {}} onDeleted={() => {}} canCoach />)
+    const list = within(await screen.findByRole('list', { name: 'My requests' }))
+    expect(list.getAllByRole('button', { name: 'Withdraw' })).toHaveLength(2)
+    fireEvent.click(list.getAllByRole('button', { name: 'Withdraw' })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, withdraw' }))
+    await waitFor(async () => expect((await store.requests()).map((r) => r.id).sort()).toEqual(['b', 'c']))
+    const coach = within(await screen.findByRole('region', { name: 'Coach other people' }))
+    fireEvent.click(coach.getByRole('button', { name: 'Withdraw my request' }))
+    fireEvent.click(coach.getByRole('button', { name: 'Yes, withdraw' }))
+    await waitFor(async () => expect((await store.requests()).map((r) => r.id)).toEqual(['b']))
+  })
+})

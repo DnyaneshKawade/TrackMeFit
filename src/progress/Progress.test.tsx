@@ -54,6 +54,8 @@ describe('progress tab', () => {
     const store = memoryProgressStore([{ date: TODAY, kg: 70 }])
     render(<Progress store={store} goal={null} today={TODAY} />)
     fireEvent.click(await screen.findByRole('button', { name: /^Remove/ }))
+    // It asks first (T-124).
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, delete' }))
     await screen.findByRole('button', { name: 'Save' })
     expect(await store.weighIns()).toEqual([])
   })
@@ -70,6 +72,18 @@ describe('progress tab', () => {
     click('Save measurements')
     expect(await screen.findByText(/^down 2.5 cm since 1 Sep/)).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Edit today’s' })).toBeTruthy()
+  })
+
+  it('deletes one day of measurements after asking (T-124)', async () => {
+    const store = memoryProgressStore([], [{ date: '2026-09-01', waistCm: 85 }, { date: TODAY, waistCm: 82 }])
+    render(<Progress store={store} goal="lose" today={TODAY} />)
+    await screen.findByRole('region', { name: 'Measurements' })
+    click('Edit today’s')
+    click('Delete this day’s measurements')
+    expect(screen.getByText('Delete all measurements for this day?')).toBeTruthy()
+    click('Yes, delete')
+    await waitFor(async () => expect((await store.measurements()).map((m) => m.date)).toEqual(['2026-09-01']))
+    expect(await screen.findByRole('button', { name: 'Add' })).toBeTruthy()
   })
 })
 

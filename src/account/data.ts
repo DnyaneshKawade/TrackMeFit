@@ -23,6 +23,8 @@ export interface DataStore {
   ask(note: string): Promise<void>
   /** Asks the owner to make this account a coach (T-103). */
   askToCoach(note: string): Promise<void>
+  /** Takes back a request nobody has answered yet (T-124). */
+  withdraw(id: string): Promise<void>
   /** Deletes the account and all its data, then ends the sign-in here. */
   deleteMe(): Promise<void>
 }
@@ -64,6 +66,10 @@ export function memoryDataStore(opts: { data?: Record<string, unknown>; requests
     async ask(note: string) {
       if (!note.trim() || note.length > 1000) throw new Error('violates check constraint')
       requests.push({ id: `r${requests.length + 1}`, note: note.trim(), status: 'open', answer: '', createdAt: new Date().toISOString(), closedAt: null, kind: 'change' })
+    },
+    async withdraw(id: string) {
+      const i = requests.findIndex((r) => r.id === id && r.status === 'open')
+      if (i >= 0) requests.splice(i, 1)
     },
     async askToCoach(note: string) {
       if (requests.some((r) => r.kind === 'coach' && r.status === 'open')) throw new Error('duplicate key')
@@ -117,6 +123,10 @@ export function supabaseDataStore(sb: SupabaseClient, userId: string): DataStore
     },
     async askToCoach(note) {
       const { error } = await sb.from('data_requests').insert({ note: note.trim(), kind: 'coach' })
+      if (error) throw error
+    },
+    async withdraw(id) {
+      const { error } = await sb.from('data_requests').delete().eq('id', id).eq('status', 'open')
       if (error) throw error
     },
     async deleteMe() {

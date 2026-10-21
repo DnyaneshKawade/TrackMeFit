@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-21: T-124 more deletes
+
+- A day's measurements can be deleted from its edit form.
+- Removed own exercises are listed under "Removed exercises", with "Bring back".
+- Exercise settings have "Clear all settings".
+- Open change and coach requests can be withdrawn.
+- Removing a weigh-in, photo or certificate, or deleting a plan, now asks first.
+- Migration `20261127000000_withdraw_requests.sql`.
+- Tests: `src/training/moreDeletes.test.tsx` (2), `src/db/withdrawRequests.test.ts` (1), and new or changed tests in Progress, Photos, Account, Workouts and CoachStatus.
+
 ## 2026-10-21: T-123 workout deletes
 
 - A workout can be deleted from its page. It asks first and says how many sets go.

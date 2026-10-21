@@ -22,6 +22,9 @@ export function memoryProgressStore(weighIns: WeighIn[] = [], measurements: Meas
     async saveMeasurement(x) {
       m.set(x.date, { ...x })
     },
+    async removeMeasurement(date) {
+      m.delete(date)
+    },
   }
 }
 
@@ -79,6 +82,10 @@ export function supabaseProgressStore(sb: SupabaseClient, userId: string): Progr
       const { error } = await sb
         .from('measurements')
         .upsert({ user_id: userId, ...measurementToRow(m) }, { onConflict: 'user_id,measured_on' })
+      if (error) throw error
+    },
+    async removeMeasurement(date) {
+      const { error } = await sb.from('measurements').delete().eq('user_id', userId).eq('measured_on', date)
       if (error) throw error
     },
   }

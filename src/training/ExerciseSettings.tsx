@@ -1,6 +1,7 @@
 // The person's own settings for one exercise (spec T-112): weight step, rest
 // time and machine or seat notes, and a goal (T-119). Empty boxes keep the usual values.
 
+import { ConfirmDelete } from '../ui/ConfirmDelete'
 import { useState } from 'react'
 import { useWeightUnit } from '../settings/units'
 import { shownWeight, stepIn, toKg } from '../engine/units'
@@ -76,6 +77,17 @@ export function ExerciseSettings({ exerciseId, onSave, onClose }: { exerciseId: 
       {error && <p className="error" role="alert">{error}</p>}
       <button className="primary" disabled={busy} onClick={save}>Save settings</button>
       <button className="link" onClick={onClose}>Cancel</button>
+      {now && (
+        <ConfirmDelete
+          label="Clear all settings"
+          question="Clear all settings for this exercise?"
+          yes="Yes, clear"
+          onConfirm={async () => {
+            await onSave({ exerciseId })
+            onClose()
+          }}
+        />
+      )}
     </div>
   )
 }
