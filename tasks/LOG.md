@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-21: T-125 coach delete rules
+
+- The database no longer lets a coach delete a client's plans, diet targets or meal plans.
+- Coaches still add and change them. The person can still delete their own.
+- Migration `20261128000000_coach_no_deletes.sql`.
+- Tests: `src/db/coachNoDeletes.test.ts` (1).
+
 ## 2026-10-21: T-124 more deletes
 
 - A day's measurements can be deleted from its edit form.
