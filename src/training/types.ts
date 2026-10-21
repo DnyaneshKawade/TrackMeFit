@@ -3,6 +3,7 @@
 
 import { startOf } from '../engine/myo'
 import { weightText, type WeightUnit } from '../engine/units'
+import { assistedNext } from '../engine/assistedLoad'
 import { breakLoad, nextLoad, type LoadDecision } from '../engine/training'
 import type { Exercise } from './exercises'
 import type { Feedback } from './progression'
@@ -189,7 +190,7 @@ export function checkSet(weightKg: number, reps: number, rir: number | null): st
 }
 
 /** "60 kg × 10, 10, 9" for the sets done at the top weight last time. */
-export function describeSets(sets: SetLog[], unit: WeightUnit = 'kg'): string {
+export function describeSets(sets: SetLog[], unit: WeightUnit = 'kg', help = false): string {
   if (!sets.length) return ''
   const groups: { w: number; reps: number[] }[] = []
   for (const s of [...sets].sort((a, b) => a.setIndex - b.setIndex)) {
@@ -197,7 +198,7 @@ export function describeSets(sets: SetLog[], unit: WeightUnit = 'kg'): string {
     if (g && g.w === s.weightKg) g.reps.push(s.reps)
     else groups.push({ w: s.weightKg, reps: [s.reps] })
   }
-  return groups.map((g) => `${weightText(g.w, unit)} × ${g.reps.join(', ')}`).join(' · ')
+  return groups.map((g) => `${weightText(g.w, unit)}${help ? ' help' : ''} × ${g.reps.join(', ')}`).join(' · ')
 }
 
 /** Whole days from one YYYY-MM-DD date to a later one. */
@@ -216,6 +217,18 @@ export function suggestNext(all: PastSession[], exercise: Exercise, repRange: [n
   const top = Math.max(...last.sets.map((s) => s.weightKg))
   const topSets = last.sets.filter((s) => s.weightKg === top)
   const repsDone = topSets.map((s) => s.reps)
+  if (exercise.assisted) {
+    // Less help is progress, so the least help used counts as the top set (T-117).
+    const help = Math.min(...last.sets.map((s) => s.weightKg))
+    const helped = last.sets.filter((s) => s.weightKg === help)
+    let misses = 0
+    for (const h of history) {
+      if (h.sets.some((s) => s.reps < repRange[0])) misses++
+      else break
+    }
+    const daysOff = today ? daysBetween(last.performedOn, today) : 0
+    return assistedNext({ help, repsDone: helped.map((s) => s.reps), repRange, increment: exercise.increment, missStreak: misses, daysOff })
+  }
   // After 10 or more days off, start lighter instead (T-082f).
   const back = today ? breakLoad(top, Math.max(...repsDone), repRange, exercise.increment, daysBetween(last.performedOn, today)) : null
   if (back) return back
