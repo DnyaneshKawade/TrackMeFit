@@ -17,6 +17,7 @@ import { cardioById } from './cardio'
 import { CardioDetail, CardioLog, CardioPicker } from './CardioLog'
 import { ExerciseSettings } from './ExerciseSettings'
 import { WorkoutClock } from './WorkoutClock'
+import { ShareWorkout } from './ShareWorkout'
 import { FeedbackSheet } from './FeedbackSheet'
 import { deloadAdvice, isDeloadWeek, weekLabel } from './progression'
 import { formatRest, REST_STEP, restAfterSet, restLeft, supersetGroups } from './restTimer'
@@ -306,6 +307,7 @@ export function SessionView({
         ) : (
           <button className="add" onClick={() => setCopying(true)}>Copy a past workout</button>
         )}
+        {session.sets.length > 0 && <ShareWorkout load={async () => session} />}
         <WorkoutNote store={store} session={session} />
         <DeleteWorkout store={store} session={session} onDeleted={onClose} />
       </section>
