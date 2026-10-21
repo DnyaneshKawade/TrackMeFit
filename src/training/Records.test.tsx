@@ -36,12 +36,30 @@ describe('records and strength graphs (T-044)', () => {
     expect(within(cal).getByRole('heading', { name: 'October 2026' })).toBeTruthy()
     expect(await within(cal).findByText('3 workouts in October 2026.')).toBeTruthy()
     expect(within(cal).getByRole('button', { name: /Friday, 9 October: 2 workouts/ })).toBeTruthy()
-    expect(within(cal).getByRole('button', { name: /Monday, 5 October: 1 workout$/ })).toBeTruthy()
+    // Each day names the muscle groups trained, shown as dots (T-120).
+    expect(within(cal).getByRole('button', { name: /Monday, 5 October: 1 workout\. Chest$/ })).toBeTruthy()
+    expect(within(cal).getByRole('button', { name: /Friday, 9 October: 2 workouts\. Chest, Legs$/ })).toBeTruthy()
+    expect(within(within(cal).getByRole('list', { name: 'What the dots mean' })).getAllByRole('listitem').map((li) => li.textContent?.trim())).toEqual(['Chest', 'Legs'])
     // Months to come can't be opened.
     expect((within(cal).getByRole('button', { name: 'Month after' }) as HTMLButtonElement).disabled).toBe(true)
     fireEvent.click(within(cal).getByRole('button', { name: 'Month before' }))
     expect(await within(cal).findByText('1 workout in September 2026.')).toBeTruthy()
     expect(within(cal).getByRole('button', { name: /28 September: 1 workout/ })).toBeTruthy()
+  })
+
+  it('T-120. the calendar can show only the days with one exercise', async () => {
+    await open()
+    const cal = screen.getByRole('region', { name: 'Workout calendar' })
+    await within(cal).findByText('3 workouts in October 2026.')
+    const filter = within(cal).getByLabelText('Show days with')
+    expect(within(filter).getAllByRole('option').map((o) => o.textContent)).toEqual(['All exercises', 'Back squat', 'Bench press (barbell)', 'Dips'])
+    fireEvent.change(filter, { target: { value: 'back-squat' } })
+    expect(within(cal).getByText('1 workout with Back squat in October 2026.')).toBeTruthy()
+    expect(within(cal).queryByRole('button', { name: /5 October/ })).toBeNull()
+    expect(within(cal).getByRole('button', { name: /Friday, 9 October: 1 workout\. Legs$/ })).toBeTruthy()
+    // The filter stays on in other months.
+    fireEvent.click(within(cal).getByRole('button', { name: 'Month before' }))
+    expect(await within(cal).findByText('0 workouts with Back squat in September 2026.')).toBeTruthy()
   })
 
   it('2. tapping a marked day shows its workouts', async () => {

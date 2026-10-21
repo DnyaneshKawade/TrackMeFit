@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { describePlates, gymFor, platesFor } from '../engine/plates'
 import { useWeightUnit } from '../settings/units'
 import { shiftDate } from '../log/types'
-import { monthGrid, monthOf, monthRange, shiftMonth } from './calendar'
+import { DOT_GROUPS, dayGroups, monthGrid, monthOf, monthRange, shiftMonth } from './calendar'
 import { cardioById } from './cardio'
 import { CardioDetail } from './CardioLog'
 import { exerciseById } from './exercises'
@@ -19,12 +19,17 @@ const longDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString
 const monthName = (month: string) => new Date(month + '-01T00:00:00').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
 const nameOf = (id: string) => exerciseById.get(id)?.name ?? cardioById.get(id)?.name ?? 'Exercise no longer in your list'
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+// The main muscle of an exercise, or cardio, for the calendar dots (T-120).
+const kindOf = (id: string) => (cardioById.has(id) ? 'cardio' : exerciseById.get(id)?.primary ?? null)
+const GROUP_NAME = new Map(DOT_GROUPS)
 
 function Calendar({ store, today }: { store: WorkoutStore; today: string }) {
   const [month, setMonth] = useState(monthOf(today))
   const [list, setList] = useState<SessionSummary[] | null>(null)
   const [error, setError] = useState(false)
   const [picked, setPicked] = useState<string | null>(null)
+  // Show only the days with this exercise (T-120).
+  const [only, setOnly] = useState<string | null>(null)
 
   useEffect(() => {
     let live = true
@@ -41,12 +46,22 @@ function Calendar({ store, today }: { store: WorkoutStore; today: string }) {
     }
   }, [store, month])
 
+  // The exercises done this month, for the filter; the picked one stays listed.
+  const choices = useMemo(() => {
+    const ids = new Set<string>()
+    for (const s of list ?? []) for (const id of s.exerciseIds) ids.add(id)
+    if (only) ids.add(only)
+    return [...ids].map((id) => [id, nameOf(id)] as const).sort((a, b) => a[1].localeCompare(b[1]))
+  }, [list, only])
+  const shown = useMemo(() => (only ? (list ?? []).filter((s) => s.exerciseIds.includes(only)) : (list ?? [])), [list, only])
   // One pass to group the month's workouts by day.
   const byDay = useMemo(() => {
     const m = new Map<string, SessionSummary[]>()
-    for (const s of list ?? []) m.set(s.performedOn, [...(m.get(s.performedOn) ?? []), s])
+    for (const s of shown) m.set(s.performedOn, [...(m.get(s.performedOn) ?? []), s])
     return m
-  }, [list])
+  }, [shown])
+  const groups = useMemo(() => dayGroups(shown, kindOf), [shown])
+  const used = useMemo(() => DOT_GROUPS.filter(([g]) => [...groups.values()].some((x) => x.includes(g))), [groups])
 
   return (
     <section aria-label="Workout calendar" className="calendar">
@@ -56,7 +71,29 @@ function Calendar({ store, today }: { store: WorkoutStore; today: string }) {
         <button className="link" aria-label="Month after" disabled={month >= monthOf(today)} onClick={() => setMonth(shiftMonth(month, 1))}>›</button>
       </header>
       {error && <p className="error">Couldn’t load your workouts. Check your connection.</p>}
-      {list && <p className="muted">{plural(list.length, 'workout', 'workouts')} in {monthName(month)}.</p>}
+      {list && (
+        <p className="muted">
+          {plural(shown.length, 'workout', 'workouts')}
+          {only ? ` with ${nameOf(only)}` : ''} in {monthName(month)}.
+        </p>
+      )}
+      {choices.length > 0 && (
+        <label className="graph-kind">
+          Show days with
+          <select
+            value={only ?? ''}
+            onChange={(e) => {
+              setOnly(e.target.value || null)
+              setPicked(null)
+            }}
+          >
+            <option value="">All exercises</option>
+            {choices.map(([id, name]) => (
+              <option key={id} value={id}>{name}</option>
+            ))}
+          </select>
+        </label>
+      )}
       <table className="month">
         <thead>
           <tr>
@@ -72,12 +109,13 @@ function Calendar({ store, today }: { store: WorkoutStore; today: string }) {
                 if (!date) return <td key={j} />
                 const done = byDay.get(date)
                 const day = Number(date.slice(8))
+                const dots = groups.get(date) ?? []
                 return (
                   <td key={j}>
                     {done ? (
                       <button
                         className={date === picked ? 'day trained on' : 'day trained'}
-                        aria-label={`${longDate(date)}: ${plural(done.length, 'workout', 'workouts')}`}
+                        aria-label={`${longDate(date)}: ${plural(done.length, 'workout', 'workouts')}${dots.length ? `. ${dots.map((g) => GROUP_NAME.get(g)).join(', ')}` : ''}`}
                         aria-pressed={date === picked}
                         onClick={() => setPicked(date === picked ? null : date)}
                       >
@@ -86,6 +124,13 @@ function Calendar({ store, today }: { store: WorkoutStore; today: string }) {
                     ) : (
                       <span className={date === today ? 'day today' : 'day'}>{day}</span>
                     )}
+                    {dots.length > 0 && (
+                      <span className="dots" aria-hidden="true">
+                        {dots.map((g) => (
+                          <i key={g} className={`dot g-${g}`} />
+                        ))}
+                      </span>
+                    )}
                   </td>
                 )
               })}
@@ -93,6 +138,15 @@ function Calendar({ store, today }: { store: WorkoutStore; today: string }) {
           ))}
         </tbody>
       </table>
+      {used.length > 0 && (
+        <ul className="dot-key" aria-label="What the dots mean">
+          {used.map(([g, name]) => (
+            <li key={g}>
+              <i className={`dot g-${g}`} aria-hidden="true" /> {name}
+            </li>
+          ))}
+        </ul>
+      )}
       {picked && (
         <ul className="session-list" aria-label={`Workouts on ${longDate(picked)}`}>
           {(byDay.get(picked) ?? []).map((s) => (
