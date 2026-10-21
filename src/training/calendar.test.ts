@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { monthGrid, monthRange, shiftMonth } from './calendar'
+import { dayGroups, groupOf, monthGrid, monthRange, shiftMonth } from './calendar'
+import type { Muscle } from '../engine/training'
 
 describe('workout calendar (T-044)', () => {
   it('1. lays out a month in weeks starting on Monday', () => {
@@ -14,5 +15,20 @@ describe('workout calendar (T-044)', () => {
     expect(shiftMonth('2026-01', -1)).toBe('2025-12')
     expect(shiftMonth('2026-12', 1)).toBe('2027-01')
     expect(monthRange('2028-02')).toEqual(['2028-02-01', '2028-02-29'])
+  })
+
+  it('T-120. groups each day by the main muscles trained, in a fixed order', () => {
+    const kind = (id: string) => (id === 'run' ? 'cardio' : id === 'curl' ? 'biceps' : id === 'squat' ? 'quads' : id === 'calf' ? 'calves' : null) as Muscle | 'cardio' | null
+    const days = dayGroups(
+      [
+        { performedOn: '2026-10-05', exerciseIds: ['run', 'curl'] },
+        { performedOn: '2026-10-05', exerciseIds: ['squat', 'calf', 'gone'] },
+        { performedOn: '2026-10-06', exerciseIds: ['gone'] },
+      ],
+      kind,
+    )
+    expect(days.get('2026-10-05')).toEqual(['arms', 'legs', 'cardio'])
+    expect(days.get('2026-10-06')).toEqual([])
+    expect(groupOf('rearDelts')).toBe('shoulders')
   })
 })
