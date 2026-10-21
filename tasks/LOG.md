@@ -9,6 +9,12 @@ Newest first. One entry per finished piece of work: what changed, which tests co
 - No database change.
 - Tests: `src/training/pastWorkout.test.tsx` (4).
 
+## 2026-10-21: Myo-reps box style fix
+
+- The myo-reps mini-set box now looks like the other fields: same border, size and blue focus ring.
+- The set row can't grow wider than a small phone screen, so Log set always shows.
+- CSS only (`src/training/training.css`). Checked by eye at 320 px width.
+
 ## 2026-10-21: T-120 calendar dots and exercise filter
 
 - Each trained day shows dots for the muscle groups trained, with a colour key.
