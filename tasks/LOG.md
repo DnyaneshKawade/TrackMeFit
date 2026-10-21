@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-21: T-119 exercise goals
+
+- Exercise settings take a goal weight and reps, like 100 kg × 1.
+- Records show the best set towards it, like "90% of the way", or that it was reached.
+- The weight graphs show the goal as a dashed line.
+- Migration `20261126000000_exercise_goals.sql` adds `goal_kg` and `goal_reps` to `exercise_settings`.
+- Tests: `src/engine/goal.test.ts` (4), `src/training/exerciseGoals.test.tsx` (3), `src/db/exerciseGoals.test.ts` (1).
+
 ## 2026-10-21: T-118 technique video links
 
 - Each exercise card and records page has "Watch how". It opens a YouTube search for good form.

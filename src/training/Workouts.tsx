@@ -114,7 +114,7 @@ export function Workouts({
         async saveSetting(s) {
           await exercises.saveSetting(s)
           const others = allSettings().filter((x) => x.exerciseId !== s.exerciseId)
-          setExerciseSettings(s.stepKg || s.restSec || s.note ? [...others, s] : others)
+          setExerciseSettings(s.stepKg || s.restSec || s.note || s.goalKg ? [...others, s] : others)
         },
         async setHidden(id, hidden) {
           await exercises.setHidden(id, hidden)

@@ -79,6 +79,7 @@
 .strength-chart svg { width: 100%; height: auto; display: block; }
 .strength-chart .axis { stroke: var(--field-line); stroke-width: 1; }
 .strength-chart .trend-line { fill: none; stroke: var(--pv); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.strength-chart .goal-line { stroke: var(--pv); stroke-width: 1.5; stroke-dasharray: 6 5; opacity: 0.7; }
 .strength-chart .dot { fill: var(--pv); }
 .strength-chart figcaption { margin-top: 4px; font-size: 12px; }
 .plate-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -108,6 +109,7 @@
 .exercise header .history-link + .link { font-size: 13px; }
 .exercise-settings { display: grid; gap: 8px; margin: 8px 0; padding: 10px; border: 1.5px solid var(--line); border-radius: 12px; }
 .exercise-settings label { display: grid; gap: 4px; }
+.exercise-settings .goal-row { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
 .setup-note { margin: 4px 0; }
 .watch-how { display: inline-block; margin: 2px 0 4px; font-size: 14px; }
 .detail-tabs { display: flex; gap: 6px; margin: 4px 0 12px; }

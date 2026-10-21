@@ -27,7 +27,7 @@ export interface ExerciseStore {
   saveSetting(s: ExerciseSetting): Promise<void>
 }
 
-const isEmpty = (s: ExerciseSetting) => !s.stepKg && !s.restSec && !s.note?.trim()
+const isEmpty = (s: ExerciseSetting) => !s.stepKg && !s.restSec && !s.note?.trim() && !s.goalKg
 
 export function memoryExerciseStore(init: { custom?: SavedExercise[]; favourites?: string[]; settings?: ExerciseSetting[] } = {}): ExerciseStore {
   const own = [...(init.custom ?? [])]
@@ -140,12 +140,13 @@ export function supabaseExerciseStore(sb: SupabaseClient, userId: string): Exerc
       else check(await sb.from('favourite_exercises').delete().eq('user_id', userId).eq('exercise_id', exerciseId))
     },
     async settings() {
-      const rows = check(await sb.from('exercise_settings').select('exercise_id, step_kg, rest_seconds, note').eq('user_id', userId).limit(1000))
-      return (rows as { exercise_id: string; step_kg: number | string | null; rest_seconds: number | null; note: string | null }[]).map((r) => ({
+      const rows = check(await sb.from('exercise_settings').select('exercise_id, step_kg, rest_seconds, note, goal_kg, goal_reps').eq('user_id', userId).limit(1000))
+      return (rows as { exercise_id: string; step_kg: number | string | null; rest_seconds: number | null; note: string | null; goal_kg?: number | string | null; goal_reps?: number | null }[]).map((r) => ({
         exerciseId: r.exercise_id,
         ...(r.step_kg !== null ? { stepKg: Number(r.step_kg) } : {}),
         ...(r.rest_seconds !== null ? { restSec: r.rest_seconds } : {}),
         ...(r.note ? { note: r.note } : {}),
+        ...(r.goal_kg != null ? { goalKg: Number(r.goal_kg), goalReps: r.goal_reps ?? 1 } : {}),
       }))
     },
     async saveSetting(s) {
@@ -154,7 +155,7 @@ export function supabaseExerciseStore(sb: SupabaseClient, userId: string): Exerc
         check(
           await sb
             .from('exercise_settings')
-            .upsert({ user_id: userId, exercise_id: s.exerciseId, step_kg: s.stepKg ?? null, rest_seconds: s.restSec ?? null, note: s.note?.trim() || null, updated_at: new Date().toISOString() }),
+            .upsert({ user_id: userId, exercise_id: s.exerciseId, step_kg: s.stepKg ?? null, rest_seconds: s.restSec ?? null, note: s.note?.trim() || null, goal_kg: s.goalKg ?? null, goal_reps: s.goalKg ? (s.goalReps ?? 1) : null, updated_at: new Date().toISOString() }),
         )
     },
   }

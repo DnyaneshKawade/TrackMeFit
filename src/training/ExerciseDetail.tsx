@@ -19,6 +19,7 @@ import {
   type StrengthSession,
 } from '../engine/strength'
 import { ASSISTED_GRAPH_KINDS, assistedGraph, assistedHistory, assistedRecords, type AssistedGraphKind, type AssistedRecords } from '../engine/assisted'
+import { goalLine, goalProgress, type Goal } from '../engine/goal'
 import { exerciseById, techniqueSearchUrl } from './exercises'
 import type { WorkoutStore } from './types'
 
@@ -150,7 +151,7 @@ function History({ sessions, unit, assisted }: { sessions: StrengthSession[]; un
   )
 }
 
-function Graph({ sessions, today, unit, noWeight, assisted }: { sessions: StrengthSession[]; today: string; unit: WeightUnit; noWeight: boolean; assisted: boolean }) {
+function Graph({ sessions, today, unit, noWeight, assisted, goal }: { sessions: StrengthSession[]; today: string; unit: WeightUnit; noWeight: boolean; assisted: boolean; goal?: Goal }) {
   const [kind, setKind] = useState<GraphKind | AssistedGraphKind>(assisted ? 'help' : noWeight ? 'reps' : 'e1rm')
   const [range, setRange] = useState<GraphRange>('3m')
   const [picked, setPicked] = useState<number | null>(null)
@@ -171,11 +172,14 @@ function Graph({ sessions, today, unit, noWeight, assisted }: { sessions: Streng
   const suffix = isWeight ? ` ${unit}` : ' reps'
   const show = (v: number) => `${Math.round(v * 10) / 10}${suffix}`
   const pick = (i: number | null) => setPicked(i === picked ? null : i)
+  // The goal as a dashed line on the weight graphs (T-119).
+  const goalKg = goal ? goalLine(goal, kind) : null
+  const goalShown = goalKg === null ? null : shownWeight(goalKg, unit)
 
   let chart = <p className="muted">Pick a longer time, or log two workouts, to see a graph.</p>
   if (points.length >= 2) {
-    const lo = Math.min(...values)
-    const hi = Math.max(...values)
+    const lo = Math.min(...values, ...(goalShown === null ? [] : [goalShown]))
+    const hi = Math.max(...values, ...(goalShown === null ? [] : [goalShown]))
     const pad = Math.max(1, (hi - lo) * 0.15)
     const x = (i: number) => (i / (points.length - 1)) * CHART_W
     const y = (v: number) => CHART_H - ((v - (lo - pad)) / (hi - lo + 2 * pad)) * CHART_H
@@ -187,13 +191,15 @@ function Graph({ sessions, today, unit, noWeight, assisted }: { sessions: Streng
           aria-label={`${label} in each workout, from ${show(values[0])} on ${shortDate(points[0].date)} to ${show(values[values.length - 1])} on ${shortDate(points[points.length - 1].date)}`}
         >
           <line x1="0" y1={CHART_H} x2={CHART_W} y2={CHART_H} className="axis" />
+          {goalShown !== null && <line x1="0" y1={y(goalShown)} x2={CHART_W} y2={y(goalShown)} className="goal-line" aria-hidden="true" />}
           <polyline points={values.map((v, i) => `${x(i)},${y(v)}`).join(' ')} className="trend-line" />
           {points.map((p, i) => (
             <circle key={p.date + i} cx={x(i)} cy={y(values[i])} r={i === picked ? 6 : 4} className={i === picked ? 'dot on' : 'dot'} onClick={() => pick(i)} />
           ))}
         </svg>
         <figcaption className="muted">
-          Lowest {show(lo)}, highest {show(hi)}. Tap a day below for its sets.
+          {goalShown !== null && <>The dashed line is your goal, {show(goalShown)}. </>}
+          Lowest {show(Math.min(...values))}, highest {show(Math.max(...values))}. Tap a day below for its sets.
         </figcaption>
       </figure>
     )
@@ -283,6 +289,8 @@ export function ExerciseDetail({
   const assisted = !!exerciseById.get(exerciseId)?.assisted
   const records = useMemo(() => (sessions ? exerciseRecords(sessions) : null), [sessions])
   const helped = useMemo(() => (sessions && assisted ? assistedRecords(sessions) : null), [sessions, assisted])
+  const goal = assisted ? undefined : exerciseById.get(exerciseId)?.goal
+  const progress = useMemo(() => (sessions && goal ? goalProgress(sessions, goal, unit) : null), [sessions, goal, unit])
 
   return (
     <section aria-label={`Records for ${nameOf(exerciseId)}`} className="exercise-records">
@@ -302,9 +310,15 @@ export function ExerciseDetail({
       </div>
       {error && <p className="error">Couldn’t load your records. Check your connection.</p>}
       {!error && !sessions && <p className="muted">Loading…</p>}
+      {progress && tab !== 'history' && (
+        <p className={progress.reached ? 'record' : 'muted'} role="status">
+          {progress.reached ? '🎯 ' : ''}
+          {progress.text}
+        </p>
+      )}
       {sessions && records && tab === 'records' && (helped ? <AssistedRecordsView records={helped} unit={unit} /> : <Records records={records} unit={unit} />)}
       {sessions && tab === 'history' && <History sessions={sessions} unit={unit} assisted={assisted} />}
-      {sessions && records && tab === 'graph' && <Graph sessions={sessions} today={today} unit={unit} noWeight={!records.heaviest} assisted={assisted} />}
+      {sessions && records && tab === 'graph' && <Graph sessions={sessions} today={today} unit={unit} noWeight={!records.heaviest} assisted={assisted} goal={goal} />}
     </section>
   )
 }
