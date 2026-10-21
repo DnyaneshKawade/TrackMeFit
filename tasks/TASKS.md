@@ -30,7 +30,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 |---|---|---|
 | T-120 | Calendar dots by muscle, and a filter by exercise (FitNotes) | Calendar tests |
 | T-121 | Share a workout as text, such as on WhatsApp (FitNotes) | Text builder tests |
-| T-125 | Coaches can't delete a client's plans, diet targets or meal plans through the API; the database rules allow it today | DB tests |
 | T-015 | USDA bulk importer (Foundation + SR Legacy) into our foods table | Mapper tests (started in T-007), import count check |
 | T-018c | Food logging extras: barcode scan (free for everyone, Open Food Facts kept separate under the ODbL), batch-cooked weighing | Component tests for each |
 | T-067 / T-068 later | Parked until users ask (DK, 17 Oct 2026): diet break, SCOFF check, doctor ticks, after the goal, weigh-in habit, plan from logs, gain check, protein choices question | — |
@@ -68,6 +67,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-125 | Coaches can't delete a client's plans, diet targets or meal plans; they still add and change them ([spec](../specs/T-125-coach-delete-rules.md)) | `src/db/coachNoDeletes.test.ts` |
 | T-124 | Deletes that were missing: a day's measurements, bring back a removed own exercise, clear exercise settings, withdraw an open request; weigh-ins, photos, certificates and plans ask first ([spec](../specs/T-124-more-deletes.md)) | `src/progress/Progress.test.tsx`, `src/training/moreDeletes.test.tsx`, `src/account/Account.test.tsx`, `src/db/withdrawRequests.test.ts` |
 | T-123 | Delete a whole workout (asks first), undo a skip, and Undo after removing a set or cardio entry; works offline ([spec](../specs/T-123-workout-deletes.md)) | `src/training/deleteWorkout.test.tsx`, `src/training/offlineStore.test.ts` |
 | T-122 | More graph choices: every choice always shows, volume names, "Total sets", and a Training volume graph for workout volume and weekly sets per muscle; Calm Ocean dropdown ([spec](../specs/T-122-graph-options.md)) | `src/engine/volumeHistory.test.ts`, `src/training/trainingVolume.test.tsx`, `src/training/Records.test.tsx` |
