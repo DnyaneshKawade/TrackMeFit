@@ -19,7 +19,7 @@ import {
   type StrengthSession,
 } from '../engine/strength'
 import { ASSISTED_GRAPH_KINDS, assistedGraph, assistedHistory, assistedRecords, type AssistedGraphKind, type AssistedRecords } from '../engine/assisted'
-import { exerciseById } from './exercises'
+import { exerciseById, techniqueSearchUrl } from './exercises'
 import type { WorkoutStore } from './types'
 
 const CHART_W = 320
@@ -288,6 +288,11 @@ export function ExerciseDetail({
     <section aria-label={`Records for ${nameOf(exerciseId)}`} className="exercise-records">
       <button className="link" onClick={onBack}>{backLabel}</button>
       <h3>{nameOf(exerciseId)}</h3>
+      {exerciseById.has(exerciseId) && (
+        <a className="link watch-how" href={techniqueSearchUrl(nameOf(exerciseId))} target="_blank" rel="noopener noreferrer" aria-label={`Watch how to do ${nameOf(exerciseId)} on YouTube`}>
+          Watch how ↗
+        </a>
+      )}
       <div className="range detail-tabs" role="group" aria-label="Records, history or graph">
         {TABS.map(([t, text]) => (
           <button key={t} className="chip" aria-pressed={t === tab} onClick={() => setTab(t)}>

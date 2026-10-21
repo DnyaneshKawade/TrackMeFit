@@ -266,6 +266,13 @@ export const MUSCLE_NAMES: Record<Muscle, string> = {
   frontDelts: 'Front delts', forearms: 'Forearms', adductors: 'Inner thighs', neck: 'Neck',
 }
 
+/** A YouTube search for good form (spec T-118). Nothing is hosted or embedded;
+ * the link opens outside the app, so it never breaks when a video is removed. */
+export function techniqueSearchUrl(name: string): string {
+  const words = name.replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${words} proper form`)}`
+}
+
 /** Muscles in body order, top to bottom, for browsing the list (T-115). */
 export const BROWSE_ORDER: Muscle[] = [
   'chest', 'back', 'frontDelts', 'sideDelts', 'rearDelts', 'traps', 'biceps', 'triceps', 'forearms',

@@ -7,7 +7,7 @@ import { assistedNewRecord } from '../engine/assisted'
 import { PLATEAU_SESSIONS, plateauCheck } from '../engine/plateau'
 import { LANDMARKS, targetRir, type Muscle } from '../engine/training'
 import { warmupSets } from '../engine/warmup'
-import { exerciseById, similarExercise, type Exercise, type ExerciseSetting } from './exercises'
+import { exerciseById, similarExercise, techniqueSearchUrl, type Exercise, type ExerciseSetting } from './exercises'
 import { ExercisePicker, type ExerciseLibrary } from './ExercisePicker'
 import { ExerciseDetail } from './ExerciseDetail'
 import { SyncNote } from '../sync/SyncNote'
@@ -492,6 +492,9 @@ function ExerciseLog({
       </header>
       {settingsOpen && saveSetting && <ExerciseSettings exerciseId={exercise.id} onSave={saveSetting} onClose={() => setSettingsOpen(false)} />}
       {exercise.setupNote && <p className="muted setup-note">Setup: {exercise.setupNote}</p>}
+      <a className="link watch-how" href={techniqueSearchUrl(exercise.name)} target="_blank" rel="noopener noreferrer" aria-label={`Watch how to do ${exercise.name} on YouTube`}>
+        Watch how ↗
+      </a>
       {exercise.assisted && <p className="muted">The weight here is help. Less help is progress.</p>}
       {copied && <p className="muted">Copied from {new Date(copied.from + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}: {describeSets(copied.sets, unit, exercise.assisted)}</p>}
       {superset && (

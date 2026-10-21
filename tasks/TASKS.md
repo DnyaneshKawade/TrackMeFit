@@ -28,7 +28,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests planned |
 |---|---|---|
-| T-118 | Technique video link for each exercise (free YouTube links, nothing hosted) (RP) | Library test: every link is https and from an allowed site |
 | T-119 | Exercise goals, like "100 kg squat", shown on the graph and records (FitNotes) | Engine and screen tests |
 | T-120 | Calendar dots by muscle, and a filter by exercise (FitNotes) | Calendar tests |
 | T-121 | Share a workout as text, such as on WhatsApp (FitNotes) | Text builder tests |
@@ -69,6 +68,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-118 | Technique videos: a "Watch how" YouTube search for every exercise, opened outside the app; nothing hosted (DK chose search over hand-picked links) ([spec](../specs/T-118-technique-videos.md)) | `src/training/techniqueVideos.test.tsx` |
 | T-117 | Assisted machines: the weight is help, so least help is the record, advice takes help away, and the graph shows help (RP, FitNotes) ([spec](../specs/T-117-assisted-machines.md)) | `src/engine/assisted.test.ts`, `src/training/assisted.test.tsx` |
 | T-116 | Workout clock from the first set (FitNotes); keeping the screen on was dropped by DK ([spec](../specs/T-116-workout-clock.md)) | `src/training/workoutClock.test.tsx` |
 | T-115 | Browse exercises by muscle in the picker: a row of muscle chips with counts, working with the search (FitNotes) ([spec](../specs/T-115-browse-by-muscle.md)) | `src/training/browseByMuscle.test.tsx` |
