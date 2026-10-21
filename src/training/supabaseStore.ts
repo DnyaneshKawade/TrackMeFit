@@ -211,6 +211,19 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templ
       ) as unknown as SummaryRow[]
       return rows.map(summaryFromRow)
     },
+    async sessionsBetween(from, to) {
+      const rows = check(
+        await sb
+          .from('workout_sessions')
+          .select(`performed_on, set_logs!inner(${SET_COLUMNS})`)
+          .eq('user_id', userId)
+          .gte('performed_on', from)
+          .lte('performed_on', to)
+          .order('performed_on', { ascending: false })
+          .limit(MAX_SUMMARIES),
+      ) as unknown as { performed_on: string; set_logs: SetRow[] }[]
+      return rows.map((r): PastSession => ({ performedOn: r.performed_on, sets: r.set_logs.map(setFromRow) }))
+    },
     async saveNote(sessionId, note) {
       check(await sb.from('workout_sessions').update({ note: note.trim() || null }).eq('id', sessionId))
     },

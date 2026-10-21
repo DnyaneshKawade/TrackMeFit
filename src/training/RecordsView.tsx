@@ -11,6 +11,7 @@ import { cardioById } from './cardio'
 import { CardioDetail } from './CardioLog'
 import { exerciseById } from './exercises'
 import { ExerciseDetail } from './ExerciseDetail'
+import { TrainingVolume } from './TrainingVolume'
 import type { SessionSummary, WorkoutStore } from './types'
 
 const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
@@ -206,6 +207,7 @@ export function RecordsView({ store, today, onClose }: { store: WorkoutStore; to
       ) : (
         <>
           <Calendar store={store} today={today} />
+          <TrainingVolume store={store} today={today} />
           <ExerciseList store={store} today={today} onPick={setExerciseId} />
           <PlateCalculator />
         </>

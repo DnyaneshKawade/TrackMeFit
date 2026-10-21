@@ -143,14 +143,16 @@ export function newRecord(past: StrengthSession[], today: StrengthSet[], logged:
 }
 
 /** What the strength graph can show (T-106), like FitNotes' graph choices. */
-export type GraphKind = 'e1rm' | 'heaviest' | 'reps' | 'bestSet' | 'volume' | 'totalReps'
+export type GraphKind = 'e1rm' | 'heaviest' | 'reps' | 'bestSet' | 'volume' | 'totalReps' | 'sets'
+/** Every choice always shows, even with nothing logged yet (T-122). */
 export const GRAPH_KINDS: [GraphKind, string][] = [
   ['e1rm', 'One-rep max guess'],
   ['heaviest', 'Heaviest weight'],
   ['reps', 'Most reps in a set'],
-  ['bestSet', 'Best set (weight × reps)'],
-  ['volume', 'Total weight lifted'],
+  ['bestSet', 'Best set volume (weight × reps)'],
+  ['volume', 'Total volume (all sets)'],
   ['totalReps', 'Total reps'],
+  ['sets', 'Total sets'],
 ]
 /** Graph kinds shown in kg or lb; the others are counts. */
 export const WEIGHT_KINDS = new Set<GraphKind>(['e1rm', 'heaviest', 'bestSet', 'volume'])
@@ -189,6 +191,7 @@ export function graphPoints(sessions: StrengthSession[], kind: GraphKind, range:
       else if (kind === 'reps') value = Math.max(value, x.reps)
       else if (kind === 'bestSet') value = Math.max(value, x.weightKg * x.reps)
       else if (kind === 'volume') value += x.weightKg * x.reps
+      else if (kind === 'sets') value += 1
       else value += x.reps
     }
     if (value > 0) out.push({ date: s.performedOn, value: kind === 'e1rm' ? round05(value) : Math.round(value * 10) / 10 })

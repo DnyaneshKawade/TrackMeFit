@@ -45,13 +45,14 @@ export function assistedNewRecord(past: StrengthSession[], today: StrengthSet[],
     : `New record: ${set.reps} reps with ${weightText(set.weightKg, unit)} of help.`
 }
 
-export type AssistedGraphKind = 'help' | 'reps'
+export type AssistedGraphKind = 'help' | 'reps' | 'sets'
 export const ASSISTED_GRAPH_KINDS: [AssistedGraphKind, string][] = [
   ['help', 'Least help (lower is better)'],
   ['reps', 'Most reps in a set'],
+  ['sets', 'Total sets'],
 ]
 
-/** One value per workout, oldest first: the least help used, or the most reps. */
+/** One value per workout, oldest first: the least help used, the most reps, or the sets done. */
 export function assistedGraph(sessions: StrengthSession[], kind: AssistedGraphKind, range: GraphRange, today: string): { date: string; value: number }[] {
   const from = rangeStart(range, today)
   const out: { date: string; value: number }[] = []
@@ -59,7 +60,7 @@ export function assistedGraph(sessions: StrengthSession[], kind: AssistedGraphKi
     if (from && s.performedOn < from) continue
     const sets = s.sets.map(startOf).filter(working)
     if (!sets.length) continue
-    const value = kind === 'help' ? Math.min(...sets.map((x) => x.weightKg)) : Math.max(...sets.map((x) => x.reps))
+    const value = kind === 'help' ? Math.min(...sets.map((x) => x.weightKg)) : kind === 'sets' ? sets.length : Math.max(...sets.map((x) => x.reps))
     out.push({ date: s.performedOn, value })
   }
   return out

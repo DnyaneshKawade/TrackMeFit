@@ -2,6 +2,15 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-21: T-122 graph choices and volume
+
+- Exercise graphs list every choice, even with nothing logged.
+- Volume choices now say "volume". A new "Total sets" choice counts working sets.
+- Records have a Training volume graph: workout volume, or weekly sets for one muscle.
+- The graph dropdown uses the Calm Ocean look.
+- No database change.
+- Tests: `src/engine/volumeHistory.test.ts` (3), `src/training/trainingVolume.test.tsx` (3), `src/training/Records.test.tsx` (2 changed).
+
 ## 2026-10-21: T-119 exercise goals
 
 - Exercise settings take a goal weight and reps, like 100 kg × 1.

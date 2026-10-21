@@ -1,5 +1,5 @@
 import type { Feedback } from './progression'
-import { MAX_RECORD_SESSIONS, MAX_SUMMARIES, type NewSet, type Plan, type PlanDay, type Session, type SessionSummary, type SetLog, type WorkoutStore } from './types'
+import { MAX_RECORD_SESSIONS, MAX_SUMMARIES, type NewSet, type Plan, type PlanDay, type Session, type PastSession, type SessionSummary, type SetLog, type WorkoutStore } from './types'
 
 export function memoryWorkoutStore(
   init: { plans?: Plan[]; sessions?: Session[]; feedback?: (Feedback & { sessionId: string })[] } = {},
@@ -65,6 +65,13 @@ export function memoryWorkoutStore(
         .sort((a, b) => b.performedOn.localeCompare(a.performedOn))
         .slice(0, MAX_SUMMARIES)
         .map((s): SessionSummary => ({ id: s.id, performedOn: s.performedOn, name: s.name, planDayId: s.planDayId, exerciseIds: [...new Set(s.sets.map((x) => x.exerciseId))], ...(s.skipped ? { skipped: s.skipped } : {}) }))
+    },
+    async sessionsBetween(from, to) {
+      return sessions
+        .filter((s) => s.performedOn >= from && s.performedOn <= to && s.sets.length)
+        .sort((a, b) => b.performedOn.localeCompare(a.performedOn))
+        .slice(0, MAX_SUMMARIES)
+        .map((s): PastSession => ({ performedOn: s.performedOn, sets: s.sets.map((x) => ({ ...x })) }))
     },
     async saveNote(sessionId, note) {
       const s = sessions.find((x) => x.id === sessionId)

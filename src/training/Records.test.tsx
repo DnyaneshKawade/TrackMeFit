@@ -227,9 +227,12 @@ describe('history and graph for each exercise (T-106)', () => {
     expect(within(page).getByRole('img', { name: /from 80 kg on 28 Sept to 81.5 kg/ })).toBeTruthy()
     fireEvent.change(within(page).getByLabelText('Graph shows'), { target: { value: 'volume' } })
     // 60 × 10 + 60 × 8 = 1080; the warm-up is left out on 5 Oct.
-    expect(within(page).getByRole('img', { name: /^Total weight lifted in each workout, from 1080 kg on 28 Sept to 350 kg on 5 Oct/ })).toBeTruthy()
+    expect(within(page).getByRole('img', { name: /^Total volume \(all sets\) in each workout, from 1080 kg on 28 Sept to 350 kg on 5 Oct/ })).toBeTruthy()
     fireEvent.change(within(page).getByLabelText('Graph shows'), { target: { value: 'totalReps' } })
     expect(within(page).getByRole('img', { name: /^Total reps in each workout, from 18 reps .* to 5 reps/ })).toBeTruthy()
+    // Warm-ups are not counted as sets (T-122).
+    fireEvent.change(within(page).getByLabelText('Graph shows'), { target: { value: 'sets' } })
+    expect(within(page).getByRole('img', { name: /^Total sets in each workout, from 2 sets on 28 Sept to 1 set on 5 Oct/ })).toBeTruthy()
   })
 
   it('3. tapping a workout shows its sets', async () => {
@@ -240,13 +243,16 @@ describe('history and graph for each exercise (T-106)', () => {
     expect(within(list).getByRole('status').textContent).toBe('40 kg × 10 (warm-up), 70 kg × 5')
   })
 
-  it('4. with no weight, the graph only offers counts', async () => {
+  it('4. with no weight, every choice still shows and the empty one says why (T-122)', async () => {
     await open()
     fireEvent.click(await screen.findByRole('button', { name: /^Dips/ }))
     const page = await screen.findByRole('region', { name: 'Records for Dips' })
     fireEvent.click(await within(page).findByRole('button', { name: 'Graph' }))
     const options = within(within(page).getByLabelText('Graph shows')).getAllByRole('option').map((o) => o.textContent)
-    expect(options).toEqual(['Most reps in a set', 'Total reps'])
+    expect(options).toEqual(['One-rep max guess', 'Heaviest weight', 'Most reps in a set', 'Best set volume (weight × reps)', 'Total volume (all sets)', 'Total reps', 'Total sets'])
+    expect((within(page).getByLabelText('Graph shows') as HTMLSelectElement).value).toBe('reps')
+    fireEvent.change(within(page).getByLabelText('Graph shows'), { target: { value: 'volume' } })
+    expect(within(page).getByText('Nothing to show yet. Log a set with weight to see this.')).toBeTruthy()
   })
 
   it('5. a workout opens an exercise’s history and goes back with typed weights kept', async () => {

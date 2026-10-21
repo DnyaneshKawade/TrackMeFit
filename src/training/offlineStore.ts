@@ -191,6 +191,7 @@ export function offlineWorkoutStore(
     },
     // Records read many workouts, so they are not kept on the phone.
     exerciseHistory: (exerciseId, limit) => remote.exerciseHistory(exerciseId, limit),
+    sessionsBetween: (from, to) => remote.sessionsBetween(from, to),
     summaries: (from, to) =>
       cached(
         () => remote.summaries(from, to),
