@@ -44,6 +44,8 @@ describe('coach status screens (T-042a3)', () => {
     fireEvent.change(screen.getByLabelText('Certificate photo'), { target: { files: [photo] } })
     expect(await screen.findByRole('img', { name: 'ACE' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Remove ACE' }))
+    // It asks first (T-124).
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, delete' }))
     await screen.findByLabelText('Certificate name')
     expect(await store.certificates()).toEqual([])
   })

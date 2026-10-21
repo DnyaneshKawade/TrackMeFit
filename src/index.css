@@ -127,3 +127,6 @@ a { color: var(--pv); }
 details.coach-own, details.about-client { box-sizing: border-box; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px 16px; margin: 12px auto; box-shadow: var(--shadow); }
 details.coach-own { max-width: 480px; margin: 12px 20px; }
 details > summary { font-weight: 600; cursor: pointer; min-height: 28px; }
+/* A delete that asks first (T-124). */
+.confirm-delete { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 14px; }
+.confirm-delete .error { flex-basis: 100%; }

@@ -81,6 +81,8 @@ describe('workout plans', () => {
     render(<Workouts store={store} today={TODAY} />)
     fireEvent.click(await screen.findByRole('button', { name: /^Push Pull Legs/ }))
     click('Delete plan')
+    // It asks first (T-124).
+    click('Yes, delete')
     await waitFor(() => expect(screen.queryByRole('button', { name: /^Push Pull Legs/ })).toBeNull())
     expect(await store.plans()).toEqual([])
   })

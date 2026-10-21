@@ -49,6 +49,9 @@ describe('progress photos (T-022b)', () => {
     const store = memoryPhotoStore([{ id: 'a', date: TODAY, pose: 'back' }])
     render(<Photos store={store} today={TODAY} />)
     fireEvent.click(await screen.findByRole('button', { name: 'Remove back photo from 15 Oct' }))
+    // It asks first, since a photo can't come back (T-124).
+    expect(screen.getByText('Delete this photo? You can’t undo this.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, delete' }))
     expect(await screen.findByText(/Take a photo every two to four weeks/)).toBeTruthy()
     expect((await store.photos()).photos).toHaveLength(0)
   })

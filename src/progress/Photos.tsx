@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { ConfirmDelete } from '../ui/ConfirmDelete'
 import { POSES, checkPhotoFile, shrinkImage, type Photo, type PhotoStore, type Pose } from './photoStore'
 
 const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
@@ -150,9 +151,7 @@ export function Photos({
                 <li key={p.id}>
                   <img src={p.url} alt={`${poseLabel(p.pose)}, ${shortDate(d)}`} loading="lazy" />
                   {!readOnly && (
-                    <button className="link" aria-label={`Remove ${p.pose} photo from ${shortDate(d)}`} onClick={() => void remove(p)}>
-                      Remove
-                    </button>
+                    <ConfirmDelete label="Remove" ariaLabel={`Remove ${p.pose} photo from ${shortDate(d)}`} question="Delete this photo? You can’t undo this." onConfirm={() => remove(p)} />
                   )}
                 </li>
               ))}

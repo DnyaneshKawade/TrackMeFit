@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { LANDMARKS, type Muscle } from '../engine/training'
-import { BROWSE_ORDER, EQUIPMENT_NAMES, MUSCLE_NAMES, checkNewExercise, countByMuscle, searchExercises, type Equipment, type Exercise, type ExerciseSetting, type NewExercise } from './exercises'
+import { BROWSE_ORDER, EQUIPMENT_NAMES, MUSCLE_NAMES, checkNewExercise, countByMuscle, customExercises, searchExercises, type Equipment, type Exercise, type ExerciseSetting, type NewExercise } from './exercises'
 
 /** Favourites and the person's own exercises (T-043b). */
 export interface ExerciseLibrary {
@@ -153,6 +153,19 @@ export function ExercisePicker({ onPick, onClose, library }: { onPick: (e: Exerc
   // 'new' adds an exercise; an Exercise is one of the person's own being edited.
   const [form, setForm] = useState<'new' | Exercise | null>(null)
   const [removed, setRemoved] = useState<Exercise | null>(null)
+  // Bumped when a hidden exercise comes back, to redraw the lists (T-124).
+  const [, setBack] = useState(0)
+  const hidden = library ? customExercises().filter((e) => e.hidden) : []
+  const bringBack = (e: Exercise) => {
+    setError(null)
+    library!.setHidden(e.id, false).then(
+      () => {
+        if (removed?.id === e.id) setRemoved(null)
+        setBack((n) => n + 1)
+      },
+      () => setError('Couldn’t bring the exercise back. Check your connection.'),
+    )
+  }
   const [error, setError] = useState<string | null>(null)
   // Browse by main muscle, as in FitNotes; works with the search too (T-115).
   const [muscle, setMuscle] = useState<Muscle | null>(null)
@@ -204,10 +217,7 @@ export function ExercisePicker({ onPick, onClose, library }: { onPick: (e: Exerc
                 className="link"
                 onClick={() => {
                   setError(null)
-                  library.setHidden(removed.id, false).then(
-                    () => setRemoved(null),
-                    () => setError('Couldn’t bring the exercise back. Check your connection.'),
-                  )
+                  bringBack(removed)
                 }}
               >
                 Undo
@@ -240,6 +250,19 @@ export function ExercisePicker({ onPick, onClose, library }: { onPick: (e: Exerc
               <ExerciseRow key={e.id} e={e} library={library} onPick={onPick} onEdit={setForm} onError={setError} />
             ))}
           </ul>
+          {hidden.length > 0 && !(removed && hidden.length === 1 && hidden[0].id === removed.id) && (
+            <details className="hidden-exercises">
+              <summary>Removed exercises ({hidden.length})</summary>
+              <ul className="results">
+                {hidden.map((e) => (
+                  <li key={e.id} className="exercise-row">
+                    <span className="result-name">{e.name}</span>
+                    <button className="link" aria-label={`Bring back ${e.name}`} onClick={() => bringBack(e)}>Bring back</button>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
         </>
       )}
     </section>

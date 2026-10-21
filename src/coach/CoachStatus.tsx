@@ -1,6 +1,7 @@
 // The coach's status on the Clients tab (spec T-042a3). An Approved coach sees
 // their clients; anyone else sees where they stand and what to send.
 
+import { ConfirmDelete } from '../ui/ConfirmDelete'
 import { useEffect, useState, type ReactNode } from 'react'
 import { checkPhotoFile, shrinkImage } from '../progress/photoStore'
 import { applyAgainOn, type Certificate, type CoachApprovalStore, type CoachDetails, type CoachStanding } from './approval'
@@ -129,7 +130,7 @@ function DetailsForm({
               <li key={c.id}>
                 <img src={c.url} alt={c.name} width={80} height={80} />
                 <strong>{c.name}</strong>
-                <button className="link" aria-label={`Remove ${c.name}`} onClick={() => void remove(c.id)}>Remove</button>
+                <ConfirmDelete label="Remove" ariaLabel={`Remove ${c.name}`} question="Delete this certificate?" onConfirm={() => remove(c.id)} />
               </li>
             ))}
           </ul>

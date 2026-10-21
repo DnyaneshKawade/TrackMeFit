@@ -1,6 +1,7 @@
 // The Account page (spec T-042a5): download my data, ask for a change, and
 // delete my account.
 
+import { ConfirmDelete } from '../ui/ConfirmDelete'
 import { useEffect, useState } from 'react'
 import { localDate } from '../log/types'
 import { dataError, fileName, saveFile, type DataRequest, type DataStore } from './data'
@@ -157,6 +158,17 @@ function AskForChange({ store }: { store: DataStore }) {
                 Sent on {day(r.createdAt)}. {r.status === 'open' ? 'Waiting for an answer.' : `Answered on ${day(r.closedAt ?? r.createdAt)}.`}
               </p>
               {r.answer && <p>Our answer: {r.answer}</p>}
+              {r.status === 'open' && (
+                <ConfirmDelete
+                  label="Withdraw"
+                  question="Withdraw this request?"
+                  yes="Yes, withdraw"
+                  onConfirm={async () => {
+                    await store.withdraw(r.id)
+                    await load()
+                  }}
+                />
+              )}
             </li>
           ))}
         </ul>
@@ -185,7 +197,18 @@ function CoachAsk({ store }: { store: DataStore }) {
     <section aria-label="Coach other people">
       <h3>Coach other people</h3>
       {asked?.status === 'open' ? (
-        <p>We have your request from {day(asked.createdAt)}. We will answer here.</p>
+        <>
+          <p>We have your request from {day(asked.createdAt)}. We will answer here.</p>
+          <ConfirmDelete
+            label="Withdraw my request"
+            question="Withdraw your request to coach?"
+            yes="Yes, withdraw"
+            onConfirm={async () => {
+              await store.withdraw(asked.id)
+              await load()
+            }}
+          />
+        </>
       ) : open ? (
         <form
           aria-label="Ask to coach"
