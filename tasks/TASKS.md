@@ -28,7 +28,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests planned |
 |---|---|---|
-| T-120 | Calendar dots by muscle, and a filter by exercise (FitNotes) | Calendar tests |
 | T-121 | Share a workout as text, such as on WhatsApp (FitNotes) | Text builder tests |
 | T-015 | USDA bulk importer (Foundation + SR Legacy) into our foods table | Mapper tests (started in T-007), import count check |
 | T-018c | Food logging extras: barcode scan (free for everyone, Open Food Facts kept separate under the ODbL), batch-cooked weighing | Component tests for each |
@@ -67,6 +66,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-120 | Calendar dots for the muscle groups trained each day, a colour key, and "Show days with" one exercise (FitNotes) ([spec](../specs/T-120-calendar-dots.md)) | `src/training/calendar.test.ts`, `src/training/Records.test.tsx` |
 | T-125 | Coaches can't delete a client's plans, diet targets or meal plans; they still add and change them ([spec](../specs/T-125-coach-delete-rules.md)) | `src/db/coachNoDeletes.test.ts` |
 | T-124 | Deletes that were missing: a day's measurements, bring back a removed own exercise, clear exercise settings, withdraw an open request; weigh-ins, photos, certificates and plans ask first ([spec](../specs/T-124-more-deletes.md)) | `src/progress/Progress.test.tsx`, `src/training/moreDeletes.test.tsx`, `src/account/Account.test.tsx`, `src/db/withdrawRequests.test.ts` |
 | T-123 | Delete a whole workout (asks first), undo a skip, and Undo after removing a set or cardio entry; works offline ([spec](../specs/T-123-workout-deletes.md)) | `src/training/deleteWorkout.test.tsx`, `src/training/offlineStore.test.ts` |
