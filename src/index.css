@@ -110,6 +110,7 @@ body:has(.bottom-tabs) { padding-bottom: calc(80px + env(safe-area-inset-bottom)
 .error { color: var(--danger); }
 .link { background: none; border: 0; color: var(--pv); font: inherit; font-weight: 600; cursor: pointer; padding: 6px 8px; min-height: 36px; border-radius: 10px; }
 .link:hover { background: var(--soft); }
+.link.danger { color: var(--danger); }
 .link.back { display: inline-flex; align-items: center; gap: 4px; padding-left: 0; margin-left: -2px; }
 .link.back::before { content: '‹'; font-size: 22px; line-height: 1; }
 .card, .account > section, .progress > section, .progress > form, .progress > .weight-chart, .clients > section, .profile-part, .today-plan {

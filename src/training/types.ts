@@ -134,6 +134,8 @@ export interface WorkoutStore {
   skipDay(date: string, day: PlanDay, reason?: string): Promise<void>
   addSet(sessionId: string, set: NewSet, id?: string): Promise<SetLog>
   removeSet(id: string): Promise<void>
+  /** Deletes a workout with its sets and answers, or takes back a skip (T-123). */
+  deleteSession(id: string): Promise<void>
   /** Earlier sessions with this exercise, newest first. */
   history(exerciseId: string, beforeDate: string, limit?: number): Promise<PastSession[]>
   /** Every earlier workout with this exercise, newest first, up to a limit. Needs a connection. */

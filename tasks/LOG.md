@@ -2,6 +2,16 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-21: T-123 workout deletes
+
+- A workout can be deleted from its page. It asks first and says how many sets go.
+- A skipped day has "Undo skip", so the plan's next day comes back.
+- Removing a set or cardio entry shows "Undo" to put it back.
+- Deletes made offline wait and are sent later.
+- No database change.
+- Tests: `src/training/deleteWorkout.test.tsx` (3), `src/training/offlineStore.test.ts` (2 new).
+- Left open: T-124 (other deletes) and T-125 (coach delete rules).
+
 ## 2026-10-21: T-122 graph choices and volume
 
 - Exercise graphs list every choice, even with nothing logged.

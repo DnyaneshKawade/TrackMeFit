@@ -164,6 +164,16 @@ export function Workouts({
     void load()
   }
 
+  // Takes back a skip, so the plan's next day comes back (T-123).
+  const unskip = async (s: Session) => {
+    try {
+      await store.deleteSession(s.id)
+      void load()
+    } catch {
+      setError('Couldn’t undo the skip. Check your connection.')
+    }
+  }
+
   if (view.kind === 'plan') {
     return (
       <main className="log">
@@ -298,10 +308,11 @@ export function Workouts({
         {sessions.map((s) => (
           <li key={s.id}>
             {s.skipped ? (
-              <p className="day-button">
+              <div className="day-button skipped-day">
                 <strong>{s.name}</strong>
                 <span className="muted">Skipped{s.skipped.reason ? `: ${s.skipped.reason}` : ''}</span>
-              </p>
+                <button className="link" aria-label={`Undo skip of ${s.name}`} onClick={() => void unskip(s)}>Undo skip</button>
+              </div>
             ) : (
               <button className="day-button" onClick={() => setView({ kind: 'session', session: s })}>
                 <strong>{s.name}</strong>

@@ -12,6 +12,7 @@ type Op =
   | { kind: 'start'; session: Session; day: PlanDay | null }
   | { kind: 'set'; sessionId: string; set: SetLog }
   | { kind: 'unset'; id: string }
+  | { kind: 'unsession'; id: string }
   | { kind: 'feedback'; sessionId: string; feedback: Feedback[] }
   | { kind: 'note'; sessionId: string; note: string }
 
@@ -65,12 +66,13 @@ export function offlineWorkoutStore(
         const { id, ...set } = op.set
         await remote.addSet(op.sessionId, set, id)
       } else if (op.kind === 'unset') await remote.removeSet(op.id)
+      else if (op.kind === 'unsession') await remote.deleteSession(op.id)
       else if (op.kind === 'note') await remote.saveNote(op.sessionId, op.note)
       else await remote.saveFeedback(op.sessionId, op.feedback)
     },
     createdId: (op) => (op.kind === 'start' ? op.session.id : op.kind === 'set' ? op.set.id : undefined),
-    // Only sets are removed in the app; a session is never undone.
-    undo: (op) => ({ kind: 'unset', id: op.kind === 'set' ? op.set.id : '' }),
+    // Sets and whole workouts can be removed (T-123).
+    undo: (op) => (op.kind === 'start' ? { kind: 'unsession', id: op.session.id } : { kind: 'unset', id: op.kind === 'set' ? op.set.id : '' }),
     onRefused(op) {
       if (op.kind === 'set') dropSetFromCache(op.set.id)
       if (op.kind === 'start') {
@@ -89,7 +91,8 @@ export function offlineWorkoutStore(
     const removed = new Set(ops.flatMap((o) => (o.kind === 'unset' ? [o.id] : [])))
     const known = new Set(sessions.map((s) => s.id))
     const started = ops.flatMap((o) => (o.kind === 'start' && o.session.performedOn === date && pending.has(o.session.id) && !known.has(o.session.id) ? [o.session] : []))
-    return [...sessions, ...started].map((s) => {
+    const gone = new Set(ops.flatMap((o) => (o.kind === 'unsession' ? [o.id] : [])))
+    return [...sessions, ...started].filter((s) => !gone.has(s.id)).map((s) => {
       const have = new Set(s.sets.map((x) => x.id))
       const added = ops.flatMap((o) => (o.kind === 'set' && o.sessionId === s.id && pending.has(o.set.id) && !have.has(o.set.id) ? [o.set] : []))
       // The latest waiting note wins over the saved one.
@@ -177,6 +180,14 @@ export function offlineWorkoutStore(
       // Made on the phone and not sent yet (or being sent): cancel it.
       if (outbox.cancel(id) === 'none') await sendOrQueue(() => remote.removeSet(id), { kind: 'unset', id })
       dropSetFromCache(id)
+    },
+    async deleteSession(id) {
+      // Its waiting sets, answers and notes go first, so nothing is sent for it.
+      for (const o of outbox.ops()) if (o.kind === 'set' && o.sessionId === id) outbox.cancel(o.set.id)
+      outbox.drop((o) => (o.kind === 'feedback' || o.kind === 'note') && o.sessionId === id)
+      // Started on the phone and not sent yet (or being sent): cancel it.
+      if (outbox.cancel(id) === 'none') await sendOrQueue(() => remote.deleteSession(id), { kind: 'unsession', id })
+      dropSessionFromCache(id)
     },
     async history(exerciseId, beforeDate, limit = 3) {
       const k = `${exerciseId}|${beforeDate}|${limit}`

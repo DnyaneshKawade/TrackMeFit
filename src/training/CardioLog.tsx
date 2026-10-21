@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { cardioRecords, cardioText, checkCardio, durationText, parseDuration, speedKmh, type CardioEntry } from '../engine/cardio'
 import { useSync } from '../sync/useSync'
 import { CARDIO, cardioById, type CardioExercise } from './cardio'
-import type { PastSession, Session, WorkoutStore } from './types'
+import type { NewSet, PastSession, Session, SetLog, WorkoutStore } from './types'
 
 const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 
@@ -42,10 +42,13 @@ export function CardioLog({
   const [distance, setDistance] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // The last entry removed, so it can be put back (T-123).
+  const [removed, setRemoved] = useState<SetLog | null>(null)
   const { pending } = useSync(store.sync)
   const done = session.sets.filter((s) => s.exerciseId === cardio.id).sort((a, b) => a.setIndex - b.setIndex)
 
   const log = async () => {
+    setRemoved(null)
     const seconds = parseDuration(time)
     const km = cardio.distance && distance.trim() ? Number(distance.replace(',', '.')) : null
     const problem = checkCardio(km, seconds)
@@ -76,9 +79,23 @@ export function CardioLog({
   const remove = async (id: string) => {
     try {
       await store.removeSet(id)
+      setRemoved(session.sets.find((s) => s.id === id) ?? null)
       onChange({ ...session, sets: session.sets.filter((s) => s.id !== id) })
     } catch {
       setError('Couldn’t remove it. Try again.')
+    }
+  }
+
+  const putBack = async () => {
+    if (!removed) return
+    const set: Partial<SetLog> = { ...removed }
+    delete set.id
+    try {
+      const saved = await store.addSet(session.id, set as NewSet)
+      setRemoved(null)
+      onChange({ ...session, sets: [...session.sets, saved] })
+    } catch {
+      setError('Couldn’t put it back. Try again.')
     }
   }
 
@@ -101,6 +118,12 @@ export function CardioLog({
           </li>
         ))}
       </ol>
+      {removed && (
+        <p className="undo-row" role="status">
+          Entry removed.{' '}
+          <button className="link" onClick={() => void putBack()}>Undo</button>
+        </p>
+      )}
       <div className="set-row">
         <input aria-label={`${cardio.name} time`} placeholder="Time, like 25:30" inputMode="numeric" value={time} onChange={(e) => setTime(e.target.value)} />
         {cardio.distance && (

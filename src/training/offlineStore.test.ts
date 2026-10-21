@@ -33,6 +33,7 @@ function flakyServer(init: Parameters<typeof memoryWorkoutStore>[0] = { plans: [
     sessionsOn: gate(inner.sessionsOn),
     history: gate(inner.history),
     removeSet: gate(inner.removeSet),
+    deleteSession: gate(inner.deleteSession),
     saveFeedback: gate(inner.saveFeedback),
     saveNote: gate(inner.saveNote),
     feedbackSince: gate(inner.feedbackSince),
@@ -244,5 +245,35 @@ describe('offline workouts (T-027b)', () => {
     expect(await store.summaries('2026-10-01', '2026-10-31')).toEqual([{ id: 's0', performedOn: '2026-10-10', name: 'Push', planDayId: 'd1', exerciseIds: ['bench'] }])
     await expect(store.summaries('2026-09-01', '2026-09-30')).rejects.toThrow()
     await expect(store.exerciseHistory('bench')).rejects.toThrow()
+  })
+
+  it('T-123. deleting a workout made offline drops it and its sets; nothing is sent', async () => {
+    const { store, state, inner } = setup()
+    await store.sessionsOn(DAY)
+    state.online = false
+    const session = await store.startSession(DAY, null)
+    await store.addSet(session.id, set(0))
+    await store.saveNote(session.id, 'Short day')
+    await store.deleteSession(session.id)
+    expect(await store.sessionsOn(DAY)).toEqual([])
+    expect(store.sync.pendingIds().size).toBe(0)
+    state.online = true
+    await store.sync.run()
+    expect(await inner.sessionsOn(DAY)).toEqual([])
+    expect(state.starts).toBe(0)
+    expect(store.sync.refused()).toBe(0)
+  })
+
+  it('T-123. deleting a saved workout offline waits and is sent later', async () => {
+    const { store, state, inner } = setup()
+    await store.sessionsOn(DAY)
+    const session = await store.startSession(DAY, null)
+    await store.addSet(session.id, set(0))
+    state.online = false
+    await store.deleteSession(session.id)
+    expect(await store.sessionsOn(DAY)).toEqual([])
+    state.online = true
+    await store.sync.run()
+    expect(await inner.sessionsOn(DAY)).toEqual([])
   })
 })
