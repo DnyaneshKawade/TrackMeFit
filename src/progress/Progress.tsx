@@ -25,6 +25,7 @@ import {
   type ProgressStore,
   type WeighIn,
 } from './types'
+import { goalDates, goalWeight } from '../engine/goalWeight'
 import '../log/log.css'
 import '../training/training.css'
 import './progress.css'
@@ -32,11 +33,29 @@ import './progress.css'
 const CHART_W = 320
 const CHART_H = 140
 
+/** The goal and when it may be reached (T-154). */
+function GoalPace({ weighIns, goalKg, today }: { weighIns: WeighIn[]; goalKg: number; today: string }) {
+  const goal = goalWeight(weighIns, goalKg)
+  if (!goal) return null
+  const dates = goalDates(weighIns, goalKg, today)
+  return (
+    <section className="goal-pace" aria-label="Your goal">
+      <p className="trend-message">{goal.text}</p>
+      {dates.from && dates.to && (
+        <p>
+          At this pace, you may reach it between {shortDate(dates.from)} and {shortDate(dates.to)}.
+        </p>
+      )}
+      <p className="muted">{dates.reason}</p>
+    </section>
+  )
+}
+
 const shortDate = (iso: string) =>
   new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 
-export function WeightChartView({ weighIns }: { weighIns: WeighIn[] }) {
-  const chart = weightChart(weighIns, CHART_W, CHART_H)
+export function WeightChartView({ weighIns, goalKg = null }: { weighIns: WeighIn[]; goalKg?: number | null }) {
+  const chart = weightChart(weighIns, CHART_W, CHART_H, 90, goalKg)
   if (!chart || chart.scale.length < 2) return null
   return (
     <figure className="weight-chart">
@@ -45,10 +64,12 @@ export function WeightChartView({ weighIns }: { weighIns: WeighIn[] }) {
         {chart.scale.map((p) => (
           <circle key={p.date} cx={p.x} cy={p.y} r="2.5" className="scale-dot" />
         ))}
+        {chart.goalY !== null && <line x1="0" y1={chart.goalY} x2={CHART_W} y2={chart.goalY} className="goal-line" />}
         <polyline points={chart.trend.map((p) => `${p.x},${p.y}`).join(' ')} className="trend-line" />
       </svg>
       <figcaption className="muted">
         {shortDate(chart.firstDate)} to {shortDate(chart.lastDate)}, {chart.minKg} to {chart.maxKg} kg. Dots are daily weights; the line is your trend.
+        {chart.goalY !== null && ` The dashed line is your goal, ${goalKg} kg.`}
       </figcaption>
     </figure>
   )
@@ -342,7 +363,8 @@ export function Progress({
         />
       )}
 
-      <WeightChartView weighIns={weighIns} />
+      <WeightChartView weighIns={weighIns} goalKg={profile?.targetWeightKg ?? null} />
+      {profile?.targetWeightKg ? <GoalPace weighIns={weighIns} goalKg={profile.targetWeightKg} today={today} /> : null}
 
       {recent.length > 0 && (
         <section aria-label="Recent weigh-ins">

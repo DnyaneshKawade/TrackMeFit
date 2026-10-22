@@ -138,7 +138,12 @@ export interface WeightChart {
   maxKg: number
   firstDate: string
   lastDate: string
+  /** Where the goal line sits; null when there is no goal or it is far off the chart. */
+  goalY: number | null
 }
+
+/** The goal line is drawn when the goal is this close to the weights shown. */
+export const GOAL_NEAR_KG = 5
 
 const DAY_MS = 86_400_000
 const dayNum = (iso: string) => Math.round(Date.parse(iso + 'T00:00:00Z') / DAY_MS)
@@ -146,7 +151,7 @@ const dayNum = (iso: string) => Math.round(Date.parse(iso + 'T00:00:00Z') / DAY_
 /** Points for the weight chart: the last `days` days ending on the newest
  * weigh-in, scaled into a `width` x `height` box. The trend uses all
  * weigh-ins so the line starts where it really was. */
-export function weightChart(weighIns: WeighIn[], width: number, height: number, days = 90): WeightChart | null {
+export function weightChart(weighIns: WeighIn[], width: number, height: number, days = 90, goalKg: number | null = null): WeightChart | null {
   if (!weighIns.length) return null
   const sorted = [...weighIns].sort((a, b) => a.date.localeCompare(b.date))
   const lastDate = sorted[sorted.length - 1].date
@@ -158,6 +163,12 @@ export function weightChart(weighIns: WeighIn[], width: number, height: number, 
   // Keep at least a 2 kg window so small changes don't look dramatic.
   let minKg = Math.floor(Math.min(...values) * 2) / 2
   let maxKg = Math.ceil(Math.max(...values) * 2) / 2
+  // A goal close by widens the chart so its line fits (T-154).
+  const nearGoal = goalKg !== null && goalKg > minKg - GOAL_NEAR_KG && goalKg < maxKg + GOAL_NEAR_KG
+  if (nearGoal) {
+    minKg = Math.min(minKg, Math.floor(goalKg * 2) / 2)
+    maxKg = Math.max(maxKg, Math.ceil(goalKg * 2) / 2)
+  }
   if (maxKg - minKg < 2) {
     const mid = (maxKg + minKg) / 2
     minKg = mid - 1
@@ -170,7 +181,8 @@ export function weightChart(weighIns: WeighIn[], width: number, height: number, 
     x: Math.round(((dayNum(w.date) - dayNum(firstDate)) / span) * width * 10) / 10,
     y: Math.round((1 - (w.kg - minKg) / (maxKg - minKg)) * height * 10) / 10,
   })
-  return { scale: scale.map(place), trend: trend.map(place), minKg, maxKg, firstDate, lastDate }
+  const goalY = nearGoal ? place({ date: firstDate, kg: goalKg }).y : null
+  return { scale: scale.map(place), trend: trend.map(place), minKg, maxKg, firstDate, lastDate, goalY }
 }
 
 export interface MeasureChange {

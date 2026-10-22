@@ -12,6 +12,8 @@ import { excludedTags, hasNonvegOff } from '../profile/dietRules'
 import { dayExcluded, nonvegWeekday, vegDayReason, type DayChoice } from '../profile/nonvegDays'
 import { EntryRow, MealSection, type EntryActions, type SameOffer } from './MealSection'
 import { daysLogged, mealNow, weekStart } from './week'
+import { goalWeight, type GoalWeight } from '../engine/goalWeight'
+import type { WeighIn } from '../engine/diet'
 import './log.css'
 
 // The food search loads when first opened, to keep the first load small.
@@ -94,6 +96,9 @@ export function FoodLog({
   mealPlans,
   latestWeight = noWeight,
   nextStep,
+  goalKg = null,
+  weighIns,
+  onGoal,
   today = localDate(),
 }: {
   store: LogStore
@@ -109,6 +114,11 @@ export function FoodLog({
   latestWeight?: () => Promise<number | null>
   /** The next weekly calorie step for the current target, if one is due. */
   nextStep?: (target: DietTarget) => Promise<StepOffer | null>
+  /** The goal weight, for the goal strip (T-154). */
+  goalKg?: number | null
+  weighIns?: () => Promise<WeighIn[]>
+  /** Opens the Progress tab. */
+  onGoal?: () => void
   today?: string
 }) {
   const [date, setDate] = useState(today)
@@ -237,6 +247,20 @@ export function FoodLog({
       live = false
     }
   }, [store, date])
+
+  // How far the goal weight is (T-154). Optional: no strip if it fails.
+  const [goal, setGoal] = useState<GoalWeight | null>(null)
+  useEffect(() => {
+    if (!goalKg || !weighIns) return setGoal(null)
+    let live = true
+    weighIns().then(
+      (list) => live && setGoal(goalWeight(list, goalKg)),
+      () => {},
+    )
+    return () => {
+      live = false
+    }
+  }, [goalKg, weighIns])
 
   // Days logged earlier this week, for the kind weekly count. Optional: no count if it fails.
   const [earlier, setEarlier] = useState<string[] | null>(null)
@@ -435,6 +459,8 @@ export function FoodLog({
         <button aria-label="Next day" disabled={date >= today} onClick={() => setDate(shiftDate(date, 1))}>›</button>
       </nav>
 
+      {goal && <GoalStrip goal={goal} onOpen={onGoal} />}
+
       {/* With targets, the ring card shows the day, so the totals are for screen readers only. */}
       <dl className="macros day-total" data-quiet={targets && target ? '' : undefined} aria-label="Day total">
         <div><dt>Calories</dt><dd>{day.kcal}</dd></div>
@@ -524,6 +550,25 @@ export function FoodLog({
         </button>
       )}
     </main>
+  )
+}
+
+/** "Goal 70 kg. 2.4 kg to go." with a bar that fills (T-154). */
+function GoalStrip({ goal, onOpen }: { goal: GoalWeight; onOpen?: () => void }) {
+  const body = (
+    <>
+      <span>{goal.text}</span>
+      <span className="bar" aria-hidden="true">
+        <span style={{ width: `${goal.percent}%` }} />
+      </span>
+    </>
+  )
+  return onOpen ? (
+    <button className="goal-strip" aria-label={`${goal.text} See your progress`} onClick={onOpen}>
+      {body}
+    </button>
+  ) : (
+    <p className="goal-strip">{body}</p>
   )
 }
 
