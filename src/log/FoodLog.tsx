@@ -314,6 +314,15 @@ export function FoodLog({
               setSaved(await mealPlans.save(plan, picks))
               setPlanning(false)
             }}
+            onDelete={
+              mealPlans.remove
+                ? async () => {
+                    await mealPlans.remove!()
+                    setSaved(null)
+                    setPlanning(false)
+                  }
+                : undefined
+            }
             onClose={() => setPlanning(false)}
           />
         </Suspense>

@@ -17,6 +17,8 @@ export interface SavedMealPlan {
 export interface MealPlanStore {
   latest(): Promise<SavedMealPlan | null>
   save(plan: MealPlan, picks: string[]): Promise<SavedMealPlan>
+  /** Deletes the person's meal plan with its older versions (T-129). Coaches can't. */
+  remove?(): Promise<void>
 }
 
 /** `by` is who saves; `rows` are plans saved before. */
@@ -29,6 +31,9 @@ export function memoryMealPlanStore(by: string | null = null, rows: SavedMealPla
       const row = { id: String(rows.length + 1), plan, picks, createdAt: new Date(rows.length).toISOString(), createdBy: by }
       rows.push(row)
       return row
+    },
+    async remove() {
+      rows.length = 0
     },
   }
 }
@@ -62,6 +67,10 @@ export function supabaseMealPlanStore(sb: SupabaseClient, userId: string): MealP
         .single()
       if (error) throw error
       return fromRow(data as Row)
+    },
+    async remove() {
+      const { error } = await sb.from('meal_plans').delete().eq('user_id', userId)
+      if (error) throw error
     },
   }
 }
