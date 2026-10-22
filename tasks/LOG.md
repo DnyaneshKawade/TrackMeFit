@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-160 "Same as yesterday" on each meal
+- Each meal that is empty today shows "Same as yesterday" when the day before had food in it. The button lists the foods and calories.
+- One tap adds each food again, one by one, so it works offline. Copies are not plan ticks.
+- On an earlier day the button says "Same as the day before".
+- Spec: `specs/T-160-same-as-yesterday.md`. Tests: `src/log/sameAsYesterday.test.tsx` (4).
+
 ## 2026-10-22: T-082n light week choice
 
 - In a light week, pick "Week-1 weights" or "Same weight, 3 reps left".

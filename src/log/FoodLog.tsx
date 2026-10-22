@@ -10,7 +10,7 @@ import { SyncNote } from '../sync/SyncNote'
 import { useSync } from '../sync/useSync'
 import { excludedTags, hasNonvegOff } from '../profile/dietRules'
 import { dayExcluded, nonvegWeekday, vegDayReason, type DayChoice } from '../profile/nonvegDays'
-import { EntryRow, MealSection, type EntryActions } from './MealSection'
+import { EntryRow, MealSection, type EntryActions, type SameOffer } from './MealSection'
 import { daysLogged, mealNow, weekStart } from './week'
 import './log.css'
 
@@ -224,6 +224,20 @@ export function FoodLog({
     void load()
   }, [load])
 
+  // The day before, to add a meal again in one tap (T-160). Optional: no offer if it fails.
+  const [before, setBefore] = useState<LogEntry[] | null>(null)
+  useEffect(() => {
+    let live = true
+    setBefore(null)
+    store.listDay(shiftDate(date, -1)).then(
+      (es) => live && setBefore(es),
+      () => {},
+    )
+    return () => {
+      live = false
+    }
+  }, [store, date])
+
   // Days logged earlier this week, for the kind weekly count. Optional: no count if it fails.
   const [earlier, setEarlier] = useState<string[] | null>(null)
   useEffect(() => {
@@ -312,6 +326,32 @@ export function FoodLog({
   }
   const actionsFor = (e: LogEntry): EntryActions => ({ onAmount: (g) => changeAmount(e, g), onCopy: (m) => copyTo(e, m) })
 
+  // "Same as yesterday" (T-160): the day before's food for a meal, added one
+  // by one, so a lost connection keeps what was saved.
+  const beforeByMeal = useMemo(() => {
+    const by = new Map<Meal, LogEntry[]>()
+    for (const e of before ?? []) by.set(e.meal, [...(by.get(e.meal) ?? []), e])
+    return by
+  }, [before])
+  const sameFor = (meal: Meal): SameOffer | undefined => {
+    const foods = beforeByMeal.get(meal)
+    if (!foods) return undefined
+    return {
+      label: date === today ? 'Same as yesterday' : 'Same as the day before',
+      foods,
+      onCopy: async () => {
+        try {
+          for (const e of foods) {
+            const saved = await store.add(repeatEntry(e, meal, date))
+            setEntries((list) => [...(list ?? []), saved])
+          }
+        } catch {
+          setError('Couldn’t add all of that. Try again.')
+        }
+      },
+    }
+  }
+
   if (editingTargets) {
     return (
       <main className="log">
@@ -380,7 +420,7 @@ export function FoodLog({
   const plainMeals = MEALS.map((meal) => {
     const items = (entries ?? []).filter((e) => e.meal === meal)
     return (
-      <MealSection key={meal} meal={meal} entries={items} onAdd={() => openAdd(meal)}>
+      <MealSection key={meal} meal={meal} entries={items} onAdd={() => openAdd(meal)} same={sameFor(meal)}>
         {items.map((e) => (
           <EntryRow key={e.id} entry={e} pending={pending.has(e.id)} onRemove={() => void remove(e.id)} actions={actionsFor(e)} />
         ))}
@@ -465,6 +505,7 @@ export function FoodLog({
               onTick={tick}
               onRemove={(id) => void remove(id)}
               actionsFor={actionsFor}
+              sameFor={sameFor}
               onAdd={openAdd}
               onChangePlan={mealPlans ? () => setPlanning(true) : undefined}
               byCoach={!!userId && !!saved.createdBy && saved.createdBy !== userId}

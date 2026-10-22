@@ -4,7 +4,14 @@
 import { Children, useState, type ReactNode } from 'react'
 import { amountLabel, MAX_GRAMS, MEAL_NAMES, MEALS, totals, type LogEntry, type Meal } from './types'
 
-export function MealSection({ meal, entries, tick, onAdd, children }: { meal: Meal; entries: LogEntry[]; tick?: ReactNode; onAdd: () => void; children: ReactNode }) {
+/** The day before's food for a meal, to add again in one tap (T-160). */
+export interface SameOffer {
+  label: string
+  foods: LogEntry[]
+  onCopy: () => Promise<void>
+}
+
+export function MealSection({ meal, entries, tick, onAdd, same, children }: { meal: Meal; entries: LogEntry[]; tick?: ReactNode; onAdd: () => void; same?: SameOffer; children: ReactNode }) {
   return (
     <section className="meal" aria-label={MEAL_NAMES[meal]}>
       <header>
@@ -18,7 +25,31 @@ export function MealSection({ meal, entries, tick, onAdd, children }: { meal: Me
         </button>
       </header>
       {entries.length === 0 && !hasRows(children) ? <p className="muted">Not added yet</p> : <ul>{children}</ul>}
+      {same && entries.length === 0 && <SameAgain meal={meal} offer={same} />}
     </section>
+  )
+}
+
+function SameAgain({ meal, offer }: { meal: Meal; offer: SameOffer }) {
+  const [busy, setBusy] = useState(false)
+  const names = offer.foods.map((e) => e.foodName).join(', ')
+  const copy = async () => {
+    setBusy(true)
+    try {
+      await offer.onCopy()
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <p className="same-again">
+      <button className="secondary" disabled={busy} aria-label={`${offer.label} for ${MEAL_NAMES[meal]}`} onClick={() => void copy()}>
+        {offer.label}
+      </button>
+      <span className="muted">
+        {names} · {totals(offer.foods).kcal} calories
+      </span>
+    </p>
   )
 }
 

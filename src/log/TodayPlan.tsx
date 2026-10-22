@@ -9,7 +9,7 @@ import { vegDayPlan } from '../engine/mealPlan'
 import type { DietTag } from '../food/types'
 import type { SavedMealPlan } from '../profile/mealPlanStore'
 import { PLAN_FOODS, planFoodsFor } from '../profile/planFoods'
-import { EntryInfo, EntryRow, MealSection, type EntryActions } from './MealSection'
+import { EntryInfo, EntryRow, MealSection, type EntryActions, type SameOffer } from './MealSection'
 import { PLAN_MEAL, planEntry, planRows, resized, tickedEntries, tickState, type PlanRow, type TickState } from './planTicks'
 import { MAX_GRAMS, MEALS, type LogEntry, type Meal, type NewLogEntry } from './types'
 
@@ -31,6 +31,7 @@ export default function TodayPlan({
   onTick,
   onRemove,
   actionsFor,
+  sameFor,
   onAdd,
   onChangePlan,
   byCoach = false,
@@ -48,6 +49,8 @@ export default function TodayPlan({
   onRemove: (id: string) => void
   /** Change the amount or copy a food added by hand (T-134). */
   actionsFor?: (e: LogEntry) => EntryActions
+  /** The day before's food for a meal, to add again (T-160). */
+  sameFor?: (meal: Meal) => SameOffer | undefined
   onAdd: (meal: Meal) => void
   /** Opens the plan editor (T-061). */
   onChangePlan?: () => void
@@ -165,6 +168,7 @@ export default function TodayPlan({
             entries={entries.filter((e) => e.meal === meal)}
             tick={mealRows.length > 0 && <TickBox label={`Ate all of ${mealRows[0].meal}`} state={state(mealRows)} disabled={busy} onChange={(on) => void set(mealRows, on)} />}
             onAdd={() => onAdd(meal)}
+            same={sameFor?.(meal)}
           >
             {mealRows.map(plannedRow)}
             {byHand.map((e) => (
