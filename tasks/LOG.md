@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: new tasks T-146 to T-153 from the study on keeping people
+
+- From the study `reviews/keep-people-coming-back.md` in the project files.
+- New: plan-making screen and first steps, "when will you log", small wins, weekly and monthly cards, "we now know your body", welcome back, friendly voice guide, festival mode.
+- T-152 now points to `reviews/wording-check.md`: about 45 messages to rewrite, with before and after.
+- Changed: T-141 now has the kind-streak rules. T-100 now sends at most 1 message a day.
+- No code change. No tests.
+
 ## 2026-10-22: new tasks T-135 to T-145
 
 - Added to the to-do list after a review against other apps and RP.

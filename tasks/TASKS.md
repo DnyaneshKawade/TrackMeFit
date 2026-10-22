@@ -28,13 +28,21 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests planned |
 |---|---|---|
+| T-146 | "Making your plan" screen after setup that names each step (your weight, your food habits, your training days); a calm "Good choice" note; a "First steps: 2 of 5 done" card (log a meal, a workout, a weigh-in). Study: `reviews/keep-people-coming-back.md` | Screen tests |
+| T-147 | Two setup questions: "When will you log your food?" and "If you miss a day, what will you do?"; reminders (T-100) use the answer | Profile and screen tests |
+| T-148 | Small wins and milestones with calm messages: first meal, first workout, first full week, every 2 kg, 10 and 25 workouts, protein goal 5 of 7 days | Engine tests, each with its reason; screen test |
+| T-149 | Monday "Your week" card (wins first, then one next step) and a monthly "Your month" card with before and after | Engine tests; screen tests |
+| T-150 | "We now know your body" moment when the burn is first learned from 3 weeks of data (T-067d) | Engine test; screen test |
+| T-151 | Welcome back: a kind note after 2 quiet days, a "coming back" win on return, fresh-start offers on Monday, the 1st and birthdays; no list of missed days, no lower targets as punishment | Engine tests; screen test |
+| T-152 | Friendly voice guide in `docs/words.md` (name and goal, "you can" not "you must", kind after a slip, one emoji only for wins, grey not red for missed days); rewrite about 45 old messages in 15 files using the before-and-after list in `reviews/wording-check.md` (win first, "normal" then a next step, always a hopeful next step, show the goal, calm praise; error messages stay) | Words test; changed screen tests |
+| T-153 | Festival and wedding mode: one tap pauses calorie steps for the week, kind message, back to plan after; festival greetings | Engine tests; screen test |
 | T-135 | Ready-made workout plans (DK, 22 Oct 2026): a "Ready-made plans" list on the Training tab with 16 plans in basic English. Fit in 2 Days, Strong Start, Get Strong, Strong and Fit, Big and Strong, Muscle Plus, Full Power, Home Strong, Home Strong Plus, Fit Anywhere, Strong Legs, Big Arms, Big Chest, Strong Back, Fit for Life (60 and above), Small Gym Plan. Each has a plain line (days, where). The top one is marked "Best for you", picked from days a week, experience, where you train and age, with the reasons. "Use this plan" opens the plan editor; the engine still sets sets and weights. No famous program names (trademarks). Research: `reviews/ready-made-plans.md` in the project files | Plan data tests (every exercise in the library, 2-4 sets each, no repeat in a day, at most 10 sets per muscle per day, home and no-equipment plans use only that kit); best-match tests; screen test |
 | T-136 | Build my own block, like RP's builder: pick days a week, mark muscles Grow or Keep, and one focus muscle; the app makes the plan (after T-082h) | Engine tests; screen test |
 | T-137 | Android and iPhone apps in the Play Store and App Store (Capacitor wrapper), with store forms, data safety answers and screenshots | Build check in CI; manual store review |
 | T-138 | Steps and health sync: Health Connect on Android and Apple Health on iPhone, steps feed the calories you burn (after T-137) | Mapper tests; engine tests for steps |
 | T-139 | AI help, parked (DK, 22 Oct 2026): start with a free smart food search over our own data; paid AI later only for open questions, with a daily limit and the key on the server | Search tests; function test with the key never in the app |
 | T-140 | Real-user test: 20 to 50 people for a month, an in-app "Send feedback" form, and a count of who comes back each week | Feedback form test; counts match a seeded database |
-| T-141 | Streaks and habit nudges: days in a row with food or workouts logged, shown kindly, never a punishment (with T-100 reminders) | Engine tests; screen test |
+| T-141 | Kind streaks: count days logged this week ("5 of 7"), not an unbroken chain; two free rest days a week; planned rest days count; no sad message when it breaks; a switch to hide it (with T-100 reminders). Study: `reviews/keep-people-coming-back.md` | Engine tests; screen test |
 | T-142 | Coach payments: clients pay coaches in the app by UPI (Razorpay or similar), with our share; keys stay on the server | Function tests; webhook tests; RLS test |
 | T-143 | Hindi and other Indian languages for every screen (words.md rule 8 keeps text ready) | Every text has a translation; language switch test |
 | T-144 | Water tracking: glasses a day with a simple goal | Log tests; screen test |
@@ -45,7 +53,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-042a3b | Email to the coach at each approval decision; needs an email service and its key (e.g. Resend), sent from an Edge Function | Function test: one email per decision, key never in the app |
 | T-082n | Light week choice: week-1 weights, or the same weight with 3 reps left (4.9) | Engine tests |
 | T-083 | Stuck at the calorie floor: a card with checks (log everything, walk more, then see a doctor) instead of a lower number; optional diet break of 1-2 weeks at maintenance after 8-12 weeks of cutting, accepted by the user | Engine tests |
-| T-100 | Optional reminders (log food, weigh in, workout day, coach reply), a switch for each and a quiet time | Engine, database and Edge Function tests |
+| T-100 | Optional reminders (log food, weigh in, workout day, coach reply), a switch for each and a quiet time; at most 1 message a day, sent at the time the person chose (T-147) | Engine, database and Edge Function tests |
 | T-102 | Optional second sign-in step with an authenticator app | RLS test; set-up component test |
 | T-082g | RP-style soreness: ask "still sore?" at the first set of that muscle in the next workout, not after the workout; optional pump question; new set-change table (4.6; RP notes) | Engine tests, migration test, screen test |
 | T-082h | Muscle priority: Grow more, Grow or Keep, in the plan editor and engine, and change it in the middle of a block (4.7; RP notes; the engine's `priority` already exists) | Engine and screen tests |
