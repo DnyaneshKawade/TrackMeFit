@@ -9,12 +9,33 @@ Newest first. One entry per finished piece of work: what changed, which tests co
 - No database change. The choice is kept on the phone.
 - Tests: `src/training/lightWeekChoice.test.tsx` (4).
 
-## 2026-10-22: T-135 room in the size budget
+## 2026-10-22: T-161 room in the size budget
 
 - The Food tab is now its own file. It starts loading with the app, so it opens as fast.
 - The first download went from 139.8 to 134.8 KB gzip, under the 140 KB budget.
 - No database change. No change people see.
 - Tests: `npm run size`; the App tests still pass.
+
+## 2026-10-22: screen tasks T-154 to T-160
+
+- From `reviews/screen-check.md` in the project files: the study's hooks applied to the screens.
+- Goal strip, workout finish screen, today checklist and "Day done", small motion, progress story card, plans made for you, "Same as yesterday".
+- No code change. No tests.
+
+## 2026-10-22: new tasks T-146 to T-153 from the study on keeping people
+
+- From the study `reviews/keep-people-coming-back.md` in the project files.
+- New: plan-making screen and first steps, "when will you log", small wins, weekly and monthly cards, "we now know your body", welcome back, friendly voice guide, festival mode.
+- T-152 now points to `reviews/wording-check.md`: about 45 messages to rewrite, with before and after.
+- Changed: T-141 now has the kind-streak rules. T-100 now sends at most 1 message a day.
+- No code change. No tests.
+
+## 2026-10-22: new tasks T-135 to T-145
+
+- Added to the to-do list after a review against other apps and RP.
+- T-135 ready-made workout plans, with DK's basic-English names. T-136 build my own block.
+- T-137 to T-145: store apps, steps sync, AI help (parked), real-user test, streaks, coach payments, Indian languages, water, friends.
+- No code change. No tests.
 
 ## 2026-10-22: T-134 change or copy a food
 

@@ -26,7 +26,7 @@ import { ageOn, isOnboarded, type ProfileInfo, type ProfileStore } from './profi
 
 // First-run questions are seen once, so they load only when needed.
 // Training and Progress load when their tab is first opened, to keep the first load small.
-// The Food tab opens first, so its code starts loading with the app (T-135),
+// The Food tab opens first, so its code starts loading with the app (T-161),
 // but in its own file to keep the first download small.
 const foodLog = import('./log/FoodLog')
 const FoodLog = lazy(() => foodLog.then((m) => ({ default: m.FoodLog })))
