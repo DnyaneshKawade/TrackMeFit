@@ -44,9 +44,22 @@ export const LANDMARKS: Record<Muscle, Landmarks> = {
 
 const EXPERIENCE_SCALE: Record<Experience, number> = { beginner: 0.6, intermediate: 1, advanced: 1.2 }
 
-/** Week-1 sets for a muscle. Priority muscles start one MAV step higher. */
-export function startingSets(muscle: Muscle, experience: Experience, priority = false, landmarks = LANDMARKS[muscle]): number {
-  const base = priority ? landmarks.mavLow : landmarks.mev
+/** How hard a plan pushes a muscle (T-082h, RP's Emphasize / Grow /
+ * Maintain): "more" starts higher and may climb to MRV, "grow" stops at the
+ * top of MAV, "keep" holds it at MV and never adds sets. */
+export type Priority = 'more' | 'grow' | 'keep'
+
+/** A kept muscle gets at least this many sets a week (Bickel 2011: a third
+ * of the usual work holds muscle). */
+export const KEEP_LEAST = 2
+
+/** Sets a week that hold a muscle the person chose to keep. */
+export const keepTarget = (landmarks: Landmarks) => Math.max(landmarks.mv, KEEP_LEAST)
+
+/** Week-1 sets for a muscle. "Grow more" starts at the low end of MAV. */
+export function startingSets(muscle: Muscle, experience: Experience, priority: Priority = 'grow', landmarks = LANDMARKS[muscle]): number {
+  if (priority === 'keep') return keepTarget(landmarks)
+  const base = priority === 'more' ? landmarks.mavLow : landmarks.mev
   return Math.round(base * EXPERIENCE_SCALE[experience])
 }
 
@@ -96,7 +109,7 @@ export interface SetDecision {
 /** Next week's sets for one muscle (T-082g, adapted from RP's table).
  * Performance leads; soreness is a recovery check, and pump only breaks a
  * tie. Neither adds sets on its own. */
-export function nextWeekSets(current: number, f: MuscleFeedback, landmarks: Landmarks): SetDecision {
+export function nextWeekSets(current: number, f: MuscleFeedback, landmarks: Landmarks, priority: Priority = 'grow'): SetDecision {
   let change = 0
   let recoverySession = false
   let swapExercise = false
@@ -139,7 +152,23 @@ export function nextWeekSets(current: number, f: MuscleFeedback, landmarks: Land
     why = `${why} The pump was low, so one more.`
   }
 
-  const sets = Math.max(Math.min(current, landmarks.mv), Math.min(landmarks.mrv, current + change))
+  // The muscle's priority sets the top (T-082h).
+  if (priority === 'keep') {
+    const target = Math.min(current, keepTarget(landmarks))
+    const sets = f.pain ? Math.min(target, Math.max(0, current + change)) : target
+    if (!f.pain) why = sets < current ? `You chose Keep, so sets go down to ${sets}.` : 'You chose Keep, so sets stay the same.'
+    return { sets, change: sets - current, recoverySession, swapExercise, why }
+  }
+  const top = priority === 'more' ? landmarks.mrv : landmarks.mavHigh
+  const sets = Math.max(Math.min(current, landmarks.mv), Math.min(Math.max(current, top), current + change))
+  if (change > 0 && sets < current + change) {
+    why =
+      sets > current
+        ? `Sets go up to ${sets}. ${priority === 'more' ? 'That is the most this muscle can heal from.' : 'That is the usual top for this muscle.'}`
+        : priority === 'more'
+          ? 'This is the most this muscle can heal from, so sets stay.'
+          : 'This is the usual top for this muscle, so sets stay. Pick "Grow more" to go higher.'
+  }
   return { sets, change: sets - current, recoverySession, swapExercise, why }
 }
 

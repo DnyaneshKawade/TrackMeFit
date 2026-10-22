@@ -24,7 +24,7 @@ describe('startingSets', () => {
     expect(startingSets('chest', 'advanced')).toBe(12)
   })
   it('starts priority muscles higher', () => {
-    expect(startingSets('biceps', 'intermediate', true)).toBe(14)
+    expect(startingSets('biceps', 'intermediate', 'more')).toBe(14)
   })
 })
 

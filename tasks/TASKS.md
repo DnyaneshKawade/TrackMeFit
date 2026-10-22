@@ -56,7 +56,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-083 | Stuck at the calorie floor: a card with checks (log everything, walk more, then see a doctor) instead of a lower number; optional diet break of 1-2 weeks at maintenance after 8-12 weeks of cutting, accepted by the user | Engine tests |
 | T-100 | Optional reminders (log food, weigh in, workout day, coach reply), a switch for each and a quiet time; at most 1 message a day, sent at the time the person chose (T-147) | Engine, database and Edge Function tests |
 | T-102 | Optional second sign-in step with an authenticator app | RLS test; set-up component test |
-| T-082h | Muscle priority: Grow more, Grow or Keep, in the plan editor and engine, and change it in the middle of a block (4.7; RP notes; the engine's `priority` already exists) | Engine and screen tests |
 | T-082j | Beginner start: add weight each session on big lifts, then switch to rep ranges (4.3) | Engine tests |
 | T-082k | Once a block, a "reps left" check on one-joint moves (4.11) | Engine and screen tests |
 | T-082l | Starter plan defaults for people 60 and over; rep range and rest defaults (4.12, 4.13) | Starter plan tests |
@@ -84,6 +83,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-082h | Muscle priority: Grow more, Grow or Keep per muscle in the plan editor, any time in a block; the engine stops Grow at MAV high, lets Grow more reach MRV and holds Keep at MV ([spec](../specs/T-082h-muscle-priority.md)) | `src/engine/musclePriority.test.ts` (4), `src/training/musclePriority.test.tsx` (3), `src/db/musclePriority.test.ts` (1) |
 | T-157 | Small motion for wins (tick pop, "Day done ✓", record pop) and a short record buzz, all under half a second; off with the phone's "reduce motion" or a Motion switch in Me ([spec](../specs/T-157-win-motion.md)) | `src/settings/motion.test.tsx` (4) |
 | T-082g | RP-style soreness: "How did your chest heal since last time?" at the muscle's first set next workout; optional pump after the workout; new set-change table ([spec](../specs/T-082g-soreness-timing.md)) | `src/engine/sorenessTable.test.ts` (5), `src/training/sorenessTiming.test.tsx` (3), `src/db/sorenessTiming.test.ts` (1) |
 | T-156 | Today checklist ("Today: 2 of 4 done": meals, calories, workout or rest day, weigh-in), "Day done ✓" on the ring, a kind line when over, and a peek at tomorrow after 7 pm ([spec](../specs/T-156-today-checklist.md)) | `src/engine/today.test.ts` (6), `src/log/todayChecklist.test.tsx` (4) |
