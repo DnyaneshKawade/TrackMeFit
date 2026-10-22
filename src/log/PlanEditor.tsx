@@ -67,7 +67,8 @@ export default function PlanEditor({
   onDelete?: () => Promise<void>
   onClose: () => void
 }) {
-  const [mode, setMode] = useState<'edit' | 'new'>(saved ? 'edit' : 'new')
+  // A new plan first asks how to make it (T-131): build it or have one suggested.
+  const [mode, setMode] = useState<'edit' | 'choose' | 'suggest'>(saved ? 'edit' : 'choose')
   const [plan, setPlan] = useState<MealPlan | null>(saved?.plan ?? null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -139,16 +140,26 @@ export default function PlanEditor({
             setAdding(meal)
           }}
         />
-      ) : (
+      ) : mode === 'suggest' ? (
         <>
-          {targets && (
-            <div className="own-plan">
-              <button className="secondary" onClick={buildOwn}>Build my own plan</button>
-              <p className="muted">Start with empty meals and add each food yourself.</p>
-            </div>
-          )}
           <NewPlan targets={targets} excluded={excluded} blocked={blocked} counts={counts} loadWeight={loadWeight} onAccept={(a) => void save(a.plan, a.picks)} />
+          <button className="link" onClick={() => setMode('choose')}>
+            Back
+          </button>
         </>
+      ) : !targets ? (
+        <p className="info">Set your daily targets first. The plan is made to fit them.</p>
+      ) : (
+        <div className="plan-choice" role="group" aria-label="How to make the plan">
+          <div className="own-plan">
+            <button className="primary" onClick={buildOwn}>Build my own plan</button>
+            <p className="muted">Start with empty meals and add each food yourself.</p>
+          </div>
+          <div className="own-plan">
+            <button className="secondary" onClick={() => setMode('suggest')}>Suggest a plan</button>
+            <p className="muted">Pick protein foods you like. We make a plan to fit your targets.</p>
+          </div>
+        </div>
       )}
       {mode === 'edit' && plan && (
         <div className="editor-actions">
@@ -156,7 +167,7 @@ export default function PlanEditor({
             Save plan
           </button>
           {empty && <p className="muted">Add at least one food to save the plan.</p>}
-          <button className="link" onClick={() => setMode('new')}>
+          <button className="link" onClick={() => setMode('choose')}>
             Make a new plan
           </button>
           {saved && onDelete && (

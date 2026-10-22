@@ -153,6 +153,7 @@ describe('change the meal plan (T-061)', () => {
     const { mealPlans } = await setup()
     const editor = await openEditor()
     fireEvent.click(within(editor).getByRole('button', { name: 'Make a new plan' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Suggest a plan' }))
     const picks = await screen.findByRole('group', { name: 'Protein foods you like' })
     fireEvent.click(within(picks).getByRole('button', { name: /Soya/ }))
     fireEvent.click(await screen.findByRole('button', { name: 'Use this plan' }))
@@ -164,6 +165,7 @@ describe('change the meal plan (T-061)', () => {
   it('4. with no weight logged, a new plan asks for today’s weight first', async () => {
     await setup({ plan: false, weight: null })
     fireEvent.click(await screen.findByRole('button', { name: 'Make a meal plan' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Suggest a plan' }))
     const weight = await screen.findByLabelText('Your weight today (kg)')
     fireEvent.change(weight, { target: { value: '68' } })
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
@@ -184,6 +186,7 @@ describe('change the meal plan (T-061)', () => {
     const editor = await openEditor()
     expect(within(editor).getByRole('region', { name: 'Lunch' })).toBeTruthy()
     fireEvent.click(within(editor).getByRole('button', { name: 'Make a new plan' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Suggest a plan' }))
     expect((await screen.findByText(/we don’t make an automatic meal plan/)).textContent).toMatch(/coach or your doctor/)
   })
 
