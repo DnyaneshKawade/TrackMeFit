@@ -227,6 +227,8 @@ export interface LoadInput {
   rirDone?: (number | null)[]
   /** Reps left the plan aimed for this week (T-082b). */
   targetRir?: number
+  /** A beginner's big lift still adds weight each workout (T-082j). */
+  linear?: boolean
 }
 
 export interface LoadDecision {
@@ -240,6 +242,21 @@ const MAX_JUMP_FRACTION = 0.1
 /** People guess reps left about 1 off, so only a gap of 2 or more counts. */
 const RIR_GAP = 2
 
+/** A beginner's weekly weight steps last this long (T-082j). */
+export const BEGINNER_WEEKS = 8
+/** Reps left a beginner needs on every set to add weight next time. */
+export const BEGINNER_RIR = 2
+
+/** Whether a beginner's big lift still adds weight each workout (T-082j):
+ * within 8 weeks of its first workout, and never missed twice in a row
+ * before the latest workout. `misses` is newest first; `daysSinceFirst` is
+ * null when the first workout is not known. */
+export function beginnerLinear({ daysSinceFirst, misses }: { daysSinceFirst: number | null; misses: boolean[] }): boolean {
+  if (daysSinceFirst === null || daysSinceFirst > BEGINNER_WEEKS * 7) return false
+  for (let k = 1; k + 1 < misses.length; k++) if (misses[k] && misses[k + 1]) return false
+  return true
+}
+
 /** Double progression. Hit the top of the range on every set: add weight, or
  * reps if the next jump is too big. Missed the bottom twice: drop 5-10%.
  * Inside the range, logged reps left decide too (T-082b): 2 or more above the
@@ -247,6 +264,16 @@ const RIR_GAP = 2
 export function nextLoad(i: LoadInput): LoadDecision {
   const [lo, hi] = i.repRange
   const topOfRange = i.repsDone.length > 0 && i.repsDone.every((r) => r >= hi)
+  const smallJump = i.weight === 0 || i.increment / i.weight <= MAX_JUMP_FRACTION
+  // Beginners add weight each workout while every set reaches the range with
+  // 2 or more reps left; two misses in a row end it (T-082j).
+  if (i.linear && i.missStreak >= 2) {
+    const dropped = Math.max(0, Math.floor((i.weight * 0.92) / i.increment) * i.increment)
+    return { weight: dropped, targetReps: lo, why: 'Your quick beginner gains have slowed. So the weight comes down a little. Now add reps first.' }
+  }
+  if (i.linear && !topOfRange && i.weight > 0 && smallJump && i.repsDone.length > 0 && i.repsDone.every((r) => r >= lo) && (i.rirDone ?? []).every((r) => r === null || r >= BEGINNER_RIR)) {
+    return { weight: i.weight + i.increment, targetReps: lo, why: `You hit ${lo} reps on every set. Beginners add weight each workout.` }
+  }
   if (topOfRange) {
     if (i.weight > 0 && i.increment / i.weight > MAX_JUMP_FRACTION) {
       return { weight: i.weight, targetReps: hi + 1, why: 'The next weight is a big jump. So add a rep to each set first.' }
@@ -262,7 +289,6 @@ export function nextLoad(i: LoadInput): LoadDecision {
   const inRange = i.repsDone.length > 0 && i.repsDone.every((r) => r >= lo)
   if (inRange && logged.length && i.targetRir !== undefined) {
     const left = Math.round(logged.reduce((a, b) => a + b, 0) / logged.length)
-    const smallJump = i.weight === 0 || i.increment / i.weight <= MAX_JUMP_FRACTION
     if (left >= i.targetRir + RIR_GAP && smallJump) {
       return {
         weight: i.weight + i.increment,
