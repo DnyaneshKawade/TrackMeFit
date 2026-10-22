@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: screen tasks T-154 to T-160
+
+- From `reviews/screen-check.md` in the project files: the study's hooks applied to the screens.
+- Goal strip, workout finish screen, today checklist and "Day done", small motion, progress story card, plans made for you, "Same as yesterday".
+- No code change. No tests.
+
 ## 2026-10-22: new tasks T-146 to T-153 from the study on keeping people
 
 - From the study `reviews/keep-people-coming-back.md` in the project files.
