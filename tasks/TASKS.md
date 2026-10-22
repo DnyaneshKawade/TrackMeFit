@@ -66,6 +66,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | ID | Task | Tests |
 |---|---|---|
 | T-130 | ✕ on a planned exercise takes it out of today's workout only, with Undo; add another in its place; exercises with sets keep theirs ([spec](../specs/T-130-remove-exercise-today.md)) | `src/training/removeExercise.test.tsx` |
+| T-129 | "Build my own plan": start with empty meals and add each food; change it with "Change plan"; "Delete meal plan" asks first; coaches can't delete ([spec](../specs/T-129-own-meal-plan.md)) | `src/log/ownMealPlan.test.tsx` |
 | T-128 | Open a past workout from its calendar day to add, remove or delete; Done goes back to Records ([spec](../specs/T-128-open-past-workout.md)) | `src/training/openPastWorkout.test.tsx`, `src/training/Records.test.tsx` |
 | T-127 | Graphs, records, history and the calendar leave out a deleted workout or set at once, even while the delete waits to be sent ([spec](../specs/T-127-delete-updates-graphs.md)) | `src/training/offlineStore.test.ts` |
 | T-121 | Share a workout as text, such as on WhatsApp: "Share workout" in a workout and "Share" on a calendar day; uses the share sheet or copies; notes left out ([spec](../specs/T-121-share-workout.md)) | `src/engine/shareText.test.ts`, `src/training/shareWorkout.test.tsx`, `src/training/Records.test.tsx` |

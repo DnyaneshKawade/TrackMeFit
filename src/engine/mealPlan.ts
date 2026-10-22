@@ -627,6 +627,19 @@ export function addFoundItem(plan: MealPlan, meal: MealName, found: { foodId: st
   })
 }
 
+/** An empty day for "Build my own plan" (T-129): the person adds every food. */
+export function emptyPlan(targets: Macros): MealPlan {
+  const zero = { kcal: 0, proteinG: 0, carbG: 0, fatG: 0 }
+  return {
+    targets,
+    meals: MEALS.map((name) => ({ name, items: [], macros: zero })),
+    totals: zero,
+    feasibility: { reachableProteinG: 0, feasible: true, message: '', suggestions: [] },
+    onTarget: false,
+    notes: [],
+  }
+}
+
 export function removeItem(plan: MealPlan, meal: MealName, index: number): MealPlan {
   return withItems(plan, meal, (items) => items.filter((_, i) => i !== index))
 }

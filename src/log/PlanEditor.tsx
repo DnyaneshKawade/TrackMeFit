@@ -5,7 +5,7 @@
 
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import type { Macros } from '../engine/diet'
-import { MEALS, addFoundItem, planCheck, removeItem, setItemGrams, swapItem, swapOptions, tidyPlan, type MealName, type MealPlan } from '../engine/mealPlan'
+import { MEALS, addFoundItem, emptyPlan, planCheck, removeItem, setItemGrams, swapItem, swapOptions, tidyPlan, type MealName, type MealPlan } from '../engine/mealPlan'
 import type { DietTag } from '../food/types'
 import type { CustomFood, NewCustomFood } from '../food/custom'
 import type { FoodFinder } from '../food/finder'
@@ -13,6 +13,7 @@ import type { Food } from '../food/types'
 import type { AcceptedMealPlan } from '../profile/MealPlanStep'
 import type { SavedMealPlan } from '../profile/mealPlanStore'
 import { PLAN_FOODS_BY_ID, planFoodsFor } from '../profile/planFoods'
+import { ConfirmDelete } from '../ui/ConfirmDelete'
 import { AddFood } from './AddFood'
 import { PLAN_MEAL } from './planTicks'
 import type { LogEntry, NewLogEntry } from './types'
@@ -44,6 +45,7 @@ export default function PlanEditor({
   loadWeight,
   search,
   onSave,
+  onDelete,
   onClose,
 }: {
   saved: SavedMealPlan | null
@@ -61,6 +63,8 @@ export default function PlanEditor({
   loadWeight: () => Promise<number | null>
   search: PlanSearch
   onSave: (plan: MealPlan, picks: string[]) => Promise<void>
+  /** Deletes the saved plan; only the person can, not their coach (T-129). */
+  onDelete?: () => Promise<void>
   onClose: () => void
 }) {
   const [mode, setMode] = useState<'edit' | 'new'>(saved ? 'edit' : 'new')
@@ -83,7 +87,14 @@ export default function PlanEditor({
   }
 
   const whose = name ? `${name}’s` : 'your'
-  const title = mode === 'edit' ? `Change ${whose} meal plan` : name ? `New meal plan for ${name}` : 'New meal plan'
+  const own = mode === 'edit' && !saved
+  const title = mode === 'edit' ? (own ? `Build ${whose} own meal plan` : `Change ${whose} meal plan`) : name ? `New meal plan for ${name}` : 'New meal plan'
+  const empty = !plan || plan.meals.every((m) => m.items.length === 0)
+  const buildOwn = () => {
+    if (!targets) return
+    setPlan(emptyPlan(targets))
+    setMode('edit')
+  }
 
   if (adding && plan) {
     const meal = adding
@@ -129,16 +140,28 @@ export default function PlanEditor({
           }}
         />
       ) : (
-        <NewPlan targets={targets} excluded={excluded} blocked={blocked} counts={counts} loadWeight={loadWeight} onAccept={(a) => void save(a.plan, a.picks)} />
+        <>
+          {targets && (
+            <div className="own-plan">
+              <button className="secondary" onClick={buildOwn}>Build my own plan</button>
+              <p className="muted">Start with empty meals and add each food yourself.</p>
+            </div>
+          )}
+          <NewPlan targets={targets} excluded={excluded} blocked={blocked} counts={counts} loadWeight={loadWeight} onAccept={(a) => void save(a.plan, a.picks)} />
+        </>
       )}
       {mode === 'edit' && plan && (
         <div className="editor-actions">
-          <button className="primary" disabled={busy} onClick={() => void save(plan, saved!.picks)}>
+          <button className="primary" disabled={busy || empty} onClick={() => void save(plan, saved?.picks ?? [])}>
             Save plan
           </button>
+          {empty && <p className="muted">Add at least one food to save the plan.</p>}
           <button className="link" onClick={() => setMode('new')}>
             Make a new plan
           </button>
+          {saved && onDelete && (
+            <ConfirmDelete label="Delete meal plan" danger question="Delete your meal plan? Foods you already logged stay. You can’t undo this." onConfirm={onDelete} />
+          )}
         </div>
       )}
     </section>
