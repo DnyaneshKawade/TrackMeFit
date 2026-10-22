@@ -101,7 +101,7 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 @keyframes tmf-pop { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: no-preference) {
   :root:not([data-motion='off']) .today-list li[data-done] > span:first-child,
-  :root:not([data-motion='off']) .ring-text .day-done,
+  :root:not([data-motion='off']) .left .calories .day-done,
   :root:not([data-motion='off']) .record,
   :root:not([data-motion='off']) .finish-records li { display: inline-block; animation: tmf-pop 0.35s ease-out; }
   :root:not([data-motion='off']) .meal input[type='checkbox']:checked { animation: tmf-pop 0.3s ease-out; }
