@@ -58,7 +58,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-018c | Food logging extras: barcode scan (free for everyone, Open Food Facts kept separate under the ODbL), batch-cooked weighing | Component tests for each |
 | T-067 / T-068 later | Parked until users ask (DK, 17 Oct 2026): diet break, SCOFF check, doctor ticks, after the goal, weigh-in habit, plan from logs, gain check, protein choices question | — |
 | T-042a3b | Email to the coach at each approval decision; needs an email service and its key (e.g. Resend), sent from an Edge Function | Function test: one email per decision, key never in the app |
-| T-082n | Light week choice: week-1 weights, or the same weight with 3 reps left (4.9) | Engine tests |
 | T-083 | Stuck at the calorie floor: a card with checks (log everything, walk more, then see a doctor) instead of a lower number; optional diet break of 1-2 weeks at maintenance after 8-12 weeks of cutting, accepted by the user | Engine tests |
 | T-100 | Optional reminders (log food, weigh in, workout day, coach reply), a switch for each and a quiet time; at most 1 message a day, sent at the time the person chose (T-147) | Engine, database and Edge Function tests |
 | T-102 | Optional second sign-in step with an authenticator app | RLS test; set-up component test |
@@ -91,6 +90,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-082n | Light week choice: "Week-1 weights" (4 reps left) or "Same weight, 3 reps left"; beginners keep week-1 weights; kept on the phone ([spec](../specs/T-082n-light-week-choice.md)) | `src/training/lightWeekChoice.test.tsx` |
 | T-161 | Food tab code moved out of the first download, loading alongside it, to make room in the 140 KB budget (139.8 to 134.8 KB) | `npm run size`, `src/App*.test.tsx` |
 | T-134 | "Edit" on a logged food changes its amount or copies it to another meal; "Copy to" on a meal plan food ([spec](../specs/T-134-change-copy-food.md)) | `src/log/entryActions.test.tsx` |
 | T-133 | The Food tab day card shows calories, protein, carbs and fat eaten, and how much is left or over each target ([spec](../specs/T-133-eaten-today.md)) | `src/log/eatenToday.test.tsx`, `src/targets/TargetsFood.test.tsx` |

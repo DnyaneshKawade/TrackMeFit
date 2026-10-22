@@ -4,7 +4,7 @@
 // in the plan until the person accepts the review.
 
 import {
-  deloadSets,
+  lightWeek,
   estimatedOneRepMax,
   fractionalVolume,
   LANDMARKS,
@@ -12,6 +12,7 @@ import {
   nextWeekSets,
   shouldDeload,
   type Effort,
+  type LightWeek,
   type Muscle,
   type Performance,
   type Recovery,
@@ -253,10 +254,10 @@ export function reviewWeek(input: {
 }
 
 /** What to do on a planned exercise in a deload week. */
-export const deloadAdvice = (sets: number, muscle?: Muscle) =>
+export const deloadAdvice = (sets: number, muscle?: Muscle, light?: LightWeek) =>
   muscle && LIGHT_WEEK_SKIP.has(muscle)
     ? 'Light week: you can skip this one. Rows, pulls and carries work it too.'
-    : `Light week: ${deloadSets(sets)} sets at your week-1 weights. Stop while you could still do 4 more reps.`
+    : (light ?? lightWeek({ sets, load: 'week1', beginner: true, lastWeightKg: null })).reason
 
 /** Small muscles a light week can leave out (T-109, as in RP). */
 export const LIGHT_WEEK_SKIP: ReadonlySet<Muscle> = new Set(['traps', 'forearms'])

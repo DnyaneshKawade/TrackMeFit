@@ -152,7 +152,7 @@ export function Workouts({
     const days = new Set(p.days.map((d) => d.id))
     return (blockWorkouts ?? []).filter((w) => w.skipped && w.planDayId && days.has(w.planDayId) && w.performedOn >= shiftDate(today, -6))
   }
-  const blockOf = (p?: Plan) => (p ? { week: weekOf(p), hardWeeks: p.hardWeeks ?? 4 } : undefined)
+  const blockOf = (p?: Plan) => (p ? { week: weekOf(p), hardWeeks: p.hardWeeks ?? 4, beginner: answers?.experience === 'beginner' } : undefined)
   const weeklyOf = (p?: Plan) => (p ? weeklySets(p) : undefined)
 
   const start = async (day: PlanDay | null) => {

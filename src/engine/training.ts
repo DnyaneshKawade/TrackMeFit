@@ -257,3 +257,28 @@ export function shouldDeload(c: DeloadCheck): boolean {
 export function deloadSets(sets: number): number {
   return Math.ceil(sets / 2)
 }
+
+/** How heavy a light week is (4.9, T-082n): week-1 weights, or last week's weight with 3 reps left. */
+export type LightLoad = 'week1' | 'same'
+
+export interface LightWeek {
+  sets: number
+  /** Reps to leave at the end of each set. */
+  rir: number
+  /** The weight to start from; null means "your week-1 weights". */
+  weightKg: number | null
+  /** The choice that was used; a beginner always gets week-1 weights. */
+  load: LightLoad
+  reason: string
+}
+
+/** The light week for one exercise. Beginners keep week-1 weights and 4 reps
+ * left, the simpler rule (inferred). Without a weight from last time, "same"
+ * falls back to week-1 weights. */
+export function lightWeek(i: { sets: number; load: LightLoad; beginner: boolean; lastWeightKg: number | null }): LightWeek {
+  const sets = deloadSets(i.sets)
+  if (i.load === 'same' && !i.beginner && i.lastWeightKg !== null && i.lastWeightKg > 0) {
+    return { sets, rir: 3, weightKg: i.lastWeightKg, load: 'same', reason: `Light week: ${sets} sets at last time's weight. Stop while you could still do 3 more reps.` }
+  }
+  return { sets, rir: 4, weightKg: null, load: 'week1', reason: `Light week: ${sets} sets at your week-1 weights. Stop while you could still do 4 more reps.` }
+}
