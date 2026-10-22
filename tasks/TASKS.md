@@ -42,7 +42,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-157 | Small motion and buzz for wins (tick pop, ring fill, record buzz), under half a second; follows "reduce motion"; an off switch in settings | Screen tests with reduce motion on and off; setting test |
 | T-158 | Progress tab opens with a "Since you started" story card (weight, waist, workouts) and a first-and-latest photo compare slider | Engine test for the story numbers; screen tests |
 | T-159 | Plans feel made for you: the person's name on plan headers, chips (goal, days, veg), "Why this?" links to the engine's reasons; a journey bar (Start, Learning your body, Steady progress, Goal) that moves with T-150 | Engine test for the journey stage; screen tests |
-| T-160 | "Same as yesterday" on each meal: one tap copies yesterday's entries for that meal | Copy test; screen test |
 | T-135 | Ready-made workout plans (DK, 22 Oct 2026): a "Ready-made plans" list on the Training tab with 16 plans in basic English. Fit in 2 Days, Strong Start, Get Strong, Strong and Fit, Big and Strong, Muscle Plus, Full Power, Home Strong, Home Strong Plus, Fit Anywhere, Strong Legs, Big Arms, Big Chest, Strong Back, Fit for Life (60 and above), Small Gym Plan. Each has a plain line (days, where). The top one is marked "Best for you", picked from days a week, experience, where you train and age, with the reasons. "Use this plan" opens the plan editor; the engine still sets sets and weights. No famous program names (trademarks). Research: `reviews/ready-made-plans.md` in the project files | Plan data tests (every exercise in the library, 2-4 sets each, no repeat in a day, at most 10 sets per muscle per day, home and no-equipment plans use only that kit); best-match tests; screen test |
 | T-136 | Build my own block, like RP's builder: pick days a week, mark muscles Grow or Keep, and one focus muscle; the app makes the plan (after T-082h) | Engine tests; screen test |
 | T-137 | Android and iPhone apps in the Play Store and App Store (Capacitor wrapper), with store forms, data safety answers and screenshots | Build check in CI; manual store review |
@@ -90,6 +89,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-160 | "Same as yesterday" on each meal: one tap adds the day before's foods for that meal, with the foods and calories shown; works with a meal plan too | `src/log/sameAsYesterday.test.tsx` (4) |
 | T-082n | Light week choice: "Week-1 weights" (4 reps left) or "Same weight, 3 reps left"; beginners keep week-1 weights; kept on the phone ([spec](../specs/T-082n-light-week-choice.md)) | `src/training/lightWeekChoice.test.tsx` |
 | T-161 | Food tab code moved out of the first download, loading alongside it, to make room in the 140 KB budget (139.8 to 134.8 KB) | `npm run size`, `src/App*.test.tsx` |
 | T-134 | "Edit" on a logged food changes its amount or copies it to another meal; "Copy to" on a meal plan food ([spec](../specs/T-134-change-copy-food.md)) | `src/log/entryActions.test.tsx` |

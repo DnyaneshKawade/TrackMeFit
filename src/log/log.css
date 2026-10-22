@@ -41,6 +41,8 @@
 .meal li .entry-edit input { width: 80px; }
 .meal li .copy-to { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .meal li .copy-to button { min-height: 36px; padding: 4px 12px; }
+.meal .same-again { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 8px 0 0; font-size: 13px; }
+.meal .same-again button { min-height: 36px; padding: 4px 12px; }
 .fab { position: fixed; right: max(20px, calc(50% - 240px)); bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 15; display: flex; align-items: center; gap: 8px; height: 56px; padding: 0 22px; border: 0; border-radius: 28px; background: var(--p); color: var(--on-p); font: inherit; font-size: 16px; font-weight: 600; box-shadow: 0 6px 18px rgb(0 0 0 / 0.22); cursor: pointer; }
 
 .sheet-head { display: flex; justify-content: space-between; align-items: center; }
