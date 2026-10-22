@@ -28,6 +28,17 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests planned |
 |---|---|---|
+| T-135 | Ready-made workout plans (DK, 22 Oct 2026): a "Ready-made plans" list on the Training tab with 16 plans in basic English. Fit in 2 Days, Strong Start, Get Strong, Strong and Fit, Big and Strong, Muscle Plus, Full Power, Home Strong, Home Strong Plus, Fit Anywhere, Strong Legs, Big Arms, Big Chest, Strong Back, Fit for Life (60 and above), Small Gym Plan. Each has a plain line (days, where). The top one is marked "Best for you", picked from days a week, experience, where you train and age, with the reasons. "Use this plan" opens the plan editor; the engine still sets sets and weights. No famous program names (trademarks). Research: `reviews/ready-made-plans.md` in the project files | Plan data tests (every exercise in the library, 2-4 sets each, no repeat in a day, at most 10 sets per muscle per day, home and no-equipment plans use only that kit); best-match tests; screen test |
+| T-136 | Build my own block, like RP's builder: pick days a week, mark muscles Grow or Keep, and one focus muscle; the app makes the plan (after T-082h) | Engine tests; screen test |
+| T-137 | Android and iPhone apps in the Play Store and App Store (Capacitor wrapper), with store forms, data safety answers and screenshots | Build check in CI; manual store review |
+| T-138 | Steps and health sync: Health Connect on Android and Apple Health on iPhone, steps feed the calories you burn (after T-137) | Mapper tests; engine tests for steps |
+| T-139 | AI help, parked (DK, 22 Oct 2026): start with a free smart food search over our own data; paid AI later only for open questions, with a daily limit and the key on the server | Search tests; function test with the key never in the app |
+| T-140 | Real-user test: 20 to 50 people for a month, an in-app "Send feedback" form, and a count of who comes back each week | Feedback form test; counts match a seeded database |
+| T-141 | Streaks and habit nudges: days in a row with food or workouts logged, shown kindly, never a punishment (with T-100 reminders) | Engine tests; screen test |
+| T-142 | Coach payments: clients pay coaches in the app by UPI (Razorpay or similar), with our share; keys stay on the server | Function tests; webhook tests; RLS test |
+| T-143 | Hindi and other Indian languages for every screen (words.md rule 8 keeps text ready) | Every text has a translation; language switch test |
+| T-144 | Water tracking: glasses a day with a simple goal | Log tests; screen test |
+| T-145 | Friends: follow a friend and see their workouts if they allow it (sharing as text is T-121) | RLS tests; screen tests |
 | T-015 | USDA bulk importer (Foundation + SR Legacy) into our foods table | Mapper tests (started in T-007), import count check |
 | T-018c | Food logging extras: barcode scan (free for everyone, Open Food Facts kept separate under the ODbL), batch-cooked weighing | Component tests for each |
 | T-067 / T-068 later | Parked until users ask (DK, 17 Oct 2026): diet break, SCOFF check, doctor ticks, after the goal, weigh-in habit, plan from logs, gain check, protein choices question | — |
