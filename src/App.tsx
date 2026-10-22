@@ -5,7 +5,6 @@ import { memoryChatStore, supabaseChatStore, type ChatStore } from './coach/chat
 import { memoryCheckInStore, supabaseCheckInStore, type CheckInStore } from './coach/checkIns'
 import { createSupabaseAuth, supabaseFromEnv } from './auth/supabaseAuth'
 import type { Account, AuthService } from './auth/types'
-import { FoodLog } from './log/FoodLog'
 import { memoryLogStore } from './log/memoryStore'
 import { supabaseLogStore } from './log/supabaseStore'
 import { offlineLogStore } from './log/offlineStore'
@@ -27,6 +26,10 @@ import { ageOn, isOnboarded, type ProfileInfo, type ProfileStore } from './profi
 
 // First-run questions are seen once, so they load only when needed.
 // Training and Progress load when their tab is first opened, to keep the first load small.
+// The Food tab opens first, so its code starts loading with the app (T-135),
+// but in its own file to keep the first download small.
+const foodLog = import('./log/FoodLog')
+const FoodLog = lazy(() => foodLog.then((m) => ({ default: m.FoodLog })))
 const Workouts = lazy(() => import('./training/Workouts').then((m) => ({ default: m.Workouts })))
 const Progress = lazy(() => import('./progress/Progress').then((m) => ({ default: m.Progress })))
 const Clients = lazy(() => import('./coach/Clients').then((m) => ({ default: m.Clients })))
@@ -528,17 +531,19 @@ export function AppShell({
       {topbar}
       {tabs}
       {tab === 'food' && (
-        <FoodLog
-          store={store!}
-          loadFoods={loadFoods}
-          foods={foods}
-          targets={targets}
-          userId={account.id}
-          diet={profile ?? undefined}
-          mealPlans={mealPlans}
-          latestWeight={latestWeight}
-          nextStep={nextStep}
-        />
+        <Suspense fallback={<main className="log">Loading…</main>}>
+          <FoodLog
+            store={store!}
+            loadFoods={loadFoods}
+            foods={foods}
+            targets={targets}
+            userId={account.id}
+            diet={profile ?? undefined}
+            mealPlans={mealPlans}
+            latestWeight={latestWeight}
+            nextStep={nextStep}
+          />
+        </Suspense>
       )}
       <Suspense fallback={<main className="log">Loading…</main>}>
         {tab === 'training' && (
