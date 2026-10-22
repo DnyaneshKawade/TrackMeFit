@@ -13,6 +13,7 @@ import { dayExcluded, nonvegWeekday, vegDayReason, type DayChoice } from '../pro
 import { EntryRow, MealSection, type EntryActions, type SameOffer } from './MealSection'
 import { daysLogged, mealNow, weekStart } from './week'
 import { goalWeight, type GoalWeight } from '../engine/goalWeight'
+import { todayChecks, tomorrowPeek, type TodayChecks, type WorkoutToday } from '../engine/today'
 import type { WeighIn } from '../engine/diet'
 import './log.css'
 
@@ -99,6 +100,8 @@ export function FoodLog({
   goalKg = null,
   weighIns,
   onGoal,
+  training,
+  hour = new Date().getHours(),
   today = localDate(),
 }: {
   store: LogStore
@@ -119,6 +122,10 @@ export function FoodLog({
   weighIns?: () => Promise<WeighIn[]>
   /** Opens the Progress tab. */
   onGoal?: () => void
+  /** Today's workout and tomorrow's plan day, for the checklist (T-156). */
+  training?: () => Promise<{ workout: WorkoutToday; tomorrow: string | null }>
+  /** The hour now, for the evening peek at tomorrow. */
+  hour?: number
   today?: string
 }) {
   const [date, setDate] = useState(today)
@@ -248,19 +255,35 @@ export function FoodLog({
     }
   }, [store, date])
 
-  // How far the goal weight is (T-154). Optional: no strip if it fails.
-  const [goal, setGoal] = useState<GoalWeight | null>(null)
+  // Weigh-ins, for the goal strip (T-154) and today's weigh-in tick (T-156).
+  // Optional: without them there is no strip and no tick.
+  const [weights, setWeights] = useState<WeighIn[] | null>(null)
   useEffect(() => {
-    if (!goalKg || !weighIns) return setGoal(null)
+    if (!weighIns) return
     let live = true
     weighIns().then(
-      (list) => live && setGoal(goalWeight(list, goalKg)),
+      (list) => live && setWeights(list),
       () => {},
     )
     return () => {
       live = false
     }
-  }, [goalKg, weighIns])
+  }, [weighIns])
+  const goal = useMemo(() => (weights && goalKg ? goalWeight(weights, goalKg) : null), [weights, goalKg])
+
+  // Today's workout and tomorrow's plan day (T-156). Optional too.
+  const [trained, setTrained] = useState<{ workout: WorkoutToday; tomorrow: string | null } | null>(null)
+  useEffect(() => {
+    if (!training) return
+    let live = true
+    training().then(
+      (t) => live && setTrained(t),
+      () => {},
+    )
+    return () => {
+      live = false
+    }
+  }, [training])
 
   // Days logged earlier this week, for the kind weekly count. Optional: no count if it fails.
   const [earlier, setEarlier] = useState<string[] | null>(null)
@@ -440,6 +463,18 @@ export function FoodLog({
   }
 
   const day = totals(entries ?? [])
+  const isToday = date === today && entries !== null
+  const checks = isToday
+    ? todayChecks({
+        mealsLogged: (['breakfast', 'lunch', 'dinner'] as const).filter((m) => entries.some((e) => e.meal === m)).length,
+        kcal: day.kcal,
+        targetKcal: target?.kcal ?? null,
+        workout: trained?.workout ?? null,
+        weighedIn: !!weights?.some((w) => w.date === today),
+      })
+    : null
+  const breakfast = saved?.plan.meals.find((m) => m.name === 'Breakfast')?.items.slice(0, 2).map((i) => i.name).join(', ') || null
+  const peek = isToday ? tomorrowPeek({ hour, workout: trained?.tomorrow ?? null, breakfast }) : null
   const week = earlier && date === today && entries ? daysLogged(earlier, today, entries.length > 0) : 0
   const plainMeals = MEALS.map((meal) => {
     const items = (entries ?? []).filter((e) => e.meal === meal)
@@ -469,7 +504,9 @@ export function FoodLog({
         <div><dt>Fat</dt><dd>{day.fatG} g</dd></div>
       </dl>
 
-      {targets && target && <LeftToday target={target} eaten={day} byCoach={!!userId && target.setBy !== userId} onEdit={() => setEditingTargets(true)} />}
+      {targets && target && <LeftToday target={target} eaten={day} checks={checks} byCoach={!!userId && target.setBy !== userId} onEdit={() => setEditingTargets(true)} />}
+      {checks && <TodayList checks={checks} />}
+      {peek && <p className="peek muted">{peek}</p>}
       {week > 0 && (
         <p className="week" role="status" aria-label="This week">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l4 4L19 6" /></svg>
@@ -572,14 +609,34 @@ function GoalStrip({ goal, onOpen }: { goal: GoalWeight; onOpen?: () => void }) 
   )
 }
 
+/** "Today: 2 of 4 done" with a tick for each (T-156). */
+function TodayList({ checks }: { checks: TodayChecks }) {
+  return (
+    <section className="today-list" aria-label="Today checklist">
+      <h3>{checks.text}</h3>
+      <ul>
+        {checks.items.map((i) => (
+          <li key={i.key} data-done={i.done ? '' : undefined}>
+            <span aria-hidden="true">{i.done ? '✓' : '○'}</span> {i.label}
+            <span className="sr-only">{i.done ? ', done' : ', not yet'}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 function LeftToday({
   target,
   eaten,
+  checks,
   byCoach,
   onEdit,
 }: {
   target: DietTarget
   eaten: TargetValues
+  /** Today's checklist; "Day done" shows on the ring (T-156). */
+  checks: TodayChecks | null
   byCoach: boolean
   onEdit: () => void
 }) {
@@ -601,11 +658,13 @@ function LeftToday({
             <circle className="ring-fill" cx="60" cy="60" r="52" pathLength="100" strokeDasharray={`${share(eaten.kcal, target.kcal)} 100`} />
           </svg>
           <span className="ring-text">
+            {checks?.dayDone && <strong className="day-done">Day done ✓</strong>}
             <strong>{num(eaten.kcal)}</strong>
             <span>calories eaten</span>
           </span>
         </div>
         <small className="gap" data-over={left.kcal < 0 ? '' : undefined}>{gap('kcal', '')}</small>
+        {checks?.overNote && <small className="kind">{checks.overNote}</small>}
       </div>
       <div className="bars">
         {bars.map(([name, key]) => (

@@ -186,6 +186,11 @@ export function AppShell({
     [progress],
   )
   const weighIns = useMemo(() => (progress ? () => progress.weighIns() : undefined), [progress])
+  // Today's workout and tomorrow's plan day, for the Today checklist (T-156).
+  const training = useMemo(
+    () => (workouts ? async () => (await import('./training/today')).trainingToday(workouts, localDate()) : undefined),
+    [workouts],
+  )
   const foods = useMemo(() => (account ? foodStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const mealPlans = useMemo(() => (account ? mealPlanStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   // undefined while loading; null when it couldn't be loaded (the app still works).
@@ -546,6 +551,7 @@ export function AppShell({
             goalKg={profile?.targetWeightKg ?? null}
             weighIns={weighIns}
             onGoal={() => go('progress')}
+            training={training}
           />
         </Suspense>
       )}
