@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-154 goal strip and goal line
+- New pure engine `src/engine/goalWeight.ts`: kg to go and share done from the trend weight, and a likely date range from the last 14 days' pace.
+- The Today tab shows a goal strip with a bar. A tap opens Progress.
+- The Progress chart draws a dashed goal line when the goal is within 5 kg. A "Your goal" note gives the date range and calls it a guess.
+- Spec: `specs/T-154-goal-strip.md`. Tests: `src/engine/goalWeight.test.ts` (5), `src/progress/goalStrip.test.tsx` (4).
+
 ## 2026-10-22: T-160 "Same as yesterday" on each meal
 - Each meal that is empty today shows "Same as yesterday" when the day before had food in it. The button lists the foods and calories.
 - One tap adds each food again, one by one, so it works offline. Copies are not plan ticks.

@@ -12,6 +12,7 @@
 .weight-chart .axis { stroke: var(--field-line); stroke-width: 1; }
 .weight-chart .scale-dot { fill: var(--chart-muted); }
 .weight-chart .trend-line { fill: none; stroke: var(--pv); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.weight-chart .goal-line { stroke: var(--acc); stroke-width: 1.5; stroke-dasharray: 6 4; }
 .weight-chart figcaption { margin-top: 4px; font-size: 12px; }
 .weigh-list { list-style: none; padding: 0; margin: 0; }
 .weigh-list li { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }

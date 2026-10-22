@@ -185,6 +185,7 @@ export function AppShell({
     },
     [progress],
   )
+  const weighIns = useMemo(() => (progress ? () => progress.weighIns() : undefined), [progress])
   const foods = useMemo(() => (account ? foodStoreFor(account) : undefined), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const mealPlans = useMemo(() => (account ? mealPlanStoreFor(account) : null), [account?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   // undefined while loading; null when it couldn't be loaded (the app still works).
@@ -542,6 +543,9 @@ export function AppShell({
             mealPlans={mealPlans}
             latestWeight={latestWeight}
             nextStep={nextStep}
+            goalKg={profile?.targetWeightKg ?? null}
+            weighIns={weighIns}
+            onGoal={() => go('progress')}
           />
         </Suspense>
       )}
