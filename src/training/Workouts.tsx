@@ -22,7 +22,8 @@ type View =
   | { kind: 'plan'; plan: Plan }
   | { kind: 'review'; plan: Plan }
   | { kind: 'block'; plan: Plan }
-  | { kind: 'session'; session: Session }
+  /** `fromRecords`: opened from the calendar, so closing goes back there (T-128). */
+  | { kind: 'session'; session: Session; fromRecords?: boolean }
   | { kind: 'start' }
   | { kind: 'skip'; plan: Plan; day: PlanDay }
   | { kind: 'records' }
@@ -250,7 +251,7 @@ export function Workouts({
   if (view.kind === 'records') {
     return (
       <main className="log">
-        <RecordsView store={store} today={today} onClose={() => setView({ kind: 'home' })} />
+        <RecordsView store={store} today={today} onClose={() => setView({ kind: 'home' })} onOpen={(session) => setView({ kind: 'session', session, fromRecords: true })} />
       </main>
     )
   }
@@ -266,7 +267,7 @@ export function Workouts({
           weekly={weeklyOf(planOf(view.session.planDayId))}
           library={library}
           past={view.session.performedOn < today}
-          onClose={back}
+          onClose={view.fromRecords ? () => setView({ kind: 'records' }) : back}
         />
       </main>
     )
