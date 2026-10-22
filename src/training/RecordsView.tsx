@@ -11,6 +11,7 @@ import { cardioById } from './cardio'
 import { CardioDetail } from './CardioLog'
 import { exerciseById } from './exercises'
 import { ExerciseDetail } from './ExerciseDetail'
+import { ShareWorkout } from './ShareWorkout'
 import { TrainingVolume } from './TrainingVolume'
 import type { SessionSummary, WorkoutStore } from './types'
 
@@ -152,6 +153,11 @@ function Calendar({ store, today }: { store: WorkoutStore; today: string }) {
           {(byDay.get(picked) ?? []).map((s) => (
             <li key={s.id}>
               <strong>{s.name}</strong> <span className="muted">· {plural(s.exerciseIds.length, 'exercise', 'exercises')}</span>
+              <ShareWorkout
+                label="Share"
+                ariaLabel={`Share ${s.name} on ${longDate(picked)}`}
+                load={async () => (await store.sessionsOn(picked)).find((x) => x.id === s.id)}
+              />
             </li>
           ))}
         </ul>

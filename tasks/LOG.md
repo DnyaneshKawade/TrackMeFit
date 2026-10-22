@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-21: T-121 share a workout as text
+
+- "Share workout" in a workout, and "Share" on each workout of a calendar day.
+- Opens the phone's share sheet, or copies the text. Notes are never shared.
+- No database change.
+- Tests: `src/engine/shareText.test.ts` (4), `src/training/shareWorkout.test.tsx` (4), `src/training/Records.test.tsx` (1 changed).
+
 ## 2026-10-21: T-126 log a past workout
 
 - "Start a workout" has a Workout date box. It starts at today and goes back up to a year.

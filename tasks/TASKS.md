@@ -28,7 +28,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests planned |
 |---|---|---|
-| T-121 | Share a workout as text, such as on WhatsApp (FitNotes) | Text builder tests |
 | T-015 | USDA bulk importer (Foundation + SR Legacy) into our foods table | Mapper tests (started in T-007), import count check |
 | T-018c | Food logging extras: barcode scan (free for everyone, Open Food Facts kept separate under the ODbL), batch-cooked weighing | Component tests for each |
 | T-067 / T-068 later | Parked until users ask (DK, 17 Oct 2026): diet break, SCOFF check, doctor ticks, after the goal, weigh-in habit, plan from logs, gain check, protein choices question | — |
@@ -66,6 +65,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-121 | Share a workout as text, such as on WhatsApp: "Share workout" in a workout and "Share" on a calendar day; uses the share sheet or copies; notes left out ([spec](../specs/T-121-share-workout.md)) | `src/engine/shareText.test.ts`, `src/training/shareWorkout.test.tsx`, `src/training/Records.test.tsx` |
 | T-126 | Log a past workout: pick a date up to a year back before starting; sets save on that day, with no live clocks ([spec](../specs/T-126-past-workout.md)) | `src/training/pastWorkout.test.tsx` |
 | T-120 | Calendar dots for the muscle groups trained each day, a colour key, and "Show days with" one exercise (FitNotes) ([spec](../specs/T-120-calendar-dots.md)) | `src/training/calendar.test.ts`, `src/training/Records.test.tsx` |
 | T-125 | Coaches can't delete a client's plans, diet targets or meal plans; they still add and change them ([spec](../specs/T-125-coach-delete-rules.md)) | `src/db/coachNoDeletes.test.ts` |

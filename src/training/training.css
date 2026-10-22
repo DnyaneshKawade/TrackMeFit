@@ -175,3 +175,4 @@
 .dot.g-cardio { background: var(--g-cardio); }
 .dot-key { display: flex; flex-wrap: wrap; gap: 4px 12px; list-style: none; padding: 0; margin: 8px 0; font-size: 13px; color: var(--muted); }
 .dot-key .dot { width: 8px; height: 8px; vertical-align: middle; }
+.share-workout { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; margin: 8px 0; }
