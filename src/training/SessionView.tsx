@@ -5,7 +5,7 @@ import { useWeightUnit } from '../settings/units'
 import { myoText, newRecord, type StrengthSession } from '../engine/strength'
 import { assistedNewRecord } from '../engine/assisted'
 import { PLATEAU_SESSIONS, plateauCheck } from '../engine/plateau'
-import { LANDMARKS, targetRir, type Muscle } from '../engine/training'
+import { LANDMARKS, lightWeek, targetRir, type LightLoad, type Muscle } from '../engine/training'
 import { warmupSets } from '../engine/warmup'
 import { exerciseById, similarExercise, techniqueSearchUrl, type Exercise, type ExerciseSetting } from './exercises'
 import { ExercisePicker, type ExerciseLibrary } from './ExercisePicker'
@@ -18,6 +18,7 @@ import { CardioDetail, CardioLog, CardioPicker } from './CardioLog'
 import { ExerciseSettings } from './ExerciseSettings'
 import { WorkoutClock } from './WorkoutClock'
 import { readHidden, saveHidden } from './hiddenExercises'
+import { readLightLoad, saveLightLoad } from './lightLoad'
 import { ShareWorkout } from './ShareWorkout'
 import { FeedbackSheet } from './FeedbackSheet'
 import { deloadAdvice, isDeloadWeek, weekLabel } from './progression'
@@ -121,6 +122,13 @@ function DeleteWorkout({ store, session, onDeleted }: { store: WorkoutStore; ses
   )
 }
 
+/** A plan's training block; beginners keep the simpler light week (T-082n). */
+export interface Block {
+  week: number
+  hardWeeks: number
+  beginner?: boolean
+}
+
 export function SessionView({
   store,
   session: initial,
@@ -137,7 +145,7 @@ export function SessionView({
   /** Each muscle's sets a week in the plan (T-082e). */
   weekly?: Partial<Record<Muscle, number>>
   /** The plan's training block, when the session follows a plan day. */
-  block?: { week: number; hardWeeks: number }
+  block?: Block
   library?: ExerciseLibrary
   /** Logged for an earlier day, so no live clocks (T-126). */
   past?: boolean
@@ -159,6 +167,11 @@ export function SessionView({
     setHidden(next)
     setLastHidden(on ? id : null)
     saveHidden(session.id, [...next])
+  }
+  const [lightLoad, setLightLoad] = useState(readLightLoad)
+  const pickLight = (l: LightLoad) => {
+    setLightLoad(l)
+    saveLightLoad(l)
   }
   const [picking, setPicking] = useState(false)
   const [askFeedback, setAskFeedback] = useState(false)
@@ -234,6 +247,15 @@ export function SessionView({
           <button className="link" onClick={() => (trained.length && !past ? setAskFeedback(true) : onClose())}>Done</button>
         </header>
         {block && <p className="muted">{weekLabel(block.week, block.hardWeeks)}</p>}
+        {block && isDeloadWeek(block.week, block.hardWeeks) && !block.beginner && (
+          <div className="choice" role="group" aria-label="Light week weights">
+            {LIGHT_LOADS.map(([l, label]) => (
+              <button key={l} className="chip" aria-pressed={lightLoad === l} onClick={() => pickLight(l)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
         {past ? (
           <p className="muted">Past workout on {new Date(session.performedOn + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}.</p>
         ) : (
@@ -259,6 +281,7 @@ export function SessionView({
                 exercise={exercise}
                 plan={planned.find((p) => p.exerciseId === exercise.id)}
                 block={block}
+                lightLoad={lightLoad}
                 warm={ids.slice(0, ids.indexOf(exercise.id)).some((id) => exerciseById.get(id)?.primary === exercise.primary)}
                 weekly={weekly?.[exercise.primary]}
                 others={ids}
@@ -337,6 +360,12 @@ export function SessionView({
   )
 }
 
+/** The two light-week choices (T-082n). */
+const LIGHT_LOADS: [LightLoad, string][] = [
+  ['week1', 'Week-1 weights'],
+  ['same', 'Same weight, 3 reps left'],
+]
+
 /** Past sessions read per exercise: enough for the plateau check (T-082e). */
 const HISTORY_SESSIONS = PLATEAU_SESSIONS + 3
 
@@ -346,6 +375,7 @@ function ExerciseLog({
   exercise,
   plan,
   block,
+  lightLoad = 'week1',
   warm,
   weekly,
   others,
@@ -362,7 +392,9 @@ function ExerciseLog({
   session: Session
   exercise: Exercise
   plan?: PlanExercise
-  block?: { week: number; hardWeeks: number }
+  block?: Block
+  /** The light-week weights the person picked (T-082n). */
+  lightLoad?: LightLoad
   /** An earlier exercise today trains the same muscle (T-082c). */
   warm?: boolean
   /** Sets a week for this exercise's muscle, and today's exercises (T-082e). */
@@ -406,8 +438,12 @@ function ExerciseLog({
   const [record, setRecord] = useState<{ setId: string; text: string } | null>(null)
 
   const range: [number, number] = plan ? [plan.repMin, plan.repMax] : exercise.isolation ? [10, 15] : [6, 10]
+  // The light week's sets, weight and reps left (T-082n).
+  const lastWorking = (h: PastSession[] | null) => workingSets(h?.[0]?.sets ?? [])[0]
+  const light = (h: PastSession[] | null) =>
+    deload && plan ? lightWeek({ sets: plan.sets, load: lightLoad, beginner: !!block?.beginner, lastWeightKg: lastWorking(h)?.weightKg ?? null }) : null
   // Reps left to aim for; 2 when the session follows no plan (T-082b).
-  const aim = block ? targetRir(block.week, block.hardWeeks, exercise.isolation) : 2
+  const aim = light(history)?.rir ?? (block ? targetRir(block.week, block.hardWeeks, exercise.isolation) : 2)
   // No plateau advice or weight increases in a deload week.
   const advise = (h: PastSession[]) => {
     if (deload) return { next: null, plateau: null }
@@ -429,6 +465,12 @@ function ExerciseLog({
   const suggestion = advice?.next ?? null
   const plateauNote = advice?.plateau && advice.plateau.action !== 'lighter' ? advice.plateau.why : null
 
+  // Picking "Same weight" in a light week fills an empty weight box (T-082n).
+  useEffect(() => {
+    const w = light(history)?.weightKg
+    if (w) setWeight((x) => x || show(w))
+  }, [lightLoad]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // A copied workout replaces whatever was in the boxes (T-113).
   useEffect(() => {
     const first = copied?.sets[0]
@@ -444,8 +486,9 @@ function ExerciseLog({
         if (!live) return
         setHistory(h)
         const s = advise(h).next
-        // Otherwise start from last time's first working set.
-        const last = deload ? undefined : workingSets(h[0]?.sets ?? [])[0]
+        // Otherwise start from last time's first working set; in a light week
+        // only when the person keeps the same weight (T-082n).
+        const last = deload && !light(h)?.weightKg ? undefined : lastWorking(h)
         const fill = s ? { weight: s.weight, reps: s.targetReps } : last ? { weight: last.weightKg, reps: last.reps } : null
         if (fill) {
           setWeight((w) => w || show(fill.weight))
@@ -590,7 +633,7 @@ function ExerciseLog({
         </button>
       )}
       {history && history[0] && workingSets(history[0].sets).length > 0 && <p className="muted">Last time: {describeSets(workingSets(history[0].sets), unit, exercise.assisted)}</p>}
-      {deload && plan && <p className="suggest">{deloadAdvice(plan.sets, exercise.primary)}</p>}
+      {deload && plan && <p className="suggest">{deloadAdvice(plan.sets, exercise.primary, light(history) ?? undefined)}</p>}
       {block && !deload && (
         <p className="muted">
           {(() => {
