@@ -221,6 +221,7 @@ describe('logging a workout', () => {
     await waitFor(() => expect(within(bench).queryByText(/Set 2/)).toBeNull())
 
     click('Done')
+    click('Next') // past the finish screen (T-155)
     click('Skip')
     expect(await screen.findByText('1 sets logged')).toBeTruthy()
   })

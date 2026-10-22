@@ -39,6 +39,7 @@ describe('feedback after a workout', () => {
     fireEvent.click(within(screen.getByRole('region', { name: 'Bench press (barbell)' })).getByRole('button', { name: 'Log set' }))
     await screen.findByText('Set 1: 60 kg × 8')
     click('Done')
+    click('Next') // past the finish screen (T-155)
 
     const chest = within(screen.getByRole('group', { name: 'Chest' }))
     fireEvent.click(chest.getByRole('button', { name: 'Fresh' }))

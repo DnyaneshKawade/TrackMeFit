@@ -36,6 +36,7 @@ describe('something hurt, per exercise (T-108)', () => {
     render(<Workouts store={store} today={TODAY} />)
     fireEvent.click(await screen.findByRole('button', { name: /^Upper A/ }))
     click('Done')
+    click('Next') // past the finish screen (T-155)
     const chest = within(screen.getByRole('group', { name: 'Chest' }))
     expect(chest.getByLabelText(`Something hurt in ${nameOf(BENCH).toLowerCase()}`)).toBeTruthy()
     expect(chest.queryByLabelText(/Something hurt in lat/)).toBeNull()
