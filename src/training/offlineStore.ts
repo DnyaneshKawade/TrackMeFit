@@ -12,7 +12,8 @@ type Op =
   | { kind: 'start'; session: Session; day: PlanDay | null }
   | { kind: 'set'; sessionId: string; set: SetLog }
   | { kind: 'unset'; id: string }
-  | { kind: 'unsession'; id: string }
+  /** `setIds` lets graphs hide its sets while the delete waits. */
+  | { kind: 'unsession'; id: string; setIds?: string[] }
   | { kind: 'feedback'; sessionId: string; feedback: Feedback[] }
   | { kind: 'note'; sessionId: string; note: string }
 
@@ -83,6 +84,29 @@ export function offlineWorkoutStore(
       }
     },
   })
+
+  /** Workouts and sets waiting to be deleted, so graphs and the calendar
+   * stop showing them at once, not only after the delete is sent. */
+  const waitingDeletes = () => {
+    const sessions = new Set<string>()
+    const sets = new Set<string>()
+    for (const o of outbox.ops()) {
+      if (o.kind === 'unset') sets.add(o.id)
+      else if (o.kind === 'unsession') {
+        sessions.add(o.id)
+        for (const id of o.setIds ?? []) sets.add(id)
+      }
+    }
+    return { sessions, sets }
+  }
+  const hideDeleted = (list: PastSession[]): PastSession[] => {
+    const { sets } = waitingDeletes()
+    if (!sets.size) return list
+    return list.flatMap((p) => {
+      const kept = p.sets.filter((x) => !sets.has(x.id))
+      return kept.length ? [{ ...p, sets: kept }] : []
+    })
+  }
 
   /** Server or cached sessions of a day with the waiting work applied on top. */
   const withOutbox = (date: string, sessions: Session[]): Session[] => {
@@ -186,12 +210,13 @@ export function offlineWorkoutStore(
       for (const o of outbox.ops()) if (o.kind === 'set' && o.sessionId === id) outbox.cancel(o.set.id)
       outbox.drop((o) => (o.kind === 'feedback' || o.kind === 'note') && o.sessionId === id)
       // Started on the phone and not sent yet (or being sent): cancel it.
-      if (outbox.cancel(id) === 'none') await sendOrQueue(() => remote.deleteSession(id), { kind: 'unsession', id })
+      const setIds = days.flatMap(([, list]) => list.filter((s) => s.id === id).flatMap((s) => s.sets.map((x) => x.id)))
+      if (outbox.cancel(id) === 'none') await sendOrQueue(() => remote.deleteSession(id), { kind: 'unsession', id, setIds })
       dropSessionFromCache(id)
     },
     async history(exerciseId, beforeDate, limit = 3) {
       const k = `${exerciseId}|${beforeDate}|${limit}`
-      return cached(
+      const list = await cached(
         () => remote.history(exerciseId, beforeDate, limit),
         (h) => {
           histories = [...histories.filter(([x]) => x !== k), [k, h] as [string, PastSession[]]].slice(-CACHED_HISTORIES)
@@ -199,12 +224,14 @@ export function offlineWorkoutStore(
         },
         () => histories.find(([x]) => x === k)?.[1],
       )
+      return hideDeleted(list)
     },
     // Records read many workouts, so they are not kept on the phone.
-    exerciseHistory: (exerciseId, limit) => remote.exerciseHistory(exerciseId, limit),
-    sessionsBetween: (from, to) => remote.sessionsBetween(from, to),
-    summaries: (from, to) =>
-      cached(
+    exerciseHistory: async (exerciseId, limit) => hideDeleted(await remote.exerciseHistory(exerciseId, limit)),
+    sessionsBetween: async (from, to) => hideDeleted(await remote.sessionsBetween(from, to)),
+    summaries: async (from, to) => {
+      const gone = waitingDeletes().sessions
+      const list = await cached(
         () => remote.summaries(from, to),
         () => {},
         // Offline, the calendar shows the days kept on the phone.
@@ -215,7 +242,9 @@ export function offlineWorkoutStore(
             list.map((x): SessionSummary => ({ id: x.id, performedOn: x.performedOn, name: x.name, planDayId: x.planDayId, exerciseIds: [...new Set(x.sets.map((y) => y.exerciseId))] })),
           )
         },
-      ),
+      )
+      return gone.size ? list.filter((s) => !gone.has(s.id)) : list
+    },
     async saveFeedback(sessionId, feedback) {
       if (!feedback.length) return
       await sendOrQueue(() => remote.saveFeedback(sessionId, feedback), { kind: 'feedback', sessionId, feedback })

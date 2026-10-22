@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-127 graphs update after a delete
+
+- A deleted workout or set no longer shows in graphs, records, history or the calendar while its delete waits.
+- The waiting delete keeps its set ids, so the graphs can hide them.
+- No database change.
+- Tests: `src/training/offlineStore.test.ts` (1 new).
+
 ## 2026-10-21: T-121 share a workout as text
 
 - "Share workout" in a workout, and "Share" on each workout of a calendar day.

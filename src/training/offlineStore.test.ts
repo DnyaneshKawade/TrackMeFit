@@ -276,4 +276,26 @@ describe('offline workouts (T-027b)', () => {
     await store.sync.run()
     expect(await inner.sessionsOn(DAY)).toEqual([])
   })
+
+  it('T-127. graphs and the calendar stop showing a deleted workout while the delete waits', async () => {
+    const { store, state, inner } = setup()
+    await store.sessionsOn(DAY)
+    const kept = await store.startSession(DAY, null)
+    await store.addSet(kept.id, set(0, 50))
+    const gone = await store.startSession(DAY, null)
+    await store.addSet(gone.id, set(0, 70))
+    const extra = await store.addSet(kept.id, set(1, 55))
+    state.online = false
+    await store.deleteSession(gone.id)
+    await store.removeSet(extra.id)
+    // Back online, but the waiting deletes are not sent yet.
+    state.online = true
+    expect((await inner.sessionsBetween(DAY, DAY)).flatMap((p) => p.sets.map((x) => x.weightKg)).sort()).toEqual([50, 55, 70])
+    expect((await store.sessionsBetween(DAY, DAY)).flatMap((p) => p.sets.map((x) => x.weightKg))).toEqual([50])
+    expect((await store.exerciseHistory('bench')).flatMap((p) => p.sets.map((x) => x.weightKg))).toEqual([50])
+    expect((await store.history('bench', '2099-01-01')).flatMap((p) => p.sets.map((x) => x.weightKg))).toEqual([50])
+    expect((await store.summaries(DAY, DAY)).map((s) => s.id)).toEqual([kept.id])
+    await store.sync.run()
+    expect((await inner.sessionsBetween(DAY, DAY)).flatMap((p) => p.sets.map((x) => x.weightKg))).toEqual([50])
+  })
 })

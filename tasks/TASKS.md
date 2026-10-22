@@ -65,6 +65,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-127 | Graphs, records, history and the calendar leave out a deleted workout or set at once, even while the delete waits to be sent ([spec](../specs/T-127-delete-updates-graphs.md)) | `src/training/offlineStore.test.ts` |
 | T-121 | Share a workout as text, such as on WhatsApp: "Share workout" in a workout and "Share" on a calendar day; uses the share sheet or copies; notes left out ([spec](../specs/T-121-share-workout.md)) | `src/engine/shareText.test.ts`, `src/training/shareWorkout.test.tsx`, `src/training/Records.test.tsx` |
 | T-126 | Log a past workout: pick a date up to a year back before starting; sets save on that day, with no live clocks ([spec](../specs/T-126-past-workout.md)) | `src/training/pastWorkout.test.tsx` |
 | T-120 | Calendar dots for the muscle groups trained each day, a colour key, and "Show days with" one exercise (FitNotes) ([spec](../specs/T-120-calendar-dots.md)) | `src/training/calendar.test.ts`, `src/training/Records.test.tsx` |
