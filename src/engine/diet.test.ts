@@ -77,7 +77,7 @@ describe('calorieTarget', () => {
   })
 
   it('sets a deficit from the weekly loss rate', () => {
-    // 0.5% of 70 kg = 0.35 kg/week -> 385 kcal/day deficit.
+    // 0.5% of 70 kg = 0.35 kg/week -> 385 calories/day deficit.
     expect(calorieTarget({ tdee: 2400, weightKg: 70, rate: -0.005, sex: 'male' })).toBe(2020)
   })
 
@@ -87,7 +87,7 @@ describe('calorieTarget', () => {
     expect(fast).toBe(capped)
   })
 
-  it('moves at most 150 kcal from last week', () => {
+  it('moves at most 150 calories from last week', () => {
     expect(calorieTarget({ tdee: 2400, weightKg: 70, rate: -0.005, sex: 'male', previousTarget: 2400 })).toBe(2250)
   })
 

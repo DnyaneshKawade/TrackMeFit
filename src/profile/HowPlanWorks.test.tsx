@@ -12,8 +12,8 @@ describe('how your plan works (T-076)', () => {
     render(<HowPlanWorks steps={losing} />)
     const box = screen.getByRole('region', { name: 'How your plan works' })
     expect(within(box).getByRole('heading', { name: 'Why week 1 is not a cut' })).toBeTruthy()
-    expect(box.textContent).toMatch(/Week 1 is 2,300 kcal, about what you burn\./)
-    expect(box.textContent).toContain(`Then it goes down 250 kcal each week, to ${losing.goalKcal.toLocaleString('en-IN')} kcal.`)
+    expect(box.textContent).toMatch(/Week 1 is 2,300 calories, about what you burn\./)
+    expect(box.textContent).toContain(`Then it goes down 250 calories each week, to ${losing.goalKcal.toLocaleString('en-IN')} calories.`)
     expect(box.textContent).toMatch(/1 of 3/)
   })
 

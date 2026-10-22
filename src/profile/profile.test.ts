@@ -141,7 +141,7 @@ describe('current diet', () => {
     expect(d.counts).toEqual({ 'tmf:dish:roti': 4, 'tmf:dish:steamed-rice': 1, 'tmf:dish:dal-tadka': 2, 'tmf:dish:chai': 2 })
     expect(d.kcal).toBe(950) // 408 + 183 + 222 + 132 = 945, to the nearest 10
     expect(d.proteinG).toBe(35)
-    expect(describeDiet(d, 64)).toMatch(/about 950 kcal and 35 g protein a day\. Protein is low at 0\.5 g per kg/)
+    expect(describeDiet(d, 64)).toMatch(/about 950 calories and 35 g protein a day\. Protein is low at 0\.5 g per kg/)
     expect(describeDiet(estimateDiet({}), 64)).toMatch(/Add what you eat/)
   })
 })
@@ -184,7 +184,7 @@ describe('plan', () => {
     expect(plan.suggested!.kcal).toBe(plan.steps!.steps[0])
     expect(plan.steps!.goalKcal).toBeLessThan(plan.maintenance.low)
     expect(plan.suggested!.proteinG).toBe(90) // 1.4 g per kg of 64 kg (T-068c)
-    expect(plan.reasons[0]).toMatch(/^Week 1 is .* kcal a day\. That is about what you burn\.$/)
+    expect(plan.reasons[0]).toMatch(/^Week 1 is .* calories a day\. That is about what you burn\.$/)
     expect(plan.timeline!.message).toMatch(/60 kg/)
     expect(plan.intakeNote).toMatch(/usual day/)
   })
@@ -266,7 +266,7 @@ describe('gain paces (T-059)', () => {
 
   it('9. each note gives the kg a week and the extra calories a day', () => {
     const steady = gain('beginner', body(60))[1]
-    expect(steady.note).toBe('0.5 % of your weight a week. That is about 0.3 kg a week. You eat 330 extra kcal a day. A good mix of muscle and size for most people.')
+    expect(steady.note).toBe('0.5 % of your weight a week. That is about 0.3 kg a week. You eat 330 extra calories a day. A good mix of muscle and size for most people.')
   })
 
   it('10. a long goal starts with a first milestone and is said in months', () => {
@@ -279,7 +279,7 @@ describe('gain paces (T-059)', () => {
 
   it('12. gain is capped at 1 % a week, and the plan says how many extra calories it adds', () => {
     const plan = buildPlan({ ...asha, goal: 'gain', goalRate: 0.005, experience: 'beginner' }, 50, TODAY)
-    expect(plan.reasons[0]).toBe('Calories are set to gain 0.5 % of your weight a week. You eat 280 kcal a day more than you burn.')
+    expect(plan.reasons[0]).toBe('Calories are set to gain 0.5 % of your weight a week. You eat 280 calories a day more than you burn.')
   })
 })
 
@@ -294,7 +294,7 @@ describe('Catch up to Steady (T-059c)', () => {
     expect(s.healthyMinKg).toBe(54)
     expect(s.kcalLess).toBe(300)
     expect(s.target).toEqual({ kcal: 2300, proteinG: 120, fatG: 70, carbG: 298 })
-    expect(s.message).toMatch(/average weight is 54.5 kg.*from 54 kg.*don’t need Catch up now.*about 300 kcal a day less: 2,600 to 2,300 kcal/)
+    expect(s.message).toMatch(/average weight is 54.5 kg.*from 54 kg.*don’t need Catch up now.*about 300 calories a day less: 2,600 to 2,300 calories/)
   })
 
   it('2. says nothing while still underweight', () => {
@@ -311,7 +311,7 @@ describe('Catch up to Steady (T-059c)', () => {
   it('4. without a calorie target, only the pace changes', () => {
     const s = steadySwitch(onCatchUp, 55, null)!
     expect(s.target).toBeNull()
-    expect(s.message).toMatch(/about 310 kcal a day less\.$/)
+    expect(s.message).toMatch(/about 310 calories a day less\.$/)
   })
 })
 
@@ -376,7 +376,7 @@ describe('safe paces (T-071)', () => {
   it('3. keeps a saved pace within the safe weekly limit for the body', () => {
     expect([maxLossRate(26), maxLossRate(24), maxLossRate(21)]).toEqual([0.01, 0.0075, 0.005])
     const plan = buildPlan({ ...asha, goalRate: -0.0075 }, 52, TODAY)
-    // Faster is cut back to Steady: 52 kg × 5.5 kcal less than the burn.
+    // Faster is cut back to Steady: 52 kg × 5.5 calories less than the burn.
     const burn = plan.steps!.steps[0]
     expect(plan.steps!.goalKcal).toBe(Math.round((burn - 52 * 5.5) / 10) * 10)
     expect(plan.reasons).toContain('At your goal level, you’d lose about 0.25 kg a week.')
@@ -393,7 +393,7 @@ describe('next calorie step (T-067a)', () => {
     const step = nextStep(asha, 64, target(), TODAY, 'me')!
     expect(step.values.kcal).toBe(1570)
     expect(step.values.proteinG).toBe(90)
-    expect(step.message).toBe('Ready for your next step? Eat about 1,570 kcal a day from today.')
+    expect(step.message).toBe('Ready for your next step? Eat about 1,570 calories a day from today.')
     expect(nextStep(asha, 64, target({ startsOn: '2026-10-08' }), TODAY, 'me')).toBeNull()
     expect(nextStep(asha, 64, target({ source: 'manual' }), TODAY, 'me')).toBeNull()
     expect(nextStep(asha, 64, target({ setBy: 'coach' }), TODAY, 'me')).toBeNull()
@@ -402,7 +402,7 @@ describe('next calorie step (T-067a)', () => {
 
   it('7. the last step says it is the goal level, and then steps stop', () => {
     expect(nextStep(asha, 64, target({ kcal: 1570 }), TODAY, 'me')!.message).toBe(
-      'Ready for your next step? Eat about 1,470 kcal a day from today. This is your goal level.',
+      'Ready for your next step? Eat about 1,470 calories a day from today. This is your goal level.',
     )
     expect(nextStep(asha, 64, target({ kcal: 1470 }), TODAY, 'me')).toBeNull()
   })
@@ -413,7 +413,7 @@ describe('next calorie step (T-067a)', () => {
     const hold = nextStep(asha, 64, target(), TODAY, 'me', { weighIns, dayKcal: new Map() })!
     expect(hold.hold).toBe(true)
     expect(hold.values.kcal).toBe(1820)
-    expect(hold.message).toMatch(/That is your pace, so stay at 1,820 kcal for now\.$/)
+    expect(hold.message).toMatch(/That is your pace, so stay at 1,820 calories for now\.$/)
     expect(nextStep(asha, 64, target(), TODAY, 'me')!.hold).toBe(false)
   })
 })

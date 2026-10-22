@@ -143,7 +143,7 @@ export function estimateDiet(counts: Record<string, number>, extras: DietExtra[]
 export function describeDiet(d: CurrentDiet, weightKg: number | null): string {
   if (!d.kcal) return 'Add what you eat on a usual day.'
   const perKg = weightKg ? d.proteinG / weightKg : null
-  const base = `That’s about ${d.kcal.toLocaleString('en-IN')} kcal and ${d.proteinG} g protein a day.`
+  const base = `That’s about ${d.kcal.toLocaleString('en-IN')} calories and ${d.proteinG} g protein a day.`
   if (perKg === null) return base
   const r = Math.round(perKg * 10) / 10
   if (perKg < 0.8) return `${base} Protein is low at ${r} g per kg of body weight. Most people do better with 1.2 to 2 g.`

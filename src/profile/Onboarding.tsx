@@ -553,7 +553,7 @@ export function Onboarding({
                 <ol className="steps" aria-label="Weekly steps">
                   {plan.steps.steps.map((k, i) => (
                     <li key={i}>
-                      Week {i + 1}: {fmt(k)} kcal{i === plan.steps!.steps.length - 1 ? ' (your goal level)' : ''}
+                      Week {i + 1}: {fmt(k)} calories{i === plan.steps!.steps.length - 1 ? ' (your goal level)' : ''}
                     </li>
                   ))}
                 </ol>

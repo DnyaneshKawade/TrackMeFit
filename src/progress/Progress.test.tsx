@@ -97,7 +97,7 @@ describe('Catch up to Steady (T-059c)', () => {
     const calls: [number, unknown][] = []
     render(<Progress store={memoryProgressStore(weighIns)} goal="gain" profile={profile} targets={targets} onSwitchPace={async (r, t) => void calls.push([r, t])} today={TODAY} />)
     const card = await screen.findByRole('region', { name: 'Switch to Steady' })
-    await within(card).findByText(/2,600 to 2,300 kcal/)
+    await within(card).findByText(/2,600 to 2,300 calories/)
     expect(calls).toEqual([])
     fireEvent.click(within(card).getByRole('button', { name: 'Switch to Steady' }))
     await waitFor(() => expect(calls).toEqual([[0.005, { kcal: 2300, proteinG: 120, fatG: 70, carbG: 298 }]]))

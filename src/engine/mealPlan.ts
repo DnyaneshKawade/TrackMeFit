@@ -333,8 +333,8 @@ export function buildMealPlan(input: MealPlanInput): MealPlan {
     // Keep oil added for calories while calories are still short.
     const want = Math.max(2 * step(fat), short ? inDay(fat.id) : 0, Math.min(cap, roundTo(fat, ((targets.fatG - others) / fat.per100g.fatG) * 100)))
     const lunchG = ceilTo(fat, want / 2)
-    put('Lunch', fat, Math.min(fat.maxPerMealG, lunchG), 'Cooking fat, kept near ICMR’s 27 g per 2,000 kcal.')
-    put('Dinner', fat, Math.min(fat.maxPerMealG, want - lunchG), 'Cooking fat, kept near ICMR’s 27 g per 2,000 kcal.')
+    put('Lunch', fat, Math.min(fat.maxPerMealG, lunchG), 'Cooking fat, kept near ICMR’s 27 g per 2,000 calories.')
+    put('Dinner', fat, Math.min(fat.maxPerMealG, want - lunchG), 'Cooking fat, kept near ICMR’s 27 g per 2,000 calories.')
   }
   const snackFillers = ['tmf:ing:curd', 'tmf:ing:milk', 'tmf:ing:peanuts'].map((id) => byId.get(id)).filter((f): f is PlanFood => !!f && fits('Snack', f))
   const fitCalories = () => {
@@ -666,7 +666,7 @@ export function planCheck(totals: Macros, targets: Macros): string {
   const proteinOk = Math.abs(protein) <= 5
   if (kcalOk && proteinOk) return 'This plan is close to your targets.'
   const parts: string[] = []
-  if (!kcalOk) parts.push(`This plan has ${Math.abs(kcal).toLocaleString('en-IN')} kcal ${kcal > 0 ? 'more' : 'less'} than your target.`)
+  if (!kcalOk) parts.push(`This plan has ${Math.abs(kcal).toLocaleString('en-IN')} calories ${kcal > 0 ? 'more' : 'less'} than your target.`)
   if (!proteinOk) parts.push(`It has ${Math.abs(protein)} g ${protein > 0 ? 'more' : 'less'} protein than your target.`)
   if (kcalOk) parts[0] = parts[0].replace(/^It has/, 'This plan has')
   return parts.join(' ')

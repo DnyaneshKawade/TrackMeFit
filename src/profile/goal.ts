@@ -141,7 +141,7 @@ function gainPaces(experience: Experience, medical: Record<string, boolean>, bod
   const amounts = (rate: number) => {
     if (!body) return `${pct(rate)}.`
     const kg = Math.round(rate * body.weightKg * 100) / 100
-    return `${pctText(rate)} of your weight a week. That is about ${kg} kg a week. You eat ${surplusKcal(rate, body.weightKg)} extra kcal a day.`
+    return `${pctText(rate)} of your weight a week. That is about ${kg} kg a week. You eat ${surplusKcal(rate, body.weightKg)} extra calories a day.`
   }
   const pace = (rate: number, label: string, text: string): Pace => ({ rate, label, note: `${amounts(rate)} ${text}` })
   const leanPace = pace(lean, 'Lean', 'Slow and clean: most of what you gain is muscle.')
@@ -163,7 +163,7 @@ function gainPaces(experience: Experience, medical: Record<string, boolean>, bod
       options.push({
         rate: catchUp,
         label: 'Catch up',
-        note: `About ${kg} kg a week and ${surplusKcal(catchUp, body.weightKg)} extra kcal a day. Reach a healthy weight sooner. More of the gain is fat. That is fine while you are underweight. Switch to Steady once you reach ${healthyMin} kg.`,
+        note: `About ${kg} kg a week and ${surplusKcal(catchUp, body.weightKg)} extra calories a day. Reach a healthy weight sooner. More of the gain is fat. That is fine while you are underweight. Switch to Steady once you reach ${healthyMin} kg.`,
       })
     }
   }
@@ -284,7 +284,7 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
   const maintenance = {
     low,
     high,
-    message: `You likely burn about ${low.toLocaleString('en-IN')} to ${high.toLocaleString('en-IN')} kcal a day. This is a first guess. It gets better after 2 to 3 weeks of logging.`,
+    message: `You likely burn about ${low.toLocaleString('en-IN')} to ${high.toLocaleString('en-IN')} calories a day. This is a first guess. It gets better after 2 to 3 weeks of logging.`,
   }
 
   let intakeNote: string | null = null
@@ -292,10 +292,10 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
     const k = p.currentDiet.kcal
     intakeNote =
       k < low
-        ? `Your usual day is about ${k.toLocaleString('en-IN')} kcal. That is less, or some foods were missed. Logging for a week will tell.`
+        ? `Your usual day is about ${k.toLocaleString('en-IN')} calories. That is less, or some foods were missed. Logging for a week will tell.`
         : k > high
-          ? `Your usual day is about ${k.toLocaleString('en-IN')} kcal. That is more, so your weight may be going up.`
-          : `Your usual day is about ${k.toLocaleString('en-IN')} kcal. That is close, so your weight may be steady.`
+          ? `Your usual day is about ${k.toLocaleString('en-IN')} calories. That is more, so your weight may be going up.`
+          : `Your usual day is about ${k.toLocaleString('en-IN')} calories. That is close, so your weight may be steady.`
   }
 
   const timeline =
@@ -330,7 +330,7 @@ export function buildPlan(p: ProfileInfo, weightKg: number, today: string): Plan
     if (kgWeek > 0) reasons.push(`At your goal level, you’d lose about ${kgWeek} kg a week.`)
   } else if (rate > 0) {
     const r = Math.min(MAX_GAIN_RATE, rate)
-    reasons.push(`Calories are set to gain ${pctText(r)} of your weight a week. You eat ${surplusKcal(r, weightKg)} kcal a day more than you burn.`)
+    reasons.push(`Calories are set to gain ${pctText(r)} of your weight a week. You eat ${surplusKcal(r, weightKg)} calories a day more than you burn.`)
   }
   else reasons.push('Calories are set to keep your weight where it is.')
   if (p.goal === 'recomp') reasons.push('This goal is to lose fat and build muscle. Eat a little less than you burn. Eat plenty of protein.')

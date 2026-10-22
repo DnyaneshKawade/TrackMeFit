@@ -2,12 +2,20 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-132 "calories", not "kcal"
+
+- Every screen and reason now says "calories" instead of "kcal".
+- The simple-words test flags "kcal" in new text. `docs/words.md` says the same.
+- No database change.
+- Tests: `src/words.test.ts`; expected text updated in 19 test files.
+
 ## 2026-10-22: T-131 two ways to make a meal plan
 
 - "Make a meal plan" now shows two choices: build my own, or suggest a plan.
 - Only "Suggest a plan" asks for protein foods. "Back" returns to the choices.
+- Calories, protein, carbs and fat targets show on top. While building, the plan's amounts show too.
 - No database change.
-- Tests: `src/log/planChoice.test.tsx` (4); 3 older tests now tap "Suggest a plan".
+- Tests: `src/log/planChoice.test.tsx` (6); 3 older tests now tap "Suggest a plan".
 
 ## 2026-10-22: T-130 remove an exercise from today
 

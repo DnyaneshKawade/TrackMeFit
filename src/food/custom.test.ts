@@ -54,7 +54,7 @@ const water = food('Water', 0, 0, 0, 0)
 describe('a home recipe', () => {
   it('works out per 100 g of the cooked dish and a serving size', () => {
     const r = recipeFood('Mom’s dal', [{ food: dal, grams: 200 }, { food: ghee, grams: 10 }, { food: water, grams: 600 }], 750, 5)
-    // 686 + 90 = 776 kcal in 750 g
+    // 686 + 90 = 776 calories in 750 g
     expect(r).toEqual({
       food: {
         name: 'Mom’s dal',

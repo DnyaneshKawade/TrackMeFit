@@ -12,7 +12,7 @@ export function MealSection({ meal, entries, tick, onAdd, children }: { meal: Me
           {tick}
           {MEAL_NAMES[meal]}
         </h3>
-        <span className="meal-kcal">{totals(entries).kcal} kcal</span>
+        <span className="meal-kcal">{totals(entries).kcal} calories</span>
         <button className="meal-add" aria-label={`Add food to ${MEAL_NAMES[meal]}`} onClick={onAdd}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
         </button>
@@ -31,7 +31,7 @@ export function EntryInfo({ entry: e, pending }: { entry: LogEntry; pending: boo
     <div>
       <span>{e.foodName}</span>
       <span className="muted">
-        {amountLabel(e)} · {e.kcal} kcal · P {e.proteinG} · C {e.carbG} · F {e.fatG}
+        {amountLabel(e)} · {e.kcal} calories · P {e.proteinG} · C {e.carbG} · F {e.fatG}
       </span>
       {pending && <span className="muted">Waiting for internet</span>}
     </div>

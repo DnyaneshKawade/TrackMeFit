@@ -3,7 +3,7 @@ import { carbsFromRest, checkTarget, macroMismatch, type TargetValues } from './
 
 type Field = keyof TargetValues
 const FIELDS: { key: Field; label: string; unit: string }[] = [
-  { key: 'kcal', label: 'Calories', unit: 'kcal' },
+  { key: 'kcal', label: 'Calories', unit: '' },
   { key: 'proteinG', label: 'Protein', unit: 'g' },
   { key: 'carbG', label: 'Carbs', unit: 'g' },
   { key: 'fatG', label: 'Fat', unit: 'g' },

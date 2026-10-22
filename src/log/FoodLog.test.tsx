@@ -59,7 +59,7 @@ describe('food log', () => {
 
     const lunch = await screen.findByRole('region', { name: 'Lunch' })
     expect(within(lunch).getByText('Dal tadka')).toBeTruthy()
-    expect(within(lunch).getByText(/225 g · 270 kcal/)).toBeTruthy()
+    expect(within(lunch).getByText(/225 g · 270 calories/)).toBeTruthy()
     expect(within(screen.getByLabelText('Day total')).getByText('270')).toBeTruthy()
     expect(await store.listDay(TODAY)).toHaveLength(1)
   })
@@ -72,7 +72,7 @@ describe('food log', () => {
     expect(within(screen.getByLabelText('This amount')).getByText('204')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Add to Breakfast' }))
     const breakfast = await screen.findByRole('region', { name: 'Breakfast' })
-    expect(within(breakfast).getByText(/60 g · 204 kcal/)).toBeTruthy()
+    expect(within(breakfast).getByText(/60 g · 204 calories/)).toBeTruthy()
   })
 
   it('switching to grams keeps the same amount', async () => {
@@ -139,7 +139,7 @@ describe('faster logging', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add to Dinner' }))
     const dinner = await screen.findByRole('region', { name: 'Dinner' })
     expect(within(dinner).getByText('Wedding buffet')).toBeTruthy()
-    expect(within(dinner).getByText(/Quick add · 900 kcal · P 30/)).toBeTruthy()
+    expect(within(dinner).getByText(/Quick add · 900 calories · P 30/)).toBeTruthy()
     expect((await store.listDay(TODAY))[0]).toMatchObject({ foodId: 'quick', grams: null })
   })
 
@@ -154,7 +154,7 @@ describe('faster logging', () => {
     expect(within(recent).getByText('Vada pav')).toBeTruthy()
     fireEvent.click(within(recent).getByRole('button', { name: 'Add Dal tadka again' }))
     const lunch = await screen.findByRole('region', { name: 'Lunch' })
-    expect(within(lunch).getByText(/150 g · 180 kcal/)).toBeTruthy()
+    expect(within(lunch).getByText(/150 g · 180 calories/)).toBeTruthy()
     expect((await store.listDay(TODAY))[0]).toMatchObject({ meal: 'lunch', foodId: 'tmf:dish:dal-tadka' })
   })
 
@@ -190,12 +190,12 @@ describe('faster logging', () => {
     expect(screen.getByRole('option', { name: '1 piece' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Add to Snacks' }))
     const snacks = await screen.findByRole('region', { name: 'Snacks' })
-    expect(within(snacks).getByText(/25 g · 120 kcal/)).toBeTruthy()
+    expect(within(snacks).getByText(/25 g · 120 calories/)).toBeTruthy()
     expect((await foods.list())[0]).toMatchObject({ name: 'chikki', per100g: { kcal: 480, proteinG: 12, carbG: 60, fatG: 22 } })
 
     fireEvent.click(within(snacks).getByRole('button', { name: /^Add food to/ }))
     type('Search foods', 'chik')
-    expect(await screen.findByText(/480 kcal per 100 g · My food/)).toBeTruthy()
+    expect(await screen.findByText(/480 calories per 100 g · My food/)).toBeTruthy()
   })
 
   it('asks before saving a label whose numbers don’t add up', async () => {
@@ -228,12 +228,12 @@ describe('faster logging', () => {
     type('Atta (whole wheat flour) grams', '200')
     type('Cooked weight (g, optional)', '500')
     type('Servings (optional)', '4')
-    expect(screen.getByLabelText('Recipe values').textContent).toMatch(/136 kcal and 5.2 g protein per 100 g; one serving is 125 g/)
+    expect(screen.getByLabelText('Recipe values').textContent).toMatch(/136 calories and 5.2 g protein per 100 g; one serving is 125 g/)
     fireEvent.click(screen.getByRole('button', { name: 'Save and log it' }))
     expect(await screen.findByRole('heading', { name: 'Atta dosa' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Add to Breakfast' }))
     const breakfast = await screen.findByRole('region', { name: 'Breakfast' })
-    expect(within(breakfast).getByText(/125 g · 170 kcal/)).toBeTruthy()
+    expect(within(breakfast).getByText(/125 g · 170 calories/)).toBeTruthy()
     expect((await foods.list())[0].recipe).toEqual({ ingredients: [{ foodId: 'usda:168893', name: 'Atta (whole wheat flour)', grams: 200 }], cookedWeightG: 500, servings: 4 })
   })
 

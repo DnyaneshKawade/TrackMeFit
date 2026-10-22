@@ -48,7 +48,7 @@ describe('people page (T-042a2)', () => {
     expect(asha.textContent).toContain('Coach: Coach Kiran.')
     expect(asha.textContent).toContain('Last seen 17 Oct 2026.')
     expect((await row('Ravi')).textContent).toContain('Email not confirmed')
-    expect(asha.textContent).not.toMatch(/kg|kcal|weight/i)
+    expect(asha.textContent).not.toMatch(/kg|kcal|calorie|weight/i)
     fireEvent.change(screen.getByLabelText('Search by name, email or phone'), { target: { value: '98000' } })
     fireEvent.click(screen.getByRole('button', { name: 'Search' }))
     await waitFor(() => expect(screen.getAllByRole('listitem').map((l) => l.getAttribute('aria-label'))).toEqual(['Asha Rao']))
