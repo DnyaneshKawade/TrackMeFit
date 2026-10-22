@@ -78,7 +78,7 @@
 .today-list li[data-done] { color: var(--ink, inherit); }
 .today-list li[data-done] > span:first-child { color: var(--pv); font-weight: 700; }
 .left .kind { display: block; color: var(--warn-ink); }
-.ring-text .day-done { font-size: 13px; color: var(--pv); }
+.left .calories .day-done { display: inline-block; justify-self: center; margin-top: 4px; padding: 2px 10px; border-radius: 12px; background: var(--tint); color: var(--p-ink); font-size: 13px; font-weight: 600; }
 .peek { margin: 0 0 12px; font-size: 14px; }
 .goal-strip { display: grid; gap: 6px; width: 100%; margin: 0 0 12px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: inherit; font: inherit; font-size: 14px; font-weight: 600; text-align: left; }
 button.goal-strip { cursor: pointer; }
