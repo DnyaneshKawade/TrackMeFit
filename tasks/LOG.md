@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-130 remove an exercise from today
+
+- Each exercise without sets in a workout has ✕. It leaves today's workout only, with Undo.
+- The plan is not changed. Removals are kept on the phone.
+- No database change.
+- Tests: `src/training/removeExercise.test.tsx` (5).
+
 ## 2026-10-22: T-128 open a past workout
 
 - Each workout on a calendar day has "Open". It opens the workout to add or remove sets, or delete it.

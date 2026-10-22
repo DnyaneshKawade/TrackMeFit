@@ -17,6 +17,7 @@ import { cardioById } from './cardio'
 import { CardioDetail, CardioLog, CardioPicker } from './CardioLog'
 import { ExerciseSettings } from './ExerciseSettings'
 import { WorkoutClock } from './WorkoutClock'
+import { readHidden, saveHidden } from './hiddenExercises'
 import { ShareWorkout } from './ShareWorkout'
 import { FeedbackSheet } from './FeedbackSheet'
 import { deloadAdvice, isDeloadWeek, weekLabel } from './progression'
@@ -148,6 +149,17 @@ export function SessionView({
   // In a superset, the exercise to do next after a set is logged.
   const [now, setNow] = useState<string | null>(null)
   const [extra, setExtra] = useState<string[]>([])
+  // Exercises taken out of this workout only; the plan keeps them (T-130).
+  const [hidden, setHidden] = useState(() => new Set(readHidden(initial.id)))
+  const [lastHidden, setLastHidden] = useState<string | null>(null)
+  const hide = (id: string, on: boolean) => {
+    const next = new Set(hidden)
+    if (on) next.add(id)
+    else next.delete(id)
+    setHidden(next)
+    setLastHidden(on ? id : null)
+    saveHidden(session.id, [...next])
+  }
   const [picking, setPicking] = useState(false)
   const [askFeedback, setAskFeedback] = useState(false)
   const [restEnds, setRestEnds] = useState<number | null>(null)
@@ -183,7 +195,9 @@ export function SessionView({
     )
   }
 
-  const all = [...new Set([...planned.map((p) => p.exerciseId), ...session.sets.map((s) => s.exerciseId), ...extra])]
+  const logged = new Set(session.sets.map((s) => s.exerciseId))
+  // A removed exercise comes back if it has sets, so no logged set is ever hidden.
+  const all = [...new Set([...planned.map((p) => p.exerciseId), ...logged, ...extra])].filter((id) => !hidden.has(id) || logged.has(id))
   // Cardio has its own cards after the strength exercises and is never in a superset.
   const ids = all.filter((id) => !cardioById.has(id))
   const cardioIds = all.filter((id) => cardioById.has(id))
@@ -195,6 +209,7 @@ export function SessionView({
         onClose={() => setPicking(false)}
         onPick={(e) => {
           setExtra((x) => [...x, e.id])
+          if (hidden.has(e.id)) hide(e.id, false)
           setPicking(false)
         }}
       />
@@ -226,6 +241,12 @@ export function SessionView({
         )}
         {!past && restEnds !== null && <RestTimer key={restEnds} endsAt={restEnds} onChange={setRestEnds} />}
         <SyncNote sync={store.sync} noun={['workout entry', 'workout entries']} />
+        {lastHidden && hidden.has(lastHidden) && (
+          <p className="undo-row" role="status">
+            {exerciseById.get(lastHidden)?.name ?? 'Exercise'} removed from this workout.{' '}
+            <button className="link" onClick={() => hide(lastHidden, false)}>Undo</button>
+          </p>
+        )}
         {supersetGroups(ids, linked).map((group) => {
           const exercises = group.flatMap((id) => exerciseById.get(id) ?? [])
           const cards = exercises.map((exercise, i) => {
@@ -258,6 +279,7 @@ export function SessionView({
                 }
                 onChange={setSession}
                 onDetail={() => setDetail(exercise.id)}
+                onRemove={logged.has(exercise.id) ? undefined : () => hide(exercise.id, true)}
                 saveSetting={saveSetting}
                 copied={copied.get(exercise.id)}
                 onLogged={() => {
@@ -331,6 +353,7 @@ function ExerciseLog({
   superset,
   onChange,
   onDetail,
+  onRemove,
   saveSetting,
   copied,
   onLogged,
@@ -352,6 +375,8 @@ function ExerciseLog({
   onChange: (s: Session) => void
   /** Opens this exercise's history and graph. */
   onDetail: () => void
+  /** Takes it out of this workout; absent once it has sets (T-130). */
+  onRemove?: () => void
   /** Saves own step, rest and notes; absent when they can't be saved (T-112). */
   saveSetting?: (s: ExerciseSetting) => Promise<void>
   /** Sets copied from a past workout, to fill the boxes set by set (T-113). */
@@ -544,6 +569,11 @@ function ExerciseLog({
         {saveSetting && (
           <button className="link" aria-label={`Settings for ${exercise.name}`} aria-expanded={settingsOpen} onClick={() => setSettingsOpen(!settingsOpen)}>
             Settings
+          </button>
+        )}
+        {onRemove && (
+          <button className="link remove-exercise" aria-label={`Remove ${exercise.name} from this workout`} onClick={onRemove}>
+            ✕
           </button>
         )}
       </header>
