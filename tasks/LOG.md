@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-130 remove an exercise from today
+
+- Each exercise without sets in a workout has ✕. It leaves today's workout only, with Undo.
+- The plan is not changed. Removals are kept on the phone.
+- No database change.
+- Tests: `src/training/removeExercise.test.tsx` (5).
+
 ## 2026-10-22: T-129 build your own meal plan
 
 - "Make a meal plan" now offers "Build my own plan". It starts with empty meals.
