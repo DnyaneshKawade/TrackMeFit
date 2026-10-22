@@ -22,6 +22,7 @@ import { readLightLoad, saveLightLoad } from './lightLoad'
 import { ShareWorkout } from './ShareWorkout'
 import { FeedbackSheet } from './FeedbackSheet'
 import { FinishView } from './FinishView'
+import { buzzForWin } from '../settings/motion'
 import { deloadAdvice, isDeloadWeek, weekLabel } from './progression'
 import { formatRest, REST_STEP, restAfterSet, restLeft, supersetGroups } from './restTimer'
 import {
@@ -599,6 +600,7 @@ function ExerciseLog({
       onChange({ ...session, sets: [...session.sets, saved] })
       const beat = past && (exercise.assisted ? assistedNewRecord(past, done, saved, unit) : newRecord(past, done, saved, unit)?.text)
       setRecord(beat ? { setId: saved.id, text: beat } : null)
+      if (beat) buzzForWin()
       // Weight and reps stay for the next set; the tag and note were for this one.
       // After a warm-up, the working weight comes back.
       if (tag === 'warmup' && working) {

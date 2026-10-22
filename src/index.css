@@ -96,6 +96,19 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 .tabs button[aria-selected='true'] { background: var(--p); color: var(--on-p); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+/* Wins move a little (T-157): under half a second, and never with
+   "reduce motion" on the phone or the switch in Me turned off. */
+@keyframes tmf-pop { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion='off']) .today-list li[data-done] > span:first-child,
+  :root:not([data-motion='off']) .left .calories .day-done,
+  :root:not([data-motion='off']) .record,
+  :root:not([data-motion='off']) .finish-records li { display: inline-block; animation: tmf-pop 0.35s ease-out; }
+  :root:not([data-motion='off']) .meal input[type='checkbox']:checked { animation: tmf-pop 0.3s ease-out; }
+}
+@media (prefers-reduced-motion: reduce) { .left .ring-fill, .left .bar span, .goal-strip .bar span { transition: none; } }
+:root[data-motion='off'] .left .ring-fill { transition: none; }
+
 /* Bottom tabs (T-101c): the main places, always one thumb away. */
 .bottom-tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; justify-content: space-around; gap: 4px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); background: var(--card); border-top: 1px solid var(--line); font-family: var(--font); }
 .bottom-tabs button { flex: 1; max-width: 120px; min-height: 52px; display: grid; justify-items: center; align-content: center; gap: 2px; border: 0; border-radius: 12px; background: none; color: var(--muted); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; }
