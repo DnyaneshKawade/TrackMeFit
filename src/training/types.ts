@@ -4,7 +4,7 @@
 import { startOf } from '../engine/myo'
 import { weightText, type WeightUnit } from '../engine/units'
 import { assistedNext } from '../engine/assistedLoad'
-import { breakLoad, nextLoad, type LoadDecision } from '../engine/training'
+import { breakLoad, nextLoad, type LoadDecision, type Muscle, type Priority } from '../engine/training'
 import type { Exercise } from './exercises'
 import type { Feedback } from './progression'
 import type { Sync } from '../sync/outbox'
@@ -39,6 +39,8 @@ export interface Plan {
   /** Who last saved the plan and the local date, the person or their coach (T-026d). */
   changedBy?: string
   changedOn?: string
+  /** Muscles set to "Grow more" or "Keep"; any other muscle is "Grow" (T-082h). */
+  priorities?: Partial<Record<Muscle, Priority>>
 }
 
 export interface SetLog {

@@ -224,15 +224,20 @@ export function reviewWeek(input: {
     const perf = musclePerformance([...new Set(exIds)].map((id) => performanceTrend(input.histories[id] ?? [])))
     if (perf.performance === 'down') down++
     const fb = input.feedback.find((f) => f.muscle === muscle)
-    if (!fb) return { muscle, sets, nextSets: sets, decision: null, why: 'No feedback after training yet, so sets stay the same.', swaps: [] }
+    const priority = input.plan.priorities?.[muscle] ?? 'grow'
+    // A kept muscle comes down to its holding sets even with no answers (T-082h).
+    if (!fb && priority !== 'keep') return { muscle, sets, nextSets: sets, decision: null, why: 'No feedback after training yet, so sets stay the same.', swaps: [] }
     const decision = nextWeekSets(
       sets,
-      { ...perf, recovery: fb.recovery ?? null, effort: fb.effort ?? null, pain: fb.pain, pump: fb.pump ?? null, stillSoreTimes: fb.stillSoreTimes, beginner: input.beginner },
+      fb
+        ? { ...perf, recovery: fb.recovery ?? null, effort: fb.effort ?? null, pain: fb.pain, pump: fb.pump ?? null, stillSoreTimes: fb.stillSoreTimes, beginner: input.beginner }
+        : { ...perf, recovery: null, effort: null, pain: false },
       LANDMARKS[muscle],
+      priority,
     )
     const whole = Math.round(decision.change)
     if (whole) proposed = applySetChange(proposed, muscle, whole)
-    const swaps = painSwaps(input.plan, fb.hurt ?? [])
+    const swaps = painSwaps(input.plan, fb?.hurt ?? [])
     pendingSwaps.push(...swaps)
     return { muscle, sets, nextSets: sets + whole, decision, why: decision.why, swaps }
   })

@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-082h muscle priority
+- The plan editor has a "Muscle focus" list: Grow more, Grow or Keep for each muscle. It can change at any time.
+- `nextWeekSets` takes the priority. Grow stops at MAV high, Grow more may reach MRV, Keep holds at MV (at least 2 sets).
+- The week review brings a kept muscle down even with no answers. Nothing changes until the person accepts.
+- `startingSets` takes the priority; the starter plan still uses Grow.
+- Migration `20261130000000_muscle_priority.sql`: `workout_plans.muscle_priority`, only "more" or "keep" saved.
+- Spec: `specs/T-082h-muscle-priority.md`. Tests: `src/engine/musclePriority.test.ts` (4), `src/training/musclePriority.test.tsx` (3), `src/db/musclePriority.test.ts` (1).
+
 ## 2026-10-22: T-157 motion and buzz for wins
 - `src/settings/motion.ts` keeps an On or Off choice on the phone and marks the page. The phone's "reduce motion" always wins.
 - CSS pops ticks, "Day done ✓" and records in 0.35 s. A new record buzzes for 140 ms.

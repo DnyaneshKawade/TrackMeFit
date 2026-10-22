@@ -3,6 +3,8 @@ import { ConfirmDelete } from '../ui/ConfirmDelete'
 import { weeklyVolume } from '../engine/volume'
 import { exerciseById, MUSCLE_NAMES } from './exercises'
 import { weeklySets } from './progression'
+import { withPriority } from './priority'
+import type { Muscle, Priority } from '../engine/training'
 import { ExercisePicker, type ExerciseLibrary } from './ExercisePicker'
 import { checkPlan, MAX_DAYS, nextDayIndex, type Plan, type PlanExercise } from './types'
 
@@ -112,6 +114,7 @@ export function PlanEditor({
       )}
 
       <WeeklySets plan={plan} />
+      <MuscleFocus plan={plan} onChange={(m, p) => setPlan((x) => withPriority(x, m, p))} />
 
       {problems.length > 0 && (
         <ul className="error" role="alert">
@@ -141,6 +144,37 @@ function WeeklySets({ plan }: { plan: Plan }) {
           </li>
         ))}
       </ul>
+    </section>
+  )
+}
+
+const PRIORITIES: [Priority, string][] = [
+  ['more', 'Grow more'],
+  ['grow', 'Grow'],
+  ['keep', 'Keep'],
+]
+
+/** Grow more, Grow or Keep for each muscle the plan trains (T-082h). */
+function MuscleFocus({ plan, onChange }: { plan: Plan; onChange: (m: Muscle, p: Priority) => void }) {
+  const muscles = [...new Set(plan.days.flatMap((d) => d.exercises.map((e) => exerciseById.get(e.exerciseId)?.primary)))].filter((m): m is Muscle => !!m)
+  if (!muscles.length) return null
+  return (
+    <section className="week-sets muscle-focus" aria-label="Muscle focus">
+      <h3>Muscle focus</h3>
+      <p className="muted">Grow more lets sets climb higher. Keep holds a muscle with fewer sets.</p>
+      {muscles.map((m) => {
+        const now = plan.priorities?.[m] ?? 'grow'
+        return (
+          <div key={m} className="choice" role="group" aria-label={`${MUSCLE_NAMES[m]} focus`}>
+            <span>{MUSCLE_NAMES[m]}</span>
+            {PRIORITIES.map(([p, label]) => (
+              <button key={p} className="chip" aria-pressed={now === p} onClick={() => onChange(m, p)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )
+      })}
     </section>
   )
 }

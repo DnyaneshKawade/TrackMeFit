@@ -3,6 +3,8 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { localDate } from '../log/types'
+import type { Muscle, Priority } from '../engine/training'
+import { plainPriorities } from './priority'
 import { latestFeedback, type Feedback, type FeedbackRow } from './feedback'
 import { MAX_RECORD_SESSIONS, MAX_SUMMARIES, type PastSession, type Plan, type Session, type SessionSummary, type SetLog, type SetTag, type WorkoutStore } from './types'
 
@@ -28,6 +30,7 @@ interface PlanRow {
   hard_weeks: number
   block_started_on: string
   block_start_week?: number
+  muscle_priority?: Partial<Record<Muscle, Priority>> | null
   updated_by?: string | null
   updated_at?: string
   plan_days: { id: string; day_index: number; name: string; plan_exercises: { position: number; exercise_id: string; sets: number; rep_min: number; rep_max: number; superset_next?: boolean }[] }[]
@@ -39,6 +42,7 @@ export const planFromRow = (r: PlanRow): Plan => ({
   hardWeeks: r.hard_weeks,
   blockStartedOn: r.block_started_on,
   ...(r.block_start_week && r.block_start_week > 1 ? { blockStartWeek: r.block_start_week } : {}),
+  ...(r.muscle_priority && Object.keys(r.muscle_priority).length ? { priorities: r.muscle_priority } : {}),
   ...(r.updated_by ? { changedBy: r.updated_by } : {}),
   ...(r.updated_at ? { changedOn: localDate(new Date(r.updated_at)) } : {}),
   days: [...r.plan_days]
@@ -89,7 +93,7 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templ
       const rows = check(
         await sb
           .from('workout_plans')
-          .select('id, name, hard_weeks, block_started_on, block_start_week, updated_by, updated_at, plan_days(id, day_index, name, plan_exercises(position, exercise_id, sets, rep_min, rep_max, superset_next))')
+          .select('id, name, hard_weeks, block_started_on, block_start_week, muscle_priority, updated_by, updated_at, plan_days(id, day_index, name, plan_exercises(position, exercise_id, sets, rep_min, rep_max, superset_next))')
           .eq('user_id', userId)
           .eq('is_active', true)
           .eq('is_template', templates)
@@ -100,8 +104,11 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templ
     async savePlan(plan) {
       let planId = plan.id
       const hard_weeks = plan.hardWeeks ?? 4
-      if (planId) check(await sb.from('workout_plans').update({ name: plan.name.trim(), hard_weeks }).eq('id', planId))
-      else planId = (check(await sb.from('workout_plans').insert({ user_id: userId, name: plan.name.trim(), hard_weeks, is_template: templates }).select('id').single()) as { id: string }).id
+      const muscle_priority = plainPriorities(plan.priorities)
+      if (planId) check(await sb.from('workout_plans').update({ name: plan.name.trim(), hard_weeks, muscle_priority }).eq('id', planId))
+      else
+        planId = (check(await sb.from('workout_plans').insert({ user_id: userId, name: plan.name.trim(), hard_weeks, muscle_priority, is_template: templates }).select('id').single()) as { id: string })
+          .id
 
       const keep = plan.days.filter((d) => d.id).map((d) => d.id!)
       let del = sb.from('plan_days').delete().eq('plan_id', planId)
