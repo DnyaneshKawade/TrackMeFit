@@ -21,6 +21,7 @@ import { readHidden, saveHidden } from './hiddenExercises'
 import { readLightLoad, saveLightLoad } from './lightLoad'
 import { ShareWorkout } from './ShareWorkout'
 import { FeedbackSheet } from './FeedbackSheet'
+import { FinishView } from './FinishView'
 import { deloadAdvice, isDeloadWeek, weekLabel } from './progression'
 import { formatRest, REST_STEP, restAfterSet, restLeft, supersetGroups } from './restTimer'
 import {
@@ -137,6 +138,7 @@ export function SessionView({
   weekly,
   library,
   past = false,
+  next,
   onClose,
 }: {
   store: WorkoutStore
@@ -149,6 +151,8 @@ export function SessionView({
   library?: ExerciseLibrary
   /** Logged for an earlier day, so no live clocks (T-126). */
   past?: boolean
+  /** The plan's next workout, for the finish screen (T-155). */
+  next?: string
   onClose: () => void
 }) {
   const [session, setSession] = useState(initial)
@@ -175,6 +179,8 @@ export function SessionView({
   }
   const [picking, setPicking] = useState(false)
   const [askFeedback, setAskFeedback] = useState(false)
+  // The finish screen comes before the feedback questions (T-155).
+  const [finishing, setFinishing] = useState(false)
   const [restEnds, setRestEnds] = useState<number | null>(null)
   // An exercise's history and graph, opened from its card (T-106).
   const [detail, setDetail] = useState<string | null>(null)
@@ -207,6 +213,8 @@ export function SessionView({
       />
     )
   }
+
+  if (finishing) return <FinishView store={store} session={session} next={next} onNext={() => setAskFeedback(true)} />
 
   const logged = new Set(session.sets.map((s) => s.exerciseId))
   // A removed exercise comes back if it has sets, so no logged set is ever hidden.
@@ -244,7 +252,7 @@ export function SessionView({
       <section className="session" aria-label={session.name} hidden={!!detail}>
         <header className="sheet-head">
           <h2>{session.name}</h2>
-          <button className="link" onClick={() => (trained.length && !past ? setAskFeedback(true) : onClose())}>Done</button>
+          <button className="link" onClick={() => (trained.length && !past ? setFinishing(true) : onClose())}>Done</button>
         </header>
         {block && <p className="muted">{weekLabel(block.week, block.hardWeeks)}</p>}
         {block && isDeloadWeek(block.week, block.hardWeeks) && !block.beginner && (

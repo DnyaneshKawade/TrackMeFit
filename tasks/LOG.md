@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-155 workout finish screen
+- New pure engine `src/engine/workoutSummary.ts`: time, working sets, weight lifted, records and one trend line.
+- "Done" now opens a finish screen first, then the feedback questions. Records and the trend use one read of the last year.
+- The plan's next day shows as "Next workout:". Plans have no weekdays, so no day is named.
+- Three older tests now tap "Next" past the finish screen.
+- Spec: `specs/T-155-finish-screen.md`. Tests: `src/engine/workoutSummary.test.ts` (5), `src/training/finishScreen.test.tsx` (2).
+
 ## 2026-10-22: T-154 goal strip and goal line
 - New pure engine `src/engine/goalWeight.ts`: kg to go and share done from the trend weight, and a likely date range from the last 14 days' pace.
 - The Today tab shows a goal strip with a bar. A tap opens Progress.

@@ -177,3 +177,7 @@
 .dot-key .dot { width: 8px; height: 8px; vertical-align: middle; }
 .share-workout { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; margin: 8px 0; }
 .exercise header .remove-exercise { font-size: 18px; padding: 4px 8px; min-width: 44px; }
+.finish .finish-stats { grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); }
+.finish .finish-records { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 6px; font-weight: 600; }
+.finish .finish-trend { margin: 8px 0; }
+.finish > .primary { width: 100%; margin-top: 12px; }

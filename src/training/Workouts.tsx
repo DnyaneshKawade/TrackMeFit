@@ -147,6 +147,11 @@ export function Workouts({
     return blockWeekByWorkouts({ startedOn, today, done: workoutsInBlock(p, blockWorkouts, today), daysPerWeek: p.days.length, startWeek: p.blockStartWeek })
   }
   const nextOf = (p: Plan) => nextPlanDay(p, blockWorkouts ?? [])
+  // The plan day after this one, for the finish screen (T-155).
+  const nextAfter = (dayId: string | null) => {
+    const p = planOf(dayId)
+    return p && p.days.length > 1 ? nextPlanDay(p, [{ planDayId: dayId }])?.name : undefined
+  }
   // This plan's skips in the last 7 days, for the week review (T-110).
   const skipsOf = (p: Plan) => {
     const days = new Set(p.days.map((d) => d.id))
@@ -267,6 +272,7 @@ export function Workouts({
           weekly={weeklyOf(planOf(view.session.planDayId))}
           library={library}
           past={view.session.performedOn < today}
+          next={nextAfter(view.session.planDayId)}
           onClose={view.fromRecords ? () => setView({ kind: 'records' }) : back}
         />
       </main>
