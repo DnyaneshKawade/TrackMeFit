@@ -65,6 +65,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-134 | "Edit" on a logged food changes its amount or copies it to another meal; "Copy to" on a meal plan food ([spec](../specs/T-134-change-copy-food.md)) | `src/log/entryActions.test.tsx` |
 | T-133 | The Food tab day card shows calories, protein, carbs and fat eaten, and how much is left or over each target ([spec](../specs/T-133-eaten-today.md)) | `src/log/eatenToday.test.tsx`, `src/targets/TargetsFood.test.tsx` |
 | T-132 | Screens and reasons say "calories", not "kcal"; the simple-words test now flags "kcal" ([spec](../specs/T-132-calories-word.md)) | `src/words.test.ts`, plus updated text in 19 test files |
 | T-131 | "Make a meal plan" first asks: "Build my own plan" or "Suggest a plan"; only a suggested plan asks for protein foods; "Back" returns; calorie, protein, carbs and fat targets on top, with the plan's amounts while building ([spec](../specs/T-131-plan-choice.md)) | `src/log/planChoice.test.tsx`, `src/log/PlanEditor.test.tsx`, `src/coach/ClientMealPlan.test.tsx` |

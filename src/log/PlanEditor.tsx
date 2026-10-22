@@ -5,7 +5,7 @@
 
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 import type { Macros } from '../engine/diet'
-import { MEALS, addFoundItem, emptyPlan, planCheck, removeItem, setItemGrams, swapItem, swapOptions, tidyPlan, type MealName, type MealPlan } from '../engine/mealPlan'
+import { MEALS, addFoundItem, copyItem, emptyPlan, planCheck, removeItem, setItemGrams, swapItem, swapOptions, tidyPlan, type MealName, type MealPlan } from '../engine/mealPlan'
 import type { DietTag } from '../food/types'
 import type { CustomFood, NewCustomFood } from '../food/custom'
 import type { FoodFinder } from '../food/finder'
@@ -282,6 +282,14 @@ function EditPlan({
                           ))}
                         </select>
                       )}
+                      <select aria-label={`Copy ${i.name} to another meal`} value="" onChange={(e) => e.target.value && onChange(copyItem(plan, name, index, e.target.value as MealName))}>
+                        <option value="">Copy to</option>
+                        {MEALS.filter((m) => m !== name).map((m) => (
+                          <option key={m} value={m}>
+                            {m}
+                          </option>
+                        ))}
+                      </select>
                       <button className="link" aria-label={`Remove ${i.name} from ${name}`} onClick={() => onChange(removeItem(plan, name, index))}>
                         Remove
                       </button>
