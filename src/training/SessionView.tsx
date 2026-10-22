@@ -216,7 +216,7 @@ export function SessionView({
       <section className="session" aria-label={session.name} hidden={!!detail}>
         <header className="sheet-head">
           <h2>{session.name}</h2>
-          <button className="link" onClick={() => (trained.length ? setAskFeedback(true) : onClose())}>Done</button>
+          <button className="link" onClick={() => (trained.length && !past ? setAskFeedback(true) : onClose())}>Done</button>
         </header>
         {block && <p className="muted">{weekLabel(block.week, block.hardWeeks)}</p>}
         {past ? (

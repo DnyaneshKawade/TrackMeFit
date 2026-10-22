@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-128 open a past workout
+
+- Each workout on a calendar day has "Open". It opens the workout to add or remove sets, or delete it.
+- Done goes back to Records. Past workouts skip the muscle questions.
+- No database change.
+- Tests: `src/training/openPastWorkout.test.tsx` (4), `src/training/Records.test.tsx` (1 changed).
+
 ## 2026-10-22: T-127 graphs update after a delete
 
 - A deleted workout or set no longer shows in graphs, records, history or the calendar while its delete waits.

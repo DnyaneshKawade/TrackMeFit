@@ -13,7 +13,7 @@ import { exerciseById } from './exercises'
 import { ExerciseDetail } from './ExerciseDetail'
 import { ShareWorkout } from './ShareWorkout'
 import { TrainingVolume } from './TrainingVolume'
-import type { SessionSummary, WorkoutStore } from './types'
+import type { Session, SessionSummary, WorkoutStore } from './types'
 
 const shortDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 const longDate = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -24,7 +24,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 const kindOf = (id: string) => (cardioById.has(id) ? 'cardio' : exerciseById.get(id)?.primary ?? null)
 const GROUP_NAME = new Map(DOT_GROUPS)
 
-function Calendar({ store, today }: { store: WorkoutStore; today: string }) {
+function Calendar({ store, today, onOpen }: { store: WorkoutStore; today: string; onOpen?: (s: Session) => void }) {
   const [month, setMonth] = useState(monthOf(today))
   const [list, setList] = useState<SessionSummary[] | null>(null)
   const [error, setError] = useState(false)
@@ -153,6 +153,7 @@ function Calendar({ store, today }: { store: WorkoutStore; today: string }) {
           {(byDay.get(picked) ?? []).map((s) => (
             <li key={s.id}>
               <strong>{s.name}</strong> <span className="muted">· {plural(s.exerciseIds.length, 'exercise', 'exercises')}</span>
+              {onOpen && <OpenWorkout store={store} date={picked} id={s.id} name={`${s.name} on ${longDate(picked)}`} onOpen={onOpen} />}
               <ShareWorkout
                 label="Share"
                 ariaLabel={`Share ${s.name} on ${longDate(picked)}`}
@@ -163,6 +164,27 @@ function Calendar({ store, today }: { store: WorkoutStore; today: string }) {
         </ul>
       )}
     </section>
+  )
+}
+
+/** Opens a past workout to add, change or delete sets (T-128). It reads the day only when tapped. */
+function OpenWorkout({ store, date, id, name, onOpen }: { store: WorkoutStore; date: string; id: string; name: string; onOpen: (s: Session) => void }) {
+  const [error, setError] = useState(false)
+  const open = async () => {
+    setError(false)
+    try {
+      const s = (await store.sessionsOn(date)).find((x) => x.id === id)
+      if (!s) throw new Error('missing')
+      onOpen(s)
+    } catch {
+      setError(true)
+    }
+  }
+  return (
+    <>
+      <button className="link" aria-label={`Open ${name}`} onClick={() => void open()}>Open</button>
+      {error && <small className="error" role="alert">Couldn’t open it. Check your connection.</small>}
+    </>
   )
 }
 
@@ -250,7 +272,7 @@ export function PlateCalculator({ initial = '' }: { initial?: string }) {
   )
 }
 
-export function RecordsView({ store, today, onClose }: { store: WorkoutStore; today: string; onClose: () => void }) {
+export function RecordsView({ store, today, onClose, onOpen }: { store: WorkoutStore; today: string; onClose: () => void; onOpen?: (s: Session) => void }) {
   const [exerciseId, setExerciseId] = useState<string | null>(null)
   return (
     <section className="sheet records-view" aria-label="Records and progress">
@@ -266,7 +288,7 @@ export function RecordsView({ store, today, onClose }: { store: WorkoutStore; to
         )
       ) : (
         <>
-          <Calendar store={store} today={today} />
+          <Calendar store={store} today={today} onOpen={onOpen} />
           <TrainingVolume store={store} today={today} />
           <ExerciseList store={store} today={today} onPick={setExerciseId} />
           <PlateCalculator />

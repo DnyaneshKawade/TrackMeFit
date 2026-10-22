@@ -66,7 +66,7 @@ describe('records and strength graphs (T-044)', () => {
     await open()
     fireEvent.click(await screen.findByRole('button', { name: /Friday, 9 October/ }))
     const list = screen.getByRole('list', { name: /Workouts on Friday, 9 October/ })
-    expect(within(list).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Legs · 1 exerciseShare', 'Arms · 1 exerciseShare'])
+    expect(within(list).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Legs · 1 exerciseOpenShare', 'Arms · 1 exerciseOpenShare'])
   })
 
   it('3. lists the exercises done in the last year, the latest first', async () => {
