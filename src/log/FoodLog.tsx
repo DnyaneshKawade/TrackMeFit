@@ -658,11 +658,11 @@ function LeftToday({
             <circle className="ring-fill" cx="60" cy="60" r="52" pathLength="100" strokeDasharray={`${share(eaten.kcal, target.kcal)} 100`} />
           </svg>
           <span className="ring-text">
-            {checks?.dayDone && <strong className="day-done">Day done ✓</strong>}
             <strong>{num(eaten.kcal)}</strong>
             <span>calories eaten</span>
           </span>
         </div>
+        {checks?.dayDone && <strong className="day-done">Day done ✓</strong>}
         <small className="gap" data-over={left.kcal < 0 ? '' : undefined}>{gap('kcal', '')}</small>
         {checks?.overNote && <small className="kind">{checks.overNote}</small>}
       </div>
