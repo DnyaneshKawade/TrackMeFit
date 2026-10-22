@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-156 Today checklist and evening peek
+- New pure engine `src/engine/today.ts`: checklist items, "Day done", the kind over-target line, and the peek at tomorrow.
+- `src/training/today.ts` finds today's workout state and tomorrow's plan day with two reads. It loads only when the Food tab opens.
+- A rest day counts as done once the week's workouts are in.
+- Spec: `specs/T-156-today-checklist.md`. Tests: `src/engine/today.test.ts` (6), `src/log/todayChecklist.test.tsx` (4).
+
 ## 2026-10-22: T-155 workout finish screen
 - New pure engine `src/engine/workoutSummary.ts`: time, working sets, weight lifted, records and one trend line.
 - "Done" now opens a finish screen first, then the feedback questions. Records and the trend use one read of the last year.

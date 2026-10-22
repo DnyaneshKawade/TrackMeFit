@@ -36,7 +36,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-151 | Welcome back: a kind note after 2 quiet days, a "coming back" win on return, fresh-start offers on Monday, the 1st and birthdays; no list of missed days, no lower targets as punishment | Engine tests; screen test |
 | T-152 | Friendly voice guide in `docs/words.md` (name and goal, "you can" not "you must", kind after a slip, one emoji only for wins, grey not red for missed days); rewrite about 45 old messages in 15 files using the before-and-after list in `reviews/wording-check.md` (win first, "normal" then a next step, always a hopeful next step, show the goal, calm praise; error messages stay) | Words test; changed screen tests |
 | T-153 | Festival and wedding mode: one tap pauses calorie steps for the week, kind message, back to plan after; festival greetings | Engine tests; screen test |
-| T-156 | Today checklist ("2 of 4 done": meals, workout, weigh-in), a "Day done ✓" state on the ring, and an evening peek at tomorrow's workout and breakfast; over target stays amber with a kind line | Engine tests for done and peek; screen tests |
 | T-157 | Small motion and buzz for wins (tick pop, ring fill, record buzz), under half a second; follows "reduce motion"; an off switch in settings | Screen tests with reduce motion on and off; setting test |
 | T-158 | Progress tab opens with a "Since you started" story card (weight, waist, workouts) and a first-and-latest photo compare slider | Engine test for the story numbers; screen tests |
 | T-159 | Plans feel made for you: the person's name on plan headers, chips (goal, days, veg), "Why this?" links to the engine's reasons; a journey bar (Start, Learning your body, Steady progress, Goal) that moves with T-150 | Engine test for the journey stage; screen tests |
@@ -87,6 +86,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-156 | Today checklist ("Today: 2 of 4 done": meals, calories, workout or rest day, weigh-in), "Day done ✓" on the ring, a kind line when over, and a peek at tomorrow after 7 pm ([spec](../specs/T-156-today-checklist.md)) | `src/engine/today.test.ts` (6), `src/log/todayChecklist.test.tsx` (4) |
 | T-155 | Workout finish screen before the feedback questions: time, working sets, weight lifted, new records with 🏆, one strength trend line and "Next workout: Lower A" ([spec](../specs/T-155-finish-screen.md)) | `src/engine/workoutSummary.test.ts` (5), `src/training/finishScreen.test.tsx` (2) |
 | T-154 | Goal strip on the Today tab ("Goal 75 kg. 2.4 kg to go." with a filling bar, tap opens Progress) and a dashed goal line on the Progress chart with a likely date range at the last 2 weeks' pace, called a guess ([spec](../specs/T-154-goal-strip.md)) | `src/engine/goalWeight.test.ts` (5), `src/progress/goalStrip.test.tsx` (4) |
 | T-160 | "Same as yesterday" on each meal: one tap adds the day before's foods for that meal, with the foods and calories shown; works with a meal plan too | `src/log/sameAsYesterday.test.tsx` (4) |
