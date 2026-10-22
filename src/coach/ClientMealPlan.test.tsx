@@ -57,6 +57,7 @@ describe('coach meal plans (T-078)', () => {
   it('2. a new plan for a veg client offers only veg protein foods', async () => {
     const { mealPlans } = setup(false)
     fireEvent.click(await screen.findByRole('button', { name: 'Make a meal plan' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Suggest a plan' }))
     const picks = await screen.findByRole('group', { name: 'Protein foods you like' })
     expect(within(picks).queryByRole('button', { name: /Chicken/ })).toBeNull()
     fireEvent.click(within(picks).getByRole('button', { name: /Soya/ }))

@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-131 two ways to make a meal plan
+
+- "Make a meal plan" now shows two choices: build my own, or suggest a plan.
+- Only "Suggest a plan" asks for protein foods. "Back" returns to the choices.
+- No database change.
+- Tests: `src/log/planChoice.test.tsx` (4); 3 older tests now tap "Suggest a plan".
+
 ## 2026-10-22: T-130 remove an exercise from today
 
 - Each exercise without sets in a workout has ✕. It leaves today's workout only, with Undo.

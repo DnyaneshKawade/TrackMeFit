@@ -65,6 +65,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-131 | "Make a meal plan" first asks: "Build my own plan" or "Suggest a plan"; only a suggested plan asks for protein foods; "Back" returns ([spec](../specs/T-131-plan-choice.md)) | `src/log/planChoice.test.tsx`, `src/log/PlanEditor.test.tsx`, `src/coach/ClientMealPlan.test.tsx` |
 | T-130 | ✕ on a planned exercise takes it out of today's workout only, with Undo; add another in its place; exercises with sets keep theirs ([spec](../specs/T-130-remove-exercise-today.md)) | `src/training/removeExercise.test.tsx` |
 | T-129 | "Build my own plan": start with empty meals and add each food; change it with "Change plan"; "Delete meal plan" asks first; coaches can't delete ([spec](../specs/T-129-own-meal-plan.md)) | `src/log/ownMealPlan.test.tsx` |
 | T-128 | Open a past workout from its calendar day to add, remove or delete; Done goes back to Records ([spec](../specs/T-128-open-past-workout.md)) | `src/training/openPastWorkout.test.tsx`, `src/training/Records.test.tsx` |
