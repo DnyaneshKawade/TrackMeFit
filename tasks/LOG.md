@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-134 change or copy a food
+
+- "Edit" on a logged food changes its amount, or copies it to another meal.
+- In the meal plan editor, "Copy to" adds a food to another meal.
+- No database change.
+- Tests: `src/log/entryActions.test.tsx` (4).
+
 ## 2026-10-22: T-133 eaten today against the targets
 
 - The day card shows calories, protein, carbs and fat eaten.

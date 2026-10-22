@@ -644,6 +644,13 @@ export function removeItem(plan: MealPlan, meal: MealName, index: number): MealP
   return withItems(plan, meal, (items) => items.filter((_, i) => i !== index))
 }
 
+/** A copy of a food in another meal (T-134), same amount; the first stays. */
+export function copyItem(plan: MealPlan, from: MealName, index: number, to: MealName): MealPlan {
+  const item = plan.meals.find((m) => m.name === from)?.items[index]
+  if (!item || from === to) return plan
+  return withItems(plan, to, (items) => [...items, { ...item, reason: `You copied this from ${from}.` }])
+}
+
 /** Adds a food to a meal: 100 g (or its usual meal limit, if less) unless
  * an amount is given; a food already in the meal gets the amount added. */
 export function addItem(plan: MealPlan, meal: MealName, f: PlanFood, grams?: number): MealPlan {

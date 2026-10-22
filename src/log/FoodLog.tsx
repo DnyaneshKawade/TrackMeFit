@@ -2,7 +2,7 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react
 import { withMine, type FoodFinder } from '../food/finder'
 import { memoryCustomFoodStore, type CustomFood, type CustomFoodStore, type NewCustomFood } from '../food/custom'
 import { remaining, type DietTarget, type TargetStore, type TargetValues } from '../targets/types'
-import { localDate, MEALS, shiftDate, totals, type LogEntry, type LogStore, type Meal, type NewLogEntry } from './types'
+import { localDate, MEALS, repeatEntry, shiftDate, totals, type LogEntry, type LogStore, type Meal, type NewLogEntry } from './types'
 import { noAutoMealPlan, type DietPref } from '../profile/types'
 import type { DietTag } from '../food/types'
 import type { MealPlanStore, SavedMealPlan } from '../profile/mealPlanStore'
@@ -10,7 +10,7 @@ import { SyncNote } from '../sync/SyncNote'
 import { useSync } from '../sync/useSync'
 import { excludedTags, hasNonvegOff } from '../profile/dietRules'
 import { dayExcluded, nonvegWeekday, vegDayReason, type DayChoice } from '../profile/nonvegDays'
-import { EntryRow, MealSection } from './MealSection'
+import { EntryRow, MealSection, type EntryActions } from './MealSection'
 import { daysLogged, mealNow, weekStart } from './week'
 import './log.css'
 
@@ -288,6 +288,30 @@ export function FoodLog({
     }
   }
 
+  // Change a logged food (T-134): a new amount is saved as a new entry in its
+  // place, so it also works while offline.
+  const changeAmount = async (e: LogEntry, grams: number) => {
+    if (!e.grams) return
+    const f = grams / e.grams
+    const next: NewLogEntry = { ...repeatEntry(e, e.meal, e.loggedOn), grams, kcal: Math.round(e.kcal * f), proteinG: round1(e.proteinG * f), carbG: round1(e.carbG * f), fatG: round1(e.fatG * f) }
+    try {
+      const saved = await store.add(next)
+      await store.remove(e.id)
+      setEntries((list) => (list ?? []).map((x) => (x.id === e.id ? saved : x)))
+    } catch {
+      setError('Couldn’t change that. Try again.')
+    }
+  }
+  const copyTo = async (e: LogEntry, meal: Meal) => {
+    try {
+      const saved = await store.add(repeatEntry(e, meal, e.loggedOn))
+      setEntries((list) => [...(list ?? []), saved])
+    } catch {
+      setError('Couldn’t copy that. Try again.')
+    }
+  }
+  const actionsFor = (e: LogEntry): EntryActions => ({ onAmount: (g) => changeAmount(e, g), onCopy: (m) => copyTo(e, m) })
+
   if (editingTargets) {
     return (
       <main className="log">
@@ -358,7 +382,7 @@ export function FoodLog({
     return (
       <MealSection key={meal} meal={meal} entries={items} onAdd={() => openAdd(meal)}>
         {items.map((e) => (
-          <EntryRow key={e.id} entry={e} pending={pending.has(e.id)} onRemove={() => void remove(e.id)} />
+          <EntryRow key={e.id} entry={e} pending={pending.has(e.id)} onRemove={() => void remove(e.id)} actions={actionsFor(e)} />
         ))}
       </MealSection>
     )
@@ -440,6 +464,7 @@ export function FoodLog({
               pending={pending}
               onTick={tick}
               onRemove={(id) => void remove(id)}
+              actionsFor={actionsFor}
               onAdd={openAdd}
               onChangePlan={mealPlans ? () => setPlanning(true) : undefined}
               byCoach={!!userId && !!saved.createdBy && saved.createdBy !== userId}
@@ -516,6 +541,8 @@ function LeftToday({
     </section>
   )
 }
+
+const round1 = (n: number) => Math.round(n * 10) / 10
 
 /** A number as people write it: 2,015 or 141.4. */
 const num = (n: number) => (Math.round(n * 10) / 10).toLocaleString('en-IN')

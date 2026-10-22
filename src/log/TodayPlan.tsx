@@ -9,7 +9,7 @@ import { vegDayPlan } from '../engine/mealPlan'
 import type { DietTag } from '../food/types'
 import type { SavedMealPlan } from '../profile/mealPlanStore'
 import { PLAN_FOODS, planFoodsFor } from '../profile/planFoods'
-import { EntryInfo, EntryRow, MealSection } from './MealSection'
+import { EntryInfo, EntryRow, MealSection, type EntryActions } from './MealSection'
 import { PLAN_MEAL, planEntry, planRows, resized, tickedEntries, tickState, type PlanRow, type TickState } from './planTicks'
 import { MAX_GRAMS, MEALS, type LogEntry, type Meal, type NewLogEntry } from './types'
 
@@ -30,6 +30,7 @@ export default function TodayPlan({
   pending,
   onTick,
   onRemove,
+  actionsFor,
   onAdd,
   onChangePlan,
   byCoach = false,
@@ -45,6 +46,8 @@ export default function TodayPlan({
   /** Logs the added entries and removes the entries with these ids. */
   onTick: (add: NewLogEntry[], remove: string[]) => Promise<void>
   onRemove: (id: string) => void
+  /** Change the amount or copy a food added by hand (T-134). */
+  actionsFor?: (e: LogEntry) => EntryActions
   onAdd: (meal: Meal) => void
   /** Opens the plan editor (T-061). */
   onChangePlan?: () => void
@@ -165,7 +168,7 @@ export default function TodayPlan({
           >
             {mealRows.map(plannedRow)}
             {byHand.map((e) => (
-              <EntryRow key={e.id} entry={e} pending={pending.has(e.id)} onRemove={() => onRemove(e.id)} />
+              <EntryRow key={e.id} entry={e} pending={pending.has(e.id)} onRemove={() => onRemove(e.id)} actions={actionsFor?.(e)} />
             ))}
           </MealSection>
         )
