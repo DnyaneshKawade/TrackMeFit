@@ -60,3 +60,4 @@
 .profile-part dl > div:last-child { border-bottom: 0; }
 .profile-part dt { flex: 0 0 9.5rem; color: var(--muted); }
 .profile-part dd { margin: 0; }
+.own-plan { display: grid; gap: 4px; margin: 8px 0 16px; }

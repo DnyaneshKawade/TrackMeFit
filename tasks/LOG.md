@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-129 build your own meal plan
+
+- "Make a meal plan" now offers "Build my own plan". It starts with empty meals.
+- "Delete meal plan" in the plan editor asks first. Logged food stays.
+- No database change.
+- Tests: `src/log/ownMealPlan.test.tsx` (4).
+
 ## 2026-10-22: T-128 open a past workout
 
 - Each workout on a calendar day has "Open". It opens the workout to add or remove sets, or delete it.
