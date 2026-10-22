@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-133 eaten today against the targets
+
+- The day card shows calories, protein, carbs and fat eaten.
+- Each line says how much is left, or how much over, the target.
+- No database change.
+- Tests: `src/log/eatenToday.test.tsx` (3); `src/targets/TargetsFood.test.tsx` (text changed).
+
 ## 2026-10-22: T-132 "calories", not "kcal"
 
 - Every screen and reason now says "calories" instead of "kcal".

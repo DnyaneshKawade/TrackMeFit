@@ -473,44 +473,52 @@ function LeftToday({
   onEdit: () => void
 }) {
   const left = remaining(target, eaten)
-  const amount = (n: number, unit: string) => (n >= 0 ? `${n}${unit} left` : `${-n}${unit} over`)
+  // What is eaten, then how far it is from the target (T-133).
+  const gap = (key: keyof TargetValues, unit: string) =>
+    `${num(Math.abs(left[key]))}${unit} ${left[key] >= 0 ? 'left' : 'over'} of ${num(target[key])}${unit}`
   const bars: [string, keyof TargetValues][] = [
     ['Protein', 'proteinG'],
     ['Carbs', 'carbG'],
     ['Fat', 'fatG'],
   ]
   return (
-    <section className="left" aria-label="Left for the day">
-      <div className="ring">
-        <svg viewBox="0 0 120 120" aria-hidden="true">
-          <circle className="ring-track" cx="60" cy="60" r="52" />
-          <circle className="ring-fill" cx="60" cy="60" r="52" pathLength="100" strokeDasharray={`${share(eaten.kcal, target.kcal)} 100`} />
-        </svg>
-        <span className="ring-text">
-          <strong aria-hidden="true">{Math.abs(left.kcal)}</strong>
-          <span aria-hidden="true">{left.kcal < 0 ? 'calories over' : 'calories left'}</span>
-          <span className="sr-only">{amount(left.kcal, ' calories')}</span>
-        </span>
+    <section className="left" aria-label="Eaten today">
+      <div className="calories" aria-label="Calories">
+        <div className="ring">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle className="ring-track" cx="60" cy="60" r="52" />
+            <circle className="ring-fill" cx="60" cy="60" r="52" pathLength="100" strokeDasharray={`${share(eaten.kcal, target.kcal)} 100`} />
+          </svg>
+          <span className="ring-text">
+            <strong>{num(eaten.kcal)}</strong>
+            <span>calories eaten</span>
+          </span>
+        </div>
+        <small className="gap" data-over={left.kcal < 0 ? '' : undefined}>{gap('kcal', '')}</small>
       </div>
       <div className="bars">
         {bars.map(([name, key]) => (
-          <div key={key}>
-            <span>{name} {amount(left[key], ' g')}</span>
+          <div key={key} aria-label={name}>
+            <span>
+              <strong>{name} {num(eaten[key])} g</strong> eaten
+            </span>
             <span className="bar" aria-hidden="true">
               <span style={{ width: `${share(eaten[key], target[key])}%` }} />
             </span>
+            <small className="gap" data-over={left[key] < 0 ? '' : undefined}>{gap(key, ' g')}</small>
           </div>
         ))}
       </div>
       <footer>
-        <span className="muted">
-          of {target.kcal} calories{byCoach ? ' · set by your coach' : ''}
-        </span>
+        <span className="muted">{byCoach ? 'Targets set by your coach' : 'Your daily targets'}</span>
         <button className="link" onClick={onEdit}>Edit targets</button>
       </footer>
     </section>
   )
 }
+
+/** A number as people write it: 2,015 or 141.4. */
+const num = (n: number) => (Math.round(n * 10) / 10).toLocaleString('en-IN')
 
 /** How much of a target is eaten, as 0 to 100. */
 const share = (eaten: number, target: number) => (target > 0 ? Math.min(100, Math.max(0, (eaten / target) * 100)) : 0)
