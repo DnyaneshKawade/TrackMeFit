@@ -3,7 +3,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { localDate } from '../log/types'
-import type { Feedback } from './progression'
+import { latestFeedback, type Feedback, type FeedbackRow } from './feedback'
 import { MAX_RECORD_SESSIONS, MAX_SUMMARIES, type PastSession, type Plan, type Session, type SessionSummary, type SetLog, type SetTag, type WorkoutStore } from './types'
 
 interface SetRow { id: string; exercise_id: string; set_index: number; weight_kg: number | string; reps: number; rir: number | null; tag?: SetTag | null; mini_reps?: number[] | null; duration_sec?: number | null; distance_km?: number | string | null; note?: string | null }
@@ -233,26 +233,26 @@ export function supabaseWorkoutStore(sb: SupabaseClient, userId: string, { templ
     },
     async saveFeedback(sessionId, list) {
       if (!list.length) return
-      check(
-        await sb.from('muscle_feedback').upsert(
-          list.map((f) => ({ session_id: sessionId, muscle: f.muscle, recovery: f.recovery, effort: f.effort, pain: f.pain, hurt_exercises: f.hurt ?? [] })),
-          { onConflict: 'session_id,muscle' },
-        ),
-      )
+      // Each save sends only its own answers, so the upsert keeps the rest:
+      // "how it healed" at the first set, the others after the workout (T-082g).
+      const row = (f: Feedback) =>
+        f.effort
+          ? { session_id: sessionId, muscle: f.muscle, effort: f.effort, pain: f.pain, pump: f.pump ?? null, hurt_exercises: f.hurt ?? [] }
+          : { session_id: sessionId, muscle: f.muscle, recovery: f.recovery ?? null }
+      for (const rows of [list.filter((f) => f.effort), list.filter((f) => !f.effort)].map((l) => l.map(row)))
+        if (rows.length) check(await sb.from('muscle_feedback').upsert(rows, { onConflict: 'session_id,muscle' }))
     },
     async feedbackSince(date) {
       const rows = check(
         await sb
           .from('muscle_feedback')
-          .select('muscle, recovery, effort, pain, hurt_exercises, created_at, workout_sessions!inner(performed_on, user_id)')
+          .select('muscle, recovery, effort, pain, pump, hurt_exercises, created_at, workout_sessions!inner(performed_on, user_id)')
           .eq('workout_sessions.user_id', userId)
           .gte('workout_sessions.performed_on', date)
           .order('created_at'),
-      ) as unknown as (Omit<Feedback, 'hurt'> & { hurt_exercises: string[] | null; workout_sessions: { performed_on: string } })[]
-      const latest = new Map<string, Feedback>()
-      for (const r of [...rows].sort((a, b) => a.workout_sessions.performed_on.localeCompare(b.workout_sessions.performed_on)))
-        latest.set(r.muscle, { muscle: r.muscle, recovery: r.recovery, effort: r.effort, pain: r.pain, ...(r.hurt_exercises?.length ? { hurt: r.hurt_exercises } : {}) })
-      return [...latest.values()]
+      ) as unknown as (Omit<FeedbackRow, 'hurt'> & { hurt_exercises: string[] | null; created_at: string; workout_sessions: { performed_on: string } })[]
+      const sorted = [...rows].sort((a, b) => a.workout_sessions.performed_on.localeCompare(b.workout_sessions.performed_on) || a.created_at.localeCompare(b.created_at))
+      return latestFeedback(sorted.map((r) => ({ muscle: r.muscle, recovery: r.recovery, effort: r.effort, pain: r.pain, pump: r.pump, hurt: r.hurt_exercises ?? [] })))
     },
     async startBlock(planId, date, week = 1) {
       check(await sb.from('workout_plans').update({ block_started_on: date, block_start_week: week }).eq('id', planId))

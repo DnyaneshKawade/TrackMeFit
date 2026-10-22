@@ -2,6 +2,14 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-082g soreness timing and pump
+- "How did it heal?" moved to the muscle's first exercise in the next workout, as in RP. It shows only when the muscle has history.
+- The after-workout sheet now asks effort, pain and an optional pump. Soreness is gone from it.
+- `nextWeekSets` follows RP's table. Low pump with early healing adds one set. Pump never adds sets alone.
+- Old answers still count: fresh, a bit sore and very sore map to the new values.
+- Migration `20261129000000_soreness_timing.sql`: recovery and effort may be empty, not both; new `pump` column.
+- Spec: `specs/T-082g-soreness-timing.md`. Tests: `src/engine/sorenessTable.test.ts` (5), `src/training/sorenessTiming.test.tsx` (3), `src/db/sorenessTiming.test.ts` (1). Older training tests updated.
+
 ## 2026-10-22: Fix "Day done ✓" overflowing the ring (T-156 follow-up)
 - DK's screenshot showed "Day done ✓" at the big number size inside the ring, pushing "calories eaten" out of it.
 - It is now a small pill under the ring, above the "left of" line. Tests: `src/log/todayChecklist.test.tsx`.

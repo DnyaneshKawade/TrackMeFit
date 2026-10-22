@@ -42,12 +42,11 @@ describe('feedback after a workout', () => {
     click('Next') // past the finish screen (T-155)
 
     const chest = within(screen.getByRole('group', { name: 'Chest' }))
-    fireEvent.click(chest.getByRole('button', { name: 'Fresh' }))
     fireEvent.click(chest.getByRole('button', { name: 'Easy' }))
     expect(screen.queryByRole('group', { name: 'Back' })).toBeNull() // no back sets logged
     click('Save')
     await screen.findByText('1 sets logged')
-    expect(await store.feedbackSince('2026-10-12')).toEqual([{ muscle: 'chest', recovery: 'fresh', effort: 'easy', pain: false }])
+    expect(await store.feedbackSince('2026-10-12')).toEqual([{ muscle: 'chest', effort: 'easy', pain: false }])
   })
 })
 
@@ -61,7 +60,7 @@ describe('week review', () => {
     render(<Workouts store={store} today={TODAY} />)
     fireEvent.click(await screen.findByRole('button', { name: 'Review week for Upper' }))
     expect(await screen.findByText('Chest: 3 → 5 sets')).toBeTruthy()
-    expect(screen.getByText('Getting stronger and it felt easy, so two more sets.')).toBeTruthy()
+    expect(screen.getByText('Getting stronger and healing early, so two more sets.')).toBeTruthy()
     expect(screen.getByText(/Back: 3 sets/)).toBeTruthy()
     expect((await store.plans())[0].days[0].exercises[0].sets).toBe(3)
     click('Apply these changes')

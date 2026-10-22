@@ -7,7 +7,7 @@ import type { NewSet, Plan, Session, WorkoutStore } from './types'
 
 const DAY = '2026-10-13'
 const plan: Plan = { id: 'p1', name: 'PPL', days: [{ id: 'd1', dayIndex: 0, name: 'Push', exercises: [{ exerciseId: 'bench', sets: 3, repMin: 6, repMax: 10 }] }] }
-const chest: Feedback = { muscle: 'chest', recovery: 'fresh', effort: 'right', pain: false }
+const chest: Feedback = { muscle: 'chest', recovery: 'healedEarly', effort: 'right', pain: false }
 const set = (setIndex: number, weightKg = 60): NewSet => ({ exerciseId: 'bench', setIndex, weightKg, reps: 8, rir: 2 })
 
 function mapStorage(): KeyValue & { data: Map<string, string> } {

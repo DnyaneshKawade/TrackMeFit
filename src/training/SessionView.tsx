@@ -5,9 +5,9 @@ import { useWeightUnit } from '../settings/units'
 import { myoText, newRecord, type StrengthSession } from '../engine/strength'
 import { assistedNewRecord } from '../engine/assisted'
 import { PLATEAU_SESSIONS, plateauCheck } from '../engine/plateau'
-import { LANDMARKS, lightWeek, targetRir, type LightLoad, type Muscle } from '../engine/training'
+import { LANDMARKS, lightWeek, targetRir, type LightLoad, type Muscle, type Recovery } from '../engine/training'
 import { warmupSets } from '../engine/warmup'
-import { exerciseById, similarExercise, techniqueSearchUrl, type Exercise, type ExerciseSetting } from './exercises'
+import { exerciseById, MUSCLE_NAMES, similarExercise, techniqueSearchUrl, type Exercise, type ExerciseSetting } from './exercises'
 import { ExercisePicker, type ExerciseLibrary } from './ExercisePicker'
 import { ExerciseDetail } from './ExerciseDetail'
 import { SyncNote } from '../sync/SyncNote'
@@ -181,6 +181,16 @@ export function SessionView({
   const [askFeedback, setAskFeedback] = useState(false)
   // The finish screen comes before the feedback questions (T-155).
   const [finishing, setFinishing] = useState(false)
+  // "How did it heal?" answers given in this workout, per muscle (T-082g).
+  const [healed, setHealed] = useState<Map<Muscle, Recovery>>(new Map())
+  const answerHealed = async (muscle: Muscle, r: Recovery) => {
+    setHealed((h) => new Map(h).set(muscle, r))
+    try {
+      await store.saveFeedback(session.id, [{ muscle, recovery: r, pain: false }])
+    } catch {
+      // A missed answer only means sets stay the same next week.
+    }
+  }
   const [restEnds, setRestEnds] = useState<number | null>(null)
   // An exercise's history and graph, opened from its card (T-106).
   const [detail, setDetail] = useState<string | null>(null)
@@ -292,6 +302,13 @@ export function SessionView({
                 lightLoad={lightLoad}
                 warm={ids.slice(0, ids.indexOf(exercise.id)).some((id) => exerciseById.get(id)?.primary === exercise.primary)}
                 weekly={weekly?.[exercise.primary]}
+                askHealed={
+                  // At the muscle's first exercise, before any of its sets (T-082g).
+                  !past && !healed.has(exercise.primary) && ids.find((id) => exerciseById.get(id)?.primary === exercise.primary) === exercise.id &&
+                  !session.sets.some((x) => exerciseById.get(x.exerciseId)?.primary === exercise.primary)
+                    ? (r) => void answerHealed(exercise.primary, r)
+                    : undefined
+                }
                 others={ids}
                 current={now === exercise.id}
                 superset={
@@ -368,6 +385,29 @@ export function SessionView({
   )
 }
 
+const HEALED: [Recovery, string][] = [
+  ['never', 'Never got sore'],
+  ['healedEarly', 'Healed a while ago'],
+  ['onTime', 'Healed just in time'],
+  ['stillSore', 'Still sore'],
+]
+
+/** "How did your chest heal since last time?" at the muscle's first set, as
+ * in RP: soreness shows a day or two after a workout (T-082g). */
+function HealedQuestion({ muscle, onAnswer }: { muscle: Muscle; onAnswer: (r: Recovery) => void }) {
+  const name = MUSCLE_NAMES[muscle].toLowerCase()
+  return (
+    <div className="choice healed" role="group" aria-label={`How did your ${name} heal since last time?`}>
+      <span className="muted">How did your {name} heal since last time?</span>
+      {HEALED.map(([r, label]) => (
+        <button key={r} className="chip" onClick={() => onAnswer(r)}>
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 /** The two light-week choices (T-082n). */
 const LIGHT_LOADS: [LightLoad, string][] = [
   ['week1', 'Week-1 weights'],
@@ -386,6 +426,7 @@ function ExerciseLog({
   lightLoad = 'week1',
   warm,
   weekly,
+  askHealed,
   others,
   current,
   superset,
@@ -407,6 +448,8 @@ function ExerciseLog({
   warm?: boolean
   /** Sets a week for this exercise's muscle, and today's exercises (T-082e). */
   weekly?: number
+  /** Asks how the muscle healed since last time; absent when not to ask (T-082g). */
+  askHealed?: (r: Recovery) => void
   others: string[]
   /** The exercise to do now in a superset. */
   current?: boolean
@@ -640,6 +683,7 @@ function ExerciseLog({
           {superset.on ? 'End superset' : 'Superset with next'}
         </button>
       )}
+      {askHealed && history && history.length > 0 && <HealedQuestion muscle={exercise.primary} onAnswer={askHealed} />}
       {history && history[0] && workingSets(history[0].sets).length > 0 && <p className="muted">Last time: {describeSets(workingSets(history[0].sets), unit, exercise.assisted)}</p>}
       {deload && plan && <p className="suggest">{deloadAdvice(plan.sets, exercise.primary, light(history) ?? undefined)}</p>}
       {block && !deload && (

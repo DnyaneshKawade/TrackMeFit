@@ -51,20 +51,38 @@ export function startingSets(muscle: Muscle, experience: Experience, priority = 
 }
 
 export type Performance = 'up' | 'same' | 'down'
-export type Recovery = 'fresh' | 'bitSore' | 'verySore'
+/** How the muscle healed since its last workout, asked at its first set
+ * next time (T-082g, as in RP): never sore, healed early, healed just in
+ * time, or still sore. */
+export type Recovery = 'never' | 'healedEarly' | 'onTime' | 'stillSore'
 export type Effort = 'easy' | 'right' | 'hard'
+/** The pump at the end of the workout; optional (T-082g). */
+export type Pump = 'low' | 'some' | 'great'
+
+/** Answers saved before T-082g: "fresh", "a bit sore", "very sore". */
+const OLD_RECOVERY: Record<string, Recovery> = { fresh: 'healedEarly', bitSore: 'onTime', verySore: 'stillSore' }
+const RECOVERIES = new Set<string>(['never', 'healedEarly', 'onTime', 'stillSore'])
+/** A saved answer, old or new, as today's soreness timing; null when there is none. */
+export const toRecovery = (v: string | null | undefined): Recovery | null =>
+  v ? (RECOVERIES.has(v) ? (v as Recovery) : (OLD_RECOVERY[v] ?? null)) : null
 
 export interface MuscleFeedback {
   /** Calculated from logs: reps or load at the same effort versus last time. */
   performance: Performance
-  /** "Was this muscle still sore or tired from last time?" */
-  recovery: Recovery
-  /** "Easy, just right, or too hard?" */
-  effort: Effort
+  /** How it healed since last time; null when not answered. */
+  recovery: Recovery | null
+  /** "Easy, just right, or too hard?"; null when not answered. */
+  effort: Effort | null
   /** "Did anything hurt?" */
   pain: boolean
+  /** "How was the pump?"; a tie-breaker only. */
+  pump?: Pump | null
   /** Consecutive sessions (including this one) where performance went down. */
   downStreak: number
+  /** Times "still sore" was answered this week. */
+  stillSoreTimes?: number
+  /** Beginners grow on less, so they add one set at most. */
+  beginner?: boolean
 }
 
 export interface SetDecision {
@@ -75,18 +93,21 @@ export interface SetDecision {
   why: string
 }
 
-/** Next week's sets for one muscle. Performance leads; soreness is only a
- * recovery check, never a reason to add sets. */
+/** Next week's sets for one muscle (T-082g, adapted from RP's table).
+ * Performance leads; soreness is a recovery check, and pump only breaks a
+ * tie. Neither adds sets on its own. */
 export function nextWeekSets(current: number, f: MuscleFeedback, landmarks: Landmarks): SetDecision {
   let change = 0
   let recoverySession = false
   let swapExercise = false
   let why: string
+  const early = f.recovery === 'never' || f.recovery === 'healedEarly'
+  const most = f.beginner ? 1 : 2
 
-  if (f.pain || f.recovery === 'verySore') {
+  if (f.pain) {
     change = -2
-    swapExercise = f.pain
-    why = f.pain ? 'Something hurt, so we cut sets and suggest a different exercise.' : 'Still very sore from last time, so we cut back.'
+    swapExercise = true
+    why = 'Something hurt, so we cut sets and suggest a different exercise.'
   } else if (f.performance === 'down') {
     if (f.downStreak >= 2) {
       change = -2
@@ -95,16 +116,27 @@ export function nextWeekSets(current: number, f: MuscleFeedback, landmarks: Land
     } else {
       why = 'You were a little weaker once. Sets stay the same to see if it happens again.'
     }
-  } else if (f.recovery === 'bitSore') {
-    why = 'A bit sore going in, so sets stay the same.'
-  } else if (f.performance === 'up' && f.effort === 'easy') {
-    change = 2
-    why = 'Getting stronger and it felt easy, so two more sets.'
+  } else if (f.recovery === 'stillSore') {
+    change = (f.stillSoreTimes ?? 1) >= 2 ? -1 : 0
+    why = change ? 'Still sore twice this week, so one set less.' : 'Still sore from last time, so sets stay the same.'
   } else if (f.effort === 'hard') {
     why = 'It felt hard, so sets stay the same.'
+  } else if (f.performance === 'up' && early) {
+    change = most
+    why = f.beginner ? 'Getting stronger and healing early, so one more set.' : 'Getting stronger and healing early, so two more sets.'
+  } else if (f.performance === 'same' && f.recovery === 'onTime') {
+    why = 'Same strength and healed just in time. Sets stay the same.'
+  } else if (f.recovery === null) {
+    change = f.performance === 'up' ? 1 : 0
+    why = change ? 'Getting stronger, so one more set.' : 'No soreness answer yet, so sets stay the same.'
   } else {
     change = 1
-    why = f.performance === 'up' ? 'Getting stronger and recovering well, so one more set.' : 'Recovering well, so one more set.'
+    why = f.performance === 'up' ? 'Getting stronger and healing on time, so one more set.' : 'Healing well, so one more set.'
+  }
+  // A low pump with early healing means there is room for a little more.
+  if (f.pump === 'low' && early && change > 0 && change < most && !f.pain && f.effort !== 'hard') {
+    change += 1
+    why = `${why} The pump was low, so one more.`
   }
 
   const sets = Math.max(Math.min(current, landmarks.mv), Math.min(landmarks.mrv, current + change))

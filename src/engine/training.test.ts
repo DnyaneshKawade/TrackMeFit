@@ -14,7 +14,7 @@ import {
 } from './training'
 
 const fb = (over: Partial<MuscleFeedback>): MuscleFeedback => ({
-  performance: 'same', recovery: 'fresh', effort: 'right', pain: false, downStreak: 0, ...over,
+  performance: 'same', recovery: 'healedEarly', effort: 'right', pain: false, downStreak: 0, ...over,
 })
 
 describe('startingSets', () => {
@@ -34,15 +34,15 @@ describe('nextWeekSets', () => {
     expect(nextWeekSets(10, fb({ performance: 'up', effort: 'easy' }), chest).sets).toBe(12)
   })
   it('adds one set when recovering well', () => {
-    expect(nextWeekSets(10, fb({ performance: 'up' }), chest).sets).toBe(11)
+    expect(nextWeekSets(10, fb({ performance: 'up', recovery: 'onTime' }), chest).sets).toBe(11)
     expect(nextWeekSets(10, fb({}), chest).sets).toBe(11)
   })
-  it('holds when a bit sore or it felt hard', () => {
-    expect(nextWeekSets(10, fb({ performance: 'up', recovery: 'bitSore' }), chest).change).toBe(0)
+  it('holds when still sore or it felt hard', () => {
+    expect(nextWeekSets(10, fb({ performance: 'up', recovery: 'stillSore' }), chest).change).toBe(0)
     expect(nextWeekSets(10, fb({ effort: 'hard' }), chest).change).toBe(0)
   })
   it('never adds sets because of soreness alone', () => {
-    expect(nextWeekSets(10, fb({ recovery: 'verySore', performance: 'up', effort: 'easy' }), chest).change).toBeLessThan(0)
+    expect(nextWeekSets(10, fb({ recovery: 'stillSore', performance: 'up', effort: 'easy' }), chest).change).toBeLessThanOrEqual(0)
   })
   it('holds after one bad session, cuts after two', () => {
     expect(nextWeekSets(14, fb({ performance: 'down', downStreak: 1 }), chest).change).toBe(0)

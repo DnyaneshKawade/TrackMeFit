@@ -11,6 +11,7 @@ export function ReviewView({
   today,
   week,
   skips,
+  beginner,
   onDone,
 }: {
   store: WorkoutStore
@@ -19,6 +20,8 @@ export function ReviewView({
   week: number
   /** Workouts skipped this week, as a sentence (T-110). */
   skips?: string | null
+  /** Beginners add one set at most (T-082g). */
+  beginner?: boolean
   onDone: () => void
 }) {
   const hardWeeks = plan.hardWeeks ?? 4
@@ -40,7 +43,7 @@ export function ReviewView({
     }
   }, [store, plan, today])
 
-  const review: WeekReview | null = data ? reviewWeek({ plan, week, hardWeeks, histories: data.histories, feedback: data.feedback, runDown }) : null
+  const review: WeekReview | null = data ? reviewWeek({ plan, week, hardWeeks, histories: data.histories, feedback: data.feedback, runDown, beginner }) : null
   const changes = review ? review.muscles.filter((m) => m.nextSets !== m.sets || m.swaps.some((s) => s.to)) : []
 
   const act = async (fn: () => Promise<unknown>) => {
