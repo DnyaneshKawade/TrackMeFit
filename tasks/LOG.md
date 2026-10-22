@@ -9,7 +9,6 @@ Newest first. One entry per finished piece of work: what changed, which tests co
 - No database change.
 - Tests: `src/training/removeExercise.test.tsx` (5).
 
-
 ## 2026-10-22: T-129 build your own meal plan
 
 - "Make a meal plan" now offers "Build my own plan". It starts with empty meals.
