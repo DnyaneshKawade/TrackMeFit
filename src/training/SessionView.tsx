@@ -417,6 +417,8 @@ const LIGHT_LOADS: [LightLoad, string][] = [
 
 /** Past sessions read per exercise: enough for the plateau check (T-082e). */
 const HISTORY_SESSIONS = PLATEAU_SESSIONS + 3
+/** Beginners read more, to see if a lift is new in the last 8 weeks (T-082j). */
+const BEGINNER_SESSIONS = 30
 
 function ExerciseLog({
   store,
@@ -510,7 +512,7 @@ function ExerciseLog({
       today: session.performedOn,
     })
     // A plateau with a missed target swaps the step for a lighter session (T-082e).
-    const next = plateau?.action === 'lighter' ? { weight: plateau.weight, targetReps: range[0], why: plateau.why } : suggestNext(h, exercise, range, aim, session.performedOn)
+    const next = plateau?.action === 'lighter' ? { weight: plateau.weight, targetReps: range[0], why: plateau.why } : suggestNext(h, exercise, range, aim, session.performedOn, block?.beginner ? { complete: h.length < BEGINNER_SESSIONS } : undefined)
     return { next, plateau }
   }
   const advice = history ? advise(history) : null
@@ -533,7 +535,7 @@ function ExerciseLog({
 
   useEffect(() => {
     let live = true
-    store.history(exercise.id, session.performedOn, HISTORY_SESSIONS).then(
+    store.history(exercise.id, session.performedOn, block?.beginner ? BEGINNER_SESSIONS : HISTORY_SESSIONS).then(
       (h) => {
         if (!live) return
         setHistory(h)

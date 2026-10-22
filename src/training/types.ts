@@ -4,7 +4,7 @@
 import { startOf } from '../engine/myo'
 import { weightText, type WeightUnit } from '../engine/units'
 import { assistedNext } from '../engine/assistedLoad'
-import { breakLoad, nextLoad, type LoadDecision, type Muscle, type Priority } from '../engine/training'
+import { beginnerLinear, breakLoad, nextLoad, type LoadDecision, type Muscle, type Priority } from '../engine/training'
 import type { Exercise } from './exercises'
 import type { Feedback } from './progression'
 import type { Sync } from '../sync/outbox'
@@ -216,7 +216,15 @@ export function daysBetween(from: string, to: string): number {
  * Logged reps left are compared with `targetRir`, the aim for this week.
  * After 10 or more days off before `today`, the start is lighter (T-082f).
  * Null when there is no history or no rep range to aim for. */
-export function suggestNext(all: PastSession[], exercise: Exercise, repRange: [number, number], targetRir?: number, today?: string): LoadDecision | null {
+export function suggestNext(
+  all: PastSession[],
+  exercise: Exercise,
+  repRange: [number, number],
+  targetRir?: number,
+  today?: string,
+  /** For a beginner: `complete` when `all` holds every past workout of the exercise (T-082j). */
+  beginner?: { complete: boolean },
+): LoadDecision | null {
   const history = all.map((h) => ({ ...h, sets: workingSets(h.sets) })).filter((h) => h.sets.length)
   const last = history[0]
   if (!last || last.sets.length === 0) return null
@@ -243,5 +251,13 @@ export function suggestNext(all: PastSession[], exercise: Exercise, repRange: [n
     if (h.sets.some((s) => s.reps < repRange[0])) missStreak++
     else break
   }
-  return nextLoad({ weight: top, repsDone, repRange, increment: exercise.increment, missStreak, rirDone: topSets.map((s) => s.rir), targetRir })
+  const first = history[history.length - 1]
+  const linear =
+    !!beginner &&
+    !exercise.isolation &&
+    beginnerLinear({
+      daysSinceFirst: beginner.complete && today ? daysBetween(first.performedOn, today) : null,
+      misses: history.map((h) => h.sets.some((s) => s.reps < repRange[0])),
+    })
+  return nextLoad({ weight: top, repsDone, repRange, increment: exercise.increment, missStreak, rirDone: topSets.map((s) => s.rir), targetRir, linear })
 }

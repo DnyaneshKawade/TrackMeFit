@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-082j beginner start
+- `nextLoad` takes `linear`: a beginner's big lift adds one weight step when every set reaches the range with 2+ reps left.
+- `beginnerLinear` keeps it for 8 weeks from the lift's first workout. A double miss ends it, with a reason.
+- A beginner's workout reads up to 30 past workouts per lift, in one read, to find the first date.
+- Spec: `specs/T-082j-beginner-start.md`. Tests: `src/engine/beginnerStart.test.ts` (4), `src/training/beginnerStart.test.tsx` (2).
+
 ## 2026-10-22: T-082h muscle priority
 - The plan editor has a "Muscle focus" list: Grow more, Grow or Keep for each muscle. It can change at any time.
 - `nextWeekSets` takes the priority. Grow stops at MAV high, Grow more may reach MRV, Keep holds at MV (at least 2 sets).
