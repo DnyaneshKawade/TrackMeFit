@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: new tasks T-135 to T-145
+
+- Added to the to-do list after a review against other apps and RP.
+- T-135 ready-made workout plans, with DK's basic-English names. T-136 build my own block.
+- T-137 to T-145: store apps, steps sync, AI help (parked), real-user test, streaks, coach payments, Indian languages, water, friends.
+- No code change. No tests.
+
 ## 2026-10-22: T-134 change or copy a food
 
 - "Edit" on a logged food changes its amount, or copies it to another meal.
