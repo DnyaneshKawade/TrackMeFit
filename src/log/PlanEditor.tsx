@@ -30,6 +30,7 @@ export interface PlanSearch {
 }
 import '../training/training.css'
 import '../profile/profile.css'
+import './log.css'
 
 const MealPlanStep = lazy(() => import('../profile/MealPlanStep'))
 
@@ -128,6 +129,7 @@ export default function PlanEditor({
         <h2>{title}</h2>
         <button className="link" onClick={onClose}>Cancel</button>
       </header>
+      {(targets ?? plan?.targets) && <PlanMacros goal={(targets ?? plan?.targets)!} totals={mode === 'edit' ? plan?.totals : undefined} />}
       {error && <p className="error" role="alert">{error}</p>}
       {mode === 'edit' && plan ? (
         <EditPlan
@@ -176,6 +178,37 @@ export default function PlanEditor({
         </div>
       )}
     </section>
+  )
+}
+
+/** Calories, protein, carbs and fat at the top while making a plan (T-131). */
+function PlanMacros({ goal, totals }: { goal: Macros; totals?: Macros }) {
+  const rows: [string, keyof Macros, string][] = [
+    ['Calories', 'kcal', ''],
+    ['Protein', 'proteinG', ' g'],
+    ['Carbs', 'carbG', ' g'],
+    ['Fat', 'fatG', ' g'],
+  ]
+  return (
+    <dl className="macros plan-macros" aria-label={totals ? 'This plan and your targets' : 'Your targets'}>
+      {rows.map(([label, key, unit]) => (
+        <div key={key}>
+          <dt>{label}</dt>
+          {totals ? (
+            <dd>
+              {fmt(totals[key])}
+              {unit}
+              <small className="muted">target {fmt(goal[key])}</small>
+            </dd>
+          ) : (
+            <dd>
+              {fmt(goal[key])}
+              {unit}
+            </dd>
+          )}
+        </div>
+      ))}
+    </dl>
   )
 }
 

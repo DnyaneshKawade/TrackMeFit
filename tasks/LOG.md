@@ -6,8 +6,9 @@ Newest first. One entry per finished piece of work: what changed, which tests co
 
 - "Make a meal plan" now shows two choices: build my own, or suggest a plan.
 - Only "Suggest a plan" asks for protein foods. "Back" returns to the choices.
+- Calories, protein, carbs and fat targets show on top. While building, the plan's amounts show too.
 - No database change.
-- Tests: `src/log/planChoice.test.tsx` (4); 3 older tests now tap "Suggest a plan".
+- Tests: `src/log/planChoice.test.tsx` (6); 3 older tests now tap "Suggest a plan".
 
 ## 2026-10-22: T-130 remove an exercise from today
 

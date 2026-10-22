@@ -74,4 +74,17 @@ describe('two ways to make a meal plan (T-131)', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Make a new plan' }))
     expect(await screen.findByRole('group', { name: 'How to make the plan' })).toBeTruthy()
   })
+
+  it('5. the targets show at the top: calories, protein, carbs and fat', async () => {
+    await openChoice()
+    const top = screen.getByLabelText('Your targets')
+    expect(top.textContent).toBe('Calories2,400Protein130 gCarbs319 gFat67 g')
+  })
+
+  it('6. while building, the top shows the plan next to each target', async () => {
+    const choice = await openChoice()
+    fireEvent.click(within(choice).getByRole('button', { name: 'Build my own plan' }))
+    const top = await screen.findByLabelText('This plan and your targets')
+    expect(top.textContent).toBe('Calories0target 2,400Protein0 gtarget 130Carbs0 gtarget 319Fat0 gtarget 67')
+  })
 })
