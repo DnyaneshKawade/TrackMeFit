@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-161 room in the size budget
+
+- The Food tab is now its own file. It starts loading with the app, so it opens as fast.
+- The first download went from 139.8 to 134.8 KB gzip, under the 140 KB budget.
+- No database change. No change people see.
+- Tests: `npm run size`; the App tests still pass.
+
 ## 2026-10-22: screen tasks T-154 to T-160
 
 - From `reviews/screen-check.md` in the project files: the study's hooks applied to the screens.

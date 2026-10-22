@@ -91,6 +91,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-161 | Food tab code moved out of the first download, loading alongside it, to make room in the 140 KB budget (139.8 to 134.8 KB) | `npm run size`, `src/App*.test.tsx` |
 | T-134 | "Edit" on a logged food changes its amount or copies it to another meal; "Copy to" on a meal plan food ([spec](../specs/T-134-change-copy-food.md)) | `src/log/entryActions.test.tsx` |
 | T-133 | The Food tab day card shows calories, protein, carbs and fat eaten, and how much is left or over each target ([spec](../specs/T-133-eaten-today.md)) | `src/log/eatenToday.test.tsx`, `src/targets/TargetsFood.test.tsx` |
 | T-132 | Screens and reasons say "calories", not "kcal"; the simple-words test now flags "kcal" ([spec](../specs/T-132-calories-word.md)) | `src/words.test.ts`, plus updated text in 19 test files |
