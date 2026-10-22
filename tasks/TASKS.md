@@ -57,7 +57,6 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 | T-083 | Stuck at the calorie floor: a card with checks (log everything, walk more, then see a doctor) instead of a lower number; optional diet break of 1-2 weeks at maintenance after 8-12 weeks of cutting, accepted by the user | Engine tests |
 | T-100 | Optional reminders (log food, weigh in, workout day, coach reply), a switch for each and a quiet time; at most 1 message a day, sent at the time the person chose (T-147) | Engine, database and Edge Function tests |
 | T-102 | Optional second sign-in step with an authenticator app | RLS test; set-up component test |
-| T-082g | RP-style soreness: ask "still sore?" at the first set of that muscle in the next workout, not after the workout; optional pump question; new set-change table (4.6; RP notes) | Engine tests, migration test, screen test |
 | T-082h | Muscle priority: Grow more, Grow or Keep, in the plan editor and engine, and change it in the middle of a block (4.7; RP notes; the engine's `priority` already exists) | Engine and screen tests |
 | T-082j | Beginner start: add weight each session on big lifts, then switch to rep ranges (4.3) | Engine tests |
 | T-082k | Once a block, a "reps left" check on one-joint moves (4.11) | Engine and screen tests |
@@ -86,6 +85,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-082g | RP-style soreness: "How did your chest heal since last time?" at the muscle's first set next workout; optional pump after the workout; new set-change table ([spec](../specs/T-082g-soreness-timing.md)) | `src/engine/sorenessTable.test.ts` (5), `src/training/sorenessTiming.test.tsx` (3), `src/db/sorenessTiming.test.ts` (1) |
 | T-156 | Today checklist ("Today: 2 of 4 done": meals, calories, workout or rest day, weigh-in), "Day done ✓" on the ring, a kind line when over, and a peek at tomorrow after 7 pm ([spec](../specs/T-156-today-checklist.md)) | `src/engine/today.test.ts` (6), `src/log/todayChecklist.test.tsx` (4) |
 | T-155 | Workout finish screen before the feedback questions: time, working sets, weight lifted, new records with 🏆, one strength trend line and "Next workout: Lower A" ([spec](../specs/T-155-finish-screen.md)) | `src/engine/workoutSummary.test.ts` (5), `src/training/finishScreen.test.tsx` (2) |
 | T-154 | Goal strip on the Today tab ("Goal 75 kg. 2.4 kg to go." with a filling bar, tap opens Progress) and a dashed goal line on the Progress chart with a likely date range at the last 2 weeks' pace, called a guess ([spec](../specs/T-154-goal-strip.md)) | `src/engine/goalWeight.test.ts` (5), `src/progress/goalStrip.test.tsx` (4) |

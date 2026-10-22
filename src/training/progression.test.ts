@@ -90,20 +90,20 @@ describe('week review', () => {
     const r = reviewWeek({
       ...base,
       histories: { 'bench-press': [s('b', 62.5, 8), s('a', 60, 8)] },
-      feedback: [{ muscle: 'chest', recovery: 'fresh', effort: 'easy', pain: false }],
+      feedback: [{ muscle: 'chest', recovery: 'healedEarly', effort: 'easy', pain: false }],
     })
     const chest = r.muscles.find((m) => m.muscle === 'chest')!
-    expect(chest).toMatchObject({ sets: 7, nextSets: 9, why: 'Getting stronger and it felt easy, so two more sets.' })
+    expect(chest).toMatchObject({ sets: 7, nextSets: 9, why: 'Getting stronger and healing early, so two more sets.' })
     expect(r.proposed.days[0].exercises[0].sets).toBe(5)
   })
   it('cuts sets and suggests a swap when something hurt, but never below maintenance', () => {
     const bigBack = applySetChange(plan, 'back', 6) // 12 back sets
-    const r = reviewWeek({ ...base, plan: bigBack, feedback: [{ muscle: 'back', recovery: 'fresh', effort: 'right', pain: true }] })
+    const r = reviewWeek({ ...base, plan: bigBack, feedback: [{ muscle: 'back', recovery: 'healedEarly', effort: 'right', pain: true }] })
     const back = r.muscles.find((m) => m.muscle === 'back')!
     expect(back).toMatchObject({ sets: 12, nextSets: 10 })
     expect(back.decision?.swapExercise).toBe(true)
     // At 6 sets back is already under its maintenance volume (8), so it holds.
-    const small = reviewWeek({ ...base, feedback: [{ muscle: 'back', recovery: 'fresh', effort: 'right', pain: true }] })
+    const small = reviewWeek({ ...base, feedback: [{ muscle: 'back', recovery: 'healedEarly', effort: 'right', pain: true }] })
     expect(small.muscles.find((m) => m.muscle === 'back')!.nextSets).toBe(6)
   })
   it('calls a deload after the hard weeks, when run down, or when half the muscles drop', () => {

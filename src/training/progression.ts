@@ -11,25 +11,17 @@ import {
   MAX_SETS_PER_SESSION,
   nextWeekSets,
   shouldDeload,
-  type Effort,
   type LightWeek,
   type Muscle,
   type Performance,
-  type Recovery,
   type SetDecision,
 } from '../engine/training'
 import { startOf } from '../engine/myo'
 import { exerciseById, similarExercise } from './exercises'
 import type { PastSession, Plan, PlanDay, SetLog } from './types'
+import type { Feedback } from './feedback'
 
-export interface Feedback {
-  muscle: Muscle
-  recovery: Recovery
-  effort: Effort
-  pain: boolean
-  /** The exercises that hurt (T-108). Older answers only have `pain`. */
-  hurt?: string[]
-}
+export { latestFeedback, type Feedback, type FeedbackRow } from './feedback'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const toDay = (d: string) => {
@@ -216,6 +208,8 @@ export function reviewWeek(input: {
   histories: Record<string, PastSession[]>
   feedback: Feedback[]
   runDown: boolean
+  /** Beginners add one set at most (T-082g). */
+  beginner?: boolean
 }): WeekReview {
   const volume = weeklySets(input.plan)
   const mainMuscles = [...new Set(input.plan.days.flatMap((d) => d.exercises.map((e) => exerciseById.get(e.exerciseId)?.primary)))].filter(
@@ -231,7 +225,11 @@ export function reviewWeek(input: {
     if (perf.performance === 'down') down++
     const fb = input.feedback.find((f) => f.muscle === muscle)
     if (!fb) return { muscle, sets, nextSets: sets, decision: null, why: 'No feedback after training yet, so sets stay the same.', swaps: [] }
-    const decision = nextWeekSets(sets, { ...perf, recovery: fb.recovery, effort: fb.effort, pain: fb.pain }, LANDMARKS[muscle])
+    const decision = nextWeekSets(
+      sets,
+      { ...perf, recovery: fb.recovery ?? null, effort: fb.effort ?? null, pain: fb.pain, pump: fb.pump ?? null, stillSoreTimes: fb.stillSoreTimes, beginner: input.beginner },
+      LANDMARKS[muscle],
+    )
     const whole = Math.round(decision.change)
     if (whole) proposed = applySetChange(proposed, muscle, whole)
     const swaps = painSwaps(input.plan, fb.hurt ?? [])

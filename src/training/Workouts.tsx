@@ -215,7 +215,7 @@ export function Workouts({
   if (view.kind === 'review') {
     return (
       <main className="log">
-        <ReviewView store={store} plan={view.plan} today={today} week={weekOf(view.plan)} skips={skipNote(skipsOf(view.plan))} onDone={back} />
+        <ReviewView store={store} plan={view.plan} today={today} week={weekOf(view.plan)} skips={skipNote(skipsOf(view.plan))} beginner={answers?.experience === 'beginner'} onDone={back} />
       </main>
     )
   }

@@ -1,14 +1,14 @@
-import type { Feedback } from './progression'
+import { latestFeedback, type FeedbackRow } from './feedback'
 import { MAX_RECORD_SESSIONS, MAX_SUMMARIES, type NewSet, type Plan, type PlanDay, type Session, type PastSession, type SessionSummary, type SetLog, type WorkoutStore } from './types'
 
 export function memoryWorkoutStore(
-  init: { plans?: Plan[]; sessions?: Session[]; feedback?: (Feedback & { sessionId: string })[] } = {},
+  init: { plans?: Plan[]; sessions?: Session[]; feedback?: (FeedbackRow & { sessionId: string })[] } = {},
 ): WorkoutStore {
   let n = 100
   const id = () => String(n++)
   let plans: Plan[] = structuredClone(init.plans ?? [])
   const sessions: Session[] = structuredClone(init.sessions ?? [])
-  const feedback: (Feedback & { sessionId: string; order: number })[] = (init.feedback ?? []).map((f, order) => ({ ...f, order }))
+  const feedback: (FeedbackRow & { sessionId: string; order: number })[] = (init.feedback ?? []).map((f, order) => ({ ...f, order }))
   const store: WorkoutStore = {
     async plans() {
       return structuredClone(plans)
@@ -85,20 +85,19 @@ export function memoryWorkoutStore(
       else delete s.note
     },
     async saveFeedback(sessionId, list) {
+      // Like the database: a later save fills in its answers and keeps the rest (T-082g).
       for (const f of list) {
         const i = feedback.findIndex((x) => x.sessionId === sessionId && x.muscle === f.muscle)
-        if (i >= 0) feedback.splice(i, 1)
-        feedback.push({ ...f, sessionId, order: feedback.length + 1000 })
+        const had = i >= 0 ? feedback.splice(i, 1)[0] : undefined
+        feedback.push({ ...had, ...f, sessionId, order: had?.order ?? feedback.length + 1000 })
       }
     },
     async feedbackSince(date) {
-      const latest = new Map<string, Feedback>()
       const dated = feedback
         .map((f) => ({ f, on: sessions.find((s) => s.id === f.sessionId)?.performedOn ?? '' }))
         .filter((x) => x.on >= date)
         .sort((a, b) => a.on.localeCompare(b.on) || a.f.order - b.f.order)
-      for (const { f } of dated) latest.set(f.muscle, { muscle: f.muscle, recovery: f.recovery, effort: f.effort, pain: f.pain, ...(f.hurt?.length ? { hurt: f.hurt } : {}) })
-      return [...latest.values()]
+      return latestFeedback(dated.map(({ f }) => f))
     },
     async startBlock(planId, date, week = 1) {
       plans = plans.map((p) => (p.id === planId ? { ...p, blockStartedOn: date, blockStartWeek: week } : p))

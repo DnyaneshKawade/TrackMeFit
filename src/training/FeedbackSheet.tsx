@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import type { Effort, Muscle, Recovery } from '../engine/training'
+import type { Effort, Muscle, Pump } from '../engine/training'
 import { exerciseById, MUSCLE_NAMES } from './exercises'
 import type { Feedback } from './progression'
 
-const RECOVERY: [Recovery, string][] = [['fresh', 'Fresh'], ['bitSore', 'A bit sore'], ['verySore', 'Very sore']]
+const PUMP: [Pump, string][] = [['low', 'Low'], ['some', 'Some'], ['great', 'Great']]
 const EFFORT: [Effort, string][] = [['easy', 'Easy'], ['right', 'Just right'], ['hard', 'Too hard']]
 
-/** Three quick questions per muscle trained, used for next week's sets.
+/** Quick questions per muscle trained, used for next week's sets. How it
+ * healed is asked at its first set next time instead (T-082g).
  * "Something hurt" is asked per exercise, so a swap fits that lift (T-108). */
 export function FeedbackSheet({
   muscles,
@@ -40,7 +41,7 @@ export function FeedbackSheet({
         const ids = doneFor(m).filter((id) => hurt.has(id))
         return { muscle: m, ...answers[m], pain: ids.length > 0, ...(ids.length ? { hurt: ids } : {}) }
       })
-      .filter((f): f is Feedback => !!f.recovery && !!f.effort)
+      .filter((f): f is Feedback => !!f.effort)
     setBusy(true)
     try {
       await onSave(done)
@@ -63,16 +64,16 @@ export function FeedbackSheet({
         return (
           <fieldset key={m} className="feedback-muscle">
             <legend>{name}</legend>
-            <div className="choice" role="group" aria-label={`${name}: sore going in?`}>
-              <span className="muted">Sore going in?</span>
-              {RECOVERY.map(([v, label]) => (
-                <button key={v} aria-pressed={a.recovery === v} onClick={() => set(m, { recovery: v })}>{label}</button>
-              ))}
-            </div>
             <div className="choice" role="group" aria-label={`${name}: how hard?`}>
               <span className="muted">How hard?</span>
               {EFFORT.map(([v, label]) => (
                 <button key={v} aria-pressed={a.effort === v} onClick={() => set(m, { effort: v })}>{label}</button>
+              ))}
+            </div>
+            <div className="choice" role="group" aria-label={`${name}: pump?`}>
+              <span className="muted">Pump? (you can skip this)</span>
+              {PUMP.map(([v, label]) => (
+                <button key={v} aria-pressed={a.pump === v} onClick={() => set(m, { pump: a.pump === v ? undefined : v })}>{label}</button>
               ))}
             </div>
             {doneFor(m).map((id) => (
