@@ -11,6 +11,7 @@ import { FamilyPart } from '../family/FamilyPart'
 import type { FamilyStore } from '../family/family'
 import type { WeightUnit } from '../engine/units'
 import { applyTheme, readTheme, saveTheme, type ThemeChoice } from '../settings/theme'
+import { applyMotion, readMotion, saveMotion, type MotionChoice } from '../settings/motion'
 import './account.css'
 
 export interface UnitsProps {
@@ -43,6 +44,29 @@ function Look() {
         ))}
       </span>
       <p className="muted">This is saved on this phone only.</p>
+    </section>
+  )
+}
+
+/** Small moves and a buzz for wins, or none (T-157). Saved on this phone only. */
+function Motion() {
+  const [choice, setChoice] = useState<MotionChoice>(() => readMotion())
+  const pick = (c: MotionChoice) => {
+    setChoice(c)
+    saveMotion(c)
+    applyMotion(c)
+  }
+  return (
+    <section aria-label="Motion">
+      <h3>Motion</h3>
+      <span className="range" role="group" aria-label="Moves and buzz for wins">
+        {(['on', 'off'] as const).map((c) => (
+          <button key={c} className="chip" aria-pressed={c === choice} onClick={() => pick(c)}>
+            {c === 'on' ? 'On' : 'Off'}
+          </button>
+        ))}
+      </span>
+      <p className="muted">Small moves and a short buzz when you win. If your phone is set to reduce motion, they stay off.</p>
     </section>
   )
 }
@@ -419,6 +443,7 @@ export function Account({
         </section>
       )}
       <Look />
+      <Motion />
       {units && <Units {...units} />}
       {security && <Security {...security} />}
       {onSignOutAll && <SignOutAll onSignOutAll={onSignOutAll} />}

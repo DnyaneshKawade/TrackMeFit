@@ -2,6 +2,12 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-157 motion and buzz for wins
+- `src/settings/motion.ts` keeps an On or Off choice on the phone and marks the page. The phone's "reduce motion" always wins.
+- CSS pops ticks, "Day done ✓" and records in 0.35 s. A new record buzzes for 140 ms.
+- The Me tab has a Motion switch.
+- Spec: `specs/T-157-win-motion.md`. Tests: `src/settings/motion.test.tsx` (4).
+
 ## 2026-10-22: T-082g soreness timing and pump
 - "How did it heal?" moved to the muscle's first exercise in the next workout, as in RP. It shows only when the muscle has history.
 - The after-workout sheet now asks effort, pain and an optional pump. Soreness is gone from it.
