@@ -7,7 +7,7 @@ import { dailyTargets } from './nutrients'
 const picks = (...keys: string[]) => PROTEIN_PICKS.filter((p) => keys.includes(p.key)).flatMap((p) => p.foods)
 const USUAL_VEG_DAY = { 'tmf:dish:roti': 4, 'tmf:dish:dal-tadka': 2, 'tmf:dish:steamed-rice': 1, 'usda:170886': 1, 'tmf:dish:chai': 2, 'tmf:dish:aloo-gobi': 1 }
 
-// Asha: vegetarian, 70 kg, 2,200 kcal and 112 g protein (1.6 g/kg).
+// Asha: vegetarian, 70 kg, 2,200 calories and 112 g protein (1.6 g/kg).
 const asha: MealPlanInput = {
   targets: { kcal: 2200, proteinG: 112, fatG: 61, carbG: 300 },
   weightKg: 70,
@@ -89,7 +89,7 @@ describe('meal plan (T-058)', () => {
     expect(vegan.notes).toContain('Foods your diet leaves out were not carried into the plan.')
   })
 
-  it('11. adds ICMR basics: 400 g vegetables, fruit, oil near 27 g per 2,000 kcal, sugar at most 25 g', () => {
+  it('11. adds ICMR basics: 400 g vegetables, fruit, oil near 27 g per 2,000 calories, sugar at most 25 g', () => {
     expect(dayGrams(plan, 'tmf:ing:cauliflower')).toBeGreaterThanOrEqual(VEG_G)
     expect(items(plan).some((i) => PLAN_FOODS_BY_ID.get(i.foodId)!.group === 'fruit')).toBe(true)
     const fat = items(plan).filter((i) => PLAN_FOODS_BY_ID.get(i.foodId)!.group === 'fat').reduce((s, i) => s + i.grams, 0)
@@ -242,7 +242,7 @@ describe('changing a plan by hand (T-061)', () => {
   it('2. the check says in plain words how far the day is from the targets', () => {
     const t = { kcal: 2000, proteinG: 100, fatG: 60, carbG: 250 }
     expect(planCheck({ ...t, kcal: 2050, proteinG: 103 }, t)).toBe('This plan is close to your targets.')
-    expect(planCheck({ ...t, kcal: 1700, proteinG: 80 }, t)).toBe('This plan has 300 kcal less than your target. It has 20 g less protein than your target.')
+    expect(planCheck({ ...t, kcal: 1700, proteinG: 80 }, t)).toBe('This plan has 300 calories less than your target. It has 20 g less protein than your target.')
     expect(planCheck({ ...t, proteinG: 130 }, t)).toBe('This plan has 30 g more protein than your target.')
   })
 

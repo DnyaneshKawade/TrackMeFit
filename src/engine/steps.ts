@@ -70,10 +70,10 @@ export function calorieSteps(i: StepInput): StepPlan {
   steps.push(goalKcal)
 
   const reasons: string[] = []
-  if (startsAtGoal) reasons.push(`Your usual day is already low. So you start at your goal of ${fmt(goalKcal)} kcal.`)
+  if (startsAtGoal) reasons.push(`Your usual day is already low. So you start at your goal of ${fmt(goalKcal)} calories.`)
   else {
-    reasons.push(`Week 1 is ${fmt(burn)} kcal a day. That is about what you burn.`)
-    reasons.push(`Then it goes down ${STEP_KCAL} kcal each week, to ${fmt(goalKcal)} kcal.`)
+    reasons.push(`Week 1 is ${fmt(burn)} calories a day. That is about what you burn.`)
+    reasons.push(`Then it goes down ${STEP_KCAL} calories each week, to ${fmt(goalKcal)} calories.`)
     reasons.push('Small steps are easier to follow. You tap OK before each new step.')
   }
   if (capped && !atFloor) reasons.push('We kept the cut small enough to be safe.')
@@ -154,17 +154,17 @@ export function weeklyCheck(i: CheckInput): StepCheck | null {
       goalKcal = calorieSteps({ ...i, burn: learnedBurn, usualKcal: null }).goalKcal
     }
   }
-  const learnt = learnedBurn !== null ? `Your weight and food logs show you burn about ${fmt(learnedBurn)} kcal. ` : ''
+  const learnt = learnedBurn !== null ? `Your weight and food logs show you burn about ${fmt(learnedBurn)} calories. ` : ''
 
   const pace = trendChange(i.weighIns, i.today, PACE_DAYS)
   const planned = i.rate * i.weightKg
   if (pace && planned < 0) {
     const perWeek = (pace.kg / pace.days) * 7
     if (perWeek <= planned)
-      return { kind: 'hold', kcal: i.currentKcal, goalKcal, learnedBurn, reason: `You are losing about ${kgText(perWeek)} a week. That is your pace, so stay at ${fmt(i.currentKcal)} kcal for now.` }
+      return { kind: 'hold', kcal: i.currentKcal, goalKcal, learnedBurn, reason: `You are losing about ${kgText(perWeek)} a week. That is your pace, so stay at ${fmt(i.currentKcal)} calories for now.` }
   }
   if (i.currentKcal <= goalKcal) return null
   const kcal = Math.max(goalKcal, i.currentKcal - STEP_KCAL)
   const atGoal = kcal === goalKcal ? ' This is your goal level.' : ''
-  return { kind: 'step', kcal, goalKcal, learnedBurn, reason: `${learnt}Ready for your next step? Eat about ${fmt(kcal)} kcal a day from today.${atGoal}` }
+  return { kind: 'step', kcal, goalKcal, learnedBurn, reason: `${learnt}Ready for your next step? Eat about ${fmt(kcal)} calories a day from today.${atGoal}` }
 }

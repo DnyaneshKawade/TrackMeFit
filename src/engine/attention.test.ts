@@ -38,8 +38,8 @@ describe('client attention (T-026b)', () => {
   })
 
   it('3. flags calories more than 15% off target and protein under 80%, after 3 logged days', () => {
-    expect(reasons({ avgKcal: 2200 })).toEqual(['Ate about 2200 kcal a day last week. That is 22% over 1800 kcal.'])
-    expect(reasons({ avgKcal: 1400 })).toEqual(['Ate about 1400 kcal a day last week. That is 22% under 1800 kcal.'])
+    expect(reasons({ avgKcal: 2200 })).toEqual(['Ate about 2200 calories a day last week. That is 22% over 1800 calories.'])
+    expect(reasons({ avgKcal: 1400 })).toEqual(['Ate about 1400 calories a day last week. That is 22% under 1800 calories.'])
     expect(reasons({ avgKcal: 2000 })).toEqual([])
     expect(reasons({ avgProteinG: 70 })).toEqual(['Protein was about 70 g a day, below the 100 g target.'])
     expect(reasons({ avgKcal: 2500, foodDays: 2 })).toEqual([])

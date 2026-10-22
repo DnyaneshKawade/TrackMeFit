@@ -2,6 +2,13 @@
 
 Newest first. One entry per finished piece of work: what changed, which tests cover it, and anything left open.
 
+## 2026-10-22: T-132 "calories", not "kcal"
+
+- Every screen and reason now says "calories" instead of "kcal".
+- The simple-words test flags "kcal" in new text. `docs/words.md` says the same.
+- No database change.
+- Tests: `src/words.test.ts`; expected text updated in 19 test files.
+
 ## 2026-10-22: T-131 two ways to make a meal plan
 
 - "Make a meal plan" now shows two choices: build my own, or suggest a plan.

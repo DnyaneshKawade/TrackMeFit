@@ -15,9 +15,9 @@ checks rules 1, 2 and 7 on every change (specs
    full stop to a semicolon or a comma. Split a long sentence in two.
 3. **No idioms.** Say it plainly: "you don't need Catch up now", not "Catch
    up has done its job".
-4. **Talk to the person.** "You ate about 2,100 kcal a day", not "Intake
+4. **Talk to the person.** "You ate about 2,100 calories a day", not "Intake
    averaged 2,100 kcal".
-5. **Numbers people know.** kcal, g and kg, as on food packets. Indian
+5. **Numbers people know.** Calories, g and kg. Write "calories", never "kcal" (DK, 22 Oct 2026). Indian
    number style (2,600; 1,00,000). Indian food names as people say them.
 6. **Same word everywhere.** Pick one word for a thing and keep it.
 7. **Grade 5 reading.** Short words and short sentences. The test works out

@@ -65,7 +65,7 @@ export function clientFlags(c: ClientSummary, today: string): Flag[] {
     const off = (c.avgKcal - c.targetKcal) / c.targetKcal
     if (Math.abs(off) > 0.15)
       flags.push({
-        reason: `Ate about ${round(c.avgKcal, 10)} kcal a day last week. That is ${Math.round(Math.abs(off) * 100)}% ${off > 0 ? 'over' : 'under'} ${c.targetKcal} kcal.`,
+        reason: `Ate about ${round(c.avgKcal, 10)} calories a day last week. That is ${Math.round(Math.abs(off) * 100)}% ${off > 0 ? 'over' : 'under'} ${c.targetKcal} calories.`,
         weight: 2,
       })
   }

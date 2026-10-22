@@ -85,7 +85,7 @@ describe('change the meal plan (T-061)', () => {
     const lunch = within(editor).getByRole('region', { name: 'Lunch' })
     const first = plan.meals.find((m) => m.name === 'Lunch')!.items[0]
     const before = check()
-    expect(before).toMatch(/The day comes to about .* kcal and \d+ g protein\. /)
+    expect(before).toMatch(/The day comes to about .* calories and \d+ g protein\. /)
 
     const grams = within(lunch).getByLabelText(`${first.name} grams at Lunch`)
     fireEvent.change(grams, { target: { value: String(first.grams * 2) } })
@@ -114,7 +114,7 @@ describe('change the meal plan (T-061)', () => {
     const editor = await openEditor()
     const breakfast = within(editor).getByRole('region', { name: 'Breakfast' })
     while (within(breakfast).queryAllByRole('button', { name: /^Remove / }).length) fireEvent.click(within(breakfast).getAllByRole('button', { name: /^Remove / })[0])
-    expect(check()).toMatch(/This plan has [\d,]+ kcal less than your target\./)
+    expect(check()).toMatch(/This plan has [\d,]+ calories less than your target\./)
   })
 
   it('3. "Save plan" saves the changes and the Food tab shows them; "Cancel" keeps the old plan', async () => {

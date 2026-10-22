@@ -42,6 +42,7 @@ const HARD_WORDS: [RegExp, string][] = [
   [/\boptimal\b/i, 'best'],
   [/\badequate\b|\bsufficient\b/i, 'enough'],
   [/\bconsume\b/i, 'eat'],
+  [/\bkcal\b/, 'calories'],
   // Idioms that don't translate.
   [/done its job|stick to|keep up\b|one-off|run down|sessions running/i, 'say it plainly'],
 ]

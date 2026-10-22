@@ -27,8 +27,8 @@ function planCards(steps: StepPlan | null): Card[] {
     {
       title: 'Why week 1 is not a cut',
       lines: [
-        `Week 1 is ${fmt(steps.steps[0])} kcal, about what you burn.`,
-        `Then it goes down ${STEP_KCAL} kcal each week, to ${fmt(steps.goalKcal)} kcal.`,
+        `Week 1 is ${fmt(steps.steps[0])} calories, about what you burn.`,
+        `Then it goes down ${STEP_KCAL} calories each week, to ${fmt(steps.goalKcal)} calories.`,
         'Small steps are easier to keep. You tap OK before each one.',
       ],
     },

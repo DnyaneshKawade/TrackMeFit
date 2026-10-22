@@ -42,7 +42,7 @@ describe('profile summary (T-084)', () => {
       ['Fasting', 'Ekadashi'],
       ['Allergies', 'Peanuts'],
     ])
-    expect(rows[5]).toEqual([['Usual day', 'About 1,850 kcal and 48 g protein']])
+    expect(rows[5]).toEqual([['Usual day', 'About 1,850 calories and 48 g protein']])
   })
 
   it('2. skipped answers read as not given, and empty lists as none', () => {

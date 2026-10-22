@@ -90,7 +90,7 @@ export function ClientMealPlan({
       ) : saved ? (
         <>
           <p>
-            About {fmt(saved.plan.totals.kcal)} kcal and {fmt(saved.plan.totals.proteinG)} g protein a day.
+            About {fmt(saved.plan.totals.kcal)} calories and {fmt(saved.plan.totals.proteinG)} g protein a day.
           </p>
           <p className="muted">
             {saved.createdBy === coachId ? 'Set by you' : saved.createdBy ? `Set by ${first}` : 'Set'} on {shortDate(saved.createdAt)}.

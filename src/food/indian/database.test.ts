@@ -28,7 +28,7 @@ describe('Indian food database built from USDA', () => {
 
   // Dish calories are summed from USDA's measured energy, while protein x 4 +
   // carbs x 4 + fat x 9 overstates it for vegetables and fruit (USDA carbs
-  // include fibre). So the check allows 20%, or 15 kcal per 100 g for light foods.
+  // include fibre). So the check allows 20%, or 15 calories per 100 g for light foods.
   it('has calories that roughly agree with the macros for every dish', () => {
     for (const d of db.dishes) {
       const gap = d.energyMismatch * d.food.per100g.kcal
@@ -36,7 +36,7 @@ describe('Indian food database built from USDA', () => {
     }
   })
 
-  it('keeps every dish between 0 and 900 kcal per 100 g', () => {
+  it('keeps every dish between 0 and 900 calories per 100 g', () => {
     for (const d of db.dishes) {
       expect(d.food.per100g.kcal, d.food.id).toBeGreaterThanOrEqual(0)
       expect(d.food.per100g.kcal, d.food.id).toBeLessThanOrEqual(900)

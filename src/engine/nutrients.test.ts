@@ -41,7 +41,7 @@ describe('protein, carbs, fat and fibre (T-068c)', () => {
     for (const t of [easy, tight, floor]) expect(Math.abs(kcalOf(t.values) - t.values.kcal)).toBeLessThan(15)
   })
 
-  it('5. fibre is 14 g per 1,000 kcal, at least 25 g', () => {
+  it('5. fibre is 14 g per 1,000 calories, at least 25 g', () => {
     expect(dailyTargets({ kcal: 1500, weightKg: 60, heightCm: 160 }).fibreG).toBe(25)
     const t = dailyTargets({ kcal: 2400, weightKg: 70, heightCm: 175 })
     expect(t.fibreG).toBe(34)

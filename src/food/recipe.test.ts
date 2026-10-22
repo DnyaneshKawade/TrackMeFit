@@ -35,7 +35,7 @@ const dal: Recipe = {
 
 describe('computeRecipe', () => {
   it('divides the pot total by the cooked weight', () => {
-    // Pot: 340 + 90 = 430 kcal, 20 g protein, 60 g carbs, 12 g fat in 500 g.
+    // Pot: 340 + 90 = 430 calories, 20 g protein, 60 g carbs, 12 g fat in 500 g.
     const { food: f, rawWeightG, cookedWeightG } = computeRecipe(dal, lookup)
     expect(rawWeightG).toBe(510)
     expect(cookedWeightG).toBe(500)

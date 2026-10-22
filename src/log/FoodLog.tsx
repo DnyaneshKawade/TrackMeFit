@@ -488,8 +488,8 @@ function LeftToday({
         </svg>
         <span className="ring-text">
           <strong aria-hidden="true">{Math.abs(left.kcal)}</strong>
-          <span aria-hidden="true">{left.kcal < 0 ? 'kcal over' : 'kcal left'}</span>
-          <span className="sr-only">{amount(left.kcal, ' kcal')}</span>
+          <span aria-hidden="true">{left.kcal < 0 ? 'calories over' : 'calories left'}</span>
+          <span className="sr-only">{amount(left.kcal, ' calories')}</span>
         </span>
       </div>
       <div className="bars">
@@ -504,7 +504,7 @@ function LeftToday({
       </div>
       <footer>
         <span className="muted">
-          of {target.kcal} kcal{byCoach ? ' · set by your coach' : ''}
+          of {target.kcal} calories{byCoach ? ' · set by your coach' : ''}
         </span>
         <button className="link" onClick={onEdit}>Edit targets</button>
       </footer>

@@ -46,7 +46,7 @@ export function summaryRows(p: ProfileInfo, weightKg: number | null, today: stri
       ['Fasting', namesOf(FASTING, p.fasting).join(', ') || 'None'],
       ['Allergies', namesOf(ALLERGIES, p.allergies).join(', ') || 'None'],
     ],
-    [['Usual day', p.currentDiet ? `About ${fmt(p.currentDiet.kcal)} kcal and ${fmt(p.currentDiet.proteinG)} g protein` : null]],
+    [['Usual day', p.currentDiet ? `About ${fmt(p.currentDiet.kcal)} calories and ${fmt(p.currentDiet.proteinG)} g protein` : null]],
   ]
 }
 

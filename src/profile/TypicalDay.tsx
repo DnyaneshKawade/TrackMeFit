@@ -126,7 +126,7 @@ export function TypicalDay({
             <span>
               {e.name}
               <small className="muted">
-                {e.portion}, {e.kcal} kcal
+                {e.portion}, {e.kcal} calories
               </small>
             </span>
             <Stepper label={e.name} value={e.count} onChange={(n) => setExtraCount(e.id, n)} />

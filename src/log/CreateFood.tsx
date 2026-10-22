@@ -182,7 +182,7 @@ export function CreateRecipe({
           <li key={f.id}>
             <button type="button" onClick={() => addPart(f)}>
               <span className="result-name">{f.name}{f.brand ? `, ${f.brand}` : ''}</span>
-              <span className="muted">{f.per100g.kcal} kcal per 100 g</span>
+              <span className="muted">{f.per100g.kcal} calories per 100 g</span>
             </button>
           </li>
         ))}
@@ -200,7 +200,7 @@ export function CreateRecipe({
       </div>
       {preview && (
         <p className="info" role="status" aria-label="Recipe values">
-          {preview.per100g.kcal} kcal and {preview.per100g.proteinG} g protein per 100 g
+          {preview.per100g.kcal} calories and {preview.per100g.proteinG} g protein per 100 g
           {preview.portions[0] ? `; one serving is ${preview.portions[0].grams} g` : ''}.
           {!cooked.trim() && ' Without a cooked weight we assume no water was added or lost.'}
         </p>

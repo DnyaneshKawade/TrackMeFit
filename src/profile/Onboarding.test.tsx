@@ -148,14 +148,14 @@ describe('onboarding', () => {
     expect(screen.getByRole('button', { name: 'Skip this step' })).toBeTruthy()
     for (let i = 0; i < 4; i++) click('More Roti or chapati')
     click('More Dal (no onion or garlic)')
-    expect(screen.getByRole('status', { name: 'Usual day' }).textContent).toMatch(/about 520 kcal and 22 g protein/)
+    expect(screen.getByRole('status', { name: 'Usual day' }).textContent).toMatch(/about 520 calories and 22 g protein/)
     click('Next')
 
     expect(heading()).toBe('Your plan')
     expect(screen.getByText('You’d reach 58 kg before your event on 1 March 2027.')).toBeTruthy()
     const targets = screen.getByRole('region', { name: 'Suggested daily targets' })
-    // The usual day (520 kcal) is below the goal level, so there are no steps.
-    expect(targets.textContent).toMatch(/Your usual day is already low\. So you start at your goal of 1,470 kcal\./)
+    // The usual day (520 calories) is below the goal level, so there are no steps.
+    expect(targets.textContent).toMatch(/Your usual day is already low\. So you start at your goal of 1,470 calories\./)
     expect(targets.textContent).toMatch(/you’d lose about 0\.\d+ kg a week/)
     expect(targets.textContent).toMatch(/only suggestions, based on food research\. They are not medical advice\. You decide whether to follow them\./)
     click('Use these targets')
@@ -209,7 +209,7 @@ describe('onboarding', () => {
     type('Calories a day', '200')
     type('Protein (g, optional)', '20')
     click('Add')
-    expect(screen.getByRole('status', { name: 'Usual day' }).textContent).toMatch(/about 840 kcal and 32 g protein/) // 2 x 320 + 200
+    expect(screen.getByRole('status', { name: 'Usual day' }).textContent).toMatch(/about 840 calories and 32 g protein/) // 2 x 320 + 200
     click('Next')
     click('I’ll set my own')
     await waitFor(() => expect(onFinish).toHaveBeenCalled())
@@ -342,15 +342,15 @@ describe('diet rules (T-057)', () => {
     fireEvent.click(await screen.findByRole('button', { name: /^Poha/ }))
     type('Amount', '2')
     click('Add to your usual day')
-    expect(await screen.findByText('400 g, 640 kcal')).toBeTruthy()
+    expect(await screen.findByText('400 g, 640 calories')).toBeTruthy()
 
     click('+ Add another food')
     click('Quick add')
     type('What was it? (optional)', 'Office thali')
     type('Calories', '700')
     click('Add to your usual day')
-    expect(await screen.findByText('your amount, 700 kcal')).toBeTruthy()
-    expect(screen.getByRole('status', { name: 'Usual day' }).textContent).toMatch(/about 1,?340 kcal/)
+    expect(await screen.findByText('your amount, 700 calories')).toBeTruthy()
+    expect(screen.getByRole('status', { name: 'Usual day' }).textContent).toMatch(/about 1,?340 calories/)
   })
 
   it('9. drops counts for foods the diet no longer allows', async () => {
@@ -359,11 +359,11 @@ describe('diet rules (T-057)', () => {
     click('Next')
     click('More Eggs')
     click('More Roti or chapati')
-    expect(screen.getByRole('status', { name: 'Usual day' }).textContent).toMatch(/about 170 kcal/)
+    expect(screen.getByRole('status', { name: 'Usual day' }).textContent).toMatch(/about 170 calories/)
     click('Back')
     pick('What you eat', 'Vegetarian')
     click('Next')
-    expect(screen.getByRole('status', { name: 'Usual day' }).textContent).toMatch(/about 100 kcal/)
+    expect(screen.getByRole('status', { name: 'Usual day' }).textContent).toMatch(/about 100 calories/)
     click('Next')
     click('I’ll set my own')
     await waitFor(() => expect(onFinish).toHaveBeenCalled())
@@ -422,7 +422,7 @@ describe('suggested day of meals (T-058b)', () => {
     const swap = within(lunch).getByRole('combobox', { name: /^Swap Toor dal/ })
     fireEvent.change(swap, { target: { value: 'tmf:ing:paneer' } })
     expect(within(screen.getByRole('region', { name: 'Lunch' })).getByText(/Swapped in for toor dal/)).toBeTruthy()
-    expect(screen.getByRole('status', { name: 'Plan total' }).textContent).toMatch(/kcal and \d+ g protein/)
+    expect(screen.getByRole('status', { name: 'Plan total' }).textContent).toMatch(/calories and \d+ g protein/)
     expect(plan().textContent).toMatch(/only suggestions, based on food research/)
     expect(onFinish).not.toHaveBeenCalled()
 
@@ -455,7 +455,7 @@ describe('gain paces (T-059)', () => {
     pick('Your main goal', 'Build muscle and gain weight')
     expect(paceButtons()).toEqual(['Lean', 'Steady (recommended)', 'Faster'])
     expect(pressed()).toBe('Steady (recommended)')
-    expect(screen.getByText(/about 0\.28 kg a week\. You eat 310 extra kcal a day/)).toBeTruthy()
+    expect(screen.getByText(/about 0\.28 kg a week\. You eat 310 extra calories a day/)).toBeTruthy()
   })
 
   it('3, 10. an underweight person gets Catch up, Faster picked, and a first milestone', () => {
@@ -531,10 +531,10 @@ describe('calorie steps in setup (T-067a)', () => {
     const targets = screen.getByRole('region', { name: 'Suggested daily targets' })
     expect(within(targets).getByRole('heading').textContent).toBe('Suggested daily targets for week 1')
     const steps = within(targets).getAllByRole('listitem').filter((li) => li.closest('ol'))
-    expect(steps.map((li) => li.textContent)).toEqual(['Week 1: 1,820 kcal', 'Week 2: 1,570 kcal', 'Week 3: 1,470 kcal (your goal level)'])
+    expect(steps.map((li) => li.textContent)).toEqual(['Week 1: 1,820 calories', 'Week 2: 1,570 calories', 'Week 3: 1,470 calories (your goal level)'])
     expect(targets.textContent).toMatch(/You tap OK before each new step\./)
     // T-076: the cards on how the plan works sit under the targets.
-    expect(screen.getByRole('region', { name: 'How your plan works' }).textContent).toMatch(/Week 1 is 1,820 kcal, about what you burn\./)
+    expect(screen.getByRole('region', { name: 'How your plan works' }).textContent).toMatch(/Week 1 is 1,820 calories, about what you burn\./)
     click('Use these targets')
     await waitFor(() => expect(onFinish).toHaveBeenCalled())
     expect(onFinish.mock.calls[0][0].targets.kcal).toBe(1820)

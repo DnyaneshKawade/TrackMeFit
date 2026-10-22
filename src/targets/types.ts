@@ -56,7 +56,7 @@ export function macroMismatch(v: TargetValues): string | null {
   const fromMacros = macroKcal(v)
   const gap = fromMacros - v.kcal
   if (Math.abs(gap) <= v.kcal * 0.05) return null
-  return `Your protein, carbs and fat add up to ${fromMacros} kcal. That is ${Math.abs(gap)} ${gap > 0 ? 'more' : 'less'} than your calories.`
+  return `Your protein, carbs and fat add up to ${fromMacros} calories. That is ${Math.abs(gap)} ${gap > 0 ? 'more' : 'less'} than your calories.`
 }
 
 /** Carbs that fill the calories left after protein and fat. */
@@ -83,4 +83,4 @@ export function remaining(target: TargetValues, eaten: Per100g): TargetValues {
 }
 
 /** "1800 kcal, 120 g protein, 200 g carbs, 60 g fat" */
-export const describeTarget = (t: TargetValues) => `${t.kcal} kcal, ${t.proteinG} g protein, ${t.carbG} g carbs, ${t.fatG} g fat`
+export const describeTarget = (t: TargetValues) => `${t.kcal} calories, ${t.proteinG} g protein, ${t.carbG} g carbs, ${t.fatG} g fat`

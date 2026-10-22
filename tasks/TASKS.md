@@ -65,6 +65,7 @@ The single list of work for Track Me Fit. Update it in the same change as the wo
 
 | ID | Task | Tests |
 |---|---|---|
+| T-132 | Screens and reasons say "calories", not "kcal"; the simple-words test now flags "kcal" ([spec](../specs/T-132-calories-word.md)) | `src/words.test.ts`, plus updated text in 19 test files |
 | T-131 | "Make a meal plan" first asks: "Build my own plan" or "Suggest a plan"; only a suggested plan asks for protein foods; "Back" returns; calorie, protein, carbs and fat targets on top, with the plan's amounts while building ([spec](../specs/T-131-plan-choice.md)) | `src/log/planChoice.test.tsx`, `src/log/PlanEditor.test.tsx`, `src/coach/ClientMealPlan.test.tsx` |
 | T-130 | ✕ on a planned exercise takes it out of today's workout only, with Undo; add another in its place; exercises with sets keep theirs ([spec](../specs/T-130-remove-exercise-today.md)) | `src/training/removeExercise.test.tsx` |
 | T-129 | "Build my own plan": start with empty meals and add each food; change it with "Change plan"; "Delete meal plan" asks first; coaches can't delete ([spec](../specs/T-129-own-meal-plan.md)) | `src/log/ownMealPlan.test.tsx` |

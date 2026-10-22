@@ -162,7 +162,7 @@ describe('meal plan inside the meals (T-063)', () => {
     await waitFor(() => expect(dayKcal()).toBe(String(Math.round(item.macros.kcal))))
     const row = within(region).getAllByRole('checkbox', { name: `Ate ${item.name}` })[0].closest('li')!
     expect(row.className).toBe('planned ticked')
-    expect(row.textContent).toMatch(/kcal · P /)
+    expect(row.textContent).toMatch(/calories · P /)
     expect(within(region).getAllByText(item.name)).toHaveLength(plan.meals[0].items.filter((i) => i.name === item.name).length)
   })
 
@@ -190,7 +190,7 @@ describe('meal plan inside the meals (T-063)', () => {
     const { plan } = await setup()
     const line = screen.getByRole('region', { name: 'Your meal plan' })
     const items = plan.meals.flatMap((m) => m.items).length
-    expect(line.textContent).toMatch(new RegExp(`Your meal plan about ${plan.totals.kcal.toLocaleString('en-IN')} kcal, \\d+ g protein, 0 of ${items} eaten`))
+    expect(line.textContent).toMatch(new RegExp(`Your meal plan about ${plan.totals.kcal.toLocaleString('en-IN')} calories, \\d+ g protein, 0 of ${items} eaten`))
     expect(within(line).getByRole('checkbox', { name: 'Ate the whole plan' })).toBeTruthy()
   })
 

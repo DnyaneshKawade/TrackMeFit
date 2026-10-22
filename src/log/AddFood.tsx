@@ -154,7 +154,7 @@ export function AddFood({
                   <button onClick={() => setPicked(f)}>
                     <span className="result-name">{f.name}{f.brand ? `, ${f.brand}` : ''}</span>
                     <span className="muted">
-                      {f.per100g.kcal} kcal per 100 g · {SOURCE_NAME[f.source] ?? f.source}
+                      {f.per100g.kcal} calories per 100 g · {SOURCE_NAME[f.source] ?? f.source}
                     </span>
                   </button>
                 </li>
@@ -205,7 +205,7 @@ function RecentList({
       <ul>
         {items.map(({ entry: e, times }) => {
           const food = foods.get(e.foodId)
-          const detail = `${amountLabel(e)} · ${e.kcal} kcal${times > 1 ? ` · ${times} times` : ''}`
+          const detail = `${amountLabel(e)} · ${e.kcal} calories${times > 1 ? ` · ${times} times` : ''}`
           return (
             <li key={e.id}>
               {food ? (
@@ -320,7 +320,7 @@ function MyFoods({
             <button className="recent-name" onClick={() => onPick(f)}>
               <span className="result-name">{f.name}{f.brand ? `, ${f.brand}` : ''}</span>
               <span className="muted">
-                {f.per100g.kcal} kcal per 100 g{f.recipe ? ' · recipe' : ''}
+                {f.per100g.kcal} calories per 100 g{f.recipe ? ' · recipe' : ''}
               </span>
             </button>
             {confirming === f.id ? (

@@ -148,7 +148,7 @@ export default function MealPlanStep({
           {plan.meals.map((m) => (
             <section key={m.name} className="plan-meal" aria-label={m.name}>
               <h3>
-                {m.name} <small className="muted">{fmt(m.macros.kcal)} kcal, {Math.round(m.macros.proteinG)} g protein</small>
+                {m.name} <small className="muted">{fmt(m.macros.kcal)} calories, {Math.round(m.macros.proteinG)} g protein</small>
               </h3>
               <ul className="plan-items">
                 {m.items.map((i) => {
@@ -204,7 +204,7 @@ export default function MealPlanStep({
           ))}
 
           <p className="info" role="status" aria-label="Plan total">
-            The day comes to about {fmt(plan.totals.kcal)} kcal and {Math.round(plan.totals.proteinG)} g protein (your target: {fmt(goal.kcal)} kcal,{' '}
+            The day comes to about {fmt(plan.totals.kcal)} calories and {Math.round(plan.totals.proteinG)} g protein (your target: {fmt(goal.kcal)} calories,{' '}
             {goal.proteinG} g protein).
           </p>
           {plan.notes.map((n) => (

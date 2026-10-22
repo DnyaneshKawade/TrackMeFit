@@ -105,7 +105,7 @@ export default function TodayPlan({
             <span>{i.name}</span>
             <span className="muted">
               {i.grams} g {i.weighed}
-              {i.hint && `, ${i.hint}`} · {Math.round(i.macros.kcal)} kcal
+              {i.hint && `, ${i.hint}`} · {Math.round(i.macros.kcal)} calories
             </span>
           </div>
         )}
@@ -134,7 +134,7 @@ export default function TodayPlan({
           <span>
             <strong>Your meal plan{vegWhy ? ', veg today' : ''}</strong>{' '}
             <span className="muted">
-              about {plan.totals.kcal.toLocaleString('en-IN')} kcal, {Math.round(plan.totals.proteinG)} g protein, {done} of {rows.length} eaten
+              about {plan.totals.kcal.toLocaleString('en-IN')} calories, {Math.round(plan.totals.proteinG)} g protein, {done} of {rows.length} eaten
               {byCoach && '. Changed by your coach'}
             </span>
           </span>

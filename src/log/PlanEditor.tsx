@@ -230,7 +230,7 @@ function EditPlan({
   return (
     <>
       <p className="info" role="status" aria-label="Plan check">
-        The day comes to about {fmt(plan.totals.kcal)} kcal and {Math.round(plan.totals.proteinG)} g protein. {planCheck(plan.totals, goal)}
+        The day comes to about {fmt(plan.totals.kcal)} calories and {Math.round(plan.totals.proteinG)} g protein. {planCheck(plan.totals, goal)}
       </p>
       {MEALS.map((name: MealName) => {
         const items = byMeal.get(name)?.items ?? []
@@ -268,7 +268,7 @@ function EditPlan({
                       g {i.weighed}
                       {i.hint && <span className="muted">, {i.hint}</span>}
                       <small className="muted reason">
-                        {fmt(i.macros.kcal)} kcal, {Math.round(i.macros.proteinG)} g protein. {i.reason}
+                        {fmt(i.macros.kcal)} calories, {Math.round(i.macros.proteinG)} g protein. {i.reason}
                       </small>
                     </span>
                     <span className="item-actions">

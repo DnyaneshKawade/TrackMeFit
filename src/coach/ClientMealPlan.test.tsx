@@ -37,7 +37,7 @@ describe('coach meal plans (T-078)', () => {
   it('1. the coach sees the client’s plan, its size, and who set it and when', async () => {
     const { plan } = setup(true)
     const section = await screen.findByRole('region', { name: 'Meal plan' })
-    expect(await within(section).findByText(`About ${Math.round(plan.totals.kcal).toLocaleString('en-IN')} kcal and ${Math.round(plan.totals.proteinG)} g protein a day.`)).toBeTruthy()
+    expect(await within(section).findByText(`About ${Math.round(plan.totals.kcal).toLocaleString('en-IN')} calories and ${Math.round(plan.totals.proteinG)} g protein a day.`)).toBeTruthy()
     expect(within(section).getByText('Set by Asha on 10 Oct.')).toBeTruthy()
     cleanup()
     setup(false)
